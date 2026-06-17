@@ -1,0 +1,33 @@
+import express from 'express';
+import { validateJWT, authorize } from '../middleware/auth.js';
+import { createLead, listLeads, getLead, updateLead, deleteLead, updateLeadStatus, previewLead, generateLeadPDF, sendLeadEmail, convertLead, autoBuildProposal, getLeadConversionStats, getLeadTemplates, removeLeadFromGroup, convertLeadFromGroup, createLeadGroup, listLeadGroups, createLeadGroupFromTrips, getLeadGroup, updateLeadGroup, deleteLeadGroup, previewLeadGroup, sendLeadGroupEmail, addLeadToGroup, updateLeadStatusInGroup } from '../controllers/leadController.js';
+const router = express.Router();
+router.use(validateJWT);
+// Proposals (Go uses /proposals not /leads)
+router.post('/proposals', authorize('admin', 'agent'), createLead);
+router.get('/proposals', authorize('admin', 'agent'), listLeads);
+router.post('/proposals/auto-build', authorize('admin', 'agent'), autoBuildProposal);
+router.get('/proposals/stats', authorize('admin', 'agent'), getLeadConversionStats);
+router.get('/proposals/templates', authorize('admin', 'agent'), getLeadTemplates);
+router.get('/proposals/:id', authorize('admin', 'agent'), getLead);
+router.put('/proposals/:id', authorize('admin', 'agent'), updateLead);
+router.delete('/proposals/:id', authorize('admin', 'agent'), deleteLead);
+router.put('/proposals/:id/status', authorize('admin', 'agent'), updateLeadStatus);
+router.get('/proposals/:id/preview', authorize('admin', 'agent'), previewLead);
+router.get('/proposals/:id/generate-pdf', authorize('admin', 'agent'), generateLeadPDF);
+router.post('/proposals/:id/send-email', authorize('admin', 'agent'), sendLeadEmail);
+router.post('/proposals/:id/convert', authorize('admin', 'agent'), convertLead);
+router.post('/proposals/:proposal_id/remove-from-group', authorize('admin', 'agent'), removeLeadFromGroup);
+router.post('/proposals/:proposal_id/convert-from-group', authorize('admin', 'agent'), convertLeadFromGroup);
+// Group Proposals
+router.post('/group-proposals', authorize('admin', 'agent'), createLeadGroup);
+router.get('/group-proposals', authorize('admin', 'agent'), listLeadGroups);
+router.post('/group-proposals/from-trips', authorize('admin', 'agent'), createLeadGroupFromTrips);
+router.get('/group-proposals/:id', authorize('admin', 'agent'), getLeadGroup);
+router.put('/group-proposals/:id', authorize('admin', 'agent'), updateLeadGroup);
+router.delete('/group-proposals/:id', authorize('admin', 'agent'), deleteLeadGroup);
+router.get('/group-proposals/:id/preview', authorize('admin', 'agent'), previewLeadGroup);
+router.post('/group-proposals/:id/send-email', authorize('admin', 'agent'), sendLeadGroupEmail);
+router.post('/group-proposals/:group_id/leads/:lead_id', authorize('admin', 'agent'), addLeadToGroup);
+router.put('/group-proposals/:group_id/leads/:lead_id/status', authorize('admin', 'agent'), updateLeadStatusInGroup);
+export default router;

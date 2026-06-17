@@ -1,0 +1,12 @@
+import express from 'express';
+import { validateJWT, authorize } from '../middleware/auth.js';
+import { getNotificationPreferences, updateNotificationPreferences, sendDailyDigest, sendTaskReminders, sendOverdueReminders, testNotification } from '../controllers/notificationController.js';
+const router = express.Router();
+router.use(validateJWT);
+router.get('/notifications/preferences', authorize('admin', 'agent'), getNotificationPreferences);
+router.put('/notifications/preferences', authorize('admin', 'agent'), updateNotificationPreferences);
+router.post('/notifications/digest/:agentId', authorize('admin'), sendDailyDigest);
+router.post('/notifications/reminders/:agentId', authorize('admin'), sendTaskReminders);
+router.post('/notifications/overdue/:agentId', authorize('admin'), sendOverdueReminders);
+router.post('/notifications/test', authorize('admin', 'agent'), testNotification);
+export default router;

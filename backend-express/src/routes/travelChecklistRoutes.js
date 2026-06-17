@@ -1,0 +1,10 @@
+import express from 'express';
+import { validateJWT } from '../middleware/auth.js';
+import { getChecklist, updateChecklistItem, updateChecklistBulk, getChecklistProgress } from '../controllers/travelChecklistController.js';
+const router = express.Router();
+router.use(validateJWT);
+router.post('/checklist', getChecklist);
+router.put('/checklist/item', updateChecklistItem);
+router.put('/checklist/bulk', updateChecklistBulk);
+router.get('/checklist/progress', getChecklistProgress);
+export default router;

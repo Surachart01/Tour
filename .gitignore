@@ -1,0 +1,64 @@
+# Node.js / Frontends & Backends
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/*.local
+**/uploads/
+**/logs/
+**/*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/pnpm-debug.log*
+**/lerna-debug.log*
+
+# Exclude Legacy Go Backend and Legacy Frontend
+backend-main/
+frontend-main/
+
+# Environment & Sensitive files
+**/.env
+**/.env.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
+**/config/config.yaml*
+**/secrets/
+**/backup/
+**/credentials.json
+**/*.db
+**/*.sqlite
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+.cursor/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Build & Go binary files
+backend-main/bin/
+backend-main/core-backend
+backend-main/*.exe
+backend-main/*.test
+backend-main/*.out
+
+# Temporary & Generated files
+**/tmp/
+**/*.tmp
+**/*.bak
+**/*.pdf
+**/*.xlsx
+**/*.csv

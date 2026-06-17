@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: agent_operator_db
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: admin@123
+      POSTGRES_DB: agent_operator
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend-express
+      dockerfile: Dockerfile
+    container_name: agent_operator_backend
+    ports:
+      - "8081:8081"
+    environment:
+      DATABASE_URL: "postgresql://agent:admin%40123@db:5432/agent_operator?schema=public"
+      PORT: 8081
+      JWT_SECRET: "WheelsApartSecretTokenKeyVerySecure32!"
+      BANK_ENCRYPTION_KEY: "WheelsApartBankDataEncryptKey32!"
+      # SMTP & Email defaults (copied from backend config)
+      SMTP_HOST: "smtp.gmail.com"
+      SMTP_PORT: 587
+      SMTP_USER: "varunjain06061991@gmail.com"
+      SMTP_PASS: "zzrl irjo uuyl otdn"
+      EMAIL_FROM_DEFAULT: "varunjain06061991@gmail.com"
+      EMAIL_FROM_BEPPE: "varunjain0606@gmail.com"
+      EMAIL_CC_DEFAULT: "varunjain0606@gmail.com"
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./frontend-vite
+      dockerfile: Dockerfile
+    container_name: agent_operator_frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: "http://localhost:8081/api/v1"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
