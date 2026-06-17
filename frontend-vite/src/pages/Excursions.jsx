@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Table, Card, Form, Input, Button, Select, Space, Tag, Drawer, message, Popconfirm, InputNumber, Tabs, Checkbox, DatePicker, Divider } from 'antd';
+import { Table, Card, Form, Input, Button, Select, Space, Tag, Drawer, message, Popconfirm, InputNumber, Tabs, Checkbox, DatePicker, Divider, Tooltip } from 'antd';
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined, DollarOutlined, CalendarOutlined, CopyOutlined } from '@ant-design/icons';
 import { Binoculars, MapPin, Tag as TagIcon, Compass, Sparkles } from 'lucide-react';
 import dayjs from 'dayjs';
@@ -264,7 +264,13 @@ export default function Excursions() {
         <div>
           <span className="font-bold text-slate-800 text-sm block">{text}</span>
           {record.code && <Tag color="cyan" className="mt-0.5">{record.code}</Tag>}
-          <span className="text-slate-400 text-xs mt-0.5 block">{record.description}</span>
+          {record.description && (
+            <Tooltip title={<div className="max-w-[400px] text-xs leading-relaxed">{record.description}</div>} placement="topLeft" mouseEnterDelay={0.3}>
+              <span className="text-slate-400 text-xs mt-1 block line-clamp-2 cursor-help max-w-[450px]">
+                {record.description}
+              </span>
+            </Tooltip>
+          )}
         </div>
       )
     },
