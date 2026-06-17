@@ -174,7 +174,7 @@ export default function Bookings() {
                 </Col>
                 <Col span={8}>
                   <div className="text-xs text-slate-400 font-semibold">TOTAL SELLING PRICE</div>
-                  <div className="text-base font-bold text-emerald-600 mt-0.5">{currentBooking.totalSelling.toLocaleString()} THB</div>
+                  <div className="text-base font-bold text-emerald-600 mt-0.5">{(currentBooking.totalSelling || 0).toLocaleString()} THB</div>
                 </Col>
               </Row>
             </div>

@@ -222,7 +222,7 @@ export default function Tours() {
       title: 'Base Price',
       dataIndex: 'basePrice',
       key: 'basePrice',
-      render: (val) => <span className="font-bold text-emerald-600">{val.toLocaleString()} THB</span>
+      render: (val) => <span className="font-bold text-emerald-600">{(val || 0).toLocaleString()} THB</span>
     },
     {
       title: 'Supplier',

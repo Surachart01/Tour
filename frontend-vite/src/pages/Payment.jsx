@@ -104,7 +104,7 @@ export default function Payment() {
       title: 'Gross Selling',
       dataIndex: 'totalSelling',
       key: 'totalSelling',
-      render: (val) => <span className="font-semibold text-slate-700">{val.toLocaleString()} THB</span>
+      render: (val) => <span className="font-semibold text-slate-700">{(val || 0).toLocaleString()} THB</span>
     },
     {
       title: 'Amount Settled',
@@ -197,7 +197,7 @@ export default function Payment() {
                 <Col span={8}>
                   <div className="text-xs text-slate-400 font-semibold">REMAINING DUE</div>
                   <div className="text-base font-bold text-red-600 mt-0.5">
-                    {(currentPayment.totalSelling - currentPayment.paidAmount).toLocaleString()} THB
+                    {((currentPayment.totalSelling || 0) - (currentPayment.paidAmount || 0)).toLocaleString()} THB
                   </div>
                 </Col>
               </Row>

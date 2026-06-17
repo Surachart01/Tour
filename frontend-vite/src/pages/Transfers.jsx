@@ -203,7 +203,7 @@ export default function Transfers() {
       title: 'Cost Rate',
       dataIndex: 'price',
       key: 'price',
-      render: (val) => <span className="font-bold text-emerald-600">{val.toLocaleString()} THB</span>
+      render: (val) => <span className="font-bold text-emerald-600">{(val || 0).toLocaleString()} THB</span>
     },
     {
       title: 'Capacity',
