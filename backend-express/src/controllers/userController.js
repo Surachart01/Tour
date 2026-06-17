@@ -225,7 +225,9 @@ export async function createAdmin(req, res, next) {
         isPrimaryAdmin: !isSuperAdminUser,
         isSuperAdmin: isSuperAdminUser,
         canCreateUsers: !isSuperAdminUser,
-        canViewAnalytics: true
+        canViewAnalytics: true,
+        permissions: userData.permissions ? (typeof userData.permissions === 'string' ? userData.permissions : JSON.stringify(userData.permissions)) : null,
+        googleId: userData.googleId || userData.google_id || null
       }
     });
 
@@ -297,7 +299,7 @@ export async function createAdmin(req, res, next) {
 export async function createUser(req, res, next) {
   try {
     const claims = req.user;
-    const { username, email, role, password, agent_id } = req.body;
+    const { username, email, role, password, agent_id, permissions, googleId, google_id } = req.body;
 
     if (!username || !email || !password || !agent_id) {
       return res.status(400).send('Invalid input data');
@@ -327,7 +329,9 @@ export async function createUser(req, res, next) {
         password: hashedPassword,
         agentId: agent_id,
         parentUserId: claims.user_id,
-        organizationId: claims.organizationId
+        organizationId: claims.organizationId,
+        permissions: permissions ? (typeof permissions === 'string' ? permissions : JSON.stringify(permissions)) : null,
+        googleId: googleId || google_id || null
       }
     });
 
@@ -468,14 +472,17 @@ export async function updateUser(req, res, next) {
       return res.status(400).send('Invalid user ID');
     }
 
-    const { username, email, role } = req.body;
+    const { username, email, role, permissions, googleId, google_id } = req.body;
+    const resolvedGoogleId = googleId !== undefined ? googleId : (google_id !== undefined ? google_id : undefined);
 
     const updatedUser = await prisma.user.update({
       where: { id },
       data: {
         username,
         email,
-        role
+        role,
+        permissions: permissions !== undefined ? (typeof permissions === 'string' ? permissions : JSON.stringify(permissions)) : undefined,
+        googleId: resolvedGoogleId
       }
     });
 
@@ -483,7 +490,9 @@ export async function updateUser(req, res, next) {
       id: updatedUser.id,
       user: updatedUser.username,
       email: updatedUser.email,
-      role: updatedUser.role
+      role: updatedUser.role,
+      permissions: updatedUser.permissions,
+      google_id: updatedUser.googleId
     });
   } catch (err) {
     next(err);

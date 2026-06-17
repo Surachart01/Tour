@@ -8,6 +8,13 @@ export async function createTransfer(req, res, next) {
         transfer_type: data.transfer_type, city: data.city,
         description: data.description || null,
         departure: data.departure, arrival: data.arrival,
+        supplier_name: data.supplier_name || null,
+        user_id: data.user_id ? parseInt(data.user_id) : null,
+        country: data.country || "Thailand",
+        sic_price_adult: data.sic_price_adult !== undefined ? data.sic_price_adult : 0.00,
+        sic_price_child: data.sic_price_child !== undefined ? data.sic_price_child : 0.00,
+        supplier_id: data.supplier_id ? parseInt(data.supplier_id) : null,
+        display_order: data.display_order !== undefined ? parseInt(data.display_order) : 0,
         transfer_pricing: data.pricing ? {
           create: data.pricing.map(p => ({
             start_date: new Date(p.start_date), end_date: new Date(p.end_date),
@@ -96,6 +103,13 @@ export async function updateTransfer(req, res, next) {
         data: {
           transfer_type: data.transfer_type, city: data.city,
           description: data.description, departure: data.departure, arrival: data.arrival,
+          supplier_name: data.supplier_name !== undefined ? data.supplier_name : undefined,
+          user_id: data.user_id !== undefined ? (data.user_id ? parseInt(data.user_id) : null) : undefined,
+          country: data.country !== undefined ? data.country : undefined,
+          sic_price_adult: data.sic_price_adult !== undefined ? data.sic_price_adult : undefined,
+          sic_price_child: data.sic_price_child !== undefined ? data.sic_price_child : undefined,
+          supplier_id: data.supplier_id !== undefined ? (data.supplier_id ? parseInt(data.supplier_id) : null) : undefined,
+          display_order: data.display_order !== undefined ? parseInt(data.display_order) : undefined,
           transfer_pricing: data.pricing ? {
             create: data.pricing.map(p => ({
               start_date: new Date(p.start_date), end_date: new Date(p.end_date),

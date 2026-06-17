@@ -10,6 +10,11 @@ export async function createExcursion(req, res, next) {
         description: data.description || null,
         sic_price_adult: data.sic_price_adult, sic_price_child: data.sic_price_child,
         walkin_price: data.walkin_price, currency_id: data.currency_id,
+        supplier_name: data.supplier_name || null,
+        valid_days: data.valid_days || null,
+        user_id: data.user_id ? parseInt(data.user_id) : null,
+        country: data.country || "Thailand",
+        display_order: data.display_order !== undefined ? parseInt(data.display_order) : 0,
         excursion_pricing: data.pricing ? {
           create: data.pricing.map(p => ({
             start_date: new Date(p.start_date), end_date: new Date(p.end_date),
@@ -95,6 +100,11 @@ export async function updateExcursion(req, res, next) {
           is_sic_excursion: data.is_sic_excursion, description: data.description,
           sic_price_adult: data.sic_price_adult, sic_price_child: data.sic_price_child,
           walkin_price: data.walkin_price, currency_id: data.currency_id,
+          supplier_name: data.supplier_name !== undefined ? data.supplier_name : undefined,
+          valid_days: data.valid_days !== undefined ? data.valid_days : undefined,
+          user_id: data.user_id !== undefined ? (data.user_id ? parseInt(data.user_id) : null) : undefined,
+          country: data.country !== undefined ? data.country : undefined,
+          display_order: data.display_order !== undefined ? parseInt(data.display_order) : undefined,
           excursion_pricing: data.pricing ? {
             create: data.pricing.map(p => ({
               start_date: new Date(p.start_date), end_date: new Date(p.end_date),

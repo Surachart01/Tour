@@ -14,15 +14,17 @@ model User {
   role             String       @db.VarChar(50)
   password         String       @db.VarChar(100)
   agentId          Int          @map("agent_id")
-  userType         String       @default("agent") @map("user_type") @db.VarChar(50)
-  parentUserId     Int?         @map("parent_user_id")
-  organizationId   Int?         @map("organization_id")
-  isPrimaryAdmin   Boolean      @default(false) @map("is_primary_admin")
-  isSuperAdmin     Boolean      @default(false) @map("is_super_admin")
-  canCreateUsers   Boolean      @default(false) @map("can_create_users")
-  canViewAnalytics Boolean      @default(false) @map("can_view_analytics")
   createdAt        DateTime     @default(now()) @map("created_at")
   updatedAt        DateTime     @default(now()) @updatedAt @map("updated_at")
+  permissions      String?
+  googleId         String?      @map("google_id") @db.VarChar(255)
+  canCreateUsers   Boolean      @default(false) @map("can_create_users")
+  canViewAnalytics Boolean      @default(false) @map("can_view_analytics")
+  isPrimaryAdmin   Boolean      @default(false) @map("is_primary_admin")
+  isSuperAdmin     Boolean      @default(false) @map("is_super_admin")
+  organizationId   Int?         @map("organization_id")
+  parentUserId     Int?         @map("parent_user_id")
+  userType         String       @default("agent") @map("user_type") @db.VarChar(50)
   userProfile      UserProfile?
   agent            Agent        @relation(fields: [agentId], references: [id])
   parentUser       User?        @relation("UserHierarchy", fields: [parentUserId], references: [id])
@@ -170,10 +172,13 @@ model Agent {
   email                String   @unique @db.VarChar(100)
   telephone            String?  @db.VarChar(20)
   fax                  String?  @db.VarChar(20)
+  userId               Int?     @map("user_id")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @default(now()) @updatedAt @map("updated_at")
   paymentDeadlineType  String   @default("24_hours_before") @map("payment_deadline_type") @db.VarChar(50)
   paymentDeadlineDays  Int?     @map("payment_deadline_days")
-  enableAssistanceFee  Boolean? @map("enable_assistance_fee")
   defaultAssistanceFee Decimal? @map("default_assistance_fee") @db.Decimal(10, 2)
+  enableAssistanceFee  Boolean? @map("enable_assistance_fee")
   trips                trips[]
   users                User[]
 
@@ -234,6 +239,7 @@ model excursion_trip_items {
   remarks       String?
   created_at    DateTime?   @default(now()) @db.Timestamp(6)
   updated_at    DateTime?   @default(now()) @db.Timestamp(6)
+  pickup_time   String?
   currencies    currencies? @relation(fields: [currency_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
   excursions    excursions? @relation(fields: [excursion_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   suppliers     suppliers?  @relation(fields: [supplier_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -253,29 +259,37 @@ model excursions {
   currency_id          Int?
   created_at           DateTime?              @default(now()) @db.Timestamp(6)
   updated_at           DateTime?              @default(now()) @db.Timestamp(6)
+  supplier_name        String?                @db.VarChar(100)
+  valid_days           String?                @db.VarChar(255)
+  user_id              Int?
+  country              String?                @default("Thailand") @db.VarChar(100)
+  display_order        Int?                   @default(0) @map("display_order")
   excursion_pricing    excursion_pricing[]
   excursion_trip_items excursion_trip_items[]
   currencies           currencies?            @relation(fields: [currency_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
 }
 
 model flight_trip_items {
-  id            Int         @id @default(autoincrement())
-  trip_item_id  Int?
-  from_date     DateTime    @db.Timestamp(6)
-  to_date       DateTime    @db.Timestamp(6)
-  flight_number String?     @db.VarChar(50)
-  in_or_out     String?     @db.VarChar(10)
-  route         String?     @db.VarChar(100)
-  issued_by     String?     @db.VarChar(100)
-  approved      Boolean?    @default(false)
-  declined      Boolean?    @default(false)
-  price         Decimal?    @db.Decimal(10, 2)
-  currency_id   Int?
-  remarks       String?
-  created_at    DateTime?   @default(now()) @db.Timestamp(6)
-  updated_at    DateTime?   @default(now()) @db.Timestamp(6)
-  currencies    currencies? @relation(fields: [currency_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  trips         trips?      @relation(fields: [trip_item_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id             Int         @id @default(autoincrement())
+  trip_item_id   Int?
+  from_date      DateTime    @db.Timestamp(6)
+  to_date        DateTime    @db.Timestamp(6)
+  flight_number  String?     @db.VarChar(50)
+  in_or_out      String?     @db.VarChar(10)
+  route          String?     @db.VarChar(100)
+  issued_by      String?     @db.VarChar(100)
+  approved       Boolean?    @default(false)
+  declined       Boolean?    @default(false)
+  price          Decimal?    @db.Decimal(10, 2)
+  currency_id    Int?
+  remarks        String?
+  created_at     DateTime?   @default(now()) @db.Timestamp(6)
+  updated_at     DateTime?   @default(now()) @db.Timestamp(6)
+  edt            String?
+  eat            String?
+  flight_airline String?     @db.VarChar(100)
+  currencies     currencies? @relation(fields: [currency_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  trips          trips?      @relation(fields: [trip_item_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model hotel_contacts {
@@ -303,6 +317,7 @@ model hotel_fees {
   new_year_dinner_fee  Decimal?    @db.Decimal(10, 2)
   created_at           DateTime?   @default(now()) @db.Timestamp(6)
   updated_at           DateTime?   @default(now()) @db.Timestamp(6)
+  late_checkout_21_fee Int?        @default(0)
   currencies           currencies? @relation(fields: [currency_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
   hotels               hotels?     @relation(fields: [hotel_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
@@ -390,6 +405,22 @@ model hotel_trip_items {
   notes                 String?
   created_at            DateTime?               @default(now()) @db.Timestamp(6)
   updated_at            DateTime?               @default(now()) @db.Timestamp(6)
+  promotion             String?
+  meals                 String?
+  room_types_json       String?
+  early_check_in        Boolean?                @default(false)
+  late_check_out        Boolean?                @default(false)
+  flight_in             String?
+  flight_out            String?
+  flight_info           String?
+  discount              Decimal?                @default(0) @db.Decimal(10, 2)
+  booking_status        String?
+  booking_remark        String?
+  promotion_id          Int?
+  total_price           Decimal?                @default(0) @db.Decimal(10, 2)
+  display_order         Int?                    @default(0) @map("display_order")
+  extra_adult_bed_count Int?                    @default(0)
+  extra_child_bed_count Int?                    @default(0)
   hotel_room_type_items hotel_room_type_items[]
   hotels                hotels?                 @relation(fields: [hotel_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   hotel_promotions      hotel_promotions?       @relation(fields: [promotions], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -406,6 +437,9 @@ model hotels {
   created_at       DateTime?          @default(now()) @db.Timestamp(6)
   updated_at       DateTime?          @default(now()) @db.Timestamp(6)
   deleted_at       DateTime?          @db.Timestamp(6)
+  user_id          Int?
+  country          String?            @default("Thailand") @db.VarChar(100)
+  display_order    Int?               @default(0) @map("display_order")
   hotel_contacts   hotel_contacts[]
   hotel_fees       hotel_fees[]
   hotel_promotions hotel_promotions[]
@@ -449,6 +483,8 @@ model markups {
   transfer_markup_unit     String                     @db.VarChar(10)
   transfer_markup          Decimal                    @db.Decimal(10, 2)
   currency_id              Int?
+  hotel_markup_unit        String?                    @db.VarChar(10)
+  hotel_markup_value       Decimal?                   @db.Decimal(10, 2)
   hotel_markup_percentages hotel_markup_percentages[]
   currencies               currencies?                @relation(fields: [currency_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
 }
@@ -599,12 +635,12 @@ model tours {
   duration        Int
   route           String?
   departures      String            @db.VarChar(10)
-  city            String?           @db.VarChar(100)
-  country         String?           @default("Thailand") @db.VarChar(100)
-  valid_days      String?           @db.VarChar(255)
-  display_order   Int?              @default(0) @map("display_order")
   created_at      DateTime?         @default(now()) @db.Timestamp(6)
   updated_at      DateTime?         @default(now()) @db.Timestamp(6)
+  city            String?           @db.VarChar(100)
+  valid_days      String?           @db.VarChar(255)
+  country         String?           @default("Thailand") @db.VarChar(100)
+  display_order   Int?              @default(0) @map("display_order")
   tour_pricing    tour_pricing[]
   tour_trip_items tour_trip_items[]
 }
@@ -660,6 +696,13 @@ model transfers {
   arrival             String                @db.VarChar(100)
   created_at          DateTime?             @default(now()) @db.Timestamp(6)
   updated_at          DateTime?             @default(now()) @db.Timestamp(6)
+  supplier_name       String?               @db.VarChar(100)
+  user_id             Int?
+  country             String?               @default("Thailand") @db.VarChar(100)
+  sic_price_adult     Decimal?              @default(0) @db.Decimal(10, 2)
+  sic_price_child     Decimal?              @default(0) @db.Decimal(10, 2)
+  supplier_id         Int?
+  display_order       Int?                  @default(0) @map("display_order")
   transfer_pricing    transfer_pricing[]
   transfer_trip_items transfer_trip_items[]
 }
@@ -695,13 +738,20 @@ model trips {
   booking_reference    String?                @db.VarChar(100)
   file_reference       String?                @db.VarChar(100)
   remarks              String?
-  total_amount         Decimal?               @db.Decimal(10, 2)
+  total_amount         Decimal?               @db.Decimal(20, 2)
   discount_amount      Decimal?               @db.Decimal(10, 2)
-  final_amount         Decimal?               @db.Decimal(10, 2)
+  final_amount         Decimal?               @db.Decimal(20, 2)
   approved             Boolean?               @default(false)
   declined             Boolean?               @default(false)
   created_at           DateTime?              @default(now()) @db.Timestamp(6)
   updated_at           DateTime?              @default(now()) @db.Timestamp(6)
+  trip_start_date      DateTime?              @db.Date
+  client_email         String?                @db.VarChar(100)
+  user_id              Int?
+  is_booking           Boolean?               @default(false)
+  amount_paid          Decimal?               @default(0) @db.Decimal(20, 2)
+  penalty_cost         Decimal?               @default(0) @db.Decimal(20, 2)
+  status               String?                @default("Pending") @db.VarChar(50)
   excursion_trip_items excursion_trip_items[]
   flight_trip_items    flight_trip_items[]
   hotel_trip_items     hotel_trip_items[]

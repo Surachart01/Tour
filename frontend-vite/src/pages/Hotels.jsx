@@ -21,6 +21,9 @@ export default function Hotels() {
   const [contacts, setContacts] = useState([]);
   const [roomTypes, setRoomTypes] = useState([]);
   const [promotions, setPromotions] = useState([]);
+  const [selectedRoomKeys, setSelectedRoomKeys] = useState([]);
+  const [massEditVisible, setMassEditVisible] = useState(false);
+  const [massEditForm] = Form.useForm();
 
   // Mock Countries & Cities
   const countries = ['Thailand', 'Vietnam', 'Singapore'];
@@ -118,6 +121,7 @@ export default function Hotels() {
   };
 
   const handleOpenDrawer = (record = null) => {
+    setSelectedRoomKeys([]);
     if (record) {
       setDrawerTitle('Edit Hotel');
       setCurrentHotel(record);
@@ -214,6 +218,53 @@ export default function Hotels() {
   };
   const deleteRoomRow = (key) => {
     setRoomTypes(prev => prev.filter(r => r.key !== key));
+    setSelectedRoomKeys(prev => prev.filter(k => k !== key));
+  };
+
+  const handleOpenMassEditModal = () => {
+    if (selectedRoomKeys.length === 0) {
+      message.warning('Please select at least one room rate to edit.');
+      return;
+    }
+    const firstSelected = roomTypes.find(r => r.key === selectedRoomKeys[0]);
+    if (firstSelected) {
+      massEditForm.setFieldsValue({
+        fromDate: firstSelected.fromDate,
+        toDate: firstSelected.toDate,
+        roomType: firstSelected.roomType,
+        price: firstSelected.price,
+        extraBed: firstSelected.extraBed,
+        foodCostAdult: firstSelected.foodCostAdult,
+        foodCostChild: firstSelected.foodCostChild,
+      });
+    } else {
+      massEditForm.resetFields();
+    }
+    setMassEditVisible(true);
+  };
+
+  const handleApplyMassEdit = () => {
+    massEditForm.validateFields().then(values => {
+      setRoomTypes(prev => prev.map(r => {
+        if (selectedRoomKeys.includes(r.key)) {
+          const updated = { ...r };
+          if (values.fromDate !== undefined && values.fromDate !== '') updated.fromDate = values.fromDate;
+          if (values.toDate !== undefined && values.toDate !== '') updated.toDate = values.toDate;
+          if (values.roomType !== undefined && values.roomType !== '') updated.roomType = values.roomType;
+          if (values.price !== undefined && values.price !== null) updated.price = values.price;
+          if (values.extraBed !== undefined && values.extraBed !== null) updated.extraBed = values.extraBed;
+          if (values.foodCostAdult !== undefined && values.foodCostAdult !== null) updated.foodCostAdult = values.foodCostAdult;
+          if (values.foodCostChild !== undefined && values.foodCostChild !== null) updated.foodCostChild = values.foodCostChild;
+          return updated;
+        }
+        return r;
+      }));
+      setMassEditVisible(false);
+      setSelectedRoomKeys([]);
+      message.success('Mass edit applied successfully to selected room rates.');
+    }).catch(err => {
+      message.error('Please resolve validation issues.');
+    });
   };
 
   const addPromoRow = () => {
@@ -475,7 +526,20 @@ export default function Hotels() {
           <TabPane tab={<span className="flex items-center gap-2"><Calendar className="w-4 h-4" />Room Rates</span>} key="3">
             <div className="flex justify-between items-center mb-4 mt-2">
               <span className="text-slate-500 text-xs">Define seasonal room rates, breakfast (food) surcharges and extra bed prices</span>
-              <Button type="dashed" onClick={addRoomRow} icon={<PlusOutlined />} className="rounded-lg">Add Room Rate</Button>
+              <Space>
+                {selectedRoomKeys.length > 0 && (
+                  <Button
+                    type="primary"
+                    danger
+                    onClick={handleOpenMassEditModal}
+                    icon={<EditOutlined />}
+                    className="rounded-lg"
+                  >
+                    Mass Edit ({selectedRoomKeys.length})
+                  </Button>
+                )}
+                <Button type="dashed" onClick={addRoomRow} icon={<PlusOutlined />} className="rounded-lg">Add Room Rate</Button>
+              </Space>
             </div>
 
             <Table
@@ -483,6 +547,10 @@ export default function Hotels() {
               pagination={false}
               className="border border-slate-100 rounded-lg overflow-hidden"
               scroll={{ x: 1000 }}
+              rowSelection={{
+                selectedRowKeys: selectedRoomKeys,
+                onChange: (keys) => setSelectedRoomKeys(keys),
+              }}
               columns={[
                 {
                   title: 'Validity From',
@@ -616,6 +684,51 @@ export default function Hotels() {
           </TabPane>
         </Tabs>
       </Drawer>
+
+      {/* Mass Edit Modal */}
+      <Modal
+        title="Mass Edit Selected Room Rates"
+        open={massEditVisible}
+        onOk={handleApplyMassEdit}
+        onCancel={() => setMassEditVisible(false)}
+        okText="Apply Changes"
+        cancelText="Cancel"
+        className="rounded-lg"
+        width={600}
+      >
+        <Form form={massEditForm} layout="vertical" className="mt-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item name="fromDate" label="Validity From">
+              <Input type="date" className="rounded-lg h-10" />
+            </Form.Item>
+            <Form.Item name="toDate" label="Validity To">
+              <Input type="date" className="rounded-lg h-10" />
+            </Form.Item>
+          </div>
+          
+          <Form.Item name="roomType" label="Room Type">
+            <Input placeholder="Deluxe Double" className="rounded-lg h-10" />
+          </Form.Item>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item name="price" label="Price (THB)">
+              <InputNumber min={0} className="w-full rounded-lg h-10 flex items-center" />
+            </Form.Item>
+            <Form.Item name="extraBed" label="Extra Bed (THB)">
+              <InputNumber min={0} className="w-full rounded-lg h-10 flex items-center" />
+            </Form.Item>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item name="foodCostAdult" label="BF Adult (THB)">
+              <InputNumber min={0} className="w-full rounded-lg h-10 flex items-center" />
+            </Form.Item>
+            <Form.Item name="foodCostChild" label="BF Child (THB)">
+              <InputNumber min={0} className="w-full rounded-lg h-10 flex items-center" />
+            </Form.Item>
+          </div>
+        </Form>
+      </Modal>
     </div>
   );
 }

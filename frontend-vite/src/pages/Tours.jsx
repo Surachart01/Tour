@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Card, Form, Input, Button, Select, Space, Tag, Modal, Drawer, Tabs, message, Popconfirm, InputNumber, Checkbox } from 'antd';
-import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined, DollarOutlined, CalendarOutlined, CarOutlined } from '@ant-design/icons';
-import { Map, MapPin, Tag as TagIcon, Compass, Users } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Table, Card, Form, Input, Button, Select, Space, Tag, Drawer, Tabs, message, Popconfirm, InputNumber, Checkbox, DatePicker } from 'antd';
+import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined, DollarOutlined, CalendarOutlined, CopyOutlined } from '@ant-design/icons';
+import { Map, MapPin, Compass } from 'lucide-react';
+import dayjs from 'dayjs';
 import api from '../services/api.js';
 
 const { TabPane } = Tabs;
@@ -17,71 +18,72 @@ export default function Tours() {
   const [currentTour, setCurrentTour] = useState(null);
   const [form] = Form.useForm();
 
-  // Child lists
-  const [pricingTiers, setPricingTiers] = useState([]);
-  const [selectedDays, setSelectedDays] = useState([]);
-
-  // Mock Countries & Cities
-  const countries = ['Thailand', 'Vietnam', 'Singapore'];
-  const cities = {
-    Thailand: ['Bangkok', 'Phuket', 'Chiang Mai', 'Pattaya', 'Krabi'],
-    Vietnam: ['Hanoi', 'Ho Chi Minh', 'Da Nang'],
-    Singapore: ['Singapore City']
-  };
+  // Dynamic API data
+  const [countries, setCountries] = useState([]); // [{code, name}]
+  const [countryNames, setCountryNames] = useState([]); // string[]
+  const [citiesByCountry, setCitiesByCountry] = useState({});
   const [selectedCountry, setSelectedCountry] = useState(null);
 
-  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  // Child lists
+  const [pricingTiers, setPricingTiers] = useState([]);
+  const [validDays, setValidDays] = useState([]);
 
-  const mockTours = [
-    {
-      id: 1,
-      name: 'Grand Palace & Emerald Buddha Tour',
-      code: 'BKK-T001',
-      city: 'Bangkok',
-      country: 'Thailand',
-      duration: '1 Day',
-      category: 'Standard',
-      supplier: 'Bangkok Sightseeing Ltd.',
-      basePrice: 1500,
-      description: 'Visit the historic Grand Palace, home of the kings of Siam, and the Temple of the Emerald Buddha.',
-      operatingDays: ['Monday', 'Wednesday', 'Friday', 'Saturday'],
-      pricingTiers: [
-        { key: 1, minPax: 1, maxPax: 2, pricePerPax: 1800, childPrice: 1200 },
-        { key: 2, minPax: 3, maxPax: 5, pricePerPax: 1500, childPrice: 1000 },
-        { key: 3, minPax: 6, maxPax: 10, pricePerPax: 1200, childPrice: 800 }
-      ]
-    },
-    {
-      id: 2,
-      name: 'Phi Phi Island Day Trip by Speedboat',
-      code: 'HKT-T002',
-      city: 'Phuket',
-      country: 'Thailand',
-      duration: '1 Day',
-      category: 'Deluxe',
-      supplier: 'Phuket Marine Tours',
-      basePrice: 2800,
-      description: 'Cruise to Phi Phi Don and Phi Phi Leh. Enjoy snorkeling at Maya Bay and lunch at the beach.',
-      operatingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-      pricingTiers: [
-        { key: 1, minPax: 1, maxPax: 4, pricePerPax: 3000, childPrice: 2200 },
-        { key: 2, minPax: 5, maxPax: 10, pricePerPax: 2800, childPrice: 2000 }
-      ]
-    }
+  const dayOptions = [
+    { label: 'Mon', value: 'mon' },
+    { label: 'Tue', value: 'tue' },
+    { label: 'Wed', value: 'wed' },
+    { label: 'Thu', value: 'thu' },
+    { label: 'Fri', value: 'fri' },
+    { label: 'Sat', value: 'sat' },
+    { label: 'Sun', value: 'sun' },
   ];
+
+  // Load countries from API
+  const fetchCountries = useCallback(async () => {
+    try {
+      const res = await api.get('/locations/countries');
+      const data = res.data?.countries || (Array.isArray(res.data) ? res.data : []);
+      setCountries(data);
+      setCountryNames(data.map(c => c.name || c));
+    } catch {
+      const fallback = [
+        { code: 'TH', name: 'Thailand' }, { code: 'VN', name: 'Vietnam' },
+        { code: 'SG', name: 'Singapore' }, { code: 'MY', name: 'Malaysia' },
+        { code: 'ID', name: 'Indonesia' }
+      ];
+      setCountries(fallback);
+      setCountryNames(fallback.map(c => c.name));
+    }
+  }, []);
+
+  // Load cities for a country from API (uses country code)
+  const fetchCities = useCallback(async (countryName) => {
+    if (!countryName) return;
+    if (citiesByCountry[countryName]) return;
+    const countryObj = countries.find(c => c.name === countryName);
+    const code = countryObj?.code || countryName;
+    try {
+      const res = await api.get(`/locations/countries/${code}/cities`);
+      const list = res.data?.cities || (Array.isArray(res.data) ? res.data : []);
+      setCitiesByCountry(prev => ({ ...prev, [countryName]: list.map(c => c.city || c.name || c) }));
+    } catch {
+      const fallback = {
+        Thailand: ['Bangkok', 'Phuket', 'Chiang Mai', 'Pattaya', 'Krabi'],
+        Vietnam: ['Hanoi', 'Ho Chi Minh', 'Da Nang'],
+        Singapore: ['Singapore City']
+      };
+      setCitiesByCountry(prev => ({ ...prev, [countryName]: fallback[countryName] || [] }));
+    }
+  }, [citiesByCountry, countries]);
 
   const fetchTours = async () => {
     setLoading(true);
     try {
       const response = await api.get('/tours');
-      if (response.data && response.data.length > 0) {
-        setTours(response.data);
-      } else {
-        setTours(mockTours);
-      }
+      setTours(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
-      console.warn('API error, using mock data:', err);
-      setTours(mockTours);
+      console.warn('API error:', err);
+      setTours([]);
     } finally {
       setLoading(false);
     }
@@ -89,25 +91,39 @@ export default function Tours() {
 
   useEffect(() => {
     fetchTours();
+    fetchCountries();
   }, []);
 
-  const handleSearch = (values) => {
+  useEffect(() => {
+    if (selectedCountry) fetchCities(selectedCountry);
+  }, [selectedCountry]);
+
+  const handleSearch = async (values) => {
     setLoading(true);
-    setTimeout(() => {
-      let filtered = [...mockTours];
+    try {
+      let params = {};
+      if (values.keyword) params.keyword = values.keyword;
+      const response = await api.get('/tours', { params });
+      let results = Array.isArray(response.data) ? response.data : [];
       if (values.country) {
-        filtered = filtered.filter(t => t.country === values.country);
+        results = results.filter(t => t.country === values.country);
       }
       if (values.city) {
-        filtered = filtered.filter(t => t.city === values.city);
+        results = results.filter(t => t.city === values.city);
       }
       if (values.keyword) {
         const kw = values.keyword.toLowerCase();
-        filtered = filtered.filter(t => t.name.toLowerCase().includes(kw) || t.code.toLowerCase().includes(kw));
+        results = results.filter(t =>
+          t.name?.toLowerCase().includes(kw) ||
+          t.code?.toLowerCase().includes(kw)
+        );
       }
-      setTours(filtered);
+      setTours(results);
+    } catch {
+      setTours([]);
+    } finally {
       setLoading(false);
-    }, 400);
+    }
   };
 
   const handleOpenDrawer = (record = null) => {
@@ -121,19 +137,50 @@ export default function Tours() {
         city: record.city,
         duration: record.duration,
         category: record.category,
-        supplier: record.supplier,
-        basePrice: record.basePrice,
+        departures: record.departures,
+        route: record.route,
         description: record.description,
+        display_order: record.display_order || 0,
       });
       setSelectedCountry(record.country);
-      setSelectedDays(record.operatingDays || []);
-      setPricingTiers(record.pricingTiers || []);
+      // Parse valid_days from DB string
+      let days = [];
+      if (record.valid_days) {
+        try {
+          if (record.valid_days.trim().startsWith('{')) {
+            const obj = JSON.parse(record.valid_days);
+            if (obj.mon) days.push('mon');
+            if (obj.tue) days.push('tue');
+            if (obj.wed) days.push('wed');
+            if (obj.thu) days.push('thu');
+            if (obj.fri) days.push('fri');
+            if (obj.sat) days.push('sat');
+            if (obj.sun) days.push('sun');
+          } else {
+            days = record.valid_days.split(',').map(d => d.trim().toLowerCase());
+          }
+        } catch {
+          days = [];
+        }
+      }
+      setValidDays(days);
+      // Parse pricing tiers from tour_pricing
+      const tiers = (record.tour_pricing || []).map((p, i) => ({
+        key: p.id || Date.now() + i,
+        start_date: p.start_date,
+        end_date: p.end_date,
+        single_room_price: p.single_room_price ? parseFloat(p.single_room_price) : 0,
+        double_room_price: p.double_room_price ? parseFloat(p.double_room_price) : 0,
+        triple_room_price: p.triple_room_price ? parseFloat(p.triple_room_price) : 0,
+        currency_id: p.currency_id,
+      }));
+      setPricingTiers(tiers);
     } else {
       setDrawerTitle('Add Tour');
       setCurrentTour(null);
       form.resetFields();
       setSelectedCountry(null);
-      setSelectedDays(daysOfWeek); // default all days
+      setValidDays(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']); // all days by default
       setPricingTiers([]);
     }
     setDrawerVisible(true);
@@ -142,49 +189,80 @@ export default function Tours() {
   const handleSaveTour = async () => {
     try {
       const values = await form.validateFields();
-      const tourPayload = {
-        ...values,
-        operatingDays: selectedDays,
-        pricingTiers,
+      const payload = {
+        name: values.name,
+        code: values.code || null,
+        category: values.category,
+        description: values.description || null,
+        duration: parseInt(values.duration) || 1,
+        route: values.route || null,
+        departures: values.departures || '',
+        city: values.city || null,
+        country: values.country || 'Thailand',
+        valid_days: JSON.stringify({
+          mon: validDays.includes('mon'),
+          tue: validDays.includes('tue'),
+          wed: validDays.includes('wed'),
+          thu: validDays.includes('thu'),
+          fri: validDays.includes('fri'),
+          sat: validDays.includes('sat'),
+          sun: validDays.includes('sun'),
+        }),
+        display_order: values.display_order || 0,
+        pricing: pricingTiers.map(p => ({
+          start_date: p.start_date,
+          end_date: p.end_date,
+          single_room_price: parseFloat(p.single_room_price) || 0,
+          double_room_price: parseFloat(p.double_room_price) || 0,
+          triple_room_price: parseFloat(p.triple_room_price) || 0,
+          currency_id: p.currency_id || null,
+        })),
       };
 
       if (currentTour) {
         message.loading({ content: 'Saving...', key: 'toursave' });
-        try {
-          await api.put(`/tours/${currentTour.id}`, tourPayload);
-        } catch (e) {}
-        
-        setTours(prev => prev.map(t => t.id === currentTour.id ? { ...t, ...tourPayload } : t));
+        await api.put(`/tours/${currentTour.id}`, payload);
         message.success({ content: 'Tour updated successfully', key: 'toursave' });
       } else {
         message.loading({ content: 'Creating...', key: 'toursave' });
-        let newId = Date.now();
-        try {
-          const res = await api.post('/tours', tourPayload);
-          if (res.data && res.data.id) newId = res.data.id;
-        } catch (e) {}
-
-        const newTour = { id: newId, ...tourPayload };
-        setTours(prev => [newTour, ...prev]);
+        await api.post('/tours', payload);
         message.success({ content: 'Tour added successfully', key: 'toursave' });
       }
-
       setDrawerVisible(false);
+      fetchTours();
     } catch (err) {
-      message.error('Please fix form validation errors.');
+      if (err.errorFields) {
+        message.error('Please fix form validation errors.');
+      } else {
+        message.error('Failed to save tour: ' + (err.response?.data || err.message));
+      }
     }
   };
 
   const handleDeleteTour = async (id) => {
     try {
       await api.delete(`/tours/${id}`);
-    } catch (e) {}
-    setTours(prev => prev.filter(t => t.id !== id));
-    message.success('Tour deleted successfully');
+      message.success('Tour deleted successfully');
+      fetchTours();
+    } catch {
+      message.error('Failed to delete tour');
+    }
   };
 
+  // Pricing tier handlers
   const addTierRow = () => {
-    setPricingTiers(prev => [...prev, { key: Date.now(), minPax: 1, maxPax: 2, pricePerPax: 0, childPrice: 0 }]);
+    setPricingTiers(prev => [...prev, {
+      key: Date.now(),
+      start_date: dayjs().format('YYYY-MM-DD'),
+      end_date: dayjs().add(1, 'year').format('YYYY-MM-DD'),
+      single_room_price: 0,
+      double_room_price: 0,
+      triple_room_price: 0,
+      currency_id: null
+    }]);
+  };
+  const duplicateTierRow = (row) => {
+    setPricingTiers(prev => [...prev, { ...row, key: Date.now() }]);
   };
   const updateTierRow = (key, field, val) => {
     setPricingTiers(prev => prev.map(t => t.key === key ? { ...t, [field]: val } : t));
@@ -202,8 +280,8 @@ export default function Tours() {
         <div>
           <span className="font-bold text-slate-800 text-sm block">{text}</span>
           <span className="text-slate-400 text-xs flex items-center gap-2 mt-0.5">
-            <Tag color="cyan">{record.code}</Tag>
-            <Compass className="w-3 h-3 text-slate-400" /> {record.duration} | {record.category}
+            {record.code && <Tag color="cyan">{record.code}</Tag>}
+            <Compass className="w-3 h-3 text-slate-400" /> {record.duration} day{record.duration > 1 ? 's' : ''} | {record.category}
           </span>
         </div>
       )
@@ -214,21 +292,56 @@ export default function Tours() {
       key: 'city',
       render: (text, record) => (
         <span className="flex items-center gap-1 text-slate-600 text-sm">
-          <MapPin className="w-3.5 h-3.5 text-sky-600" /> {text}, {record.country}
+          <MapPin className="w-3.5 h-3.5 text-sky-600" /> {text || '-'}, {record.country}
         </span>
       )
     },
     {
-      title: 'Base Price',
-      dataIndex: 'basePrice',
-      key: 'basePrice',
-      render: (val) => <span className="font-bold text-emerald-600">{(val || 0).toLocaleString()} THB</span>
+      title: 'Departures',
+      dataIndex: 'departures',
+      key: 'departures',
+      render: (text) => <span className="text-slate-500 text-xs">{text || '-'}</span>
     },
     {
-      title: 'Supplier',
-      dataIndex: 'supplier',
-      key: 'supplier',
-      render: (text) => <span className="text-slate-500 text-xs font-semibold">{text || '-'}</span>
+      title: 'Valid Days',
+      dataIndex: 'valid_days',
+      key: 'valid_days',
+      render: (text) => {
+        if (!text) return <Tag color="green">All Days</Tag>;
+        let days = [];
+        try {
+          if (text.trim().startsWith('{')) {
+            const obj = JSON.parse(text);
+            if (obj.mon) days.push('Mon');
+            if (obj.tue) days.push('Tue');
+            if (obj.wed) days.push('Wed');
+            if (obj.thu) days.push('Thu');
+            if (obj.fri) days.push('Fri');
+            if (obj.sat) days.push('Sat');
+            if (obj.sun) days.push('Sun');
+          } else {
+            const dayMap = { '0': 'Sun', '1': 'Mon', '2': 'Tue', '3': 'Wed', '4': 'Thu', '5': 'Fri', '6': 'Sat', 'sun': 'Sun', 'mon': 'Mon', 'tue': 'Tue', 'wed': 'Wed', 'thu': 'Thu', 'fri': 'Fri', 'sat': 'Sat' };
+            days = text.split(',').map(d => dayMap[d.trim().toLowerCase()] || d);
+          }
+        } catch {
+          days = [];
+        }
+        if (days.length === 0) return <Tag color="red">None</Tag>;
+        if (days.length === 7) return <Tag color="green">All Days</Tag>;
+        return (
+          <Space size={2} wrap>
+            {days.map(d => <Tag key={d} color="blue" className="text-xs">{d}</Tag>)}
+          </Space>
+        );
+      }
+    },
+    {
+      title: 'Pricing',
+      key: 'pricing_count',
+      render: (_, record) => {
+        const count = record.tour_pricing?.length || 0;
+        return <Tag color={count > 0 ? 'green' : 'default'}>{count} tier{count !== 1 ? 's' : ''}</Tag>;
+      }
     },
     {
       title: 'Actions',
@@ -247,12 +360,67 @@ export default function Tours() {
             okText="Yes"
             cancelText="No"
           >
-            <Button
-              type="text"
-              danger
-              icon={<DeleteOutlined />}
-            />
+            <Button type="text" danger icon={<DeleteOutlined />} />
           </Popconfirm>
+        </Space>
+      )
+    }
+  ];
+
+  const pricingColumns = [
+    {
+      title: 'Date From',
+      dataIndex: 'start_date',
+      width: 160,
+      render: (val, record) => (
+        <DatePicker
+          value={val ? dayjs(val) : null}
+          onChange={(d) => updateTierRow(record.key, 'start_date', d ? d.format('YYYY-MM-DD') : null)}
+          className="w-full rounded-lg"
+          format="YYYY-MM-DD"
+        />
+      )
+    },
+    {
+      title: 'Date To',
+      dataIndex: 'end_date',
+      width: 160,
+      render: (val, record) => (
+        <DatePicker
+          value={val ? dayjs(val) : null}
+          onChange={(d) => updateTierRow(record.key, 'end_date', d ? d.format('YYYY-MM-DD') : null)}
+          className="w-full rounded-lg"
+          format="YYYY-MM-DD"
+        />
+      )
+    },
+    {
+      title: 'Single Room Price',
+      dataIndex: 'single_room_price',
+      width: 140,
+      render: (val, record) => <InputNumber min={0} step={0.01} value={val} onChange={(v) => updateTierRow(record.key, 'single_room_price', v)} className="w-full rounded-lg" />
+    },
+    {
+      title: 'Double Room Price',
+      dataIndex: 'double_room_price',
+      width: 140,
+      render: (val, record) => <InputNumber min={0} step={0.01} value={val} onChange={(v) => updateTierRow(record.key, 'double_room_price', v)} className="w-full rounded-lg" />
+    },
+    {
+      title: 'Triple Room Price',
+      dataIndex: 'triple_room_price',
+      width: 140,
+      render: (val, record) => <InputNumber min={0} step={0.01} value={val} onChange={(v) => updateTierRow(record.key, 'triple_room_price', v)} className="w-full rounded-lg" />
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      width: 100,
+      align: 'center',
+      render: (_, record) => (
+        <Space>
+          <Button type="text" icon={<CopyOutlined />} onClick={() => duplicateTierRow(record)} title="Duplicate" />
+          <Button type="text" danger icon={<DeleteOutlined />} onClick={() => deleteTierRow(record.key)} />
         </Space>
       )
     }
@@ -287,13 +455,14 @@ export default function Tours() {
             <Select
               placeholder="Select country"
               allowClear
+              showSearch
               onChange={(val) => {
                 setSelectedCountry(val);
                 searchForm.setFieldsValue({ city: undefined });
               }}
               className="rounded-lg shadow-sm"
             >
-              {countries.map(c => <Select.Option key={c} value={c}>{c}</Select.Option>)}
+              {countryNames.map(c => <Select.Option key={c} value={c}>{c}</Select.Option>)}
             </Select>
           </Form.Item>
           
@@ -301,10 +470,11 @@ export default function Tours() {
             <Select
               placeholder="Select city"
               allowClear
+              showSearch
               disabled={!selectedCountry}
               className="rounded-lg shadow-sm"
             >
-              {(cities[selectedCountry] || []).map(city => (
+              {(citiesByCountry[selectedCountry] || []).map(city => (
                 <Select.Option key={city} value={city}>{city}</Select.Option>
               ))}
             </Select>
@@ -342,7 +512,7 @@ export default function Tours() {
       {/* Add/Edit Drawer */}
       <Drawer
         title={<span className="font-bold text-slate-800 text-lg flex items-center gap-2"><Map className="w-5 h-5 text-sky-600" /> {drawerTitle}</span>}
-        width={850}
+        width={900}
         onClose={() => setDrawerVisible(false)}
         open={drawerVisible}
         extra={
@@ -360,35 +530,31 @@ export default function Tours() {
                 <Input placeholder="Grand Palace Tour" className="rounded-lg h-10" />
               </Form.Item>
 
-              <Form.Item name="code" label="Tour Code" rules={[{ required: true, message: 'Please enter tour code' }]}>
+              <Form.Item name="code" label="Tour Code">
                 <Input placeholder="BKK-T001" className="rounded-lg h-10" />
               </Form.Item>
 
-              <Form.Item name="duration" label="Duration" rules={[{ required: true, message: 'Please enter duration' }]}>
-                <Select placeholder="Select duration" className="rounded-lg h-10">
-                  <Select.Option value="Half Day">Half Day</Select.Option>
-                  <Select.Option value="1 Day">1 Day</Select.Option>
-                  <Select.Option value="2 Days 1 Night">2 Days 1 Night</Select.Option>
-                  <Select.Option value="3 Days 2 Nights">3 Days 2 Nights</Select.Option>
-                </Select>
+              <Form.Item name="duration" label="Duration (Days)" rules={[{ required: true, message: 'Please enter duration' }]}>
+                <InputNumber min={1} placeholder="1" className="w-full rounded-lg h-10 flex items-center" />
               </Form.Item>
 
               <Form.Item name="country" label="Country" rules={[{ required: true, message: 'Please select country' }]}>
                 <Select
                   placeholder="Select country"
+                  showSearch
                   onChange={(val) => {
                     setSelectedCountry(val);
                     form.setFieldsValue({ city: undefined });
                   }}
                   className="rounded-lg h-10"
                 >
-                  {countries.map(c => <Select.Option key={c} value={c}>{c}</Select.Option>)}
+                  {countryNames.map(c => <Select.Option key={c} value={c}>{c}</Select.Option>)}
                 </Select>
               </Form.Item>
 
-              <Form.Item name="city" label="City" rules={[{ required: true, message: 'Please select city' }]}>
-                <Select placeholder="Select city" disabled={!selectedCountry} className="rounded-lg h-10">
-                  {(cities[selectedCountry] || []).map(c => <Select.Option key={c} value={c}>{c}</Select.Option>)}
+              <Form.Item name="city" label="City">
+                <Select placeholder="Select city" showSearch allowClear disabled={!selectedCountry} className="rounded-lg h-10">
+                  {(citiesByCountry[selectedCountry] || []).map(c => <Select.Option key={c} value={c}>{c}</Select.Option>)}
                 </Select>
               </Form.Item>
 
@@ -400,12 +566,16 @@ export default function Tours() {
                 </Select>
               </Form.Item>
 
-              <Form.Item name="basePrice" label="Base Cost Rate (THB)" rules={[{ required: true, message: 'Please enter base price' }]}>
-                <InputNumber min={0} className="w-full rounded-lg h-10 flex items-center" />
+              <Form.Item name="departures" label="Departures" rules={[{ required: true, message: 'Please enter departures' }]}>
+                <Input placeholder="Daily / Mon, Wed, Fri" className="rounded-lg h-10" />
               </Form.Item>
 
-              <Form.Item name="supplier" label="Supplier" className="col-span-2">
-                <Input placeholder="Enter supplier name..." className="rounded-lg h-10" />
+              <Form.Item name="route" label="Route" className="col-span-2">
+                <Input placeholder="Bangkok - Ayutthaya - Bangkok" className="rounded-lg h-10" />
+              </Form.Item>
+
+              <Form.Item name="display_order" label="Display Order">
+                <InputNumber min={0} placeholder="0" className="w-full rounded-lg h-10 flex items-center" />
               </Form.Item>
 
               <Form.Item name="description" label="Tour Description" className="col-span-2">
@@ -418,53 +588,35 @@ export default function Tours() {
             <div className="py-4">
               <p className="text-slate-500 mb-4 text-sm">Select the days of the week when this tour is operated:</p>
               <Checkbox.Group
-                options={daysOfWeek}
-                value={selectedDays}
-                onChange={setSelectedDays}
-                className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+                options={dayOptions}
+                value={validDays}
+                onChange={setValidDays}
+                className="grid grid-cols-4 sm:grid-cols-7 gap-4"
               />
+              <div className="mt-4 flex gap-2">
+                <Button size="small" onClick={() => setValidDays(['mon','tue','wed','thu','fri','sat','sun'])}>Select All</Button>
+                <Button size="small" onClick={() => setValidDays([])}>Clear All</Button>
+                <Button size="small" onClick={() => setValidDays(['mon','tue','wed','thu','fri'])}>Weekdays Only</Button>
+                <Button size="small" onClick={() => setValidDays(['sat','sun'])}>Weekends Only</Button>
+              </div>
             </div>
           </TabPane>
 
-          <TabPane tab={<span className="flex items-center gap-2"><DollarOutlined />Group Pricing</span>} key="3">
+          <TabPane tab={<span className="flex items-center gap-2"><DollarOutlined />Room Pricing</span>} key="3">
             <div className="flex justify-between items-center mb-4 mt-2">
-              <span className="text-slate-500 text-xs">Configure tiered pricing per pax according to the size of the group</span>
+              <span className="text-slate-500 text-xs">Configure date-based room pricing (single, double, triple)</span>
               <Button type="dashed" onClick={addTierRow} icon={<PlusOutlined />} className="rounded-lg">Add Tier</Button>
             </div>
 
             <Table
               dataSource={pricingTiers}
+              columns={pricingColumns}
               pagination={false}
+              rowKey="key"
+              size="small"
               className="border border-slate-100 rounded-lg overflow-hidden"
-              columns={[
-                {
-                  title: 'Min Pax',
-                  dataIndex: 'minPax',
-                  render: (val, record) => <InputNumber min={1} value={val} onChange={(val) => updateTierRow(record.key, 'minPax', val)} className="w-full rounded-lg" />
-                },
-                {
-                  title: 'Max Pax',
-                  dataIndex: 'maxPax',
-                  render: (val, record) => <InputNumber min={1} value={val} onChange={(val) => updateTierRow(record.key, 'maxPax', val)} className="w-full rounded-lg" />
-                },
-                {
-                  title: 'Cost per Adult (THB)',
-                  dataIndex: 'pricePerPax',
-                  render: (val, record) => <InputNumber min={0} value={val} onChange={(val) => updateTierRow(record.key, 'pricePerPax', val)} className="w-full rounded-lg" />
-                },
-                {
-                  title: 'Cost per Child (THB)',
-                  dataIndex: 'childPrice',
-                  render: (val, record) => <InputNumber min={0} value={val} onChange={(val) => updateTierRow(record.key, 'childPrice', val)} className="w-full rounded-lg" />
-                },
-                {
-                  title: 'Delete',
-                  key: 'delete',
-                  align: 'center',
-                  width: 80,
-                  render: (_, record) => <Button danger type="text" icon={<DeleteOutlined />} onClick={() => deleteTierRow(record.key)} />
-                }
-              ]}
+              locale={{ emptyText: 'No pricing tiers added. Click "Add Tier" to add one.' }}
+              scroll={{ x: 900 }}
             />
           </TabPane>
         </Tabs>

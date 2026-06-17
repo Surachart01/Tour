@@ -14,7 +14,8 @@ export async function createAgent(req, res, next) {
         paymentDeadlineType: data.payment_deadline_type || '24_hours_before',
         paymentDeadlineDays: data.payment_deadline_days || null,
         enableAssistanceFee: data.enable_assistance_fee !== undefined ? data.enable_assistance_fee : true,
-        defaultAssistanceFee: data.default_assistance_fee !== undefined ? data.default_assistance_fee : 1000
+        defaultAssistanceFee: data.default_assistance_fee !== undefined ? data.default_assistance_fee : 1000,
+        userId: data.user_id ? parseInt(data.user_id) : null
       }
     });
     return res.status(201).json(agent);
@@ -47,7 +48,8 @@ export async function updateAgent(req, res, next) {
         paymentDeadlineType: data.payment_deadline_type,
         paymentDeadlineDays: data.payment_deadline_days,
         enableAssistanceFee: data.enable_assistance_fee,
-        defaultAssistanceFee: data.default_assistance_fee
+        defaultAssistanceFee: data.default_assistance_fee,
+        userId: data.user_id !== undefined ? (data.user_id ? parseInt(data.user_id) : null) : undefined
       }
     });
     return res.json(agent);

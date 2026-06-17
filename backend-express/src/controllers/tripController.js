@@ -14,7 +14,14 @@ export async function createQuotation(req, res, next) {
         file_reference: data.file_reference || null,
         remarks: data.remarks || null,
         total_amount: data.total_amount || 0, discount_amount: data.discount_amount || 0,
-        final_amount: data.final_amount || 0, approved: false, declined: false
+        final_amount: data.final_amount || 0, approved: false, declined: false,
+        trip_start_date: data.trip_start_date ? new Date(data.trip_start_date) : null,
+        client_email: data.client_email || null,
+        user_id: data.user_id ? parseInt(data.user_id) : (claims ? claims.user_id : null),
+        is_booking: data.is_booking || false,
+        amount_paid: data.amount_paid !== undefined ? data.amount_paid : 0.00,
+        penalty_cost: data.penalty_cost !== undefined ? data.penalty_cost : 0.00,
+        status: data.status || "Pending"
       }
     });
     return res.status(201).json(trip);
@@ -88,7 +95,14 @@ export async function updateQuotation(req, res, next) {
           booking_reference: data.booking_reference, file_reference: data.file_reference,
           remarks: data.remarks, agent_id: data.agent_id,
           total_amount: data.total_amount, discount_amount: data.discount_amount,
-          final_amount: data.final_amount
+          final_amount: data.final_amount,
+          trip_start_date: data.trip_start_date ? new Date(data.trip_start_date) : null,
+          client_email: data.client_email !== undefined ? data.client_email : undefined,
+          user_id: data.user_id !== undefined ? (data.user_id ? parseInt(data.user_id) : null) : undefined,
+          is_booking: data.is_booking !== undefined ? data.is_booking : undefined,
+          amount_paid: data.amount_paid !== undefined ? data.amount_paid : undefined,
+          penalty_cost: data.penalty_cost !== undefined ? data.penalty_cost : undefined,
+          status: data.status !== undefined ? data.status : undefined
         }
       });
 
@@ -104,6 +118,25 @@ export async function updateQuotation(req, res, next) {
               abf_price: item.abf_price, lunch_price: item.lunch_price, dinner_price: item.dinner_price,
               promotions: item.promotions, tour_package: item.tour_package,
               notes: item.notes, approved: item.approved || false, declined: item.declined || false,
+              promotion: item.promotion || null,
+              meals: item.meals || null,
+              room_types_json: item.room_types_json || null,
+              early_check_in: item.early_check_in || false,
+              late_check_out: item.late_check_out || false,
+              flight_in: item.flight_in || null,
+              flight_out: item.flight_out || null,
+              flight_info: item.flight_info || null,
+              discount: item.discount !== undefined ? item.discount : 0,
+              booking_status: item.booking_status || null,
+              booking_remark: item.booking_remark || null,
+              promotion_id: item.promotion_id ? parseInt(item.promotion_id) : null,
+              total_price: item.total_price !== undefined ? item.total_price : 0,
+              display_order: item.display_order !== undefined ? parseInt(item.display_order) : 0,
+              extra_adult_bed_count: item.extra_adult_bed_count || 0,
+              extra_child_bed_count: item.extra_child_bed_count || 0,
+              rsvn_in: item.rsvn_in ? new Date(item.rsvn_in) : null,
+              rsvn_out: item.rsvn_out ? new Date(item.rsvn_out) : null,
+              payment_date: item.payment_date ? new Date(item.payment_date) : null,
               hotel_room_type_items: item.room_type_items ? {
                 create: item.room_type_items.map(rt => ({
                   room_type_id: rt.room_type_id, room_type: rt.room_type,
@@ -127,7 +160,8 @@ export async function updateQuotation(req, res, next) {
               to_date: new Date(item.to_date), hotel: item.hotel,
               guide_name: item.guide_name, guide_contact: item.guide_contact,
               price: item.price, currency_id: item.currency_id, remarks: item.remarks,
-              approved: item.approved || false, declined: item.declined || false
+              approved: item.approved || false, declined: item.declined || false,
+              pickup_time: item.pickup_time || null
             }
           });
         }
@@ -174,7 +208,10 @@ export async function updateQuotation(req, res, next) {
               flight_number: item.flight_number, in_or_out: item.in_or_out,
               route: item.route, issued_by: item.issued_by, price: item.price,
               currency_id: item.currency_id, remarks: item.remarks,
-              approved: item.approved || false, declined: item.declined || false
+              approved: item.approved || false, declined: item.declined || false,
+              edt: item.edt || null,
+              eat: item.eat || null,
+              flight_airline: item.flight_airline || null
             }
           });
         }

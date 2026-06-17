@@ -9,6 +9,8 @@ export async function createMarkup(req, res, next) {
         excursion_markup: data.excursion_markup, tour_markup_unit: data.tour_markup_unit,
         tour_markup: data.tour_markup, transfer_markup_unit: data.transfer_markup_unit,
         transfer_markup: data.transfer_markup, currency_id: data.currency_id,
+        hotel_markup_unit: data.hotel_markup_unit || null,
+        hotel_markup_value: data.hotel_markup_value || null,
         hotel_markup_percentages: data.hotel_markup_percentages ? {
           create: data.hotel_markup_percentages.map(h => ({
             price_from: h.price_from, price_to: h.price_to, markup_percentage: h.markup_percentage
@@ -79,6 +81,8 @@ export async function updateMarkup(req, res, next) {
           excursion_markup: data.excursion_markup, tour_markup_unit: data.tour_markup_unit,
           tour_markup: data.tour_markup, transfer_markup_unit: data.transfer_markup_unit,
           transfer_markup: data.transfer_markup, currency_id: data.currency_id,
+          hotel_markup_unit: data.hotel_markup_unit !== undefined ? data.hotel_markup_unit : undefined,
+          hotel_markup_value: data.hotel_markup_value !== undefined ? data.hotel_markup_value : undefined,
           hotel_markup_percentages: data.hotel_markup_percentages ? {
             create: data.hotel_markup_percentages.map(h => ({
               price_from: h.price_from, price_to: h.price_to, markup_percentage: h.markup_percentage

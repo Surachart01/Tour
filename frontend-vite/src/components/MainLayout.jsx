@@ -113,6 +113,13 @@ export default function MainLayout() {
     },
   ];
 
+  const filteredMenuItems = menuItems.filter(item => {
+    if (item.key === 'control-panel') {
+      return user?.role === 'admin' || user?.role === 'superadmin';
+    }
+    return true;
+  });
+
   // Helper to find parent keys to keep menu open on load
   const getOpenKeys = () => {
     const path = location.pathname;
@@ -190,7 +197,7 @@ export default function MainLayout() {
           mode="inline"
           defaultSelectedKeys={[location.pathname]}
           defaultOpenKeys={getOpenKeys()}
-          items={menuItems}
+          items={filteredMenuItems}
           className="border-none mt-2 px-2"
           style={{ fontSize: '14px' }}
         />

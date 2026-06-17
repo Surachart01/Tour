@@ -74,12 +74,22 @@ function splitSql(sqlText) {
 async function main() {
   console.log('🌱 Starting database seeding using public.sql dump...');
 
-  // Locate public.sql
-  const sqlPath = path.resolve(__dirname, '../../public.sql');
+  // Locate public.sql - support multiple paths (local root, backend root, cwd)
+  let sqlPath = path.resolve(__dirname, '../../public.sql');
   if (!fs.existsSync(sqlPath)) {
-    console.error(`❌ Error: public.sql not found at ${sqlPath}`);
+    sqlPath = path.resolve(__dirname, '../public.sql');
+  }
+  if (!fs.existsSync(sqlPath)) {
+    sqlPath = path.resolve(process.cwd(), 'public.sql');
+  }
+  if (!fs.existsSync(sqlPath)) {
+    console.error(`❌ Error: public.sql not found at standard locations:
+  1. Root level (../../public.sql)
+  2. Backend level (../public.sql)
+  3. CWD (./public.sql)`);
     process.exit(1);
   }
+
 
   console.log(`📖 Reading SQL dump from ${sqlPath}...`);
   const sqlText = fs.readFileSync(sqlPath, 'utf8');

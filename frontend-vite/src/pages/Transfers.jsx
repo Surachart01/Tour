@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Card, Form, Input, Button, Select, Space, Tag, Drawer, message, Popconfirm, InputNumber } from 'antd';
-import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined, CarOutlined } from '@ant-design/icons';
-import { Bus, MapPin, Navigation, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Table, Card, Form, Input, Button, Select, Space, Tag, Drawer, message, Popconfirm, InputNumber, Tabs, DatePicker, Divider } from 'antd';
+import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined, DollarOutlined, CopyOutlined } from '@ant-design/icons';
+import { Bus, MapPin, ArrowRight } from 'lucide-react';
+import dayjs from 'dayjs';
 import api from '../services/api.js';
+
+const { TabPane } = Tabs;
 
 export default function Transfers() {
   const [transfers, setTransfers] = useState([]);
@@ -15,69 +18,72 @@ export default function Transfers() {
   const [currentTransfer, setCurrentTransfer] = useState(null);
   const [form] = Form.useForm();
 
-  // Mock Countries & Cities
-  const countries = ['Thailand', 'Vietnam', 'Singapore'];
-  const cities = {
-    Thailand: ['Bangkok', 'Phuket', 'Chiang Mai', 'Pattaya', 'Krabi'],
-    Vietnam: ['Hanoi', 'Ho Chi Minh', 'Da Nang'],
-    Singapore: ['Singapore City']
-  };
+  // Dynamic API data
+  const [countries, setCountries] = useState([]); // [{code, name}]
+  const [countryNames, setCountryNames] = useState([]); // string[]
+  const [citiesByCountry, setCitiesByCountry] = useState({});
+  const [suppliers, setSuppliers] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState(null);
 
-  const mockTransfers = [
-    {
-      id: 1,
-      type: 'BKK Airport to Bangkok Hotel',
-      vehicle: 'Deluxe Sedan (Toyota Camry)',
-      city: 'Bangkok',
-      country: 'Thailand',
-      departure: 'Suvarnabhumi Airport (BKK)',
-      arrival: 'Bangkok Downtown Hotel',
-      price: 1200,
-      capacityPax: 3,
-      capacityLuggage: 3,
-      supplier: 'Bangkok Limo Express'
-    },
-    {
-      id: 2,
-      type: 'Phuket Hotel to Pier Transfer',
-      vehicle: 'Standard Van (Toyota Commuter)',
-      city: 'Phuket',
-      country: 'Thailand',
-      departure: 'Phuket Hotel (Patong/Karon)',
-      arrival: 'Rassada Pier',
-      price: 800,
-      capacityPax: 9,
-      capacityLuggage: 8,
-      supplier: 'Phuket Ferry Transfers'
-    },
-    {
-      id: 3,
-      type: 'Bangkok Hotel to Pattaya Hotel',
-      vehicle: 'Family SUV (Toyota Fortuner)',
-      city: 'Bangkok',
-      country: 'Thailand',
-      departure: 'Bangkok Downtown Hotel',
-      arrival: 'Pattaya Beach Hotel',
-      price: 2200,
-      capacityPax: 4,
-      capacityLuggage: 4,
-      supplier: 'Thailand Intercity Transit'
+  // Pricing tiers
+  const [pricingTiers, setPricingTiers] = useState([]);
+
+  // Load countries from API
+  const fetchCountries = useCallback(async () => {
+    try {
+      const res = await api.get('/locations/countries');
+      const data = res.data?.countries || (Array.isArray(res.data) ? res.data : []);
+      setCountries(data);
+      setCountryNames(data.map(c => c.name || c));
+    } catch {
+      const fallback = [
+        { code: 'TH', name: 'Thailand' }, { code: 'VN', name: 'Vietnam' },
+        { code: 'SG', name: 'Singapore' }, { code: 'MY', name: 'Malaysia' },
+        { code: 'ID', name: 'Indonesia' }
+      ];
+      setCountries(fallback);
+      setCountryNames(fallback.map(c => c.name));
     }
-  ];
+  }, []);
+
+  // Load cities for a country from API (uses country code)
+  const fetchCities = useCallback(async (countryName) => {
+    if (!countryName) return;
+    if (citiesByCountry[countryName]) return;
+    const countryObj = countries.find(c => c.name === countryName);
+    const code = countryObj?.code || countryName;
+    try {
+      const res = await api.get(`/locations/countries/${code}/cities`);
+      const list = res.data?.cities || (Array.isArray(res.data) ? res.data : []);
+      setCitiesByCountry(prev => ({ ...prev, [countryName]: list.map(c => c.city || c.name || c) }));
+    } catch {
+      const fallback = {
+        Thailand: ['Bangkok', 'Phuket', 'Chiang Mai', 'Pattaya', 'Krabi'],
+        Vietnam: ['Hanoi', 'Ho Chi Minh', 'Da Nang'],
+        Singapore: ['Singapore City']
+      };
+      setCitiesByCountry(prev => ({ ...prev, [countryName]: fallback[countryName] || [] }));
+    }
+  }, [citiesByCountry, countries]);
+
+  // Load suppliers from API
+  const fetchSuppliers = useCallback(async () => {
+    try {
+      const res = await api.get('/suppliers/names?service_type=transfers');
+      setSuppliers(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      setSuppliers([]);
+    }
+  }, []);
 
   const fetchTransfers = async () => {
     setLoading(true);
     try {
       const response = await api.get('/transfers');
-      if (response.data && response.data.length > 0) {
-        setTransfers(response.data);
-      } else {
-        setTransfers(mockTransfers);
-      }
+      setTransfers(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
-      console.warn('API error, using mock data:', err);
-      setTransfers(mockTransfers);
+      console.warn('API error:', err);
+      setTransfers([]);
     } finally {
       setLoading(false);
     }
@@ -85,25 +91,41 @@ export default function Transfers() {
 
   useEffect(() => {
     fetchTransfers();
+    fetchCountries();
+    fetchSuppliers();
   }, []);
 
-  const handleSearch = (values) => {
+  useEffect(() => {
+    if (selectedCountry) fetchCities(selectedCountry);
+  }, [selectedCountry]);
+
+  const handleSearch = async (values) => {
     setLoading(true);
-    setTimeout(() => {
-      let filtered = [...mockTransfers];
+    try {
+      let params = {};
+      if (values.city) params.city = values.city;
+      if (values.keyword) params.keyword = values.keyword;
+      const url = values.city ? '/transfers/by-city' : '/transfers';
+      const response = await api.get(url, { params });
+      let results = Array.isArray(response.data) ? response.data : [];
       if (values.country) {
-        filtered = filtered.filter(t => t.country === values.country);
+        results = results.filter(t => t.country === values.country);
       }
-      if (values.city) {
-        filtered = filtered.filter(t => t.city === values.city);
-      }
-      if (values.keyword) {
+      if (values.keyword && !values.city) {
         const kw = values.keyword.toLowerCase();
-        filtered = filtered.filter(t => t.type.toLowerCase().includes(kw) || t.vehicle.toLowerCase().includes(kw));
+        results = results.filter(t =>
+          t.transfer_type?.toLowerCase().includes(kw) ||
+          t.departure?.toLowerCase().includes(kw) ||
+          t.arrival?.toLowerCase().includes(kw) ||
+          t.description?.toLowerCase().includes(kw)
+        );
       }
-      setTransfers(filtered);
+      setTransfers(results);
+    } catch {
+      setTransfers([]);
+    } finally {
       setLoading(false);
-    }, 400);
+    }
   };
 
   const handleOpenDrawer = (record = null) => {
@@ -111,23 +133,36 @@ export default function Transfers() {
       setDrawerTitle('Edit Transfer');
       setCurrentTransfer(record);
       form.setFieldsValue({
-        type: record.type,
-        vehicle: record.vehicle,
+        transfer_type: record.transfer_type,
         country: record.country,
         city: record.city,
         departure: record.departure,
         arrival: record.arrival,
-        price: record.price,
-        capacityPax: record.capacityPax,
-        capacityLuggage: record.capacityLuggage,
-        supplier: record.supplier,
+        description: record.description,
+        sic_price_adult: record.sic_price_adult ? parseFloat(record.sic_price_adult) : 0,
+        sic_price_child: record.sic_price_child ? parseFloat(record.sic_price_child) : 0,
+        supplier_name: record.supplier_name || undefined,
+        supplier_id: record.supplier_id || undefined,
+        display_order: record.display_order || 0,
       });
       setSelectedCountry(record.country);
+      // Parse pricing tiers
+      const tiers = (record.transfer_pricing || []).map((p, i) => ({
+        key: p.id || Date.now() + i,
+        start_date: p.start_date,
+        end_date: p.end_date,
+        pax: p.pax,
+        price: parseFloat(p.price),
+        cost: parseFloat(p.cost),
+        currency_id: p.currency_id,
+      }));
+      setPricingTiers(tiers);
     } else {
       setDrawerTitle('Add Transfer');
       setCurrentTransfer(null);
       form.resetFields();
       setSelectedCountry(null);
+      setPricingTiers([]);
     }
     setDrawerVisible(true);
   };
@@ -135,57 +170,91 @@ export default function Transfers() {
   const handleSaveTransfer = async () => {
     try {
       const values = await form.validateFields();
-      const payload = { ...values };
+      // Find supplier_id from supplier_name
+      const selectedSupplier = suppliers.find(s => s.name === values.supplier_name);
+      const payload = {
+        transfer_type: values.transfer_type,
+        city: values.city,
+        description: values.description || null,
+        departure: values.departure,
+        arrival: values.arrival,
+        supplier_name: values.supplier_name || null,
+        supplier_id: selectedSupplier?.id || null,
+        country: values.country || 'Thailand',
+        sic_price_adult: values.sic_price_adult || 0,
+        sic_price_child: values.sic_price_child || 0,
+        display_order: values.display_order || 0,
+        pricing: pricingTiers.map(p => ({
+          start_date: p.start_date,
+          end_date: p.end_date,
+          pax: parseInt(p.pax) || 1,
+          price: parseFloat(p.price) || 0,
+          cost: parseFloat(p.cost) || 0,
+          currency_id: p.currency_id || null,
+        })),
+      };
 
       if (currentTransfer) {
         message.loading({ content: 'Saving...', key: 'transsave' });
-        try {
-          await api.put(`/transfers/${currentTransfer.id}`, payload);
-        } catch (e) {}
-        
-        setTransfers(prev => prev.map(t => t.id === currentTransfer.id ? { ...t, ...payload } : t));
+        await api.put(`/transfers/${currentTransfer.id}`, payload);
         message.success({ content: 'Transfer updated successfully', key: 'transsave' });
       } else {
         message.loading({ content: 'Creating...', key: 'transsave' });
-        let newId = Date.now();
-        try {
-          const res = await api.post('/transfers', payload);
-          if (res.data && res.data.id) newId = res.data.id;
-        } catch (e) {}
-
-        const newTransfer = { id: newId, ...payload };
-        setTransfers(prev => [newTransfer, ...prev]);
+        await api.post('/transfers', payload);
         message.success({ content: 'Transfer added successfully', key: 'transsave' });
       }
-
       setDrawerVisible(false);
+      fetchTransfers();
     } catch (err) {
-      message.error('Please fix form validation errors.');
+      if (err.errorFields) {
+        message.error('Please fix form validation errors.');
+      } else {
+        message.error('Failed to save transfer: ' + (err.response?.data || err.message));
+      }
     }
   };
 
   const handleDeleteTransfer = async (id) => {
     try {
       await api.delete(`/transfers/${id}`);
-    } catch (e) {}
-    setTransfers(prev => prev.filter(t => t.id !== id));
-    message.success('Transfer deleted successfully');
+      message.success('Transfer deleted successfully');
+      fetchTransfers();
+    } catch {
+      message.error('Failed to delete transfer');
+    }
+  };
+
+  // Pricing tier handlers
+  const addPricingRow = () => {
+    setPricingTiers(prev => [...prev, {
+      key: Date.now(),
+      start_date: dayjs().format('YYYY-MM-DD'),
+      end_date: dayjs().add(1, 'year').format('YYYY-MM-DD'),
+      pax: 1, price: 0, cost: 0, currency_id: null
+    }]);
+  };
+  const duplicatePricingRow = (row) => {
+    setPricingTiers(prev => [...prev, { ...row, key: Date.now() }]);
+  };
+  const updatePricingRow = (key, field, val) => {
+    setPricingTiers(prev => prev.map(t => t.key === key ? { ...t, [field]: val } : t));
+  };
+  const deletePricingRow = (key) => {
+    setPricingTiers(prev => prev.filter(t => t.key !== key));
   };
 
   const columns = [
     {
-      title: 'Transfer Route & Vehicle',
-      dataIndex: 'type',
-      key: 'type',
+      title: 'Transfer Route',
+      dataIndex: 'transfer_type',
+      key: 'transfer_type',
       render: (text, record) => (
         <div>
-          <span className="font-bold text-slate-800 text-sm block">{text}</span>
-          <span className="text-slate-400 text-xs mt-0.5 flex items-center gap-1.5">
-            <CarOutlined className="text-slate-400" /> {record.vehicle}
-          </span>
+          <span className="font-bold text-slate-800 text-sm block">{text || record.type}</span>
           <span className="text-slate-400 text-xs mt-0.5 flex items-center gap-1">
             {record.departure} <ArrowRight className="w-3 h-3 text-slate-300 mx-0.5" /> {record.arrival}
           </span>
+          {record.description && <span className="text-slate-400 text-xs mt-0.5 block">{record.description}</span>}
         </div>
       )
     },
@@ -200,25 +269,28 @@ export default function Transfers() {
       )
     },
     {
-      title: 'Cost Rate',
-      dataIndex: 'price',
-      key: 'price',
-      render: (val) => <span className="font-bold text-emerald-600">{(val || 0).toLocaleString()} THB</span>
-    },
-    {
-      title: 'Capacity',
-      key: 'capacity',
+      title: 'SIC Rates',
+      key: 'rates',
       render: (_, record) => (
-        <span className="text-slate-500 text-xs font-semibold">
-          Pax: {record.capacityPax} | Luggage: {record.capacityLuggage}
-        </span>
+        <Space direction="vertical" size={1} className="text-xs">
+          <span>Adult: <strong className="text-emerald-600">{parseFloat(record.sic_price_adult || 0).toLocaleString()} THB</strong></span>
+          <span>Child: <strong className="text-emerald-500">{parseFloat(record.sic_price_child || 0).toLocaleString()} THB</strong></span>
+        </Space>
       )
     },
     {
       title: 'Supplier',
-      dataIndex: 'supplier',
-      key: 'supplier',
+      dataIndex: 'supplier_name',
+      key: 'supplier_name',
       render: (text) => <span className="text-slate-500 text-xs font-semibold">{text || '-'}</span>
+    },
+    {
+      title: 'Pricing',
+      key: 'pricing_count',
+      render: (_, record) => {
+        const count = record.transfer_pricing?.length || 0;
+        return <Tag color={count > 0 ? 'green' : 'default'}>{count} tier{count !== 1 ? 's' : ''}</Tag>;
+      }
     },
     {
       title: 'Actions',
@@ -237,12 +309,67 @@ export default function Transfers() {
             okText="Yes"
             cancelText="No"
           >
-            <Button
-              type="text"
-              danger
-              icon={<DeleteOutlined />}
-            />
+            <Button type="text" danger icon={<DeleteOutlined />} />
           </Popconfirm>
+        </Space>
+      )
+    }
+  ];
+
+  const pricingColumns = [
+    {
+      title: 'Date From',
+      dataIndex: 'start_date',
+      width: 160,
+      render: (val, record) => (
+        <DatePicker
+          value={val ? dayjs(val) : null}
+          onChange={(d) => updatePricingRow(record.key, 'start_date', d ? d.format('YYYY-MM-DD') : null)}
+          className="w-full rounded-lg"
+          format="YYYY-MM-DD"
+        />
+      )
+    },
+    {
+      title: 'Date To',
+      dataIndex: 'end_date',
+      width: 160,
+      render: (val, record) => (
+        <DatePicker
+          value={val ? dayjs(val) : null}
+          onChange={(d) => updatePricingRow(record.key, 'end_date', d ? d.format('YYYY-MM-DD') : null)}
+          className="w-full rounded-lg"
+          format="YYYY-MM-DD"
+        />
+      )
+    },
+    {
+      title: 'Pax',
+      dataIndex: 'pax',
+      width: 80,
+      render: (val, record) => <InputNumber min={1} value={val} onChange={(v) => updatePricingRow(record.key, 'pax', v)} className="w-full rounded-lg" />
+    },
+    {
+      title: 'Price',
+      dataIndex: 'price',
+      width: 110,
+      render: (val, record) => <InputNumber min={0} step={0.01} value={val} onChange={(v) => updatePricingRow(record.key, 'price', v)} className="w-full rounded-lg" />
+    },
+    {
+      title: 'Cost',
+      dataIndex: 'cost',
+      width: 110,
+      render: (val, record) => <InputNumber min={0} step={0.01} value={val} onChange={(v) => updatePricingRow(record.key, 'cost', v)} className="w-full rounded-lg" />
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      width: 100,
+      align: 'center',
+      render: (_, record) => (
+        <Space>
+          <Button type="text" icon={<CopyOutlined />} onClick={() => duplicatePricingRow(record)} title="Duplicate" />
+          <Button type="text" danger icon={<DeleteOutlined />} onClick={() => deletePricingRow(record.key)} />
         </Space>
       )
     }
@@ -277,13 +404,14 @@ export default function Transfers() {
             <Select
               placeholder="Select country"
               allowClear
+              showSearch
               onChange={(val) => {
                 setSelectedCountry(val);
                 searchForm.setFieldsValue({ city: undefined });
               }}
               className="rounded-lg shadow-sm"
             >
-              {countries.map(c => <Select.Option key={c} value={c}>{c}</Select.Option>)}
+              {countryNames.map(c => <Select.Option key={c} value={c}>{c}</Select.Option>)}
             </Select>
           </Form.Item>
           
@@ -291,10 +419,11 @@ export default function Transfers() {
             <Select
               placeholder="Select city"
               allowClear
+              showSearch
               disabled={!selectedCountry}
               className="rounded-lg shadow-sm"
             >
-              {(cities[selectedCountry] || []).map(city => (
+              {(citiesByCountry[selectedCountry] || []).map(city => (
                 <Select.Option key={city} value={city}>{city}</Select.Option>
               ))}
             </Select>
@@ -332,7 +461,7 @@ export default function Transfers() {
       {/* Add/Edit Drawer */}
       <Drawer
         title={<span className="font-bold text-slate-800 text-lg flex items-center gap-2"><Bus className="w-5 h-5 text-sky-600" /> {drawerTitle}</span>}
-        width={550}
+        width={800}
         onClose={() => setDrawerVisible(false)}
         open={drawerVisible}
         extra={
@@ -341,61 +470,83 @@ export default function Transfers() {
             <Button type="primary" onClick={handleSaveTransfer} className="bg-sky-600 border-none rounded-lg shadow-md shadow-sky-600/10">Save Transfer</Button>
           </Space>
         }
+        bodyStyle={{ paddingBottom: 80 }}
       >
-        <Form form={form} layout="vertical" className="grid grid-cols-1 gap-4 mt-2">
-          <Form.Item name="type" label="Transfer Route Title" rules={[{ required: true, message: 'Please enter route title' }]}>
-            <Input placeholder="BKK Airport to Hotel Transfer" className="rounded-lg h-10" />
-          </Form.Item>
+        <Tabs defaultActiveKey="1">
+          <TabPane tab={<span className="flex items-center gap-2"><InfoCircleOutlined />Basic Details</span>} key="1">
+            <Form form={form} layout="vertical" className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+              <Form.Item name="transfer_type" label="Transfer Type / Route Title" rules={[{ required: true, message: 'Please enter transfer type' }]} className="col-span-2">
+                <Input placeholder="BKK Airport to Hotel Transfer" className="rounded-lg h-10" />
+              </Form.Item>
 
-          <Form.Item name="vehicle" label="Vehicle Type" rules={[{ required: true, message: 'Please enter vehicle type' }]}>
-            <Input placeholder="Deluxe Sedan (Toyota Camry)" className="rounded-lg h-10" />
-          </Form.Item>
+              <Form.Item name="country" label="Country" rules={[{ required: true, message: 'Please select country' }]}>
+                <Select
+                  placeholder="Select country"
+                  showSearch
+                  onChange={(val) => {
+                    setSelectedCountry(val);
+                    form.setFieldsValue({ city: undefined });
+                  }}
+                  className="rounded-lg h-10"
+                >
+                  {countryNames.map(c => <Select.Option key={c} value={c}>{c}</Select.Option>)}
+                </Select>
+              </Form.Item>
 
-          <Form.Item name="country" label="Country" rules={[{ required: true, message: 'Please select country' }]}>
-            <Select
-              placeholder="Select country"
-              onChange={(val) => {
-                setSelectedCountry(val);
-                form.setFieldsValue({ city: undefined });
-              }}
-              className="rounded-lg h-10"
-            >
-              {countries.map(c => <Select.Option key={c} value={c}>{c}</Select.Option>)}
-            </Select>
-          </Form.Item>
+              <Form.Item name="city" label="City" rules={[{ required: true, message: 'Please select city' }]}>
+                <Select placeholder="Select city" showSearch disabled={!selectedCountry} className="rounded-lg h-10">
+                  {(citiesByCountry[selectedCountry] || []).map(c => <Select.Option key={c} value={c}>{c}</Select.Option>)}
+                </Select>
+              </Form.Item>
 
-          <Form.Item name="city" label="City" rules={[{ required: true, message: 'Please select city' }]}>
-            <Select placeholder="Select city" disabled={!selectedCountry} className="rounded-lg h-10">
-              {(cities[selectedCountry] || []).map(c => <Select.Option key={c} value={c}>{c}</Select.Option>)}
-            </Select>
-          </Form.Item>
+              <Form.Item name="departure" label="Departure Location" rules={[{ required: true, message: 'Please enter departure point' }]}>
+                <Input placeholder="Suvarnabhumi Airport (BKK)" className="rounded-lg h-10" />
+              </Form.Item>
 
-          <Form.Item name="departure" label="Departure Location" rules={[{ required: true, message: 'Please enter departure point' }]}>
-            <Input placeholder="Suvarnabhumi Airport (BKK)" className="rounded-lg h-10" />
-          </Form.Item>
+              <Form.Item name="arrival" label="Arrival Location" rules={[{ required: true, message: 'Please enter arrival point' }]}>
+                <Input placeholder="Bangkok Hotel Downtown" className="rounded-lg h-10" />
+              </Form.Item>
 
-          <Form.Item name="arrival" label="Arrival Location" rules={[{ required: true, message: 'Please enter arrival point' }]}>
-            <Input placeholder="Bangkok Hotel Downtown" className="rounded-lg h-10" />
-          </Form.Item>
+              <Form.Item name="supplier_name" label="Supplier">
+                <Select placeholder="Select supplier" allowClear showSearch className="rounded-lg h-10">
+                  {suppliers.map(s => <Select.Option key={s.id} value={s.name}>{s.name}</Select.Option>)}
+                </Select>
+              </Form.Item>
 
-          <Form.Item name="price" label="Net Rate Cost (THB)" rules={[{ required: true, message: 'Please enter price' }]}>
-            <InputNumber min={0} className="w-full rounded-lg h-10 flex items-center" />
-          </Form.Item>
+              <Form.Item name="display_order" label="Display Order">
+                <InputNumber min={0} placeholder="0" className="w-full rounded-lg h-10 flex items-center" />
+              </Form.Item>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Form.Item name="capacityPax" label="Max Passengers" rules={[{ required: true, message: 'Please enter pax capacity' }]}>
-              <InputNumber min={1} className="w-full rounded-lg h-10 flex items-center" />
-            </Form.Item>
+              <Form.Item name="sic_price_adult" label="SIC Price Adult">
+                <InputNumber min={0} step={0.01} className="w-full rounded-lg h-10 flex items-center" />
+              </Form.Item>
 
-            <Form.Item name="capacityLuggage" label="Max Luggage Bags" rules={[{ required: true, message: 'Please enter luggage capacity' }]}>
-              <InputNumber min={0} className="w-full rounded-lg h-10 flex items-center" />
-            </Form.Item>
-          </div>
+              <Form.Item name="sic_price_child" label="SIC Price Child">
+                <InputNumber min={0} step={0.01} className="w-full rounded-lg h-10 flex items-center" />
+              </Form.Item>
 
-          <Form.Item name="supplier" label="Supplier">
-            <Input placeholder="Enter supplier name..." className="rounded-lg h-10" />
-          </Form.Item>
-        </Form>
+              <Form.Item name="description" label="Description" className="col-span-2">
+                <Input.TextArea placeholder="Transfer details, vehicle type, inclusions..." rows={4} className="rounded-lg" />
+              </Form.Item>
+            </Form>
+          </TabPane>
+
+          <TabPane tab={<span className="flex items-center gap-2"><DollarOutlined />Pricing Tiers</span>} key="2">
+            <div className="flex justify-between items-center mb-4 mt-2">
+              <span className="text-slate-500 text-xs">Configure date-based pricing tiers per number of passengers</span>
+              <Button type="dashed" onClick={addPricingRow} icon={<PlusOutlined />} className="rounded-lg">Add Price Tier</Button>
+            </div>
+            <Table
+              dataSource={pricingTiers}
+              columns={pricingColumns}
+              pagination={false}
+              rowKey="key"
+              size="small"
+              className="border border-slate-100 rounded-lg overflow-hidden"
+              locale={{ emptyText: 'No pricing tiers added. Click "Add Price Tier" to add one.' }}
+            />
+          </TabPane>
+        </Tabs>
       </Drawer>
     </div>
   );
