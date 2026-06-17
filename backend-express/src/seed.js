@@ -1,9 +1,13 @@
 import prisma from './config/db.js';
+import pg from 'pg';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
 import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -49,7 +53,7 @@ function splitSql(sqlText) {
       }
     }
 
-    // Toggle single quotes (escaped single quotes in SQL are usually doubled, e.g. '', which this toggles back and forth correctly)
+    // Toggle single quotes
     if (char === "'" && sqlText[i - 1] !== '\\') {
       inSingleQuote = !inSingleQuote;
     } else if (char === '"' && sqlText[i - 1] !== '\\') {
@@ -72,8 +76,8 @@ function splitSql(sqlText) {
 }
 
 async function main() {
-  console.log('🌱 Starting database seeding using public.sql dump...');
-
+  console.log('🌱 Starting FAST database import using pg client...');
+  
   // Locate public.sql - support multiple paths (local root, backend root, cwd)
   let sqlPath = path.resolve(__dirname, '../../public.sql');
   if (!fs.existsSync(sqlPath)) {
@@ -83,53 +87,55 @@ async function main() {
     sqlPath = path.resolve(process.cwd(), 'public.sql');
   }
   if (!fs.existsSync(sqlPath)) {
-    console.error(`❌ Error: public.sql not found at standard locations:
-  1. Root level (../../public.sql)
-  2. Backend level (../public.sql)
-  3. CWD (./public.sql)`);
+    console.error(`❌ Error: public.sql not found at standard locations`);
     process.exit(1);
   }
-
 
   console.log(`📖 Reading SQL dump from ${sqlPath}...`);
   const sqlText = fs.readFileSync(sqlPath, 'utf8');
 
-  console.log('🧹 Clearing existing database schema...');
-  // Drop current schema to clean out all tables
-  await prisma.$executeRawUnsafe('DROP SCHEMA public CASCADE');
-  await prisma.$executeRawUnsafe('CREATE SCHEMA public');
-  console.log('✅ Database schema cleared.');
-
-  console.log('🧩 Splitting SQL statements...');
-  const statements = splitSql(sqlText);
-  console.log(`✅ Found ${statements.length} SQL statements to execute.`);
-
-  console.log('🚀 Executing SQL statements statement-by-statement...');
-  let successCount = 0;
-  let failCount = 0;
-
-  for (let idx = 0; idx < statements.length; idx++) {
-    const stmt = statements[idx];
+  console.log('🧩 Splitting and filtering SQL statements...');
+  const rawStatements = splitSql(sqlText);
+  const filteredStatements = [];
+  for (const stmt of rawStatements) {
     if (!stmt || stmt.startsWith('\\')) continue;
-
     // Skip drop or create statements for uuid helper functions as they are handled by the uuid-ossp extension
-    if (/FUNCTION\s+("public"\.)?"?uuid_/i.test(stmt)) {
+    if (/FUNCTION.*uuid_/i.test(stmt)) {
       continue;
     }
-
-    try {
-      await prisma.$executeRawUnsafe(stmt);
-      successCount++;
-    } catch (err) {
-      failCount++;
-      // Ignore failures for DROP commands (as they might drop tables that don't exist yet)
-      const isDrop = stmt.toUpperCase().startsWith('DROP');
-      if (!isDrop) {
-        console.warn(`[Line ${idx + 1}] Warning executing: ${stmt.substring(0, 100)}... Error: ${err.message}`);
-      }
-    }
+    filteredStatements.push(stmt);
   }
-  console.log(`📊 SQL Import Completed. Success: ${successCount}, Failed/Skipped: ${failCount}`);
+  console.log(`✅ Filtered SQL statements to ${filteredStatements.length} commands.`);
+  
+  const filteredSqlText = filteredStatements.join(';\n');
+
+  // Connect via PG Client
+  const client = new pg.Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false }
+  });
+  
+  await client.connect();
+  console.log('✅ Connected to PostgreSQL.');
+
+  console.log('🧹 Clearing existing database schema...');
+  await client.query('DROP SCHEMA IF EXISTS public CASCADE');
+  await client.query('CREATE SCHEMA public');
+  console.log('✅ Database schema cleared.');
+
+  // Pre-enable uuid-ossp extension so Prisma and SQL schema can use it immediately
+  console.log('🔌 Enabling uuid-ossp extension...');
+  await client.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
+
+  console.log('🚀 Executing raw SQL dump (this will take only a few seconds)...');
+  try {
+    await client.query(filteredSqlText);
+    console.log('✅ Raw SQL dump executed successfully.');
+  } catch (err) {
+    console.warn('⚠️ Warning during raw SQL execution:', err.message);
+  } finally {
+    await client.end();
+  }
 
   console.log('🔧 Fixing NULL agent_id values in users table to satisfy schema constraints...');
   try {
