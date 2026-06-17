@@ -262,15 +262,15 @@ export default function Excursions() {
       key: 'name',
       render: (text, record) => (
         <div>
-          <span className="font-bold text-slate-800 text-sm block">{text}</span>
-          {record.code && <Tag color="cyan" className="mt-0.5">{record.code}</Tag>}
-          {record.description && (
-            <Tooltip title={<div className="max-w-[400px] text-xs leading-relaxed">{record.description}</div>} placement="topLeft" mouseEnterDelay={0.3}>
-              <span className="text-slate-400 text-xs mt-1 block line-clamp-2 cursor-help max-w-[450px]">
-                {record.description}
-              </span>
-            </Tooltip>
-          )}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-bold text-slate-800 text-sm">{text}</span>
+            {record.description && (
+              <Tooltip title={<div className="max-w-[350px] text-xs leading-relaxed">{record.description}</div>} placement="top">
+                <InfoCircleOutlined className="text-slate-400 cursor-help hover:text-sky-600 transition-colors text-xs" />
+              </Tooltip>
+            )}
+          </div>
+          {record.code && <Tag color="cyan" className="mt-1">{record.code}</Tag>}
         </div>
       )
     },
