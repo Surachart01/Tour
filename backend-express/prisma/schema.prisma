@@ -599,6 +599,10 @@ model tours {
   duration        Int
   route           String?
   departures      String            @db.VarChar(10)
+  city            String?           @db.VarChar(100)
+  country         String?           @default("Thailand") @db.VarChar(100)
+  valid_days      String?           @db.VarChar(255)
+  display_order   Int?              @default(0) @map("display_order")
   created_at      DateTime?         @default(now()) @db.Timestamp(6)
   updated_at      DateTime?         @default(now()) @db.Timestamp(6)
   tour_pricing    tour_pricing[]

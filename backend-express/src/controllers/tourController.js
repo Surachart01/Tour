@@ -9,6 +9,10 @@ export async function createTour(req, res, next) {
         category: data.category, description: data.description || null,
         duration: data.duration, route: data.route || null,
         departures: data.departures,
+        city: data.city || null,
+        country: data.country || null,
+        valid_days: data.valid_days || null,
+        display_order: data.display_order || 0,
         tour_pricing: data.pricing ? {
           create: data.pricing.map(p => ({
             start_date: new Date(p.start_date), end_date: new Date(p.end_date),
@@ -94,6 +98,8 @@ export async function updateTour(req, res, next) {
           name: data.name, code: data.code, category: data.category,
           description: data.description, duration: data.duration,
           route: data.route, departures: data.departures,
+          city: data.city, country: data.country,
+          valid_days: data.valid_days, display_order: data.display_order,
           tour_pricing: data.pricing ? {
             create: data.pricing.map(p => ({
               start_date: new Date(p.start_date), end_date: new Date(p.end_date),

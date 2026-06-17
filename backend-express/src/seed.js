@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import bcrypt from 'bcryptjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -240,6 +241,64 @@ async function main() {
     }
   }
   console.log('✅ User profiles migration complete.');
+
+  console.log('👤 Creating default superadmin user for testing...');
+  try {
+    const superadminUsername = 'superadmin';
+    const superadminEmail = 'superadmin@verathailandia.com';
+    const superadminPassword = 'admin123';
+    const hashedSuperPassword = await bcrypt.hash(superadminPassword, 10);
+
+    const testSuperUser = await prisma.user.upsert({
+      where: { username: superadminUsername },
+      update: {
+        password: hashedSuperPassword,
+        role: 'superadmin',
+        isSuperAdmin: true,
+        canCreateUsers: true,
+        canViewAnalytics: true,
+        organizationId: defaultOrg.id
+      },
+      create: {
+        username: superadminUsername,
+        email: superadminEmail,
+        role: 'superadmin',
+        password: hashedSuperPassword,
+        agentId: 1, // Default agent 1
+        userType: 'superadmin',
+        isSuperAdmin: true,
+        canCreateUsers: true,
+        canViewAnalytics: true,
+        organizationId: defaultOrg.id
+      }
+    });
+
+    await prisma.userProfile.upsert({
+      where: { userId: testSuperUser.id },
+      update: {
+        userType: 'superadmin',
+        subscriptionTier: 'enterprise',
+        subscriptionStatus: 'active',
+        isPrimaryProfile: true,
+        role: 'admin',
+        organizationId: defaultOrg.id
+      },
+      create: {
+        userId: testSuperUser.id,
+        userType: 'superadmin',
+        companyName: 'Vera Thailandia Admin',
+        companyEmail: superadminEmail,
+        subscriptionTier: 'enterprise',
+        subscriptionStatus: 'active',
+        isPrimaryProfile: true,
+        role: 'admin',
+        organizationId: defaultOrg.id
+      }
+    });
+    console.log('✅ Default superadmin account verified (superadmin / admin123).');
+  } catch (err) {
+    console.warn('⚠️ Warning creating default superadmin user:', err.message);
+  }
 
   console.log('🌱 Seeding completed successfully!');
 }
