@@ -45,7 +45,7 @@ export async function getTransfers(req, res, next) {
   try {
     const transfers = await prisma.transfers.findMany({
       include: { transfer_pricing: { include: { currencies: true } } },
-      orderBy: { city: 'asc' }
+      orderBy: [{ display_order: 'asc' }, { departure: 'asc' }]
     });
     return res.json(transfers);
   } catch (err) { next(err); }

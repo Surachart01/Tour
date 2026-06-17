@@ -45,7 +45,7 @@ export async function getExcursions(req, res, next) {
   try {
     const excursions = await prisma.excursions.findMany({
       include: { excursion_pricing: { include: { currencies: true } }, currencies: true },
-      orderBy: { name: 'asc' }
+      orderBy: [{ display_order: 'asc' }, { name: 'asc' }]
     });
     return res.json(excursions);
   } catch (err) { next(err); }

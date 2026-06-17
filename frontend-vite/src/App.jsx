@@ -20,6 +20,7 @@ import OtherCharges from './pages/OtherCharges.jsx';
 import Tools from './pages/Tools.jsx';
 import Activities from './pages/Activities.jsx';
 import Quotation from './pages/Quotation.jsx';
+import AddTrip from './pages/AddTrip.jsx';
 import Bookings from './pages/Bookings.jsx';
 import Payment from './pages/Payment.jsx';
 import Itinerary from './pages/Itinerary.jsx';
@@ -86,6 +87,7 @@ function App() {
               <Route path="transfers" element={<Transfers />} />
               <Route path="users" element={<Users />} />
               <Route path="quotation" element={<Quotation />} />
+              <Route path="quotation/add" element={<AddTrip />} />
               <Route path="payment" element={<Payment />} />
               <Route path="itinerary" element={<Itinerary />} />
               <Route path="analytics" element={<Analytics />} />

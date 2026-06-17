@@ -173,7 +173,7 @@ export async function listHotels(req, res, next) {
         hotel_fees: true,
         hotel_promotions: true
       },
-      orderBy: { name: 'asc' }
+      orderBy: [{ display_order: 'asc' }, { name: 'asc' }]
     });
     const response = hotels.map(formatHotelResponse);
     return res.json(response);
@@ -223,7 +223,7 @@ export async function listAvailableHotelsByCity(req, res, next) {
         } : true,
         stop_sales: true
       },
-      orderBy: { name: 'asc' }
+      orderBy: [{ display_order: 'asc' }, { name: 'asc' }]
     });
     return res.json(hotels.map(formatHotelResponse));
   } catch (err) { next(err); }

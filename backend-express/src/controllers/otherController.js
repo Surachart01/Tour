@@ -1,5 +1,12 @@
 import prisma from '../config/db.js';
 
+export async function listOthers(req, res, next) {
+  try {
+    const others = await prisma.others.findMany({ orderBy: { description: 'asc' } });
+    return res.json(others);
+  } catch (err) { next(err); }
+}
+
 export async function createOther(req, res, next) {
   try {
     const data = req.body;

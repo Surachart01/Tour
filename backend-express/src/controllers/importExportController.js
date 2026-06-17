@@ -6,7 +6,7 @@ export async function exportHotels(req, res, next) {
     const hotels = await prisma.hotels.findMany({
       where: { deleted_at: null },
       include: { room_types: true, hotel_contacts: true },
-      orderBy: { name: 'asc' }
+      orderBy: [{ display_order: 'asc' }, { name: 'asc' }]
     });
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Hotels');
@@ -30,7 +30,7 @@ export async function exportHotels(req, res, next) {
 
 export async function exportExcursions(req, res, next) {
   try {
-    const excursions = await prisma.excursions.findMany({ orderBy: { name: 'asc' } });
+    const excursions = await prisma.excursions.findMany({ orderBy: [{ display_order: 'asc' }, { name: 'asc' }] });
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Excursions');
     sheet.columns = [
@@ -52,7 +52,7 @@ export async function exportExcursions(req, res, next) {
 
 export async function exportTransfers(req, res, next) {
   try {
-    const transfers = await prisma.transfers.findMany({ orderBy: { city: 'asc' } });
+    const transfers = await prisma.transfers.findMany({ orderBy: [{ display_order: 'asc' }, { departure: 'asc' }] });
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Transfers');
     sheet.columns = [
@@ -74,7 +74,7 @@ export async function exportTransfers(req, res, next) {
 
 export async function exportTours(req, res, next) {
   try {
-    const tours = await prisma.tours.findMany({ orderBy: { name: 'asc' } });
+    const tours = await prisma.tours.findMany({ orderBy: [{ display_order: 'asc' }, { name: 'asc' }] });
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Tours');
     sheet.columns = [

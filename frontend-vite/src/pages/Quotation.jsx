@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Table, Card, Form, Input, Button, Select, Space, Tag, Drawer, message, Popconfirm, InputNumber, Tabs, Divider, Row, Col } from 'antd';
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined, CalculatorOutlined } from '@ant-design/icons';
 import { BookOpen, User, PlusCircle, Trash, Hotel, Compass, Car, FileText } from 'lucide-react';
@@ -7,6 +8,7 @@ import api from '../services/api.js';
 const { TabPane } = Tabs;
 
 export default function Quotation() {
+  const navigate = useNavigate();
   const [quotations, setQuotations] = useState([
     {
       id: 1,
@@ -245,7 +247,7 @@ export default function Quotation() {
         <Button
           type="primary"
           icon={<PlusOutlined />}
-          onClick={() => handleOpenDrawer()}
+          onClick={() => navigate('/quotation/add')}
           className="bg-sky-600 border-none shadow-md shadow-sky-600/10 rounded-lg flex items-center"
         >
           New Quotation

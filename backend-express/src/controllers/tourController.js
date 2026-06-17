@@ -44,7 +44,7 @@ export async function getAllTours(req, res, next) {
   try {
     const tours = await prisma.tours.findMany({
       include: { tour_pricing: { include: { currencies: true } } },
-      orderBy: { name: 'asc' }
+      orderBy: [{ display_order: 'asc' }, { name: 'asc' }]
     });
     return res.json(tours);
   } catch (err) { next(err); }
@@ -57,7 +57,7 @@ export async function listToursByCity(req, res, next) {
     // Tours don't have city field directly, filter through pricing currencies
     const tours = await prisma.tours.findMany({
       include: { tour_pricing: { include: { currencies: true } } },
-      orderBy: { name: 'asc' }
+      orderBy: [{ display_order: 'asc' }, { name: 'asc' }]
     });
     return res.json(tours);
   } catch (err) { next(err); }
@@ -79,7 +79,7 @@ export async function listAvailableToursByCity(req, res, next) {
           include: { currencies: true }
         } : { include: { currencies: true } }
       },
-      orderBy: { name: 'asc' }
+      orderBy: [{ display_order: 'asc' }, { name: 'asc' }]
     });
     return res.json(tours);
   } catch (err) { next(err); }
