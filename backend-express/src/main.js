@@ -4,6 +4,12 @@ import cors from 'cors';
 import path from 'path';
 import errorHandler from './middleware/error.js';
 
+// BigInt JSON serialization polyfill
+BigInt.prototype.toJSON = function () {
+  const num = Number(this);
+  return Number.isSafeInteger(num) ? num : this.toString();
+};
+
 // Phase 1: Core route modules
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
