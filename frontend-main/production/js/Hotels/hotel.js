@@ -10,13 +10,20 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("nextPage").addEventListener("click", nextPage);
   document.getElementById("prevPage").addEventListener("click", prevPage);
 
-  // Add event listener for the search box
+  // Add event listener for search triggers
+  document.getElementById("btnFilterSearch").addEventListener("click", filterTable);
   document.getElementById("searchBox").addEventListener("keyup", filterTable);
+
+  document.getElementById("filterCountry").addEventListener("change", function() {
+    populateCities(this.value);
+    filterTable();
+  });
+  document.getElementById("filterCity").addEventListener("change", filterTable);
 
   // Add event listener for changing the number of rows per page
   document.getElementById("rowsSelect").addEventListener("change", function () {
     rowsPerPage =
-      this.value === "All" ? hotelsData.length : parseInt(this.value);
+      this.value === "All" ? filteredHotelsData.length : parseInt(this.value);
     currentPage = 1; // Reset to first page
     renderTable();
   });
@@ -68,7 +75,8 @@ function loadHotels() {
       }
       hotelsData = hotels;
       filteredHotelsData = hotels; // Initially, filtered data is the same as the original data
-      totalPages = Math.ceil(hotels.length / rowsPerPage);
+      totalPages = Math.ceil(hotels.length / rowsPerPage) || 1;
+      populateFilters(hotels);
       updateHotelsCount();
       renderTable();
     })
@@ -189,20 +197,78 @@ function deleteHotel(hotelId) {
     });
 }
 
-// Function to filter the table based on the search input
+// Populate unique countries and cities filters
+function populateFilters(dataList) {
+  const filterCountry = document.getElementById("filterCountry");
+  const filterCity = document.getElementById("filterCity");
+
+  // Save selected values to restore them
+  const selectedCountry = filterCountry.value;
+  const selectedCity = filterCity.value;
+
+  // Unique countries
+  const countries = [...new Set(dataList.map(item => item.country || "Thailand"))].sort();
+  filterCountry.innerHTML = `<option value="All">All Countries</option>` + 
+    countries.map(c => `<option value="${c}">${c}</option>`).join("");
+
+  // Unique cities
+  const cities = [...new Set(dataList.map(item => item.city || ""))].filter(Boolean).sort();
+  filterCity.innerHTML = `<option value="All">All Cities</option>` + 
+    cities.map(c => `<option value="${c}">${c}</option>`).join("");
+
+  // Restore previous selections if they still exist
+  if (countries.includes(selectedCountry)) filterCountry.value = selectedCountry;
+  populateCities(filterCountry.value);
+  if (cities.includes(selectedCity)) filterCity.value = selectedCity;
+}
+
+// Dynamically populate cities based on selected country
+function populateCities(country) {
+  const filterCity = document.getElementById("filterCity");
+  const selectedCity = filterCity.value;
+
+  let filteredData = hotelsData;
+  if (country && country !== "All") {
+    filteredData = hotelsData.filter(item => (item.country || "Thailand") === country);
+  }
+
+  const cities = [...new Set(filteredData.map(item => item.city || ""))].filter(Boolean).sort();
+  filterCity.innerHTML = `<option value="All">All Cities</option>` + 
+    cities.map(c => `<option value="${c}">${c}</option>`).join("");
+
+  if (cities.includes(selectedCity)) {
+    filterCity.value = selectedCity;
+  } else {
+    filterCity.value = "All";
+  }
+}
+
+// Function to filter the table based on search inputs
 function filterTable() {
+  const selectedCountry = document.getElementById("filterCountry").value;
+  const selectedCity = document.getElementById("filterCity").value;
   const searchValue = document.getElementById("searchBox").value.toLowerCase();
 
-  // Filter the hotelsData based on the search value
+  // Filter the hotelsData based on the search values
   filteredHotelsData = hotelsData.filter((hotel) => {
-    return (
+    // Country filter
+    const matchCountry = selectedCountry === "All" || (hotel.country || "Thailand") === selectedCountry;
+    
+    // City filter
+    const matchCity = selectedCity === "All" || hotel.city === selectedCity;
+
+    // Keyword filter
+    const matchKeyword = !searchValue ||
       hotel.name.toLowerCase().includes(searchValue) ||
-      hotel.city.toLowerCase().includes(searchValue)
-    );
+      hotel.city.toLowerCase().includes(searchValue) ||
+      (hotel.address || "").toLowerCase().includes(searchValue) ||
+      (hotel.notes || "").toLowerCase().includes(searchValue);
+
+    return matchCountry && matchCity && matchKeyword;
   });
 
   currentPage = 1; // Reset to the first page on search
-  totalPages = Math.ceil(filteredHotelsData.length / rowsPerPage);
+  totalPages = Math.ceil(filteredHotelsData.length / rowsPerPage) || 1;
 
   // Update count and render the filtered table
   updateHotelsCount();

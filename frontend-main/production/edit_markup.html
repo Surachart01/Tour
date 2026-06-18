@@ -314,6 +314,7 @@
                       class="form-control"
                       id="groupName"
                       placeholder="Enter group name"
+                      maxlength="20"
                       required
                     />
                   </div>
@@ -824,13 +825,14 @@
           const hotelMarkups = Array.from(
             document.querySelectorAll("#hotelMarkupTableBody tr")
           ).map((row) => {
+            const dataId = row.getAttribute("data-id");
             return {
-              id: row.getAttribute("data-id").startsWith("new-")
+              id: (!dataId || dataId.startsWith("new-"))
                 ? null
-                : parseInt(row.getAttribute("data-id")),
-              price_from: parseFloat(row.cells[0].textContent),
-              price_to: parseFloat(row.cells[1].textContent),
-              markup_percentage: parseFloat(row.cells[2].textContent),
+                : parseInt(dataId),
+              price_from: parseFloat(row.cells[0].textContent) || 0,
+              price_to: parseFloat(row.cells[1].textContent) || 0,
+              markup_percentage: parseFloat(row.cells[2].textContent) || 0,
             };
           });
 
@@ -838,11 +840,11 @@
             markup_group: groupName,
             hotel_markup_unit: hotelMarkupUnit,
             hotel_markup_percentages: hotelMarkups,
-            excursion_markup: parseFloat(excursionMarkup),
+            excursion_markup: parseFloat(excursionMarkup) || 0,
             excursion_markup_unit: excursionMarkupUnit,
-            tour_markup: parseFloat(tourMarkup),
+            tour_markup: parseFloat(tourMarkup) || 0,
             tour_markup_unit: tourMarkupUnit,
-            transfer_markup: parseFloat(transferMarkup),
+            transfer_markup: parseFloat(transferMarkup) || 0,
             transfer_markup_unit: transferMarkupUnit,
           };
 

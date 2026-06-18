@@ -314,6 +314,7 @@
                       class="form-control"
                       id="groupName"
                       placeholder="Enter group name"
+                      maxlength="20"
                       required
                     />
                   </div>
@@ -758,20 +759,20 @@
           // Collect excursion, tour, and transfer markup data
           const excursionMarkup = parseFloat(
             document.getElementById("excursionMarkup").value
-          );
+          ) || 0;
           const excursionMarkupUnit = document.getElementById(
             "excursionMarkupUnit"
           ).value;
 
           const tourMarkup = parseFloat(
             document.getElementById("tourMarkup").value
-          );
+          ) || 0;
           const tourMarkupUnit =
             document.getElementById("tourMarkupUnit").value;
 
           const transferMarkup = parseFloat(
             document.getElementById("transferMarkup").value
-          );
+          ) || 0;
           const transferMarkupUnit =
             document.getElementById("transferMarkupUnit").value;
 

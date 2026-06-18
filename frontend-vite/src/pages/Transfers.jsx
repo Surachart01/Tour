@@ -245,6 +245,13 @@ export default function Transfers() {
 
   const columns = [
     {
+      title: '#',
+      key: 'index',
+      width: 60,
+      align: 'center',
+      render: (text, record, index) => <span className="text-slate-400 text-xs">{index + 1}</span>
+    },
+    {
       title: 'Transfer Route',
       dataIndex: 'transfer_type',
       key: 'transfer_type',
@@ -283,6 +290,15 @@ export default function Transfers() {
       dataIndex: 'supplier_name',
       key: 'supplier_name',
       render: (text) => <span className="text-slate-500 text-xs font-semibold">{text || '-'}</span>
+    },
+    {
+      title: 'Display Order',
+      dataIndex: 'display_order',
+      key: 'display_order',
+      align: 'center',
+      width: 120,
+      sorter: (a, b) => (a.display_order || 0) - (b.display_order || 0),
+      render: (text) => <span className="font-semibold text-slate-600">{text !== undefined && text !== null ? text : 0}</span>
     },
     {
       title: 'Pricing',

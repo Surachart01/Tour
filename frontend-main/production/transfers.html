@@ -317,28 +317,63 @@
 
           <div class="clearfix"></div>
 
-          <!-- Search Box and Rows Display Dropdown -->
-          <div class="row" style="margin-bottom: 30px">
-            <div class="col-md-6">
-              <input
-                type="text"
-                id="searchBox"
-                class="form-control"
-                placeholder="Search for transfers..."
-              />
-            </div>
-            <div class="col-md-6 text-right">
-              <label for="rowsSelect">Show: </label>
-              <select
-                id="rowsSelect"
-                class="form-control"
-                style="width: 100px; display: inline-block"
-              >
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="All">All</option>
-              </select>
+          <!-- Search & Filter Box -->
+          <div class="row" style="margin-bottom: 25px;">
+            <div class="col-md-12">
+              <div class="filter-container" style="background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <div class="row style-filters" style="display: flex; align-items: flex-end; flex-wrap: wrap; gap: 10px;">
+
+                  <div class="filter-group" style="flex: 1; min-width: 140px;">
+                    <label for="filterCountry" style="font-size: 10px; font-weight: bold; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">Country</label>
+                    <select id="filterCountry" class="form-control" style="border-radius: 6px; border: 1px solid #ccc; height: 38px;">
+                      <option value="All">All Countries</option>
+                    </select>
+                  </div>
+
+                  <div class="filter-group" style="flex: 1; min-width: 140px;">
+                    <label for="filterCity" style="font-size: 10px; font-weight: bold; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">City</label>
+                    <select id="filterCity" class="form-control" style="border-radius: 6px; border: 1px solid #ccc; height: 38px;">
+                      <option value="All">All Cities</option>
+                    </select>
+                  </div>
+
+                  <div class="filter-group" style="flex: 1; min-width: 140px;">
+                    <label for="filterType" style="font-size: 10px; font-weight: bold; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">Type</label>
+                    <select id="filterType" class="form-control" style="border-radius: 6px; border: 1px solid #ccc; height: 38px;">
+                      <option value="All">All Types</option>
+                    </select>
+                  </div>
+
+                  <div class="filter-group" style="flex: 1; min-width: 140px;">
+                    <label for="filterSupplier" style="font-size: 10px; font-weight: bold; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">Supplier</label>
+                    <select id="filterSupplier" class="form-control" style="border-radius: 6px; border: 1px solid #ccc; height: 38px;">
+                      <option value="All">All Suppliers</option>
+                    </select>
+                  </div>
+
+                  <div class="filter-group" style="flex: 2; min-width: 200px;">
+                    <label for="searchBox" style="font-size: 10px; font-weight: bold; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">Keyword</label>
+                    <input type="text" id="searchBox" class="form-control" placeholder="Search city, type, departure, arrival..." style="border-radius: 6px; border: 1px solid #ccc; height: 38px;">
+                  </div>
+
+                  <div class="filter-group" style="min-width: 80px;">
+                    <label for="rowsSelect" style="font-size: 10px; font-weight: bold; color: #888; text-transform: uppercase; display: block; margin-bottom: 5px;">Show</label>
+                    <select id="rowsSelect" class="form-control" style="border-radius: 6px; border: 1px solid #ccc; height: 38px;">
+                      <option value="25">25</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                      <option value="All">All</option>
+                    </select>
+                  </div>
+
+                  <div class="filter-group" style="min-width: 100px;">
+                    <button type="button" id="btnFilterSearch" class="btn" style="background: #f06225; border: none; border-radius: 6px; color: white; font-weight: bold; height: 38px; padding: 0 20px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; width: 100%; transition: all 0.2s;" onmouseover="this.style.background='#d8551f'" onmouseout="this.style.background='#f06225'">
+                      Search <i class="fa fa-search"></i>
+                    </button>
+                  </div>
+
+                </div>
+              </div>
             </div>
           </div>
 
@@ -419,11 +454,13 @@
                         >
                           <thead>
                             <tr>
+                              <th>#</th>
                               <th>City</th>
                               <th>Type</th>
                               <th>Supplier</th>
                               <th>Departure</th>
                               <th>Arrival</th>
+                              <th>Display Order</th>
                               <th>Description</th>
                               <th>Edit</th>
                               <th>Delete</th>
@@ -505,17 +542,46 @@
         profileName.innerText = username;
         navProfileName.innerText = username;
 
-        // Event listener for the search box
-        searchBox.addEventListener("keyup", filterTransfers);
+        // Save filter state to sessionStorage on every change
+        function saveFilters() {
+          sessionStorage.setItem("transfers_filters", JSON.stringify({
+            country: document.getElementById("filterCountry").value,
+            city: document.getElementById("filterCity").value,
+            type: document.getElementById("filterType").value,
+            supplier: document.getElementById("filterSupplier").value,
+            keyword: searchBox.value,
+            rows: rowsSelect.value,
+          }));
+        }
+
+        // Event listener for the search box (keyup for live search)
+        searchBox.addEventListener("keyup", function () {
+          saveFilters(); filterTransfers();
+        });
+
+        // Search button click
+        document.getElementById("btnFilterSearch").addEventListener("click", function () {
+          saveFilters(); filterTransfers();
+        });
+
+        // Dropdown filter changes trigger immediate filter
+        ["filterCountry", "filterCity", "filterType", "filterSupplier"].forEach((id) => {
+          document.getElementById(id).addEventListener("change", function () {
+            saveFilters(); filterTransfers();
+          });
+        });
+
+        // Country → City cascade
+        document.getElementById("filterCountry").addEventListener("change", function () {
+          populateCityDropdown(this.value);
+        });
 
         // Event listener for changing rows per page
         rowsSelect.addEventListener("change", function () {
-          rowsPerPage =
-            this.value === "All"
-              ? filteredTransfers.length
-              : parseInt(this.value);
+          rowsPerPage = this.value === "All" ? filteredTransfers.length : parseInt(this.value);
           totalPages = Math.ceil(filteredTransfers.length / rowsPerPage);
           currentPage = 1;
+          saveFilters();
           renderTransfers();
         });
 
@@ -548,7 +614,6 @@
           window.location.href = "add_transfer.html";
         });
 
-        // Function to fetch transfers from the backend
         function fetchTransfers() {
           fetch(`${Endpoint}/api/v1/transfers`, {
             headers: {
@@ -558,32 +623,122 @@
             .then((response) => response.json())
             .then((data) => {
               transfers = data.sort((a, b) => (a.order || 0) - (b.order || 0));
-              filteredTransfers = [...transfers]; // Copy all transfers for filtering
+              filteredTransfers = [...transfers];
               totalPages = Math.ceil(filteredTransfers.length / rowsPerPage);
               updateTransfersCount();
               renderTransfers();
+              populateFilterDropdowns();
+              restoreFilters();
             })
             .catch((error) => {
               console.error("Error fetching transfers:", error);
             });
         }
 
-        // Filter the transfers based on search input
+        // Populate Country, City, Type, Supplier dropdowns with unique values from data
+        function populateFilterDropdowns() {
+          const countries = [...new Set(transfers.map((t) => t.country).filter(Boolean))].sort();
+          const types = [...new Set(transfers.map((t) => t.transfer_type).filter(Boolean))].sort();
+          const suppliers = [...new Set(transfers.map((t) => t.supplier_name).filter(Boolean))].sort();
+
+          const countrySelect = document.getElementById("filterCountry");
+          countrySelect.innerHTML = '<option value="All">All Countries</option>';
+          countries.forEach((c) => {
+            const opt = document.createElement("option");
+            opt.value = c; opt.textContent = c;
+            countrySelect.appendChild(opt);
+          });
+
+          populateCityDropdown("All");
+
+          const typeSelect = document.getElementById("filterType");
+          types.forEach((t) => {
+            const opt = document.createElement("option");
+            opt.value = t; opt.textContent = t;
+            typeSelect.appendChild(opt);
+          });
+
+          const supplierSelect = document.getElementById("filterSupplier");
+          suppliers.forEach((s) => {
+            const opt = document.createElement("option");
+            opt.value = s; opt.textContent = s;
+            supplierSelect.appendChild(opt);
+          });
+        }
+
+        // Populate city dropdown — filtered by selected country
+        function populateCityDropdown(selectedCountry) {
+          const cities = [...new Set(
+            transfers
+              .filter((t) => selectedCountry === "All" || (t.country || "") === selectedCountry)
+              .map((t) => t.city)
+              .filter(Boolean)
+          )].sort();
+
+          const citySelect = document.getElementById("filterCity");
+          citySelect.innerHTML = '<option value="All">All Cities</option>';
+          cities.forEach((c) => {
+            const opt = document.createElement("option");
+            opt.value = c; opt.textContent = c;
+            citySelect.appendChild(opt);
+          });
+        }
+
+        // Restore saved filter values from sessionStorage after dropdowns are populated
+        function restoreFilters() {
+          const saved = sessionStorage.getItem("transfers_filters");
+          if (!saved) return;
+          try {
+            const f = JSON.parse(saved);
+            // Restore rows per page
+            if (f.rows) {
+              rowsSelect.value = f.rows;
+              rowsPerPage = f.rows === "All" ? filteredTransfers.length : parseInt(f.rows);
+            }
+            // Restore country (then cascade city)
+            if (f.country) {
+              document.getElementById("filterCountry").value = f.country;
+              populateCityDropdown(f.country);
+            }
+            // Restore city after cascade
+            if (f.city) document.getElementById("filterCity").value = f.city;
+            // Restore type
+            if (f.type) document.getElementById("filterType").value = f.type;
+            // Restore supplier
+            if (f.supplier) document.getElementById("filterSupplier").value = f.supplier;
+            // Restore keyword
+            if (f.keyword) searchBox.value = f.keyword;
+            // Re-apply filters with restored values
+            filterTransfers();
+          } catch (e) { /* ignore parse errors */ }
+        }
+
+
         function filterTransfers() {
           const searchTerm = searchBox.value.toLowerCase();
+          const countryVal = document.getElementById("filterCountry").value;
+          const cityVal = document.getElementById("filterCity").value;
+          const typeVal = document.getElementById("filterType").value;
+          const supplierVal = document.getElementById("filterSupplier").value;
+
           filteredTransfers = transfers.filter((transfer) => {
             const supplierName = transfer.supplier_name || "";
-            return (
+            const countryMatch = countryVal === "All" || (transfer.country || "") === countryVal;
+            const cityMatch = cityVal === "All" || transfer.city === cityVal;
+            const typeMatch = typeVal === "All" || transfer.transfer_type === typeVal;
+            const supplierMatch = supplierVal === "All" || supplierName === supplierVal;
+            const keywordMatch = !searchTerm ||
               transfer.city.toLowerCase().includes(searchTerm) ||
               transfer.transfer_type.toLowerCase().includes(searchTerm) ||
-              transfer.description.toLowerCase().includes(searchTerm) ||
-              transfer.departure.toLowerCase().includes(searchTerm) ||
-              transfer.arrival.toLowerCase().includes(searchTerm) ||
-              supplierName.toLowerCase().includes(searchTerm)
-            );
+              (transfer.country || "").toLowerCase().includes(searchTerm) ||
+              (transfer.description || "").toLowerCase().includes(searchTerm) ||
+              (transfer.departure || "").toLowerCase().includes(searchTerm) ||
+              (transfer.arrival || "").toLowerCase().includes(searchTerm) ||
+              supplierName.toLowerCase().includes(searchTerm);
+            return countryMatch && cityMatch && typeMatch && supplierMatch && keywordMatch;
           });
           currentPage = 1;
-          totalPages = Math.ceil(filteredTransfers.length / rowsPerPage);
+          totalPages = Math.ceil(filteredTransfers.length / rowsPerPage) || 1;
           updateTransfersCount();
           renderTransfers();
         }
@@ -595,18 +750,22 @@
           const end = Math.min(start + rowsPerPage, filteredTransfers.length);
           const rowsToShow = filteredTransfers.slice(start, end);
 
-          rowsToShow.forEach((transfer) => {
+          rowsToShow.forEach((transfer, idx) => {
             const row = document.createElement("tr");
 
             const supplierName = transfer.supplier_name || "N/A";
+            const displayOrder = transfer.display_order !== undefined && transfer.display_order !== null ? transfer.display_order : 0;
+            const rowIndex = start + idx + 1;
 
             row.innerHTML = `
+      <td>${rowIndex}</td>
       <td>${transfer.city}</td>
       <td>${transfer.transfer_type}</td>
       <td>${supplierName}</td>
       <td>${transfer.departure}</td>
       <td>${transfer.arrival}</td>
-      <td class="description-cell"><div class="description-text">${transfer.description}</div></td>
+      <td>${displayOrder}</td>
+      <td class="description-cell"><div class="description-text">${transfer.description || ''}</div></td>
       <td><button class="btn btn-primary btn-sm edit-btn"><i class="fa fa-edit"></i> Edit</button></td>
       <td><button class="btn btn-danger btn-sm delete-btn"><i class="fa fa-trash"></i> Delete</button></td>
     `;
