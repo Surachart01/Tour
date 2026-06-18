@@ -28,8 +28,8 @@ router.post('/locations/cities', authorize('admin'), createCity);
 router.post('/locations/ensure-city/:cityName/:countryCode', ensureCity);
 
 // Organization Geography endpoints
-router.get('/organizations/:orgID/service-countries', authorize('admin'), getOrganizationServiceCountries);
-router.put('/organizations/:orgID/service-countries', authorize('admin'), setOrganizationServiceCountries);
+router.get('/organizations/:orgID/service-countries', getOrganizationServiceCountries);
+router.put('/organizations/:orgID/service-countries', setOrganizationServiceCountries);
 
 export default router;
 

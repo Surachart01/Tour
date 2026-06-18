@@ -41,8 +41,12 @@ router.delete('/hotels/cleanup/sql/in-city-after-time', authorize('admin'), clea
 router.post('/hotels/cleanup/sql/custom', authorize('admin'), executeCustomCleanupSQL);
 
 router.post('/hotels', authorize('admin'), createHotel);
-router.get('/hotels', (req, res, next) => {
-  if (req.query.city && req.query.from_date) return listAvailableHotelsByCity(req, res, next);
+router.get('/hotels', /* authorize('admin', 'agent') */ (req, res, next) => {
+  if (req.query.city && req.query.from_date) {
+    return listAvailableHotelsByCity(req, res, next);
+  }
+  next();
+}, authorize('admin', 'agent'), (req, res, next) => {
   if (req.query.city) return listHotelsByCity(req, res, next);
   return listHotels(req, res, next);
 });

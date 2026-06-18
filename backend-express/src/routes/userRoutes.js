@@ -21,17 +21,15 @@ router.post('/create-admin', createAdmin);
 router.post('/login', login);
 
 // Private routes (JWT required)
-router.use(validateJWT);
+router.post('/logout', validateJWT, logout);
+router.patch('/update-password', validateJWT, updatePassword);
 
-router.post('/logout', logout);
-router.patch('/update-password', updatePassword);
-
-router.post('/users', createUser);
-router.delete('/users/:id', authorize('admin'), deleteUser);
-router.get('/users', authorize('admin'), listUsers);
-router.put('/users/:id', updateUser);
-router.get('/users/me', getCurrentUser);
-router.get('/users/organization/:organizationID', getOrganizationUsers);
-router.get('/users/:id', getUser);
+router.post('/users', validateJWT, createUser);
+router.delete('/users/:id', validateJWT, authorize('admin'), deleteUser);
+router.get('/users', validateJWT, authorize('admin'), listUsers);
+router.put('/users/:id', validateJWT, updateUser);
+router.get('/users/me', validateJWT, getCurrentUser);
+router.get('/users/organization/:organizationID', validateJWT, getOrganizationUsers);
+router.get('/users/:id', validateJWT, getUser);
 
 export default router;

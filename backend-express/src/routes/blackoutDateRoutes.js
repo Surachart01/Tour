@@ -5,17 +5,17 @@ const router = express.Router();
 router.use(validateJWT);
 // Tour blackout dates
 router.post('/tours/:id/blackout-dates', authorize('admin'), createTourBlackoutDate);
-router.get('/tours/:id/blackout-dates', getTourBlackoutDates);
+router.get('/tours/:id/blackout-dates', authorize('admin'), getTourBlackoutDates);
 router.put('/tours/:id/blackout-dates/:blackout_id', authorize('admin'), updateTourBlackoutDate);
 router.delete('/tours/:id/blackout-dates/:blackout_id', authorize('admin'), deleteTourBlackoutDate);
 // Excursion blackout dates
 router.post('/excursions/:id/blackout-dates', authorize('admin'), createExcursionBlackoutDate);
-router.get('/excursions/:id/blackout-dates', getExcursionBlackoutDates);
+router.get('/excursions/:id/blackout-dates', authorize('admin'), getExcursionBlackoutDates);
 router.put('/excursions/:id/blackout-dates/:blackout_id', authorize('admin'), updateExcursionBlackoutDate);
 router.delete('/excursions/:id/blackout-dates/:blackout_id', authorize('admin'), deleteExcursionBlackoutDate);
 // Transfer blackout dates
 router.post('/transfers/:id/blackout-dates', authorize('admin'), createTransferBlackoutDate);
-router.get('/transfers/:id/blackout-dates', getTransferBlackoutDates);
+router.get('/transfers/:id/blackout-dates', authorize('admin'), getTransferBlackoutDates);
 router.put('/transfers/:id/blackout-dates/:blackout_id', authorize('admin'), updateTransferBlackoutDate);
 router.delete('/transfers/:id/blackout-dates/:blackout_id', authorize('admin'), deleteTransferBlackoutDate);
 export default router;

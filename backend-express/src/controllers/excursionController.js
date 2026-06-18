@@ -1,4 +1,44 @@
 import prisma from '../config/db.js';
+import { calculateExcursionCostLogic } from '../utils/pricing.js';
+
+export function formatExcursionResponse(excursion) {
+  if (!excursion) return null;
+  const prices = (excursion.excursion_pricing || []).map(p => ({
+    id: p.id,
+    excursion_id: p.excursion_id,
+    start_date: p.start_date ? (p.start_date instanceof Date ? p.start_date.toISOString().split('T')[0] : String(p.start_date)) : '',
+    end_date: p.end_date ? (p.end_date instanceof Date ? p.end_date.toISOString().split('T')[0] : String(p.end_date)) : '',
+    pax: p.pax,
+    price: p.price ? parseFloat(p.price) : 0,
+    cost: p.cost ? parseFloat(p.cost) : 0,
+    currency_id: p.currency_id
+  }));
+
+  const available_days = (excursion.valid_days || '').split(',').filter(x => x).map(x => ({
+    day_of_week: parseInt(x)
+  }));
+
+  return {
+    id: excursion.id,
+    name: excursion.name,
+    city: excursion.city,
+    code: excursion.code,
+    is_sic_excursion: excursion.is_sic_excursion,
+    description: excursion.description,
+    sic_price_adult: excursion.sic_price_adult ? parseFloat(excursion.sic_price_adult) : 0,
+    sic_price_child: excursion.sic_price_child ? parseFloat(excursion.sic_price_child) : 0,
+    walkin_price: excursion.walkin_price ? parseFloat(excursion.walkin_price) : 0,
+    currency_id: excursion.currency_id,
+    supplier_name: excursion.supplier_name,
+    valid_days: excursion.valid_days,
+    user_id: excursion.user_id,
+    country: excursion.country,
+    display_order: excursion.display_order,
+    order: (excursion.display_order === 0 || excursion.display_order === null || excursion.display_order === undefined) ? 100000 : excursion.display_order,
+    prices,
+    available_days
+  };
+}
 
 export async function createExcursion(req, res, next) {
   try {
@@ -24,7 +64,7 @@ export async function createExcursion(req, res, next) {
       },
       include: { excursion_pricing: true }
     });
-    return res.status(201).json(excursion);
+    return res.status(201).json(formatExcursionResponse(excursion));
   } catch (err) { next(err); }
 }
 
@@ -37,17 +77,21 @@ export async function getExcursionByID(req, res, next) {
       include: { excursion_pricing: { include: { currencies: true } }, currencies: true }
     });
     if (!excursion) return res.status(404).send('Excursion not found');
-    return res.json(excursion);
+    return res.json(formatExcursionResponse(excursion));
   } catch (err) { next(err); }
 }
 
 export async function getExcursions(req, res, next) {
   try {
     const excursions = await prisma.excursions.findMany({
-      include: { excursion_pricing: { include: { currencies: true } }, currencies: true },
-      orderBy: [{ display_order: 'asc' }, { name: 'asc' }]
+      include: { excursion_pricing: { include: { currencies: true } }, currencies: true }
     });
-    return res.json(excursions);
+    const formatted = excursions.map(formatExcursionResponse);
+    formatted.sort((a, b) => {
+      if (a.order !== b.order) return a.order - b.order;
+      return a.name.localeCompare(b.name);
+    });
+    return res.json(formatted);
   } catch (err) { next(err); }
 }
 
@@ -59,7 +103,12 @@ export async function listExcursionsByLocation(req, res, next) {
       where: { city },
       include: { excursion_pricing: { include: { currencies: true } }, currencies: true }
     });
-    return res.json(excursions);
+    const formatted = excursions.map(formatExcursionResponse);
+    formatted.sort((a, b) => {
+      if (a.order !== b.order) return a.order - b.order;
+      return a.name.localeCompare(b.name);
+    });
+    return res.json(formatted);
   } catch (err) { next(err); }
 }
 
@@ -82,7 +131,12 @@ export async function listAvailableExcursionsByCity(req, res, next) {
         currencies: true
       }
     });
-    return res.json(excursions);
+    const formatted = excursions.map(formatExcursionResponse);
+    formatted.sort((a, b) => {
+      if (a.order !== b.order) return a.order - b.order;
+      return a.name.localeCompare(b.name);
+    });
+    return res.json(formatted);
   } catch (err) { next(err); }
 }
 
@@ -129,6 +183,44 @@ export async function deleteExcursion(req, res, next) {
 
 export async function calculateExcursionCost(req, res, next) {
   try {
-    return res.json({ final_cost: 0, discount: 0 });
-  } catch (err) { next(err); }
+    const request = req.body;
+    const claims = req.user;
+
+    let markupGroup = 'TO Bronze'; // Default fallback
+    if (claims) {
+      if (claims.role !== 'admin') {
+        markupGroup = claims.markup_group || '';
+      }
+    }
+
+    if (request.agent_name) {
+      const agent = await prisma.agent.findUnique({
+        where: { name: request.agent_name }
+      });
+      if (agent) {
+        markupGroup = agent.markupGroup || '';
+      }
+    }
+
+    const markups = await prisma.markups.findMany({
+      include: { hotel_markup_percentages: true, currencies: true }
+    });
+
+    const excursion = await prisma.excursions.findUnique({
+      where: { id: parseInt(request.excursion_id) },
+      include: { excursion_pricing: true }
+    });
+
+    if (!excursion) {
+      return res.status(404).send('Excursion not found');
+    }
+
+    const final_cost = calculateExcursionCostLogic(excursion, request, markupGroup, markups);
+    return res.json({ final_cost, discount: 0 });
+  } catch (err) {
+    if (err.message && (err.message.includes('not found') || err.message.includes('not available') || err.message.includes('invalid'))) {
+      return res.status(400).send(err.message);
+    }
+    next(err);
+  }
 }

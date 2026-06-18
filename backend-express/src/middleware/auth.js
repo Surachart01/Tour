@@ -85,3 +85,88 @@ export function authorizeSuperAdmin(req, res, next) {
   console.log(`❌ SuperAdmin Authorization Forbidden for user: ${req.user ? req.user.username : 'unknown'}`);
   return res.status(403).send('Forbidden');
 }
+
+function getRequestedOrgId(req) {
+  const queryVal = req.query.organization_id || req.query.organizationId;
+  if (queryVal) return parseInt(queryVal, 10);
+  
+  const paramsVal = req.params.organization_id || req.params.organizationId || req.params.organizationID || req.params.orgID || req.params.orgid || req.params.org_id;
+  if (paramsVal) return parseInt(paramsVal, 10);
+  
+  return null;
+}
+
+function determineEffectiveRole(user, req) {
+  const requestedOrgId = getRequestedOrgId(req);
+  const userRole = user.role;
+  
+  // If no specific org requested, use base role
+  if (requestedOrgId === null || isNaN(requestedOrgId)) {
+    return userRole;
+  }
+  
+  const userOrgId = user.organization_id || user.organizationId;
+  const isHybridUser = user.is_hybrid_user || user.isHybridUser;
+  const parentOrgId = user.parent_organization_id || user.parentOrganizationId;
+  const accessibleOrgIds = user.accessible_organization_ids || user.accessibleOrganizationIds || [];
+  const userType = user.user_type || user.userType;
+  
+  // For hybrid users
+  if (isHybridUser) {
+    if (userOrgId && userOrgId === requestedOrgId) {
+      return 'admin';
+    }
+    if (parentOrgId && parentOrgId === requestedOrgId) {
+      return 'agent';
+    }
+    if (Array.isArray(accessibleOrgIds) && accessibleOrgIds.map(Number).includes(requestedOrgId)) {
+      return 'agent';
+    }
+    return 'none';
+  }
+  
+  // Dependent users
+  if (userType === 'free_agent') {
+    return 'agent';
+  }
+  
+  // Regular admins
+  if (userOrgId && userOrgId === requestedOrgId) {
+    return 'admin';
+  }
+  
+  return userRole;
+}
+
+export function contextAwareAuthorize(...allowedRoles) {
+  return (req, res, next) => {
+    const user = req.user;
+    if (!user) {
+      return res.status(401).send('Unauthorized');
+    }
+
+    if (req.isSuperAdmin) {
+      return next();
+    }
+
+    const effectiveRole = determineEffectiveRole(user, req);
+
+    for (const allowedRole of allowedRoles) {
+      if (effectiveRole === allowedRole) {
+        return next();
+      }
+      
+      // Hierarchy checks
+      if (allowedRole === 'user' && (effectiveRole === 'agent' || effectiveRole === 'admin')) {
+        return next();
+      }
+      if (allowedRole === 'agent' && effectiveRole === 'admin') {
+        return next();
+      }
+    }
+
+    console.log(`❌ ContextAwareAuthorization Forbidden for user: ${user.username} (Effective Role: ${effectiveRole})`);
+    return res.status(403).send('Forbidden');
+  };
+}
+

@@ -1,4 +1,5 @@
 import prisma from '../config/db.js';
+import { calculateHotelCostLogic } from '../utils/pricing.js';
 
 export function formatHotelResponse(hotel) {
   if (!hotel) return null;
@@ -8,22 +9,26 @@ export function formatHotelResponse(hotel) {
     key: c.id,
     id: c.id,
     name: c.contact_name,
+    contact_name: c.contact_name,
     email: c.email,
     tel: c.telephone,
+    telephone: c.telephone,
     fax: c.fax
   }));
 
   const roomTypes = (hotel.room_types || []).map(rt => ({
     key: rt.id,
     id: rt.id,
+    name: rt.name,
+    roomType: rt.name,
     fromDate: rt.start_date ? rt.start_date.toISOString().split('T')[0] : '',
     toDate: rt.end_date ? rt.end_date.toISOString().split('T')[0] : '',
-    roomType: rt.name,
+    start_date: rt.start_date,
+    end_date: rt.end_date,
     price: rt.single_price ? parseFloat(rt.single_price) : 0,
     extraBed: rt.extra_bed_adult ? parseFloat(rt.extra_bed_adult) : 0,
     foodCostAdult: rt.food_adult_abf ? parseFloat(rt.food_adult_abf) : 0,
     foodCostChild: rt.food_child_abf ? parseFloat(rt.food_child_abf) : 0,
-    // Add other fields just in case legacy JS needs them
     single_price: rt.single_price ? parseFloat(rt.single_price) : 0,
     double_price: rt.double_price ? parseFloat(rt.double_price) : 0,
     extra_bed_adult: rt.extra_bed_adult ? parseFloat(rt.extra_bed_adult) : 0,
@@ -43,17 +48,36 @@ export function formatHotelResponse(hotel) {
     key: p.id,
     id: p.id,
     code: p.promotion_code,
+    promotion_code: p.promotion_code,
     name: p.name,
     bookingFrom: p.booking_date_from ? p.booking_date_from.toISOString().split('T')[0] : null,
     bookingTo: p.booking_date_to ? p.booking_date_to.toISOString().split('T')[0] : null,
     travelFrom: p.travel_date_from ? p.travel_date_from.toISOString().split('T')[0] : null,
     travelTo: p.travel_date_to ? p.travel_date_to.toISOString().split('T')[0] : null,
+    booking_date_from: p.booking_date_from,
+    booking_date_to: p.booking_date_to,
+    travel_date_from: p.travel_date_from,
+    travel_date_to: p.travel_date_to,
     earlyBird: p.early_bird_days || 0,
+    early_bird_days: p.early_bird_days || 0,
     minNights: p.minimum_nights || 0,
+    minimum_nights: p.minimum_nights || 0,
     freeMeals: p.free_meals_abf > 0,
+    free_meals_abf: p.free_meals_abf || 0,
     discount: p.discount_amount ? parseFloat(p.discount_amount) : 0,
+    discount_amount: p.discount_amount ? parseFloat(p.discount_amount) : 0,
     enabled: p.enabled ?? true
   }));
+
+  const feesObj = {
+    id: fees.id,
+    early_checkin_fee: fees.early_checkin_fee ? parseFloat(fees.early_checkin_fee) : 0,
+    late_checkout_fee: fees.late_checkout_fee ? parseFloat(fees.late_checkout_fee) : 0,
+    christmas_dinner_fee: fees.christmas_dinner_fee ? parseFloat(fees.christmas_dinner_fee) : 0,
+    new_year_dinner_fee: fees.new_year_dinner_fee ? parseFloat(fees.new_year_dinner_fee) : 0,
+    late_checkout_21_fee: fees.late_checkout_21_fee ? parseFloat(fees.late_checkout_21_fee) : 0,
+    currency_id: fees.currency_id
+  };
 
   return {
     id: hotel.id,
@@ -63,6 +87,7 @@ export function formatHotelResponse(hotel) {
     address: hotel.address,
     notes: hotel.notes,
     display_order: hotel.display_order,
+    order: (hotel.display_order === 0 || hotel.display_order === null || hotel.display_order === undefined) ? 100000 : hotel.display_order,
     user_id: hotel.user_id,
     earlyCheckinAdd: fees.early_checkin_fee ? parseFloat(fees.early_checkin_fee) : 0,
     lateCheckoutAdd: fees.late_checkout_fee ? parseFloat(fees.late_checkout_fee) : 0,
@@ -70,7 +95,9 @@ export function formatHotelResponse(hotel) {
     newYearDinner: fees.new_year_dinner_fee || '',
     contacts,
     roomTypes,
-    promotions
+    room_types: roomTypes,
+    promotions,
+    fees: feesObj
   };
 }
 
@@ -172,11 +199,14 @@ export async function listHotels(req, res, next) {
         room_types: true,
         hotel_fees: true,
         hotel_promotions: true
-      },
-      orderBy: [{ display_order: 'asc' }, { name: 'asc' }]
+      }
     });
-    const response = hotels.map(formatHotelResponse);
-    return res.json(response);
+    const formatted = hotels.map(formatHotelResponse);
+    formatted.sort((a, b) => {
+      if (a.order !== b.order) return a.order - b.order;
+      return a.name.localeCompare(b.name);
+    });
+    return res.json(formatted);
   } catch (err) { next(err); }
 }
 
@@ -188,7 +218,12 @@ export async function listHotelsByCity(req, res, next) {
       where: { city, deleted_at: null },
       include: { room_types: true, hotel_contacts: true, hotel_fees: true, hotel_promotions: true }
     });
-    return res.json(hotels.map(formatHotelResponse));
+    const formatted = hotels.map(formatHotelResponse);
+    formatted.sort((a, b) => {
+      if (a.order !== b.order) return a.order - b.order;
+      return a.name.localeCompare(b.name);
+    });
+    return res.json(formatted);
   } catch (err) { next(err); }
 }
 
@@ -222,10 +257,14 @@ export async function listAvailableHotelsByCity(req, res, next) {
           }
         } : true,
         stop_sales: true
-      },
-      orderBy: [{ display_order: 'asc' }, { name: 'asc' }]
+      }
     });
-    return res.json(hotels.map(formatHotelResponse));
+    const formatted = hotels.map(formatHotelResponse);
+    formatted.sort((a, b) => {
+      if (a.order !== b.order) return a.order - b.order;
+      return a.name.localeCompare(b.name);
+    });
+    return res.json(formatted);
   } catch (err) { next(err); }
 }
 
@@ -340,9 +379,68 @@ export async function listCities(req, res, next) {
 
 export async function calculateHotelCost(req, res, next) {
   try {
-    const data = req.body;
-    // Simplified cost calculation - the detailed logic from Go is complex
-    // For now return a placeholder structure that frontend expects
-    return res.json({ final_cost: 0, discount: 0 });
-  } catch (err) { next(err); }
+    const request = req.body;
+    const claims = req.user;
+
+    let markupGroup = 'TO Bronze'; // Default fallback
+    if (claims) {
+      if (claims.role !== 'admin') {
+        markupGroup = claims.markup_group || '';
+      }
+    }
+
+    if (request.agent_name) {
+      const agent = await prisma.agent.findUnique({
+        where: { name: request.agent_name }
+      });
+      if (agent) {
+        markupGroup = agent.markupGroup || '';
+      }
+    }
+
+    const markups = await prisma.markups.findMany({
+      include: { hotel_markup_percentages: true, currencies: true }
+    });
+
+    const hotel = await prisma.hotels.findUnique({
+      where: { id: parseInt(request.hotel_id) }
+    });
+
+    if (!hotel) {
+      return res.status(404).send('Hotel not found');
+    }
+
+    // Fetch matching room types for the requested names
+    const roomTypeNames = (request.room_types || []).map(rt => rt.room_type);
+    const matchingRoomTypes = await prisma.room_types.findMany({
+      where: {
+        hotel_id: parseInt(request.hotel_id),
+        name: { in: roomTypeNames }
+      }
+    });
+
+    // Fetch hotel fees
+    const feesRecord = await prisma.hotel_fees.findFirst({
+      where: { hotel_id: parseInt(request.hotel_id) }
+    });
+
+    // Fetch promotion if coupon code provided
+    let promotion = null;
+    if (request.coupon_code) {
+      promotion = await prisma.hotel_promotions.findFirst({
+        where: {
+          hotel_id: parseInt(request.hotel_id),
+          promotion_code: request.coupon_code
+        }
+      });
+    }
+
+    const result = calculateHotelCostLogic(hotel, request, markupGroup, markups, matchingRoomTypes, feesRecord, promotion);
+    return res.json(result);
+  } catch (err) {
+    if (err.message && (err.message.includes('not found') || err.message.includes('not available') || err.message.includes('need to') || err.message.includes('cannot be') || err.message.includes('not supported') || err.message.includes('not enough') || err.message.includes('applicable'))) {
+      return res.status(400).send(err.message);
+    }
+    next(err);
+  }
 }

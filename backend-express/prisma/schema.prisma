@@ -563,20 +563,28 @@ model stop_sales {
 }
 
 model suppliers {
-  id                   Int                    @id @default(autoincrement())
-  name                 String                 @unique @db.VarChar(100)
-  description          String?
-  email                String?                @db.VarChar(100)
-  telephone            String?                @db.VarChar(20)
-  location             String?                @db.VarChar(255)
-  offers_transfers     Boolean?               @default(false)
-  offers_excursions    Boolean?               @default(false)
-  offers_tours         Boolean?               @default(false)
-  created_at           DateTime?              @default(now()) @db.Timestamp(6)
-  updated_at           DateTime?              @default(now()) @db.Timestamp(6)
-  excursion_trip_items excursion_trip_items[]
-  tour_trip_items      tour_trip_items[]
-  transfer_trip_items  transfer_trip_items[]
+  id                               Int                    @id @default(autoincrement())
+  name                             String                 @unique @db.VarChar(100)
+  description                      String?
+  email                            String?                @db.VarChar(100)
+  telephone                        String?                @db.VarChar(20)
+  location                         String?                @db.VarChar(255)
+  offers_transfers                 Boolean?               @default(false)
+  offers_excursions                Boolean?               @default(false)
+  offers_tours                     Boolean?               @default(false)
+  created_at                       DateTime?              @default(now()) @db.Timestamp(6)
+  updated_at                       DateTime?              @default(now()) @db.Timestamp(6)
+  excursion_trip_items             excursion_trip_items[]
+  tour_trip_items                  tour_trip_items[]
+  transfer_trip_items              transfer_trip_items[]
+  cancellation_allowed_before_days Int?                   @default(1) @map("cancellation_allowed_before_days")
+  payment_deadline_before_days     Int?                   @default(1) @map("payment_deadline_before_days")
+  transfer_price                   Decimal?               @default(0) @map("transfer_price") @db.Decimal(10, 2)
+  excursions_price                 Decimal?               @default(0) @map("excursions_price") @db.Decimal(10, 2)
+  tours_price                      Decimal?               @default(0) @map("tours_price") @db.Decimal(10, 2)
+  score                            BigInt?                @default(0)
+  currency_id                      Int?                   @default(4)
+  organization_id                  Int?
 }
 
 model tour_pricing {
@@ -728,36 +736,57 @@ model travel_checklists {
 }
 
 model trips {
-  id                   Int                    @id @default(autoincrement())
-  uuid                 String?                @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  agent_id             Int?
-  client_name          String                 @db.VarChar(100)
-  client_phone         String                 @db.VarChar(20)
-  number_of_adults     Int
-  number_of_kids       Int
-  booking_reference    String?                @db.VarChar(100)
-  file_reference       String?                @db.VarChar(100)
-  remarks              String?
-  total_amount         Decimal?               @db.Decimal(20, 2)
-  discount_amount      Decimal?               @db.Decimal(10, 2)
-  final_amount         Decimal?               @db.Decimal(20, 2)
-  approved             Boolean?               @default(false)
-  declined             Boolean?               @default(false)
-  created_at           DateTime?              @default(now()) @db.Timestamp(6)
-  updated_at           DateTime?              @default(now()) @db.Timestamp(6)
-  trip_start_date      DateTime?              @db.Date
-  client_email         String?                @db.VarChar(100)
-  user_id              Int?
-  is_booking           Boolean?               @default(false)
-  amount_paid          Decimal?               @default(0) @db.Decimal(20, 2)
-  penalty_cost         Decimal?               @default(0) @db.Decimal(20, 2)
-  status               String?                @default("Pending") @db.VarChar(50)
-  excursion_trip_items excursion_trip_items[]
-  flight_trip_items    flight_trip_items[]
-  hotel_trip_items     hotel_trip_items[]
-  invoices             invoices?
-  other_trip_items     other_trip_items[]
-  tour_trip_items      tour_trip_items[]
-  transfer_trip_items  transfer_trip_items[]
-  agents               Agent?                 @relation(fields: [agent_id], references: [id], onUpdate: NoAction)
+  id                               Int                    @id @default(autoincrement())
+  uuid                             String?                @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  agent_id                         Int?
+  client_name                      String                 @db.VarChar(100)
+  client_phone                     String                 @db.VarChar(20)
+  number_of_adults                 Int
+  number_of_kids                   Int
+  booking_reference                String?                @db.VarChar(100)
+  file_reference                   String?                @db.VarChar(100)
+  remarks                          String?
+  total_amount                     Decimal?               @db.Decimal(20, 2)
+  discount_amount                  Decimal?               @db.Decimal(10, 2)
+  final_amount                     Decimal?               @db.Decimal(20, 2)
+  approved                         Boolean?               @default(false)
+  declined                         Boolean?               @default(false)
+  created_at                       DateTime?              @default(now()) @db.Timestamp(6)
+  updated_at                       DateTime?              @default(now()) @db.Timestamp(6)
+  trip_start_date                  DateTime?              @db.Date
+  client_email                     String?                @db.VarChar(100)
+  user_id                          Int?
+  is_booking                       Boolean?               @default(false)
+  amount_paid                      Decimal?               @default(0) @db.Decimal(20, 2)
+  penalty_cost                     Decimal?               @default(0) @db.Decimal(20, 2)
+  status                           String?                @default("Pending") @db.VarChar(50)
+  include_assistance_fee           Boolean?               @default(true)
+  assistance_fee_amount            Decimal?               @default(1000) @db.Decimal(10, 2)
+  include_description_in_itinerary Boolean?               @default(false)
+  received_amount                  Decimal?               @default(0) @db.Decimal(20, 2)
+  balance                          Decimal?               @default(0) @db.Decimal(20, 2)
+  payment_date                     DateTime?              @db.Timestamp(6)
+  payment_reference                String?                @db.VarChar(255)
+  payment_deadline                 DateTime?              @db.Timestamp(6)
+  cancellation_deadline            DateTime?              @db.Timestamp(6)
+  affiliate_coupon_code            String?                @db.VarChar(50)
+  affiliate_partner_id             Int?
+  affiliate_commission_rate        Decimal?               @default(0) @db.Decimal(10, 2)
+  affiliate_commission_amount      Decimal?               @default(0) @db.Decimal(10, 2)
+  affiliate_commission_status      String?                @default("none") @db.VarChar(20)
+  affiliate_discount_applied       Decimal?               @default(0) @db.Decimal(10, 2)
+  utm_source                       String?                @db.VarChar(100)
+  utm_medium                       String?                @db.VarChar(100)
+  utm_campaign                     String?                @db.VarChar(100)
+  utm_content                      String?                @db.VarChar(100)
+  utm_term                         String?                @db.VarChar(100)
+  referral_source                  String?                @db.VarChar(100)
+  excursion_trip_items             excursion_trip_items[]
+  flight_trip_items                flight_trip_items[]
+  hotel_trip_items                 hotel_trip_items[]
+  invoices                         invoices?
+  other_trip_items                 other_trip_items[]
+  tour_trip_items                  tour_trip_items[]
+  transfer_trip_items              transfer_trip_items[]
+  agents                           Agent?                 @relation(fields: [agent_id], references: [id], onUpdate: NoAction)
 }

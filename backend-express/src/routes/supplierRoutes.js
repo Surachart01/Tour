@@ -11,7 +11,7 @@ router.use(validateJWT);
 router.post('/suppliers', authorize('admin'), createSupplier);
 router.get('/suppliers/names', authorize('admin'), listSupplierNames);
 router.get('/suppliers/all', authorize('admin'), listAllSuppliers);
-router.get('/suppliers', (req, res, next) => {
+router.get('/suppliers', authorize('admin'), (req, res, next) => {
   if (req.query.city) return listSuppliersByLocation(req, res, next);
   return listAllSuppliers(req, res, next);
 });

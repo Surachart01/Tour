@@ -16,13 +16,11 @@ const router = express.Router();
 router.post('/webhooks/stripe', handleStripeWebhook);
 router.post('/webhooks/razorpay', handleRazorpayWebhook);
 
-router.use(validateJWT);
-
-router.post('/payments/create-intent', createPaymentIntent);
-router.post('/payments/confirm', confirmPayment);
-router.get('/payments/status/:id', getPaymentStatus);
-router.post('/payments/cancel/:id', cancelPayment);
-router.get('/payments/history', getUserTransactions);
+router.post('/payments/create-intent', validateJWT, authorize('agent', 'admin', 'free_agent'), createPaymentIntent);
+router.post('/payments/confirm', validateJWT, authorize('agent', 'admin', 'free_agent'), confirmPayment);
+router.get('/payments/status/:id', validateJWT, authorize('agent', 'admin', 'free_agent'), getPaymentStatus);
+router.post('/payments/cancel/:id', validateJWT, authorize('agent', 'admin', 'free_agent'), cancelPayment);
+router.get('/payments/history', validateJWT, authorize('agent', 'admin', 'free_agent'), getUserTransactions);
 
 export default router;
 

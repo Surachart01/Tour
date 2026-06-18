@@ -1,4 +1,37 @@
 import prisma from '../config/db.js';
+import { calculateTransferCostLogic } from '../utils/pricing.js';
+
+export function formatTransferResponse(transfer) {
+  if (!transfer) return null;
+  const prices = (transfer.transfer_pricing || []).map(p => ({
+    id: p.id,
+    transfer_id: p.transfer_id,
+    start_date: p.start_date ? (p.start_date instanceof Date ? p.start_date.toISOString().split('T')[0] : String(p.start_date)) : '',
+    end_date: p.end_date ? (p.end_date instanceof Date ? p.end_date.toISOString().split('T')[0] : String(p.end_date)) : '',
+    pax: p.pax,
+    price: p.price ? parseFloat(p.price) : 0,
+    cost: p.cost ? parseFloat(p.cost) : 0,
+    currency_id: p.currency_id
+  }));
+
+  return {
+    id: transfer.id,
+    transfer_type: transfer.transfer_type,
+    city: transfer.city,
+    description: transfer.description,
+    departure: transfer.departure,
+    arrival: transfer.arrival,
+    supplier_name: transfer.supplier_name,
+    user_id: transfer.user_id,
+    country: transfer.country,
+    sic_price_adult: transfer.sic_price_adult ? parseFloat(transfer.sic_price_adult) : 0,
+    sic_price_child: transfer.sic_price_child ? parseFloat(transfer.sic_price_child) : 0,
+    supplier_id: transfer.supplier_id,
+    display_order: transfer.display_order,
+    order: (transfer.display_order === 0 || transfer.display_order === null || transfer.display_order === undefined) ? 100000 : transfer.display_order,
+    prices
+  };
+}
 
 export async function createTransfer(req, res, next) {
   try {
@@ -24,7 +57,7 @@ export async function createTransfer(req, res, next) {
       },
       include: { transfer_pricing: true }
     });
-    return res.status(201).json(transfer);
+    return res.status(201).json(formatTransferResponse(transfer));
   } catch (err) { next(err); }
 }
 
@@ -37,17 +70,21 @@ export async function getTransferByID(req, res, next) {
       include: { transfer_pricing: { include: { currencies: true } } }
     });
     if (!transfer) return res.status(404).send('Transfer not found');
-    return res.json(transfer);
+    return res.json(formatTransferResponse(transfer));
   } catch (err) { next(err); }
 }
 
 export async function getTransfers(req, res, next) {
   try {
     const transfers = await prisma.transfers.findMany({
-      include: { transfer_pricing: { include: { currencies: true } } },
-      orderBy: [{ display_order: 'asc' }, { departure: 'asc' }]
+      include: { transfer_pricing: { include: { currencies: true } } }
     });
-    return res.json(transfers);
+    const formatted = transfers.map(formatTransferResponse);
+    formatted.sort((a, b) => {
+      if (a.order !== b.order) return a.order - b.order;
+      return a.departure.localeCompare(b.departure);
+    });
+    return res.json(formatted);
   } catch (err) { next(err); }
 }
 
@@ -59,7 +96,12 @@ export async function getTransferByCity(req, res, next) {
       where: { city },
       include: { transfer_pricing: { include: { currencies: true } } }
     });
-    return res.json(transfers);
+    const formatted = transfers.map(formatTransferResponse);
+    formatted.sort((a, b) => {
+      if (a.order !== b.order) return a.order - b.order;
+      return a.departure.localeCompare(b.departure);
+    });
+    return res.json(formatted);
   } catch (err) { next(err); }
 }
 
@@ -87,7 +129,12 @@ export async function listAvailableTransfersByCity(req, res, next) {
         } : { include: { currencies: true } }
       }
     });
-    return res.json(transfers);
+    const formatted = transfers.map(formatTransferResponse);
+    formatted.sort((a, b) => {
+      if (a.order !== b.order) return a.order - b.order;
+      return a.departure.localeCompare(b.departure);
+    });
+    return res.json(formatted);
   } catch (err) { next(err); }
 }
 
@@ -134,6 +181,44 @@ export async function deleteTransfer(req, res, next) {
 
 export async function calculateTransfersCost(req, res, next) {
   try {
-    return res.json({ final_cost: 0, discount: 0 });
-  } catch (err) { next(err); }
+    const request = req.body;
+    const claims = req.user;
+
+    let markupGroup = 'TO Bronze'; // Default fallback
+    if (claims) {
+      if (claims.role !== 'admin') {
+        markupGroup = claims.markup_group || '';
+      }
+    }
+
+    if (request.agent_name) {
+      const agent = await prisma.agent.findUnique({
+        where: { name: request.agent_name }
+      });
+      if (agent) {
+        markupGroup = agent.markupGroup || '';
+      }
+    }
+
+    const markups = await prisma.markups.findMany({
+      include: { hotel_markup_percentages: true, currencies: true }
+    });
+
+    const transfer = await prisma.transfers.findUnique({
+      where: { id: parseInt(request.transfer_id) },
+      include: { transfer_pricing: true }
+    });
+
+    if (!transfer) {
+      return res.status(404).send('Transfer not found');
+    }
+
+    const final_cost = calculateTransferCostLogic(transfer, request, markupGroup, markups);
+    return res.json({ final_cost, discount: 0 });
+  } catch (err) {
+    if (err.message && (err.message.includes('not found') || err.message.includes('not available') || err.message.includes('invalid'))) {
+      return res.status(400).send(err.message);
+    }
+    next(err);
+  }
 }

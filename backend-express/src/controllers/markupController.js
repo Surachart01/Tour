@@ -49,9 +49,9 @@ export async function getAllMarkups(req, res, next) {
 export async function listMarkupGroupNames(req, res, next) {
   try {
     const markups = await prisma.markups.findMany({
-      select: { id: true, markup_group: true }
+      select: { markup_group: true }
     });
-    return res.json(markups);
+    return res.json(markups.map(m => m.markup_group));
   } catch (err) { next(err); }
 }
 

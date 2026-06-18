@@ -25,6 +25,15 @@ router.get('/quotations/:id/generate-pdf', authorize('admin', 'agent'), generate
 router.post('/quotations/:id/send-email', authorize('admin', 'agent'), sendQuotationEmail);
 router.delete('/quotations/:id', authorize('agent', 'admin'), deleteQuotation);
 
+// Trip alias routes (for frontend-vite compatibility)
+router.post('/trips', authorize('agent', 'admin'), createQuotation);
+router.get('/trips', authorize('agent', 'admin'), listQuotations);
+router.get('/trips/:id', authorize('agent', 'admin'), getQuotation);
+router.put('/trips/:id', authorize('agent', 'admin'), updateQuotation);
+router.delete('/trips/:id', authorize('agent', 'admin'), deleteQuotation);
+router.post('/trips/:id/finalize', authorize('agent', 'admin'), finalizeQuotation);
+router.post('/trips/:id/cancel', authorize('agent', 'admin'), cancelQuotation);
+
 // Booking routes
 router.get('/bookings/date-range', authorize('admin', 'agent'), listBookingsByDateRange);
 router.get('/bookings/payments/date-range', authorize('admin', 'agent'), listPaymentInfoByDateRange);
