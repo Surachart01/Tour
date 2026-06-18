@@ -16,5 +16,10 @@ EOF
 
 echo ">>> config.js written successfully"
 
+# Dynamic PORT replacement for Nginx (Railway compatibility)
+PORT="${PORT:-80}"
+echo ">>> Configuring Nginx to listen on port: ${PORT}"
+sed -i "s/listen 80;/listen ${PORT};/g" /etc/nginx/conf.d/default.conf
+
 # Start Nginx in foreground
 exec nginx -g 'daemon off;'
