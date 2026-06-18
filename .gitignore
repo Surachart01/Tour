@@ -1,6 +1,8 @@
 # Node.js / Frontends & Backends
 **/node_modules/
 **/dist/
+!frontend-main/vendors/**/dist/
+!frontend-main/vendors/**/dist/**
 **/dist-ssr/
 **/*.local
 **/uploads/
