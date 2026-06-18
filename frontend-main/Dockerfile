@@ -13,7 +13,7 @@ RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy entire production directory to nginx html root
-COPY production/ /usr/share/nginx/html/
+COPY production/ /usr/share/nginx/html/production/
 
 # Copy vendors directory (CSS/JS libraries referenced by HTML)
 COPY vendors/ /usr/share/nginx/html/vendors/
