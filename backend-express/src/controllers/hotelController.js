@@ -410,12 +410,10 @@ export async function calculateHotelCost(req, res, next) {
       return res.status(404).send('Hotel not found');
     }
 
-    // Fetch matching room types for the requested names
-    const roomTypeNames = (request.room_types || []).map(rt => rt.room_type);
+    // Fetch matching room types for the requested hotel
     const matchingRoomTypes = await prisma.room_types.findMany({
       where: {
-        hotel_id: parseInt(request.hotel_id),
-        name: { in: roomTypeNames }
+        hotel_id: parseInt(request.hotel_id)
       }
     });
 
