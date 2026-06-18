@@ -1,0 +1,3738 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Tour</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- FontAwesome 5 for modern icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
+    <style>
+      /* Modern form enhancements */
+      .form-control:focus {
+        border-color: #1abb9c !important;
+        box-shadow: 0 0 0 0.2rem rgba(26, 187, 156, 0.25) !important;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #1abb9c 0%, #16a085 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary:hover {
+        background: linear-gradient(135deg, #16a085 0%, #138d75 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-secondary:hover {
+        background: linear-gradient(135deg, #7f8c8d 0%, #6c7b7d 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-success {
+        background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-success:hover {
+        background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-warning {
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-warning:hover {
+        background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-danger {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-danger:hover {
+        background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+        transform: translateY(-1px);
+      }
+
+      .form-control {
+        height: 45px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        background-color: #fafbfc;
+        transition: all 0.3s ease;
+      }
+
+      .form-control:hover {
+        border-color: #1abb9c;
+      }
+
+      textarea.form-control {
+        height: auto;
+        min-height: 100px;
+      }
+
+      .form-group label {
+        font-weight: 600;
+        color: #34495e;
+        margin-bottom: 8px;
+      }
+
+      .table {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .table thead th {
+        background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+        color: white;
+        font-weight: 600;
+        border: none;
+        padding: 15px;
+      }
+
+      .table tbody td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        border-color: #ecf0f1;
+      }
+
+      .table tbody tr:hover {
+        background-color: #f8f9fa;
+      }
+
+      .modal-content {
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      .modal-header {
+        background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+        color: white;
+        border-radius: 10px 10px 0 0;
+        border-bottom: none;
+      }
+
+      .modal-title {
+        font-weight: 600;
+      }
+
+      .close {
+        color: white;
+        opacity: 0.8;
+        text-shadow: none;
+      }
+
+      .close:hover {
+        color: white;
+        opacity: 1;
+      }
+
+      .input-group-append .btn {
+        height: 45px;
+        border-radius: 0 6px 6px 0;
+      }
+
+      /* Custom tooltip styles */
+      .tooltip-btn {
+        position: relative;
+        display: inline-block;
+      }
+
+      .tooltip-btn .tooltip-text {
+        visibility: hidden;
+        width: 80px;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 4px;
+        padding: 5px 8px;
+        position: absolute;
+        z-index: 1000;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -40px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 12px;
+        font-weight: normal;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+
+      .tooltip-btn .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #333 transparent transparent transparent;
+      }
+
+      .tooltip-btn:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+      }
+
+      .tooltip-btn .btn {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+
+      .tooltip-btn .btn i {
+        pointer-events: none;
+      }
+
+      /* Validity Period Styling */
+      .validity-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .days-selector {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .day-pill {
+        position: relative;
+        display: inline-block;
+      }
+
+      .day-pill input[type="checkbox"] {
+        display: none;
+      }
+
+      .day-pill label {
+        display: inline-block;
+        padding: 8px 16px;
+        background-color: #6c757d;
+        color: white;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 14px;
+        font-weight: 500;
+        min-width: 50px;
+        text-align: center;
+        user-select: none;
+      }
+
+      .day-pill label:hover {
+        background-color: #5a6268;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      .day-pill input[type="checkbox"]:checked + label {
+        background-color: #1abb9c;
+        color: white;
+        box-shadow: 0 2px 8px rgba(26, 187, 156, 0.3);
+      }
+
+      /* Activity Container Styling */
+      .activity-container {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        background-color: #f8f9fa;
+      }
+
+      .activity-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .activity-header h6 {
+        margin: 0;
+        color: #495057;
+        font-weight: 600;
+      }
+
+      .activity-item {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 10px;
+        position: relative;
+      }
+
+      /* Day Management Styling */
+      .day-section {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background-color: #ffffff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .day-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+      }
+
+      .day-header h5 {
+        margin: 0;
+        color: #495057;
+        font-weight: 600;
+      }
+
+      .remove-day-btn {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        border: none;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .remove-day-btn:hover {
+        background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+        transform: translateY(-1px);
+      }
+
+      .day-toggle-btn {
+        background: linear-gradient(135deg, #1abb9c 0%, #16a085 100%);
+        border: none;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-right: 10px;
+      }
+
+      .day-toggle-btn:hover {
+        background: linear-gradient(135deg, #16a085 0%, #138d75 100%);
+      }
+
+      .day-content {
+        transition: all 0.3s ease;
+        overflow: hidden;
+      }
+
+      .day-content.collapsed {
+        display: none;
+      }
+
+      .day-content.expanded {
+        display: block;
+      }
+
+      .toggle-icon {
+        transition: transform 0.3s ease;
+      }
+
+      .toggle-icon.rotated {
+        transform: rotate(180deg);
+      }
+
+      /* Responsive design */
+      @media (max-width: 768px) {
+        .days-selector {
+          justify-content: center;
+        }
+
+        .day-pill label {
+          padding: 6px 12px;
+          font-size: 12px;
+          min-width: 40px;
+        }
+
+        .activity-header {
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .tooltip-btn .btn {
+          padding: 4px 6px;
+          font-size: 12px;
+        }
+      }
+
+      /* Full-width header styling - matching edit_transfer.html */
+      .full-width-header {
+        background: linear-gradient(135deg, #2a3f54 0%, #34495e 100%);
+        color: white;
+        padding: 30px 60px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .header-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .header-left {
+        display: flex;
+        align-items: center;
+      }
+
+      .page-title {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+      }
+
+      .page-title i {
+        font-size: 28px;
+        margin-right: 15px;
+        color: #1abb9c;
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 15px;
+      }
+
+      .header-actions .btn {
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        padding: 8px 20px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+      }
+
+      /* Main content styling - matching edit_transfer.html */
+      .main-content {
+        flex: 1;
+        padding: 40px 60px;
+        background: #ecf0f1;
+      }
+
+      .content-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        padding: 40px;
+      }
+
+      /* Form enhancements with icons */
+      .form-group label {
+        display: flex;
+        align-items: center;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 8px;
+        font-size: 14px;
+      }
+
+      .form-group label i {
+        margin-right: 8px;
+        color: #1abb9c;
+        width: 16px;
+        text-align: center;
+      }
+
+      /* Enhanced section headers */
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e9ecef;
+      }
+
+      .section-header h4 {
+        margin: 0;
+        color: #2c3e50;
+        font-weight: 700;
+        font-size: 1.4rem;
+      }
+
+      .section-header i {
+        margin-right: 12px;
+        color: #1abb9c;
+        font-size: 1.2rem;
+      }
+
+      .section-header .section-actions {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      /* Responsive design */
+      @media (max-width: 768px) {
+        .header-content {
+          flex-direction: column;
+          text-align: center;
+          gap: 20px;
+        }
+
+        .page-title {
+          font-size: 2rem;
+        }
+
+        .header-actions {
+          justify-content: center;
+          flex-wrap: wrap;
+        }
+
+        .content-card {
+          padding: 20px;
+          margin: 0 15px 30px 15px;
+        }
+
+        .full-width-header {
+          padding: 30px 0;
+        }
+      }
+
+      @media (max-width: 576px) {
+        .page-title {
+          font-size: 1.8rem;
+        }
+
+        .header-actions .btn {
+          padding: 10px 20px;
+          font-size: 14px;
+        }
+      }
+
+      /* Multiple excursions/transfers styling */
+      .activity-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .add-excursion-btn,
+      .add-transfer-btn {
+        background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        border: none;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .add-excursion-btn:hover,
+      .add-transfer-btn:hover {
+        background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+        transform: translateY(-1px);
+      }
+
+      .remove-excursion-btn,
+      .remove-transfer-btn {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        border: none;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+      }
+
+      .remove-excursion-btn:hover,
+      .remove-transfer-btn:hover {
+        background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+        transform: translateY(-1px);
+      }
+
+      .excursions-list .activity-item:not(:last-child),
+      .transfers-list .activity-item:not(:last-child) {
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e9ecef;
+      }
+    </style>
+  </head>
+
+  <body class="nav-md">
+    <div
+      class="container-fluid"
+      style="
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        padding: 0;
+      "
+    >
+      <!-- Full-width gradient header -->
+      <div class="full-width-header">
+        <div class="container">
+          <div class="header-content">
+            <div class="header-left">
+              <h1 class="page-title">
+                <i class="fas fa-route mr-3"></i>Edit Tour
+              </h1>
+            </div>
+            <div class="header-actions">
+              <button
+                type="button"
+                class="btn btn-outline-light"
+                onclick="window.location.href='tours.html'"
+                style="
+                  border: 2px solid rgba(255, 255, 255, 0.3);
+                  padding: 8px 20px;
+                  border-radius: 6px;
+                  transition: all 0.3s ease;
+                "
+              >
+                <i class="fas fa-arrow-left" style="margin-right: 8px"></i>
+                Back to Tours
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main content area -->
+      <div class="main-content">
+        <div class="container">
+          <div class="content-card">
+            <form id="tourForm">
+              <div class="row">
+                <div class="col-md-6 col-sm-6 form-group">
+                  <label for="tourName">
+                    <i class="fas fa-tag"></i>Name *
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="tourName"
+                    placeholder="Enter tour name"
+                    required
+                  />
+                </div>
+                <div class="col-md-6 col-sm-6 form-group">
+                  <label for="tourCode">
+                    <i class="fas fa-map-marker-alt"></i>Start City *
+                  </label>
+                  <select class="form-control" id="tourCode" required>
+                    <option value="">Select a city</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-4 col-sm-4 form-group">
+                  <label for="tourCategory">
+                    <i class="fas fa-star"></i>Category *
+                  </label>
+                  <select class="form-control" id="tourCategory" required>
+                    <option value="">Select Category</option>
+                    <option value="Standard">Standard</option>
+                    <option value="Superior">Superior</option>
+                    <option value="Deluxe">Deluxe</option>
+                  </select>
+                </div>
+                <div class="col-md-4 col-sm-4 form-group">
+                  <label for="tourDuration">
+                    <i class="fas fa-clock"></i>Duration (Days) *
+                  </label>
+                  <div class="d-flex">
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="tourDuration"
+                      placeholder="Enter number of days"
+                      min="1"
+                      readonly
+                      required
+                    />
+                    <button
+                      type="button"
+                      class="btn btn-success"
+                      id="addDayBtn"
+                      title="Add Day"
+                    >
+                      <i class="fas fa-plus"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="col-md-4 col-sm-4 form-group">
+                  <label for="tourDeparture">
+                    <i class="fas fa-plane-departure"></i>Departure Type *
+                  </label>
+                  <select class="form-control" id="tourDeparture" required>
+                    <option value="">Select Departure Type</option>
+                    <option value="SIC">SIC</option>
+                    <option value="PVT">PVT</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-12 col-sm-12 form-group">
+                  <label for="tourDescription">
+                    <i class="fas fa-align-left"></i>Description *
+                  </label>
+                  <textarea
+                    class="form-control"
+                    id="tourDescription"
+                    rows="3"
+                    placeholder="Enter description"
+                    required
+                  ></textarea>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-12 col-sm-12 form-group">
+                  <label for="tourRoute">
+                    <i class="fas fa-route"></i>Route *
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="tourRoute"
+                    placeholder="Enter route"
+                    required
+                  />
+                </div>
+              </div>
+
+              <!-- Tour Validity Period Section -->
+              <div class="form-group">
+                <div class="section-header">
+                  <i class="fas fa-calendar-alt"></i>
+                  <h4>Tour Validity Period</h4>
+                </div>
+                <div class="validity-section">
+                  <div>
+                    <label>Valid Days of Week *</label>
+                    <div class="days-selector mt-2">
+                      <div class="day-pill" data-day="1">
+                        <input type="checkbox" id="tourDay1" value="1" />
+                        <label for="tourDay1">Mon</label>
+                      </div>
+                      <div class="day-pill" data-day="2">
+                        <input type="checkbox" id="tourDay2" value="2" />
+                        <label for="tourDay2">Tue</label>
+                      </div>
+                      <div class="day-pill" data-day="3">
+                        <input type="checkbox" id="tourDay3" value="3" />
+                        <label for="tourDay3">Wed</label>
+                      </div>
+                      <div class="day-pill" data-day="4">
+                        <input type="checkbox" id="tourDay4" value="4" />
+                        <label for="tourDay4">Thu</label>
+                      </div>
+                      <div class="day-pill" data-day="5">
+                        <input type="checkbox" id="tourDay5" value="5" />
+                        <label for="tourDay5">Fri</label>
+                      </div>
+                      <div class="day-pill" data-day="6">
+                        <input type="checkbox" id="tourDay6" value="6" />
+                        <label for="tourDay6">Sat</label>
+                      </div>
+                      <div class="day-pill" data-day="0">
+                        <input type="checkbox" id="tourDay0" value="0" />
+                        <label for="tourDay0">Sun</label>
+                      </div>
+                    </div>
+                    <small class="form-text text-muted mt-2">
+                      Select the days of the week when this tour is available
+                      during the validity period.
+                    </small>
+                  </div>
+                </div>
+
+                <!-- Save and Cancel buttons after Tour Validity Period -->
+                <div class="text-center mt-4 mb-4">
+                  <button type="submit" class="btn btn-primary btn-lg mr-3">
+                    <i class="fas fa-save mr-2"></i>Save Changes
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-lg"
+                    onclick="window.location.href='tours.html'"
+                  >
+                    <i class="fas fa-times mr-2"></i>Cancel
+                  </button>
+                </div>
+              </div>
+
+              <!-- Itinerary Section -->
+              <div class="form-group mt-4">
+                <div class="section-header">
+                  <h4><i class="fas fa-list-ol"></i>Itinerary Details</h4>
+                  <div class="section-actions">
+                    <span class="badge badge-info"
+                      >Total Days: <span id="totalDaysCount">0</span></span
+                    >
+                    <button
+                      type="button"
+                      class="btn btn-success btn-sm"
+                      id="addDayBtn2"
+                      onclick="addNewDay()"
+                    >
+                      <i class="fas fa-plus mr-1"></i>Add Day
+                    </button>
+                  </div>
+                </div>
+                <div id="itineraryDetails"></div>
+              </div>
+
+              <!-- Prices Section -->
+              <div class="form-group">
+                <div class="section-header">
+                  <i class="fas fa-dollar-sign"></i>
+                  <h4>Tour Prices</h4>
+                  <div class="ml-auto">
+                    <button
+                      type="button"
+                      class="btn btn-success btn-sm"
+                      data-toggle="modal"
+                      data-target="#addTourPriceModal"
+                    >
+                      <i class="fas fa-plus mr-1"></i>Add Price
+                    </button>
+                  </div>
+                </div>
+
+                <table class="table table-striped mt-3" id="tourPriceTable">
+                  <thead>
+                    <tr>
+                      <th>
+                        <i class="fas fa-calendar-day mr-1"></i>Start Date
+                      </th>
+                      <th><i class="fas fa-calendar-day mr-1"></i>End Date</th>
+                      <th><i class="fas fa-users mr-1"></i>Pax</th>
+                      <th><i class="fas fa-bed mr-1"></i>Single Price</th>
+                      <th><i class="fas fa-bed mr-1"></i>Double Price</th>
+                      <th><i class="fas fa-bed mr-1"></i>Triple Price</th>
+                      <th><i class="fas fa-cogs mr-1"></i>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tourPriceTableBody"></tbody>
+                </table>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for Adding/Editing Tour Prices -->
+    <div
+      class="modal fade"
+      id="addTourPriceModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="addTourPriceModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addTourPriceModalLabel">
+              Add/Edit Tour Price
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="tourPriceForm" novalidate>
+              <div class="form-group">
+                <label for="modalStartDate">Start Date *</label>
+                <input
+                  type="date"
+                  id="modalStartDate"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="modalEndDate">End Date *</label>
+                <input
+                  type="date"
+                  id="modalEndDate"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="modalPax">Pax</label>
+                <input
+                  type="number"
+                  id="modalPax"
+                  class="form-control"
+                  placeholder="Enter Number of Passenegers"
+                />
+              </div>
+              <div class="form-group">
+                <label for="modalSinglePrice">Single Price</label>
+                <input
+                  type="number"
+                  id="modalSinglePrice"
+                  class="form-control"
+                  placeholder="Enter Single Price"
+                />
+              </div>
+              <div class="form-group">
+                <label for="modalDoublePrice">Double Price</label>
+                <input
+                  type="number"
+                  id="modalDoublePrice"
+                  class="form-control"
+                  placeholder="Enter Double Price"
+                />
+              </div>
+              <div class="form-group">
+                <label for="modalTriplePrice">Triple Price</label>
+                <input
+                  type="number"
+                  id="modalTriplePrice"
+                  class="form-control"
+                  placeholder="Enter Triple Price"
+                />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="button" class="btn btn-primary" id="saveTourPriceBtn">
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="js/config.js"></script>
+
+    <script>
+      // Global variables for tour pricing management
+      let tourPricings = [];
+
+      // Global cache for preloaded data
+      let dataCache = {
+        hotels: {}, // city -> hotels array
+        excursions: {}, // city -> excursions array  
+        transfers: {}, // city -> transfers array
+        roomTypes: {} // hotel_id -> room_types array
+      };
+
+      document.addEventListener("DOMContentLoaded", function () {
+        // Function to get user's profile country
+        async function getProfileCountry() {
+          try {
+            const token = localStorage.getItem("token");
+            const response = await fetch(`${Endpoint}/api/v1/profile`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+            
+            if (response.ok) {
+              const profile = await response.json();
+              console.log("Profile data:", profile);
+              const countryCode = profile.country_code || 'TH';
+              console.log("Using country code:", countryCode);
+              return countryCode;
+            } else {
+              console.warn("Profile API failed with status:", response.status);
+            }
+          } catch (error) {
+            console.warn("Could not fetch profile country:", error);
+          }
+          return 'TH'; // Default fallback country
+        }
+
+        // Function to populate cities dropdown with country filtering
+        async function populateCitiesDropdown(selector) {
+          const token = localStorage.getItem("token");
+          if (!token) {
+            alert("You are not authorized. Please log in first.");
+            window.location.href = "login.html";
+            return Promise.reject("No token");
+          }
+
+          try {
+            // Get user's profile country
+            const countryCode = await getProfileCountry();
+            console.log(`Loading cities for country: ${countryCode}`);
+
+            // Try country-filtered API first
+            const response = await fetch(`${Endpoint}/api/v1/locations/countries/${countryCode}/cities`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              console.log("Country-filtered cities response for", selector, ":", data);
+              
+              if (!data || (!Array.isArray(data) && !data.cities)) {
+                console.error("No cities data received for profile country");
+                // Don't fallback to global cities for main dropdown
+                return Promise.reject("No cities available for profile country");
+              }
+              
+              populateCityDropdowns(selector, data);
+              return Promise.resolve();
+            } else {
+              console.error("Country-filtered API failed - this should not happen");
+              // Don't fallback to global cities for main dropdown
+              return Promise.reject("Country-filtered API failed");
+            }
+          } catch (error) {
+            console.error("Error in populateCitiesDropdown:", error);
+            return Promise.reject("Error loading cities: " + error.message);
+          }
+        }
+
+        // Fallback function for global cities
+        async function populateGlobalCities(selector) {
+          const token = localStorage.getItem("token");
+          const response = await fetch(`${Endpoint}/api/v1/cities`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          })
+          if (!response.ok) {
+            throw new Error(`Global cities API failed: ${response.status}`);
+          }
+          const data = await response.json();
+          console.log("Global cities fallback response for", selector, ":", data);
+          populateCityDropdowns(selector, data);
+          return Promise.resolve();
+        }
+
+        // Helper function to populate city dropdowns from API data
+        function populateCityDropdowns(selector, data) {
+          // Handle different response formats
+          let cities;
+          if (Array.isArray(data)) {
+            cities = data;
+          } else if (data && Array.isArray(data.cities)) {
+            cities = data.cities.map((cityObj) => {
+              if (typeof cityObj === "string") {
+                return cityObj;
+              } else if (cityObj && cityObj.city) {
+                return cityObj.city;
+              }
+              return cityObj;
+            });
+          } else if (data && typeof data === "object") {
+            cities = Object.values(data)
+              .filter((item) => typeof item === "string" || (item && item.city))
+              .map((item) => (typeof item === "string" ? item : item.city));
+          } else {
+            console.error("Unexpected cities data format:", data);
+            cities = [];
+          }
+
+          console.log("Processed city names for", selector, ":", cities.length, "cities");
+
+          // Handle different selector formats
+          let cityDropdowns = [];
+          if (selector.startsWith('#')) {
+            const dropdown = document.getElementById(selector.substring(1));
+            if (dropdown) cityDropdowns = [dropdown];
+          } else if (selector.startsWith('.')) {
+            cityDropdowns = Array.from(document.querySelectorAll(selector));
+          } else {
+            const byId = document.getElementById(selector);
+            if (byId) {
+              cityDropdowns = [byId];
+            } else {
+              cityDropdowns = Array.from(document.querySelectorAll(selector));
+            }
+          }
+
+          if (cityDropdowns.length === 0) {
+            console.error(`No dropdown elements found with selector "${selector}"`);
+            return;
+          }
+
+          cityDropdowns.forEach((dropdown) => {
+            dropdown.innerHTML = '<option value="">Select a city</option>';
+            cities.forEach((city) => {
+              const option = document.createElement("option");
+              option.value = city;
+              option.textContent = city;
+              dropdown.appendChild(option);
+            });
+          });
+
+          console.log(`Successfully loaded ${cities.length} cities into ${cityDropdowns.length} dropdown(s)`);
+        }
+
+        // Main cities dropdown population function
+        function populateMainCitiesDropdown() {
+          return new Promise(async (resolve, reject) => {
+            try {
+              await populateCitiesDropdown("tourCode");
+              resolve();
+            } catch (error) {
+              console.error("Error in populateMainCitiesDropdown:", error);
+              reject(error);
+            }
+          });
+        }
+
+        // Function to preload all data for cities found in tour response
+        async function preloadDataForTourCities(tourDays) {
+          const token = localStorage.getItem("token");
+          if (!token) return;
+
+          // Extract all unique cities from tour days
+          const citiesWithHotels = new Set();
+          const citiesWithExcursions = new Set();
+          const citiesWithTransfers = new Set();
+
+          tourDays.forEach(day => {
+            day.details.forEach(detail => {
+              if (detail.city) {
+                if (detail.type_of_tour === "hotels") {
+                  citiesWithHotels.add(detail.city);
+                } else if (detail.type_of_tour === "excursions") {
+                  citiesWithExcursions.add(detail.city);
+                } else if (detail.type_of_tour === "transfers") {
+                  citiesWithTransfers.add(detail.city);
+                }
+              }
+            });
+          });
+
+          console.log("🚀 Preloading data for cities:", {
+            hotels: Array.from(citiesWithHotels),
+            excursions: Array.from(citiesWithExcursions),
+            transfers: Array.from(citiesWithTransfers)
+          });
+
+          // Create promises for all API calls
+          const promises = [];
+
+          // Load hotels for all cities that have hotel data
+          citiesWithHotels.forEach(city => {
+            if (!dataCache.hotels[city]) {
+              const hotelPromise = fetch(`${Endpoint}/api/v1/hotels?city=${encodeURIComponent(city)}`, {
+                method: "GET",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+              })
+              .then(response => response.json())
+              .then(hotels => {
+                dataCache.hotels[city] = hotels;
+                console.log(`✅ Cached ${hotels.length} hotels for ${city}`);
+                
+                // Also cache room types for each hotel
+                hotels.forEach(hotel => {
+                  if (hotel.room_types && hotel.id) {
+                    dataCache.roomTypes[hotel.id] = hotel.room_types;
+                  }
+                });
+              })
+              .catch(error => {
+                console.error(`❌ Error loading hotels for ${city}:`, error);
+                dataCache.hotels[city] = [];
+              });
+              promises.push(hotelPromise);
+            }
+          });
+
+          // Load excursions for all cities that have excursion data
+          citiesWithExcursions.forEach(city => {
+            if (!dataCache.excursions[city]) {
+              const excursionPromise = fetch(`${Endpoint}/api/v1/excursions?city=${encodeURIComponent(city)}`, {
+                method: "GET",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+              })
+              .then(response => response.json())
+              .then(excursions => {
+                dataCache.excursions[city] = excursions;
+                console.log(`✅ Cached ${excursions.length} excursions for ${city}`);
+              })
+              .catch(error => {
+                console.error(`❌ Error loading excursions for ${city}:`, error);
+                dataCache.excursions[city] = [];
+              });
+              promises.push(excursionPromise);
+            }
+          });
+
+          // Load transfers for all cities that have transfer data
+          citiesWithTransfers.forEach(city => {
+            if (!dataCache.transfers[city]) {
+              const transferPromise = fetch(`${Endpoint}/api/v1/transfers?city=${encodeURIComponent(city)}`, {
+                method: "GET",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+              })
+              .then(response => response.json())
+              .then(transfers => {
+                dataCache.transfers[city] = transfers;
+                console.log(`✅ Cached ${transfers.length} transfers for ${city}`);
+              })
+              .catch(error => {
+                console.error(`❌ Error loading transfers for ${city}:`, error);
+                dataCache.transfers[city] = [];
+              });
+              promises.push(transferPromise);
+            }
+          });
+
+          // Wait for all API calls to complete
+          await Promise.all(promises);
+          console.log("🎉 All data preloaded successfully!", dataCache);
+        }
+
+        populateMainCitiesDropdown();
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          alert("You are not authorized. Please log in first.");
+          window.location.href = "login.html";
+          return;
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const tourId = urlParams.get("id");
+
+        if (!tourId) {
+          alert("Invalid Tour ID.");
+          window.location.href = "tours.html";
+          return;
+        }
+
+        // Fetch tour data by ID
+        fetch(`${Endpoint}/api/v1/tours/${tourId}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => response.json())
+          .then((tour) => {
+            document.getElementById("tourName").value = tour.name;
+            document.getElementById("tourCategory").value = tour.category;
+            document.getElementById("tourDuration").value = tour.duration;
+            document.getElementById("tourDeparture").value = tour.tot;
+            document.getElementById("tourDescription").value = tour.description;
+            document.getElementById("tourRoute").value = tour.route;
+
+            populateMainCitiesDropdown().then(() => {
+              const tourCodeSelect = document.getElementById("tourCode");
+              if (tour.city) {
+                // Check if the city option exists in the country-filtered list
+                const cityOption = Array.from(tourCodeSelect.options).find(
+                  (opt) => opt.value === tour.city
+                );
+                if (cityOption) {
+                  tourCodeSelect.value = tour.city;
+                  console.log("✅ Tour city set successfully:", tour.city);
+                } else {
+                  // Do NOT add cities that are not in the profile country
+                  console.warn(`⚠️ Tour city "${tour.city}" is not available in the current profile country. Please select a city from the available options.`);
+                  // Optionally show an alert to the user
+                  setTimeout(() => {
+                    alert(`The tour city "${tour.city}" is not available in your current country profile. Please select a city from the dropdown.`);
+                  }, 500);
+                }
+              }
+            });
+
+            // Populate tour validity days if available
+            if (tour.available_days && Array.isArray(tour.available_days)) {
+              tour.available_days.forEach((availableDay) => {
+                const checkbox = document.getElementById(
+                  `tourDay${availableDay.day_of_week}`
+                );
+                if (checkbox) {
+                  checkbox.checked = true;
+                }
+              });
+            }
+
+            // Populate itinerary details and prices
+            const uniqueDays = [];
+            const seenDays = new Set();
+
+            tour.tour_days.forEach((dayEntry) => {
+              if (!seenDays.has(dayEntry.day)) {
+                uniqueDays.push(dayEntry);
+                seenDays.add(dayEntry.day);
+              }
+            });
+
+            // Preload all data for cities found in tour, then populate itinerary
+            preloadDataForTourCities(uniqueDays).then(() => {
+              console.log("🎉 Data preloading complete, now populating itinerary");
+              populateItinerary(uniqueDays);
+            }).catch(error => {
+              console.error("❌ Error preloading data:", error);
+              // Still populate itinerary even if preloading fails
+              populateItinerary(uniqueDays);
+            });
+            
+            populatePrices(tour.tour_pricings);
+          })
+          .catch((error) => {
+            console.error("Error fetching tour:", error);
+            alert("Failed to load tour details. Please try again later.");
+          });
+
+        const addDayBtn = document.getElementById("addDayBtn");
+        const itineraryDetails = document.getElementById("itineraryDetails");
+
+        window.addNewDay = function () {
+          const itineraryDetails = document.getElementById("itineraryDetails");
+          const existingDays = itineraryDetails.children.length;
+          const newDayNumber = existingDays + 1;
+
+          const daySection = createDaySection(newDayNumber);
+          itineraryDetails.appendChild(daySection);
+
+          // Initialize components for the new day
+          initializeFlatpickr();
+          populateCitiesDropdown(".city-dropdown-hotel");
+          populateCitiesDropdown(".city-dropdown-excursion");
+          populateCitiesDropdown(".city-dropdown-transfer");
+
+          // Update counters and duration
+          updateTotalDaysCount();
+          updateDurationInput();
+        };
+
+        // Function to remove a day - make global for onclick access
+        window.removeDay = function (button) {
+          const daySection = button.closest(".day-section");
+          const dayNumber = daySection.querySelector("h5").textContent;
+
+          if (
+            confirm(
+              `Are you sure you want to remove ${dayNumber}? This action cannot be undone.`
+            )
+          ) {
+            daySection.remove();
+            updateDayNumbers();
+            updateTotalDaysCount();
+            updateDurationInput();
+          }
+        };
+
+        // Function to update day numbers after deletion
+        function updateDayNumbers() {
+          const daySections = document.querySelectorAll(".day-section");
+          daySections.forEach((section, index) => {
+            const newDayNumber = index + 1;
+            section.dataset.day = newDayNumber;
+
+            // Update day header
+            const dayHeader = section.querySelector("h5");
+            dayHeader.textContent = `Day ${newDayNumber}`;
+          });
+        }
+
+        // Function to update total days count
+        function updateTotalDaysCount() {
+          const totalDays = document.querySelectorAll(".day-section").length;
+          const totalDaysElement = document.getElementById("totalDaysCount");
+          if (totalDaysElement) {
+            totalDaysElement.textContent = totalDays;
+          }
+        }
+
+        // Function to update duration input
+        function updateDurationInput() {
+          const totalDays = document.querySelectorAll(".day-section").length;
+          const durationInput = document.getElementById("tourDuration");
+          durationInput.value = totalDays;
+        }
+
+        addDayBtn.addEventListener("click", addNewDay);
+
+        let currentEditIndex = -1;
+
+        // Make initializeFlatpickr global so it can be called from add functions
+        window.initializeFlatpickr = function () {
+          flatpickr(".from-time, .to-time", {
+            enableTime: true, // Enable time picker
+            noCalendar: true, // Disable the calendar
+            dateFormat: "H:i", // 24-hour format (e.g., 20:00)
+            time_24hr: true, // Use 24-hour time format
+          });
+        };
+
+        function createDaySection(dayNumber) {
+          const daySection = document.createElement("div");
+          daySection.classList.add("day-section", "mb-4");
+          daySection.dataset.day = dayNumber;
+
+          daySection.innerHTML = `
+            <div class="day-header">
+              <div class="d-flex align-items-center">
+                <button type="button" class="day-toggle-btn" onclick="toggleDayContent(this)" title="Toggle Day Details">
+                  <i class="fas fa-chevron-down toggle-icon"></i>
+                </button>
+                <h5 class="mb-0">Day ${dayNumber}</h5>
+              </div>
+              <button type="button" class="remove-day-btn" onclick="removeDay(this)" title="Remove Day">
+                <i class="fas fa-trash mr-1"></i>Remove Day
+              </button>
+            </div>
+            <div class="day-content expanded">
+              <div class="form-group">
+                <label>Itinerary Description</label>
+                <textarea class="form-control" rows="3" placeholder="Enter itinerary details"></textarea>
+              </div>
+
+              <div class="activity-container">
+                <div class="activity-header">
+                  <h6><i class="fas fa-bed mr-2"></i>Hotels</h6>
+                </div>
+                <div class="activity-item">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <label>City</label>
+                      <select class="form-control city-dropdown-hotel">
+                        <option value="">Select City</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <label>From Time</label>
+                      <input type="text" class="form-control from-time" placeholder="Select Time" />
+                    </div>
+                    <div class="col-md-3">
+                      <label>To Time</label>
+                      <input type="text" class="form-control to-time" placeholder="To Time" />
+                    </div>
+                  </div>
+                  <div class="row mt-2">
+                    <div class="col-md-6">
+                      <label>Hotel</label>
+                      <select class="form-control hotel-dropdown">
+                        <option value="">Select Hotel</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label>Room Type</label>
+                      <select class="form-control roomtype-dropdown">
+                        <option value="">Select Room Type</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="activity-container">
+                <div class="activity-header">
+                  <h6><i class="fas fa-map-marked-alt mr-2"></i>Excursions</h6>
+                  <button type="button" class="add-excursion-btn" onclick="addExcursion(this)">
+                    <i class="fas fa-plus mr-1"></i>Add More
+                  </button>
+                </div>
+                <div class="excursions-list">
+                  <div class="activity-item">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <label>City</label>
+                        <select class="form-control city-dropdown-excursion">
+                          <option value="">Select City</option>
+                        </select>
+                      </div>
+                      <div class="col-md-3">
+                        <label>From Time</label>
+                        <input type="text" class="form-control from-time" placeholder="Select Time" />
+                      </div>
+                      <div class="col-md-3">
+                        <label>To Time</label>
+                        <input type="text" class="form-control to-time" placeholder="To Time" />
+                      </div>
+                    </div>
+                    <div class="row mt-2">
+                      <div class="col-md-10">
+                        <label>Excursion</label>
+                        <select class="form-control excursion-dropdown">
+                          <option value="">Select Excursion</option>
+                        </select>
+                      </div>
+                      <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="remove-excursion-btn" onclick="removeExcursion(this)" style="display: none;">
+                          <i class="fas fa-trash mr-1"></i>Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="activity-container">
+                <div class="activity-header">
+                  <h6><i class="fas fa-shuttle-van mr-2"></i>Transfers</h6>
+                  <button type="button" class="add-transfer-btn" onclick="addTransfer(this)">
+                    <i class="fas fa-plus mr-1"></i>Add More
+                  </button>
+                </div>
+                <div class="transfers-list">
+                  <div class="activity-item">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <label>City</label>
+                        <select class="form-control city-dropdown-transfer">
+                          <option value="">Select City</option>
+                        </select>
+                      </div>
+                      <div class="col-md-3">
+                        <label>From Time</label>
+                        <input type="text" class="form-control from-time" placeholder="From Time" />
+                      </div>
+                      <div class="col-md-3">
+                        <label>To Time</label>
+                        <input type="text" class="form-control to-time" placeholder="To Time" />
+                      </div>
+                    </div>
+                    <div class="row mt-2">
+                      <div class="col-md-10">
+                        <label>Transfer</label>
+                        <select class="form-control transfer-dropdown">
+                          <option value="">Select Transfer</option>
+                        </select>
+                      </div>
+                      <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="remove-transfer-btn" onclick="removeTransfer(this)" style="display: none;">
+                          <i class="fas fa-trash mr-1"></i>Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          return daySection;
+        }
+        function searchTransfersByCity(cityDropdown, transferDropdown) {
+          const selectedCity = cityDropdown.value;
+          const token = localStorage.getItem("token");
+
+          if (!selectedCity) {
+            console.warn("No city selected for search");
+            return Promise.resolve();
+          }
+
+          const url = new URL(`${Endpoint}/api/v1/transfers`);
+          url.searchParams.append("city", selectedCity);
+
+          return fetch(url, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Failed to fetch transfers.");
+              }
+              return response.json();
+            })
+            .then((transfers) => {
+              transferDropdown.innerHTML =
+                '<option value="">Select Transfer</option>';
+              transfers.forEach((transfer) => {
+                const option = document.createElement("option");
+                option.value = transfer.id;
+                option.textContent = transfer.description;
+                transferDropdown.appendChild(option);
+              });
+              console.log(`Loaded ${transfers.length} transfers for city: ${selectedCity}`);
+            })
+            .catch((error) => {
+              console.error("Error fetching transfers:", error);
+              transferDropdown.innerHTML = '<option value="">Failed to load transfers</option>';
+            });
+        }
+
+        function searchExcursionsByCity(cityDropdown, excursionDropdown) {
+          const selectedCity = cityDropdown.value;
+          const token = localStorage.getItem("token");
+
+          if (!selectedCity) {
+            console.warn("No city selected for search");
+            return Promise.resolve();
+          }
+
+          const url = new URL(`${Endpoint}/api/v1/excursions`);
+          url.searchParams.append("city", selectedCity);
+
+          return fetch(url, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Failed to fetch excursions.");
+              }
+              return response.json();
+            })
+            .then((excursions) => {
+              excursionDropdown.innerHTML =
+                '<option value="">Select Excursion</option>';
+              excursions.forEach((excursion) => {
+                const option = document.createElement("option");
+                option.value = excursion.id;
+                option.textContent = excursion.name;
+                excursionDropdown.appendChild(option);
+              });
+              console.log(`Loaded ${excursions.length} excursions for city: ${selectedCity}`);
+            })
+            .catch((error) => {
+              console.error("Error fetching excursions:", error);
+              excursionDropdown.innerHTML = '<option value="">Failed to load excursions</option>';
+            });
+        }
+
+        document
+          .getElementById("saveTourPriceBtn")
+          .addEventListener("click", function () {
+            const modalStartDate = document.getElementById("modalStartDate");
+            const modalEndDate = document.getElementById("modalEndDate");
+            const modalPax = document.getElementById("modalPax");
+            const modalSinglePrice =
+              document.getElementById("modalSinglePrice");
+            const modalDoublePrice =
+              document.getElementById("modalDoublePrice");
+            const modalTriplePrice =
+              document.getElementById("modalTriplePrice");
+
+            if (currentEditRow) {
+              // Update the row with the new values
+              const formattedStartDate = formatToDDMMYYYY(
+                modalStartDate.value.trim()
+              );
+              const formattedEndDate = formatToDDMMYYYY(
+                modalEndDate.value.trim()
+              );
+
+              currentEditRow.cells[0].textContent = formattedStartDate;
+              currentEditRow.cells[1].textContent = formattedEndDate;
+              currentEditRow.cells[2].textContent =
+                parseInt(modalPax.value) || 0;
+              currentEditRow.cells[3].textContent =
+                parseFloat(modalSinglePrice.value) || 0;
+              currentEditRow.cells[4].textContent =
+                parseFloat(modalDoublePrice.value) || 0;
+              currentEditRow.cells[5].textContent =
+                parseFloat(modalTriplePrice.value) || 0;
+
+              // Update the corresponding entry in tourPricings array
+              const rowIndex = Array.from(
+                document.getElementById("tourPriceTableBody").children
+              ).indexOf(currentEditRow);
+              if (rowIndex !== -1) {
+                tourPricings[rowIndex] = {
+                  startDate: formattedStartDate,
+                  endDate: formattedEndDate,
+                  pax: parseInt(modalPax.value) || 0,
+                  singlePrice: parseFloat(modalSinglePrice.value) || 0,
+                  doublePrice: parseFloat(modalDoublePrice.value) || 0,
+                  triplePrice: parseFloat(modalTriplePrice.value) || 0,
+                };
+              }
+
+              // Re-sort and re-render the table to maintain order
+              const tableBody = document.getElementById("tourPriceTableBody");
+              tableBody.innerHTML = "";
+
+              const sortedPricings = [...tourPricings].sort((a, b) => {
+                const dateA = new Date(formatToYYYYMMDD(a.startDate));
+                const dateB = new Date(formatToYYYYMMDD(b.startDate));
+                return dateA - dateB;
+              });
+
+              sortedPricings.forEach((pricing) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                  <td>${pricing.startDate}</td>
+                  <td>${pricing.endDate}</td>
+                  <td>${pricing.pax}</td>
+                  <td>${pricing.singlePrice}</td>
+                  <td>${pricing.doublePrice}</td>
+                  <td>${pricing.triplePrice}</td>
+                  <td>
+                    <div class="btn-group" role="group">
+                      <div class="tooltip-btn">
+                        <button type="button" class="btn btn-sm btn-primary edit-btn">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <span class="tooltip-text">Edit</span>
+                      </div>
+                      <div class="tooltip-btn">
+                        <button type="button" class="btn btn-sm btn-danger delete-btn ml-1">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                        <span class="tooltip-text">Delete</span>
+                      </div>
+                    </div>
+                  </td>
+                `;
+
+                row
+                  .querySelector(".edit-btn")
+                  .addEventListener("click", () => editRow(row));
+                row
+                  .querySelector(".delete-btn")
+                  .addEventListener("click", () => deleteRow(row));
+                tableBody.appendChild(row);
+              });
+
+              tourPricings = sortedPricings;
+              currentEditRow = null; // Reset reference
+            } else {
+              // If adding a new row
+              addTourPriceRow({
+                startDate: formatToDDMMYYYY(modalStartDate.value.trim()),
+                endDate: formatToDDMMYYYY(modalEndDate.value.trim()),
+                pax: parseInt(modalPax.value) || 0,
+                singlePrice: parseFloat(modalSinglePrice.value) || 0,
+                doublePrice: parseFloat(modalDoublePrice.value) || 0,
+                triplePrice: parseFloat(modalTriplePrice.value) || 0,
+              });
+            }
+
+            document.getElementById("tourPriceForm").reset(); // Reset form fields
+            $("#addTourPriceModal").modal("hide"); // Close modal
+          });
+
+        function addTourPriceRow(data) {
+          // Add the new data to tourPricings array
+          tourPricings.push(data);
+
+          // Re-sort and re-render the entire table to maintain proper order
+          const tableBody = document.getElementById("tourPriceTableBody");
+          tableBody.innerHTML = ""; // Clear existing rows
+
+          // Sort tourPricings by start date
+          const sortedPricings = [...tourPricings].sort((a, b) => {
+            const dateA = new Date(formatToYYYYMMDD(a.startDate));
+            const dateB = new Date(formatToYYYYMMDD(b.startDate));
+            return dateA - dateB;
+          });
+
+          // Re-render all rows in sorted order
+          sortedPricings.forEach((pricing) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${pricing.startDate}</td>
+              <td>${pricing.endDate}</td>
+              <td>${pricing.pax}</td>
+              <td>${pricing.singlePrice}</td>
+              <td>${pricing.doublePrice}</td>
+              <td>${pricing.triplePrice}</td>
+              <td>
+                <div class="btn-group" role="group">
+                  <div class="tooltip-btn">
+                    <button type="button" class="btn btn-sm btn-primary edit-btn">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <span class="tooltip-text">Edit</span>
+                  </div>
+                  <div class="tooltip-btn">
+                    <button type="button" class="btn btn-sm btn-danger delete-btn ml-1">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                    <span class="tooltip-text">Delete</span>
+                  </div>
+                </div>
+              </td>
+            `;
+
+            // Add event listeners for Edit and Delete buttons
+            row
+              .querySelector(".edit-btn")
+              .addEventListener("click", () => editRow(row));
+            row
+              .querySelector(".delete-btn")
+              .addEventListener("click", () => deleteRow(row));
+
+            tableBody.appendChild(row);
+          });
+
+          // Update the global tourPricings array with sorted data
+          tourPricings = sortedPricings;
+        }
+
+        // Functions to populate dropdowns from cached data
+        function populateHotelsFromCache(city, hotelDropdown, preserveSelection = true) {
+          if (!dataCache.hotels[city]) {
+            console.warn(`No cached hotels found for city: ${city}`);
+            return;
+          }
+
+          // Store current selection before clearing
+          const currentValue = preserveSelection ? hotelDropdown.value : '';
+          const currentText = preserveSelection && hotelDropdown.selectedIndex >= 0 ? 
+            hotelDropdown.options[hotelDropdown.selectedIndex].text : '';
+
+          const hotels = dataCache.hotels[city];
+          hotelDropdown.innerHTML = '<option value="">Select Hotel</option>';
+
+          const seenNames = new Set();
+          hotels.forEach((hotel) => {
+            const hotelName = hotel.name.trim().toLowerCase();
+            if (!seenNames.has(hotelName)) {
+              seenNames.add(hotelName);
+              const option = document.createElement("option");
+              option.value = hotel.id;
+              option.textContent = hotel.name;
+              option.setAttribute("data-roomtypes", JSON.stringify(hotel.room_types || []));
+              hotelDropdown.appendChild(option);
+            }
+          });
+
+          // Restore previous selection if it exists in the new options
+          if (preserveSelection && currentValue) {
+            const matchingOption = Array.from(hotelDropdown.options).find(opt => opt.value === currentValue);
+            if (matchingOption) {
+              hotelDropdown.value = currentValue;
+              console.log(`✅ Preserved hotel selection: ${currentText} (${currentValue})`);
+            } else if (currentText && currentText !== "Select Hotel") {
+              // If the exact ID doesn't match, try to find by name
+              const nameMatch = Array.from(hotelDropdown.options).find(opt => 
+                opt.text.toLowerCase() === currentText.toLowerCase()
+              );
+              if (nameMatch) {
+                hotelDropdown.value = nameMatch.value;
+                console.log(`✅ Restored hotel by name: ${currentText} -> ${nameMatch.value}`);
+              }
+            }
+          }
+          
+          console.log(`✅ Populated ${hotels.length} hotels for ${city} from cache`);
+        }
+
+        function populateExcursionsFromCache(city, excursionDropdown, preserveSelection = true) {
+          if (!dataCache.excursions[city]) {
+            console.warn(`No cached excursions found for city: ${city}`);
+            return;
+          }
+
+          // Store current selection before clearing
+          const currentValue = preserveSelection ? excursionDropdown.value : '';
+          const currentText = preserveSelection && excursionDropdown.selectedIndex >= 0 ? 
+            excursionDropdown.options[excursionDropdown.selectedIndex].text : '';
+
+          const excursions = dataCache.excursions[city];
+          excursionDropdown.innerHTML = '<option value="">Select Excursion</option>';
+          
+          excursions.forEach((excursion) => {
+            const option = document.createElement("option");
+            option.value = excursion.id;
+            option.textContent = excursion.name;
+            excursionDropdown.appendChild(option);
+          });
+
+          // Restore previous selection if it exists in the new options
+          if (preserveSelection && currentValue) {
+            const matchingOption = Array.from(excursionDropdown.options).find(opt => opt.value === currentValue);
+            if (matchingOption) {
+              excursionDropdown.value = currentValue;
+              console.log(`✅ Preserved excursion selection: ${currentText} (${currentValue})`);
+            } else if (currentText && currentText !== "Select Excursion") {
+              // If the exact ID doesn't match, try to find by name
+              const nameMatch = Array.from(excursionDropdown.options).find(opt => 
+                opt.text.toLowerCase() === currentText.toLowerCase()
+              );
+              if (nameMatch) {
+                excursionDropdown.value = nameMatch.value;
+                console.log(`✅ Restored excursion by name: ${currentText} -> ${nameMatch.value}`);
+              }
+            }
+          }
+          
+          console.log(`✅ Populated ${excursions.length} excursions for ${city} from cache`);
+        }
+
+        function populateTransfersFromCache(city, transferDropdown, preserveSelection = true) {
+          if (!dataCache.transfers[city]) {
+            console.warn(`No cached transfers found for city: ${city}`);
+            return;
+          }
+
+          // Store current selection before clearing
+          const currentValue = preserveSelection ? transferDropdown.value : '';
+          const currentText = preserveSelection && transferDropdown.selectedIndex >= 0 ? 
+            transferDropdown.options[transferDropdown.selectedIndex].text : '';
+
+          const transfers = dataCache.transfers[city];
+          transferDropdown.innerHTML = '<option value="">Select Transfer</option>';
+          
+          transfers.forEach((transfer) => {
+            const option = document.createElement("option");
+            option.value = transfer.id;
+            option.textContent = transfer.description;
+            transferDropdown.appendChild(option);
+          });
+
+          // Restore previous selection if it exists in the new options
+          if (preserveSelection && currentValue) {
+            const matchingOption = Array.from(transferDropdown.options).find(opt => opt.value === currentValue);
+            if (matchingOption) {
+              transferDropdown.value = currentValue;
+              console.log(`✅ Preserved transfer selection: ${currentText} (${currentValue})`);
+            } else if (currentText && currentText !== "Select Transfer") {
+              // If the exact ID doesn't match, try to find by name
+              const nameMatch = Array.from(transferDropdown.options).find(opt => 
+                opt.text.toLowerCase() === currentText.toLowerCase()
+              );
+              if (nameMatch) {
+                transferDropdown.value = nameMatch.value;
+                console.log(`✅ Restored transfer by name: ${currentText} -> ${nameMatch.value}`);
+              }
+            }
+          }
+          
+          console.log(`✅ Populated ${transfers.length} transfers for ${city} from cache`);
+        }
+
+        function populateRoomTypesFromCache(hotelId, roomTypeDropdown, preserveSelection = true) {
+          if (!dataCache.roomTypes[hotelId]) {
+            console.warn(`No cached room types found for hotel ID: ${hotelId}`);
+            return;
+          }
+
+          // Store current selection before clearing
+          const currentValue = preserveSelection ? roomTypeDropdown.value : '';
+          const currentText = preserveSelection && roomTypeDropdown.selectedIndex >= 0 ? 
+            roomTypeDropdown.options[roomTypeDropdown.selectedIndex].text : '';
+
+          const roomTypes = dataCache.roomTypes[hotelId];
+          roomTypeDropdown.innerHTML = '<option value="">Select Room Type</option>';
+
+          const seenRoomNames = new Set();
+          roomTypes.forEach((roomType) => {
+            const name = roomType.name.trim().toLowerCase();
+            if (!seenRoomNames.has(name)) {
+              seenRoomNames.add(name);
+              const option = document.createElement("option");
+              option.value = roomType.id;
+              option.textContent = roomType.name;
+              roomTypeDropdown.appendChild(option);
+            }
+          });
+
+          // Restore previous selection if it exists in the new options
+          if (preserveSelection && currentValue) {
+            const matchingOption = Array.from(roomTypeDropdown.options).find(opt => opt.value === currentValue);
+            if (matchingOption) {
+              roomTypeDropdown.value = currentValue;
+              console.log(`✅ Preserved room type selection: ${currentText} (${currentValue})`);
+            } else if (currentText && currentText !== "Select Room Type") {
+              // If the exact ID doesn't match, try to find by name
+              const nameMatch = Array.from(roomTypeDropdown.options).find(opt => 
+                opt.text.toLowerCase() === currentText.toLowerCase()
+              );
+              if (nameMatch) {
+                roomTypeDropdown.value = nameMatch.value;
+                console.log(`✅ Restored room type by name: ${currentText} -> ${nameMatch.value}`);
+              }
+            }
+          }
+          
+          console.log(`✅ Populated ${roomTypes.length} room types for hotel ${hotelId} from cache`);
+        }
+
+        function searchHotelsByCity(cityDropdown, hotelDropdown) {
+          const selectedCity = cityDropdown.value;
+          const token = localStorage.getItem("token");
+
+          if (!selectedCity) {
+            console.warn("No city selected for hotel search");
+            return Promise.resolve();
+          }
+
+          const url = new URL(`${Endpoint}/api/v1/hotels`);
+          url.searchParams.append("city", selectedCity);
+
+          return fetch(url, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Failed to fetch hotels.");
+              }
+              return response.json();
+            })
+            .then((hotels) => {
+              hotelDropdown.innerHTML =
+                '<option value="">Select Hotel</option>';
+
+              const seenNames = new Set(); // track hotel names
+
+              hotels.forEach((hotel) => {
+                const hotelName = hotel.name.trim().toLowerCase();
+
+                if (!seenNames.has(hotelName)) {
+                  seenNames.add(hotelName); // mark name as seen
+
+                  const option = document.createElement("option");
+                  option.value = hotel.id;
+                  option.textContent = hotel.name;
+                  option.setAttribute(
+                    "data-roomtypes",
+                    JSON.stringify(hotel.room_types || [])
+                  );
+                  hotelDropdown.appendChild(option);
+                }
+              });
+              console.log(`Loaded ${hotels.length} hotels for city: ${selectedCity}`);
+            })
+            .catch((error) => {
+              console.error("Error fetching hotels:", error);
+              hotelDropdown.innerHTML = '<option value="">Failed to load hotels</option>';
+            });
+        }
+
+        function searchTransfersByCity(cityDropdown, transferDropdown) {
+          const selectedCity = cityDropdown.value;
+          const token = localStorage.getItem("token");
+
+          if (!selectedCity) {
+            console.warn("No city selected for search");
+            return Promise.resolve();
+          }
+
+          const url = new URL(`${Endpoint}/api/v1/transfers`);
+          url.searchParams.append("city", selectedCity);
+
+          return fetch(url, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Failed to fetch transfers.");
+              }
+              return response.json();
+            })
+            .then((transfers) => {
+              transferDropdown.innerHTML =
+                '<option value="">Select Transfer</option>';
+              transfers.forEach((transfer) => {
+                const option = document.createElement("option");
+                option.value = transfer.id;
+                option.textContent = transfer.description;
+                transferDropdown.appendChild(option);
+              });
+              console.log(`Loaded ${transfers.length} transfers for city: ${selectedCity}`);
+            })
+            .catch((error) => {
+              console.error("Error fetching transfers:", error);
+              transferDropdown.innerHTML = '<option value="">Failed to load transfers</option>';
+            });
+        }
+
+        function searchExcursionsByCity(cityDropdown, excursionDropdown) {
+          const selectedCity = cityDropdown.value;
+          const token = localStorage.getItem("token");
+
+          if (!selectedCity) {
+            console.warn("No city selected for search");
+            return Promise.resolve();
+          }
+
+          const url = new URL(`${Endpoint}/api/v1/excursions`);
+          url.searchParams.append("city", selectedCity);
+
+          return fetch(url, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Failed to fetch excursions.");
+              }
+              return response.json();
+            })
+            .then((excursions) => {
+              excursionDropdown.innerHTML =
+                '<option value="">Select Excursion</option>';
+              excursions.forEach((excursion) => {
+                const option = document.createElement("option");
+                option.value = excursion.id;
+                option.textContent = excursion.name;
+                excursionDropdown.appendChild(option);
+              });
+              console.log(`Loaded ${excursions.length} excursions for city: ${selectedCity}`);
+            })
+            .catch((error) => {
+              console.error("Error fetching excursions:", error);
+              excursionDropdown.innerHTML = '<option value="">Failed to load excursions</option>';
+            });
+        }
+
+        // Populate the roomtype-dropdown based on selected hotel
+        function populateRoomTypeDropdown(hotelDropdown) {
+          const selectedOption =
+            hotelDropdown.options[hotelDropdown.selectedIndex];
+          const roomTypeDropdown = hotelDropdown
+            .closest(".day-section")
+            .querySelector(".roomtype-dropdown");
+
+          if (!roomTypeDropdown || !selectedOption) return;
+
+          const roomTypes = JSON.parse(
+            selectedOption.getAttribute("data-roomtypes") || "[]"
+          );
+
+          // Use Set to track unique room type names
+          const seenRoomNames = new Set();
+
+          // Clear existing options
+          roomTypeDropdown.innerHTML =
+            '<option value="">Select Room Type</option>';
+
+          roomTypes.forEach((roomType) => {
+            const name = roomType.name.trim().toLowerCase();
+            if (!seenRoomNames.has(name)) {
+              seenRoomNames.add(name);
+
+              const option = document.createElement("option");
+              option.value = roomType.id;
+              option.textContent = roomType.name;
+              roomTypeDropdown.appendChild(option);
+            }
+          });
+        }
+
+        // Make populateCitiesDropdown global so it can be called from add functions
+        window.populateCitiesDropdown = async function (selector) {
+          // Check if this is for itinerary dropdowns and use the special function
+          if (selector.includes("city-dropdown-hotel") || 
+              selector.includes("city-dropdown-excursion") || 
+              selector.includes("city-dropdown-transfer")) {
+            return populateItineraryCitiesForItinerary(selector);
+          }
+
+          // For main city dropdowns (like tourCode), use the original function
+          const token = localStorage.getItem("token");
+
+          if (!token) {
+            alert("You are not authorized. Please log in first.");
+            window.location.href = "login.html";
+            return Promise.reject("No token");
+          }
+
+          try {
+            // Get user's profile country
+            const countryCode = await getProfileCountry();
+            console.log(`Loading cities for ${selector} with country: ${countryCode}`);
+
+            // Try country-filtered API first
+            const response = await fetch(`${Endpoint}/api/v1/locations/countries/${countryCode}/cities`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              console.log("Country-filtered cities response for", selector, ":", data);
+              
+              if (!data || (!Array.isArray(data) && !data.cities)) {
+                console.error("No cities data received for profile country");
+                return Promise.reject("No cities available for profile country");
+              }
+              
+              populateCityDropdowns(selector, data);
+              return Promise.resolve();
+            } else {
+              console.error("Country-filtered API failed");
+              return Promise.reject("Country-filtered API failed");
+            }
+          } catch (error) {
+            console.error("Error in global populateCitiesDropdown:", error);
+            return Promise.reject("Error loading cities: " + error.message);
+          }
+        };
+
+        // Helper function for global cities fallback
+        async function populateGlobalCitiesForSelector(selector) {
+          const token = localStorage.getItem("token");
+          const response = await fetch(`${Endpoint}/api/v1/cities`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          })
+          if (!response.ok) {
+            throw new Error(`Global cities API failed: ${response.status}`);
+          }
+          const data = await response.json();
+          console.log("Global cities fallback response for", selector, ":", data);
+          populateCityDropdowns(selector, data);
+          return Promise.resolve();
+        }
+
+        // Store previous values to detect actual changes
+        const previousValues = new WeakMap();
+
+        // Event listener for dynamically loaded elements
+        document.addEventListener("change", (event) => {
+          if (event.target.classList.contains("city-dropdown-hotel")) {
+            const hotelDropdown = event.target
+              .closest(".form-group, .activity-item")
+              .querySelector(".hotel-dropdown");
+            
+            const selectedCity = event.target.value;
+            const previousCity = previousValues.get(event.target);
+            
+            // Only repopulate if the city actually changed
+            if (selectedCity !== previousCity) {
+              console.log(`City changed from "${previousCity}" to "${selectedCity}"`);
+              previousValues.set(event.target, selectedCity);
+              
+              if (selectedCity && dataCache.hotels[selectedCity]) {
+                console.log("Populating hotels from cache for city change:", selectedCity);
+                populateHotelsFromCache(selectedCity, hotelDropdown, false); // Don't preserve when city changes
+              } else if (selectedCity) {
+                console.log("No cached data, making API call for hotels in city:", selectedCity);
+                searchHotelsByCity(event.target, hotelDropdown);
+              } else {
+                // Clear hotels when no city selected
+                hotelDropdown.innerHTML = '<option value="">Select Hotel</option>';
+              }
+            }
+          } else if (
+            event.target.classList.contains("city-dropdown-excursion")
+          ) {
+            const excursionDropdown = event.target
+              .closest(".form-group, .activity-item")
+              .querySelector(".excursion-dropdown");
+            
+            const selectedCity = event.target.value;
+            const previousCity = previousValues.get(event.target);
+            
+            // Only repopulate if the city actually changed
+            if (selectedCity !== previousCity) {
+              console.log(`Excursion city changed from "${previousCity}" to "${selectedCity}"`);
+              previousValues.set(event.target, selectedCity);
+              
+              if (selectedCity && dataCache.excursions[selectedCity]) {
+                console.log("Populating excursions from cache for city change:", selectedCity);
+                populateExcursionsFromCache(selectedCity, excursionDropdown, false); // Don't preserve when city changes
+              } else if (selectedCity) {
+                console.log("No cached data, making API call for excursions in city:", selectedCity);
+                searchExcursionsByCity(event.target, excursionDropdown);
+              } else {
+                // Clear excursions when no city selected
+                excursionDropdown.innerHTML = '<option value="">Select Excursion</option>';
+              }
+            }
+          } else if (
+            event.target.classList.contains("city-dropdown-transfer")
+          ) {
+            const transferDropdown = event.target
+              .closest(".form-group, .activity-item")
+              .querySelector(".transfer-dropdown");
+            
+            const selectedCity = event.target.value;
+            const previousCity = previousValues.get(event.target);
+            
+            // Only repopulate if the city actually changed
+            if (selectedCity !== previousCity) {
+              console.log(`Transfer city changed from "${previousCity}" to "${selectedCity}"`);
+              previousValues.set(event.target, selectedCity);
+              
+              if (selectedCity && dataCache.transfers[selectedCity]) {
+                console.log("Populating transfers from cache for city change:", selectedCity);
+                populateTransfersFromCache(selectedCity, transferDropdown, false); // Don't preserve when city changes
+              } else if (selectedCity) {
+                console.log("No cached data, making API call for transfers in city:", selectedCity);
+                searchTransfersByCity(event.target, transferDropdown);
+              } else {
+                // Clear transfers when no city selected
+                transferDropdown.innerHTML = '<option value="">Select Transfer</option>';
+              }
+            }
+          }
+
+          if (event.target.classList.contains("hotel-dropdown")) {
+            const hotelDropdown = event.target;
+            const selectedHotelId = hotelDropdown.value;
+            const previousHotelId = previousValues.get(event.target);
+            
+            // Only repopulate room types if hotel actually changed
+            if (selectedHotelId !== previousHotelId) {
+              console.log(`Hotel changed from "${previousHotelId}" to "${selectedHotelId}"`);
+              previousValues.set(event.target, selectedHotelId);
+              
+              if (selectedHotelId && dataCache.roomTypes[selectedHotelId]) {
+                console.log("Populating room types from cache for hotel change:", selectedHotelId);
+                const roomTypeDropdown = hotelDropdown
+                  .closest(".day-section")
+                  .querySelector(".roomtype-dropdown");
+                if (roomTypeDropdown) {
+                  populateRoomTypesFromCache(selectedHotelId, roomTypeDropdown, false); // Don't preserve when hotel changes
+                }
+              } else if (selectedHotelId) {
+                // Fallback to original method using data-roomtypes attribute
+                populateRoomTypeDropdown(hotelDropdown);
+              } else {
+                // Clear room types when no hotel selected
+                const roomTypeDropdown = hotelDropdown
+                  .closest(".day-section")
+                  .querySelector(".roomtype-dropdown");
+                if (roomTypeDropdown) {
+                  roomTypeDropdown.innerHTML = '<option value="">Select Room Type</option>';
+                }
+              }
+            }
+          }
+        });
+
+        // Event listener for dropdown focus/click - populate from cache if data available
+        document.addEventListener("focus", (event) => {
+          if (event.target.classList.contains("hotel-dropdown")) {
+            const hotelDropdown = event.target;
+            const cityDropdown = hotelDropdown
+              .closest(".form-group, .activity-item")
+              .querySelector(".city-dropdown-hotel");
+            
+            // If city is selected but hotel dropdown only has default option, populate from cache
+            if (cityDropdown && cityDropdown.value && hotelDropdown.options.length <= 1) {
+              console.log("Populating hotels from cache for city:", cityDropdown.value);
+              populateHotelsFromCache(cityDropdown.value, hotelDropdown);
+            }
+          } else if (event.target.classList.contains("roomtype-dropdown")) {
+            const roomTypeDropdown = event.target;
+            const hotelDropdown = roomTypeDropdown
+              .closest(".form-group, .activity-item")
+              .querySelector(".hotel-dropdown");
+            
+            // If hotel is selected but room type dropdown only has default option, populate from cache
+            if (hotelDropdown && hotelDropdown.value && roomTypeDropdown.options.length <= 1) {
+              console.log("Populating room types from cache for hotel:", hotelDropdown.value);
+              populateRoomTypesFromCache(hotelDropdown.value, roomTypeDropdown);
+            }
+          } else if (event.target.classList.contains("excursion-dropdown")) {
+            const excursionDropdown = event.target;
+            const cityDropdown = excursionDropdown
+              .closest(".form-group, .activity-item")
+              .querySelector(".city-dropdown-excursion");
+            
+            // If city is selected but excursion dropdown only has default option, populate from cache
+            if (cityDropdown && cityDropdown.value && excursionDropdown.options.length <= 1) {
+              console.log("Populating excursions from cache for city:", cityDropdown.value);
+              populateExcursionsFromCache(cityDropdown.value, excursionDropdown);
+            }
+          } else if (event.target.classList.contains("transfer-dropdown")) {
+            const transferDropdown = event.target;
+            const cityDropdown = transferDropdown
+              .closest(".form-group, .activity-item")
+              .querySelector(".city-dropdown-transfer");
+            
+            // If city is selected but transfer dropdown only has default option, populate from cache
+            if (cityDropdown && cityDropdown.value && transferDropdown.options.length <= 1) {
+              console.log("Populating transfers from cache for city:", cityDropdown.value);
+              populateTransfersFromCache(cityDropdown.value, transferDropdown);
+            }
+          }
+        }, true); // Use capture phase to ensure we catch the focus event
+
+        // Event listener for add/remove buttons with null checks - REMOVED
+        // These are now handled by onclick attributes in HTML to avoid duplicate calls
+
+        function populateItinerary(tourDays) {
+          const itineraryDetails = document.getElementById("itineraryDetails");
+          itineraryDetails.innerHTML = ""; // Clear existing itinerary details
+
+          // Sort days in ascending order before rendering
+          tourDays.sort((a, b) => a.day - b.day);
+
+          tourDays.forEach((day) => {
+            const daySection = document.createElement("div");
+            daySection.classList.add("day-section", "mb-4");
+            daySection.dataset.day = day.day;
+
+            let hotelDetail = day.details.find(
+              (detail) => detail.type_of_tour === "hotels"
+            ) || {
+              city: "",
+              from_time: "",
+              to_time: "",
+              hotel_id: "",
+              hotel_name: "Select Hotel",
+              room_type_id: "",
+              room_type: "Select Room Type",
+            };
+
+            let excursionDetail = day.details.find(
+              (detail) => detail.type_of_tour === "excursions"
+            ) || {
+              city: "",
+              from_time: "",
+              to_time: "",
+              excursion_id: "",
+              excursion_name: "Select Excursion",
+            };
+
+            let transferDetail = day.details.find(
+              (detail) => detail.type_of_tour === "transfers"
+            ) || {
+              city: "",
+              from_time: "",
+              to_time: "",
+              transfer_id: "",
+              transfer_name: "Select Transfer",
+            };
+
+            // Enhanced HTML structure for a day with collapsible content
+            const dayHTML = `
+              <div class="day-header">
+                <div class="d-flex align-items-center">
+                  <button type="button" class="day-toggle-btn" onclick="toggleDayContent(this)" title="Toggle Day Details">
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                  </button>
+                  <h5 class="mb-0">Day ${day.day}</h5>
+                </div>
+                <button type="button" class="remove-day-btn" onclick="removeDay(this)" title="Remove Day">
+                  <i class="fas fa-trash mr-1"></i>Remove Day
+                </button>
+              </div>
+              <div class="day-content expanded">
+                <div class="form-group">
+                  <label>Itinerary Description</label>
+                  <textarea class="form-control" rows="3" placeholder="Enter itinerary details">${
+                    day.itinerary || ""
+                  }</textarea>
+                </div>
+
+                <div class="activity-container">
+                  <div class="activity-header">
+                    <h6><i class="fas fa-bed mr-2"></i>Hotels</h6>
+                  </div>
+                  <div class="activity-item">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <label>City</label>
+                        <select class="form-control city-dropdown-hotel">
+                          <option value="${hotelDetail.city}" selected>${
+              hotelDetail.city || "Select City"
+            }</option>
+                        </select>
+                      </div>
+                      <div class="col-md-3">
+                        <label>From Time</label>
+                        <input type="text" class="form-control from-time" placeholder="Select Time" value="${
+                          hotelDetail.from_time || ""
+                        }" />
+                      </div>
+                      <div class="col-md-3">
+                        <label>To Time</label>
+                        <input type="text" class="form-control to-time" placeholder="To Time" value="${
+                          hotelDetail.to_time || ""
+                        }" />
+                      </div>
+                    </div>
+                    <div class="row mt-2">
+                      <div class="col-md-6">
+                        <label>Hotel</label>
+                        <select class="form-control hotel-dropdown">
+                          <option value="${hotelDetail.hotel_id}" selected>${
+              hotelDetail.hotel_name || "Select Hotel"
+            }</option>
+                        </select>
+                      </div>
+                      <div class="col-md-6">
+                        <label>Room Type</label>
+                        <select class="form-control roomtype-dropdown">
+                          <option value="${
+                            hotelDetail.room_type_id
+                          }" selected>${
+              hotelDetail.room_type || "Select Room Type"
+            }</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="activity-container">
+                  <div class="activity-header">
+                    <h6><i class="fas fa-map-marked-alt mr-2"></i>Excursions</h6>
+                    <button type="button" class="add-excursion-btn" onclick="addExcursion(this)">
+                      <i class="fas fa-plus mr-1"></i>Add More
+                    </button>
+                  </div>
+                  <div class="excursions-list">
+                    ${
+                      day.details
+                        .filter(
+                          (detail) => detail.type_of_tour === "excursions"
+                        )
+                        .map(
+                          (excursionDetail, index) => `
+                      <div class="activity-item">
+                        <div class="row">
+                          <div class="col-md-6">
+                            <label>City</label>
+                            <select class="form-control city-dropdown-excursion">
+                              <option value="${
+                                excursionDetail.city
+                              }" selected>${
+                            excursionDetail.city || "Select City"
+                          }</option>
+                            </select>
+                          </div>
+                          <div class="col-md-3">
+                            <label>From Time</label>
+                            <input type="text" class="form-control from-time" placeholder="Select Time" value="${
+                              excursionDetail.from_time || ""
+                            }" />
+                          </div>
+                          <div class="col-md-3">
+                            <label>To Time</label>
+                            <input type="text" class="form-control to-time" placeholder="To Time" value="${
+                              excursionDetail.to_time || ""
+                            }" />
+                          </div>
+                        </div>
+                        <div class="row mt-2">
+                          <div class="col-md-10">
+                            <label>Excursion</label>
+                            <select class="form-control excursion-dropdown">
+                              <option value="${
+                                excursionDetail.excursion_id
+                              }" selected>${
+                            excursionDetail.excursion_name || "Select Excursion"
+                          }</option>
+                            </select>
+                          </div>
+                          <div class="col-md-2 d-flex align-items-end">
+                            <button type="button" class="remove-excursion-btn" onclick="removeExcursion(this)" style="display: ${
+                              day.details.filter(
+                                (detail) => detail.type_of_tour === "excursions"
+                              ).length > 1
+                                ? "block"
+                                : "none"
+                            };">
+                              <i class="fas fa-trash mr-1"></i>Remove
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    `
+                        )
+                        .join("") ||
+                      `
+                      <div class="activity-item">
+                        <div class="row">
+                          <div class="col-md-6">
+                            <label>City</label>
+                            <select class="form-control city-dropdown-excursion">
+                              <option value="">Select City</option>
+                            </select>
+                          </div>
+                          <div class="col-md-3">
+                            <label>From Time</label>
+                            <input type="text" class="form-control from-time" placeholder="Select Time" />
+                          </div>
+                          <div class="col-md-3">
+                            <label>To Time</label>
+                            <input type="text" class="form-control to-time" placeholder="To Time" />
+                          </div>
+                        </div>
+                        <div class="row mt-2">
+                          <div class="col-md-10">
+                            <label>Excursion</label>
+                            <select class="form-control excursion-dropdown">
+                              <option value="">Select Excursion</option>
+                            </select>
+                          </div>
+                          <div class="col-md-2 d-flex align-items-end">
+                            <button type="button" class="remove-excursion-btn" onclick="removeExcursion(this)" style="display: none;">
+                              <i class="fas fa-trash mr-1"></i>Remove
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    `
+                    }
+                  </div>
+                </div>
+
+                <div class="activity-container">
+                  <div class="activity-header">
+                    <h6><i class="fas fa-shuttle-van mr-2"></i>Transfers</h6>
+                    <button type="button" class="add-transfer-btn" onclick="addTransfer(this)">
+                      <i class="fas fa-plus mr-1"></i>Add More
+                    </button>
+                  </div>
+                  <div class="transfers-list">
+                    ${
+                      day.details
+                        .filter((detail) => detail.type_of_tour === "transfers")
+                        .map(
+                          (transferDetail, index) => `
+                      <div class="activity-item">
+                        <div class="row">
+                          <div class="col-md-6">
+                            <label>City</label>
+                            <select class="form-control city-dropdown-transfer">
+                              <option value="${transferDetail.city}" selected>${
+                            transferDetail.city || "Select City"
+                          }</option>
+                            </select>
+                          </div>
+                          <div class="col-md-3">
+                            <label>From Time</label>
+                            <input type="text" class="form-control from-time" placeholder="From Time" value="${
+                              transferDetail.from_time || ""
+                            }" />
+                          </div>
+                          <div class="col-md-3">
+                            <label>To Time</label>
+                            <input type="text" class="form-control to-time" placeholder="To Time" value="${
+                              transferDetail.to_time || ""
+                            }" />
+                          </div>
+                        </div>
+                        <div class="row mt-2">
+                          <div class="col-md-10">
+                            <label>Transfer</label>
+                            <select class="form-control transfer-dropdown">
+                              <option value="${
+                                transferDetail.transfer_id
+                              }" selected>${
+                            transferDetail.transfer_name || "Select Transfer"
+                          }</option>
+                            </select>
+                          </div>
+                          <div class="col-md-2 d-flex align-items-end">
+                            <button type="button" class="remove-transfer-btn" onclick="removeTransfer(this)" style="display: ${
+                              day.details.filter(
+                                (detail) => detail.type_of_tour === "transfers"
+                              ).length > 1
+                                ? "block"
+                                : "none"
+                            };">
+                              <i class="fas fa-trash mr-1"></i>Remove
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    `
+                        )
+                        .join("") ||
+                      `
+                      <div class="activity-item">
+                        <div class="row">
+                          <div class="col-md-6">
+                            <label>City</label>
+                            <select class="form-control city-dropdown-transfer">
+                              <option value="">Select City</option>
+                            </select>
+                          </div>
+                          <div class="col-md-3">
+                            <label>From Time</label>
+                            <input type="text" class="form-control from-time" placeholder="From Time" />
+                          </div>
+                          <div class="col-md-3">
+                            <label>To Time</label>
+                            <input type="text" class="form-control to-time" placeholder="To Time" />
+                          </div>
+                        </div>
+                        <div class="row mt-2">
+                          <div class="col-md-10">
+                            <label>Transfer</label>
+                            <select class="form-control transfer-dropdown">
+                              <option value="">Select Transfer</option>
+                            </select>
+                          </div>
+                          <div class="col-md-2 d-flex align-items-end">
+                            <button type="button" class="remove-transfer-btn" onclick="removeTransfer(this)" style="display: none;">
+                              <i class="fas fa-trash mr-1"></i>Remove
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    `
+                    }
+                  </div>
+                </div>
+              </div>
+            `;
+
+            // Set the inner HTML of the day section
+            daySection.innerHTML = dayHTML;
+
+            // Append the day section to the itinerary container
+            itineraryDetails.appendChild(daySection);
+          });
+
+          initializeFlatpickr();
+          
+          // Populate itinerary cities dropdowns using the special function that preserves selections
+          populateItineraryCitiesForItinerary(".city-dropdown-hotel");
+          populateItineraryCitiesForItinerary(".city-dropdown-excursion");
+          populateItineraryCitiesForItinerary(".city-dropdown-transfer");
+          
+          // Load existing itinerary data (now using cached data)
+          loadExistingItineraryData(tourDays);
+          
+          updateTotalDaysCount();
+        }
+
+        // Function to populate itinerary cities with country filtering while preserving selections
+        async function populateItineraryCitiesForItinerary(selector) {
+          const token = localStorage.getItem("token");
+          if (!token) {
+            alert("You are not authorized. Please log in first.");
+            window.location.href = "login.html";
+            return;
+          }
+
+          try {
+            // Get user's profile country
+            const countryCode = await getProfileCountry();
+            console.log(`Loading itinerary cities for country: ${countryCode}`);
+
+            // Try country-filtered API first
+            const response = await fetch(`${Endpoint}/api/v1/locations/countries/${countryCode}/cities`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              console.log("Country-filtered cities response for itinerary", selector, ":", data);
+              
+              if (!data || (!Array.isArray(data) && !data.cities)) {
+                console.warn("No cities data received, falling back to global cities for itinerary");
+                return populateItineraryGlobalCities(selector);
+              }
+              
+              populateItineraryCityDropdowns(selector, data);
+            } else {
+              console.warn("Country-filtered API failed, falling back to global cities for itinerary");
+              return populateItineraryGlobalCities(selector);
+            }
+          } catch (error) {
+            console.error("Error in populateItineraryCitiesForItinerary:", error);
+            return populateItineraryGlobalCities(selector);
+          }
+        }
+
+        // Fallback function for global cities in itinerary
+        async function populateItineraryGlobalCities(selector) {
+          const token = localStorage.getItem("token");
+          const response = await fetch(`${Endpoint}/api/v1/cities`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          })
+          if (!response.ok) {
+            throw new Error(`Global cities API failed: ${response.status}`);
+          }
+          const data = await response.json();
+          console.log("Global cities fallback response for itinerary", selector, ":", data);
+          populateItineraryCityDropdowns(selector, data);
+        }
+
+        // Helper function to populate itinerary city dropdowns while preserving selections
+        function populateItineraryCityDropdowns(selector, data) {
+          // Handle different response formats
+          let cities;
+          if (Array.isArray(data)) {
+            cities = data;
+          } else if (data && Array.isArray(data.cities)) {
+            cities = data.cities.map((cityObj) => {
+              if (typeof cityObj === "string") {
+                return cityObj;
+              } else if (cityObj && cityObj.city) {
+                return cityObj.city;
+              }
+              return cityObj;
+            });
+          } else if (data && typeof data === "object") {
+            cities = Object.values(data)
+              .filter((item) => typeof item === "string" || (item && item.city))
+              .map((item) => (typeof item === "string" ? item : item.city));
+          } else {
+            console.error("Unexpected cities data format:", data);
+            cities = [];
+          }
+
+          console.log("Processed itinerary city names for", selector, ":", cities.length, "cities");
+
+          // Handle different selector formats
+          let cityDropdowns = [];
+          if (selector.startsWith('#')) {
+            const dropdown = document.getElementById(selector.substring(1));
+            if (dropdown) cityDropdowns = [dropdown];
+          } else if (selector.startsWith('.')) {
+            cityDropdowns = Array.from(document.querySelectorAll(selector));
+          } else {
+            const byId = document.getElementById(selector);
+            if (byId) {
+              cityDropdowns = [byId];
+            } else {
+              cityDropdowns = Array.from(document.querySelectorAll(selector));
+            }
+          }
+
+          if (cityDropdowns.length === 0) {
+            console.error(`No itinerary dropdown elements found with selector "${selector}"`);
+            return;
+          }
+
+          cityDropdowns.forEach((dropdown) => {
+            // Store the currently selected value before clearing
+            const currentValue = dropdown.value;
+            const currentText = dropdown.options[dropdown.selectedIndex]?.text;
+            
+            dropdown.innerHTML = '<option value="">Select a city</option>';
+            
+            // Add all cities from API
+            cities.forEach((city) => {
+              const option = document.createElement("option");
+              option.value = city;
+              option.textContent = city;
+              dropdown.appendChild(option);
+            });
+
+            // Restore the previously selected value if it exists in the new list
+            if (currentValue && cities.includes(currentValue)) {
+              dropdown.value = currentValue;
+              console.log(`✅ Restored itinerary city selection: ${currentValue} for dropdown`);
+            } else if (currentValue && currentText && currentText !== "Select a city" && currentText !== "Select City" && currentText !== "") {
+              // If the current value is not in the cities list, add it as an option and select it
+              const option = document.createElement("option");
+              option.value = currentValue;
+              option.textContent = currentText;
+              option.selected = true;
+              dropdown.appendChild(option);
+              console.log(`✅ Added and selected missing itinerary city: ${currentText} (${currentValue})`);
+            }
+          });
+
+          console.log(`Successfully loaded ${cities.length} cities into ${cityDropdowns.length} itinerary dropdown(s)`);
+        }
+
+        // Function to load hotels, excursions, and transfers for existing itinerary data
+        function loadExistingItineraryData(tourDays) {
+          console.log("🔄 Loading existing itinerary data for", tourDays.length, "days");
+          
+          tourDays.forEach((day, dayIndex) => {
+            const daySection = document.querySelector(`[data-day="${day.day}"]`);
+            if (!daySection) {
+              console.warn(`⚠️ Day section not found for day ${day.day}`);
+              return;
+            }
+
+            console.log(`📅 Processing day ${day.day} with ${day.details.length} details`);
+
+            // Load hotels for each hotel detail
+            const hotelDetails = day.details.filter(detail => detail.type_of_tour === "hotels");
+            const hotelCityDropdowns = daySection.querySelectorAll(".city-dropdown-hotel");
+            
+            console.log(`🏨 Found ${hotelDetails.length} hotel details and ${hotelCityDropdowns.length} hotel city dropdowns for day ${day.day}`);
+            
+            hotelDetails.forEach((detail, index) => {
+              if (hotelCityDropdowns[index] && detail.city) {
+                const cityDropdown = hotelCityDropdowns[index];
+                const hotelDropdown = cityDropdown.closest(".activity-item").querySelector(".hotel-dropdown");
+                
+                console.log(`🏨 Populating hotels from cache for city: ${detail.city} on day ${day.day}`);
+                
+                // Initialize previous value tracking for city dropdown
+                previousValues.set(cityDropdown, detail.city);
+                
+                // Populate hotels from cache
+                populateHotelsFromCache(detail.city, hotelDropdown);
+                
+                // Set the selected hotel
+                if (detail.hotel_id && hotelDropdown) {
+                  setTimeout(() => {
+                    console.log(`🔍 Looking for hotel ID ${detail.hotel_id} in dropdown with ${hotelDropdown.options.length} options`);
+                    const hotelOption = Array.from(hotelDropdown.options).find(opt => opt.value == detail.hotel_id);
+                    if (hotelOption) {
+                      hotelDropdown.value = detail.hotel_id;
+                      // Initialize previous value tracking for hotel dropdown
+                      previousValues.set(hotelDropdown, detail.hotel_id);
+                      console.log(`✅ Set hotel: ${detail.hotel_name} for day ${day.day}`);
+                      
+                      // Populate room types from cache
+                      const roomTypeDropdown = hotelDropdown.closest(".activity-item").querySelector(".roomtype-dropdown");
+                      if (roomTypeDropdown) {
+                        populateRoomTypesFromCache(detail.hotel_id, roomTypeDropdown);
+                        
+                        // Set room type after populating
+                        if (detail.room_type_id) {
+                          setTimeout(() => {
+                            console.log(`🔍 Looking for room type ID ${detail.room_type_id} in dropdown with ${roomTypeDropdown.options.length} options`);
+                            const roomOption = Array.from(roomTypeDropdown.options).find(opt => opt.value == detail.room_type_id);
+                            if (roomOption) {
+                              roomTypeDropdown.value = detail.room_type_id;
+                              console.log(`✅ Set room type: ${detail.room_type} for day ${day.day}`);
+                            } else {
+                              console.warn(`⚠️ Room type ID ${detail.room_type_id} not found in dropdown for day ${day.day}`);
+                            }
+                          }, 100);
+                        }
+                      }
+                    } else {
+                      console.warn(`⚠️ Hotel ID ${detail.hotel_id} not found in dropdown for day ${day.day}. Available options:`, Array.from(hotelDropdown.options).map(opt => `${opt.text} (${opt.value})`));
+                    }
+                  }, 100);
+                }
+              }
+            });
+
+            // Load excursions for each excursion detail
+            const excursionDetails = day.details.filter(detail => detail.type_of_tour === "excursions");
+            const excursionCityDropdowns = daySection.querySelectorAll(".city-dropdown-excursion");
+            
+            console.log(`🎯 Found ${excursionDetails.length} excursion details and ${excursionCityDropdowns.length} excursion city dropdowns for day ${day.day}`);
+            
+            excursionDetails.forEach((detail, index) => {
+              if (excursionCityDropdowns[index] && detail.city) {
+                const cityDropdown = excursionCityDropdowns[index];
+                const excursionDropdown = cityDropdown.closest(".activity-item").querySelector(".excursion-dropdown");
+                
+                console.log(`🎯 Populating excursions from cache for city: ${detail.city} on day ${day.day}`);
+                
+                // Initialize previous value tracking for city dropdown
+                previousValues.set(cityDropdown, detail.city);
+                
+                // Populate excursions from cache
+                populateExcursionsFromCache(detail.city, excursionDropdown);
+                
+                // Set the selected excursion
+                if (detail.excursion_id && excursionDropdown) {
+                  setTimeout(() => {
+                    console.log(`🔍 Looking for excursion ID ${detail.excursion_id} in dropdown with ${excursionDropdown.options.length} options`);
+                    const excursionOption = Array.from(excursionDropdown.options).find(opt => opt.value == detail.excursion_id);
+                    if (excursionOption) {
+                      excursionDropdown.value = detail.excursion_id;
+                      console.log(`✅ Set excursion: ${detail.excursion_name} for day ${day.day}`);
+                    } else {
+                      console.warn(`⚠️ Excursion ID ${detail.excursion_id} not found in dropdown for day ${day.day}. Available options:`, Array.from(excursionDropdown.options).map(opt => `${opt.text} (${opt.value})`));
+                    }
+                  }, 100);
+                }
+              }
+            });
+
+            // Load transfers for each transfer detail
+            const transferDetails = day.details.filter(detail => detail.type_of_tour === "transfers");
+            const transferCityDropdowns = daySection.querySelectorAll(".city-dropdown-transfer");
+            
+            console.log(`🚐 Found ${transferDetails.length} transfer details and ${transferCityDropdowns.length} transfer city dropdowns for day ${day.day}`);
+            
+            transferDetails.forEach((detail, index) => {
+              if (transferCityDropdowns[index] && detail.city) {
+                const cityDropdown = transferCityDropdowns[index];
+                const transferDropdown = cityDropdown.closest(".activity-item").querySelector(".transfer-dropdown");
+                
+                console.log(`🚐 Populating transfers from cache for city: ${detail.city} on day ${day.day}`);
+                
+                // Initialize previous value tracking for city dropdown
+                previousValues.set(cityDropdown, detail.city);
+                
+                // Populate transfers from cache
+                populateTransfersFromCache(detail.city, transferDropdown);
+                
+                // Set the selected transfer
+                if (detail.transfer_id && transferDropdown) {
+                  setTimeout(() => {
+                    console.log(`🔍 Looking for transfer ID ${detail.transfer_id} in dropdown with ${transferDropdown.options.length} options`);
+                    const transferOption = Array.from(transferDropdown.options).find(opt => opt.value == detail.transfer_id);
+                    if (transferOption) {
+                      transferDropdown.value = detail.transfer_id;
+                      console.log(`✅ Set transfer: ${detail.transfer_name} for day ${day.day}`);
+                    } else {
+                      console.warn(`⚠️ Transfer ID ${detail.transfer_id} not found in dropdown for day ${day.day}. Available options:`, Array.from(transferDropdown.options).map(opt => `${opt.text} (${opt.value})`));
+                    }
+                  }, 100);
+                }
+              }
+            });
+          });
+        }
+
+        // Function to set city values in itinerary after dropdowns are populated
+        function setItineraryCityValues(tourDays) {
+          console.log("Setting itinerary city values for", tourDays.length, "days");
+          
+          tourDays.forEach((day, dayIndex) => {
+            const daySection = document.querySelector(`[data-day="${day.day}"]`);
+            if (!daySection) return;
+
+            // Set hotel cities
+            const hotelDetails = day.details.filter(detail => detail.type_of_tour === "hotels");
+            const hotelCityDropdowns = daySection.querySelectorAll(".city-dropdown-hotel");
+            hotelDetails.forEach((detail, index) => {
+              if (hotelCityDropdowns[index] && detail.city) {
+                const dropdown = hotelCityDropdowns[index];
+                // Check if the city exists in the dropdown options
+                const cityOption = Array.from(dropdown.options).find(opt => opt.value === detail.city);
+                if (cityOption) {
+                  dropdown.value = detail.city;
+                  console.log(`✅ Set hotel city: ${detail.city} for day ${day.day}`);
+                } else {
+                  // Add the missing city option
+                  const option = document.createElement("option");
+                  option.value = detail.city;
+                  option.textContent = detail.city;
+                  option.selected = true;
+                  dropdown.appendChild(option);
+                  console.log(`✅ Added missing hotel city: ${detail.city} for day ${day.day}`);
+                }
+              }
+            });
+
+            // Set excursion cities
+            const excursionDetails = day.details.filter(detail => detail.type_of_tour === "excursions");
+            const excursionCityDropdowns = daySection.querySelectorAll(".city-dropdown-excursion");
+            excursionDetails.forEach((detail, index) => {
+              if (excursionCityDropdowns[index] && detail.city) {
+                const dropdown = excursionCityDropdowns[index];
+                const cityOption = Array.from(dropdown.options).find(opt => opt.value === detail.city);
+                if (cityOption) {
+                  dropdown.value = detail.city;
+                  console.log(`✅ Set excursion city: ${detail.city} for day ${day.day}`);
+                } else {
+                  const option = document.createElement("option");
+                  option.value = detail.city;
+                  option.textContent = detail.city;
+                  option.selected = true;
+                  dropdown.appendChild(option);
+                  console.log(`✅ Added missing excursion city: ${detail.city} for day ${day.day}`);
+                }
+              }
+            });
+
+            // Set transfer cities
+            const transferDetails = day.details.filter(detail => detail.type_of_tour === "transfers");
+            const transferCityDropdowns = daySection.querySelectorAll(".city-dropdown-transfer");
+            transferDetails.forEach((detail, index) => {
+              if (transferCityDropdowns[index] && detail.city) {
+                const dropdown = transferCityDropdowns[index];
+                const cityOption = Array.from(dropdown.options).find(opt => opt.value === detail.city);
+                if (cityOption) {
+                  dropdown.value = detail.city;
+                  console.log(`✅ Set transfer city: ${detail.city} for day ${day.day}`);
+                } else {
+                  const option = document.createElement("option");
+                  option.value = detail.city;
+                  option.textContent = detail.city;
+                  option.selected = true;
+                  dropdown.appendChild(option);
+                  console.log(`✅ Added missing transfer city: ${detail.city} for day ${day.day}`);
+                }
+              }
+            });
+          });
+        }
+      });
+
+      // Global functions for onclick handlers
+      window.toggleDayContent = function (button) {
+        const daySection = button.closest(".day-section");
+        const dayContent = daySection.querySelector(".day-content");
+        const toggleIcon = button.querySelector(".toggle-icon");
+
+        if (dayContent.classList.contains("expanded")) {
+          // Collapse the content
+          dayContent.classList.remove("expanded");
+          dayContent.classList.add("collapsed");
+          toggleIcon.classList.add("rotated");
+        } else {
+          // Expand the content
+          dayContent.classList.remove("collapsed");
+          dayContent.classList.add("expanded");
+          toggleIcon.classList.remove("rotated");
+        }
+      };
+
+      // These functions are duplicated from inside DOMContentLoaded - remove duplicates
+      // The actual implementations are inside the DOMContentLoaded event listener
+
+      // Functions for adding/removing excursions and transfers - make global for onclick access
+      window.addExcursion = function (button) {
+        const excursionsContainer = button
+          .closest(".activity-container")
+          .querySelector(".excursions-list");
+        const newExcursionItem = document.createElement("div");
+        newExcursionItem.className = "activity-item";
+        newExcursionItem.innerHTML = `
+          <div class="row">
+            <div class="col-md-6">
+              <label>City</label>
+              <select class="form-control city-dropdown-excursion">
+                <option value="">Select City</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label>From Time</label>
+              <input type="text" class="form-control from-time" placeholder="Select Time" />
+            </div>
+            <div class="col-md-3">
+              <label>To Time</label>
+              <input type="text" class="form-control to-time" placeholder="To Time" />
+            </div>
+          </div>
+          <div class="row mt-2">
+            <div class="col-md-10">
+              <label>Excursion</label>
+              <select class="form-control excursion-dropdown">
+                <option value="">Select Excursion</option>
+              </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="button" class="remove-excursion-btn" onclick="removeExcursion(this)">
+                <i class="fas fa-trash mr-1"></i>Remove
+              </button>
+            </div>
+          </div>
+        `;
+
+        excursionsContainer.appendChild(newExcursionItem);
+
+        // Initialize flatpickr for new time inputs
+        window.initializeFlatpickr();
+
+        // Populate cities dropdown for the new excursion
+        window.populateCitiesDropdown(".city-dropdown-excursion");
+
+        // Show remove buttons for all excursion items
+        updateRemoveButtonsVisibility(
+          excursionsContainer,
+          ".remove-excursion-btn"
+        );
+      };
+
+      window.removeExcursion = function (button) {
+        const excursionItem = button.closest(".activity-item");
+        const excursionsContainer = excursionItem
+          ? excursionItem.closest(".excursions-list")
+          : null;
+
+        if (excursionsContainer && excursionsContainer.children.length > 1) {
+          excursionItem.remove();
+          updateRemoveButtonsVisibility(
+            excursionsContainer,
+            ".remove-excursion-btn"
+          );
+        } else {
+          console.error(
+            "Could not find excursions container or only one excursion remaining"
+          );
+        }
+      };
+
+      window.addTransfer = function (button) {
+        const transfersContainer = button
+          .closest(".activity-container")
+          .querySelector(".transfers-list");
+        const newTransferItem = document.createElement("div");
+        newTransferItem.className = "activity-item";
+        newTransferItem.innerHTML = `
+          <div class="row">
+            <div class="col-md-6">
+              <label>City</label>
+              <select class="form-control city-dropdown-transfer">
+                <option value="">Select City</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label>From Time</label>
+              <input type="text" class="form-control from-time" placeholder="From Time" />
+            </div>
+            <div class="col-md-3">
+              <label>To Time</label>
+              <input type="text" class="form-control to-time" placeholder="To Time" />
+            </div>
+          </div>
+          <div class="row mt-2">
+            <div class="col-md-10">
+              <label>Transfer</label>
+              <select class="form-control transfer-dropdown">
+                <option value="">Select Transfer</option>
+              </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="button" class="remove-transfer-btn" onclick="removeTransfer(this)">
+                <i class="fas fa-trash mr-1"></i>Remove
+              </button>
+            </div>
+          </div>
+        `;
+
+        transfersContainer.appendChild(newTransferItem);
+
+        // Initialize flatpickr for new time inputs
+        window.initializeFlatpickr();
+
+        // Populate cities dropdown for the new transfer
+        window.populateCitiesDropdown(".city-dropdown-transfer");
+
+        // Show remove buttons for all transfer items
+        updateRemoveButtonsVisibility(
+          transfersContainer,
+          ".remove-transfer-btn"
+        );
+      };
+
+      window.removeTransfer = function (button) {
+        const transferItem = button.closest(".activity-item");
+        const transfersContainer = transferItem
+          ? transferItem.closest(".transfers-list")
+          : null;
+
+        if (transfersContainer && transfersContainer.children.length > 1) {
+          transferItem.remove();
+          updateRemoveButtonsVisibility(
+            transfersContainer,
+            ".remove-transfer-btn"
+          );
+        } else {
+          console.error(
+            "Could not find transfers container or only one transfer remaining"
+          );
+        }
+      };
+
+      function updateRemoveButtonsVisibility(container, buttonSelector) {
+        const removeButtons = container.querySelectorAll(buttonSelector);
+        removeButtons.forEach((btn, index) => {
+          if (container.children.length > 1) {
+            btn.style.display = "block";
+          } else {
+            btn.style.display = "none";
+          }
+        });
+      }
+
+      let currentEditRow = null; // Track the row being edited
+
+      function formatToDDMMYYYY(dateString) {
+        const ddmmyyyyRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+        if (ddmmyyyyRegex.test(dateString)) {
+          return dateString; // Return as-is if already in dd/mm/yyyy format
+        }
+
+        // Handle dd-mm-yyyy format (convert to dd/mm/yyyy)
+        const ddmmyyyyDashRegex = /^\d{2}-\d{2}-\d{4}$/;
+        if (ddmmyyyyDashRegex.test(dateString)) {
+          return dateString.replace(/-/g, "/");
+        }
+
+        // Handle yyyy-mm-dd format
+        const dateParts = dateString.split("-");
+        if (dateParts.length === 3) {
+          const [year, month, day] = dateParts;
+          return `${day}/${month}/${year}`;
+        }
+        return dateString; // Return original if format not recognized
+      }
+
+      function formatToYYYYMMDD(dateString) {
+        // Check if the date is in dd/mm/yyyy format
+        const ddmmyyyySlashRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+        if (ddmmyyyySlashRegex.test(dateString)) {
+          const [day, month, year] = dateString.split("/");
+          return `${year}-${month}-${day}`; // Convert to yyyy-mm-dd
+        }
+
+        // Check if the date is in dd-mm-yyyy format
+        const ddmmyyyyDashRegex = /^\d{2}-\d{2}-\d{4}$/;
+        if (ddmmyyyyDashRegex.test(dateString)) {
+          const [day, month, year] = dateString.split("-");
+          return `${year}-${month}-${day}`; // Convert to yyyy-mm-dd
+        }
+
+        // Assume the date is already in yyyy-mm-dd format
+        const yyyymmddRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (yyyymmddRegex.test(dateString)) {
+          return dateString;
+        }
+
+        // Return original string if format not recognized
+        return dateString;
+      }
+
+      function editRow(row) {
+        currentEditRow = row; // Store reference to the row being edited
+
+        // Get modal elements
+        const modalStartDate = document.getElementById("modalStartDate");
+        const modalEndDate = document.getElementById("modalEndDate");
+        const modalPax = document.getElementById("modalPax");
+        const modalSinglePrice = document.getElementById("modalSinglePrice");
+        const modalDoublePrice = document.getElementById("modalDoublePrice");
+        const modalTriplePrice = document.getElementById("modalTriplePrice");
+
+        // Update the data object with the latest values from the table
+        const data = {
+          startDate: formatToYYYYMMDD(row.cells[0].textContent.trim()),
+          endDate: formatToYYYYMMDD(row.cells[1].textContent.trim()),
+          pax: parseInt(row.cells[2].textContent.trim()) || 0,
+          singlePrice: parseFloat(row.cells[3].textContent.trim()) || 0,
+          doublePrice: parseFloat(row.cells[4].textContent.trim()) || 0,
+          triplePrice: parseFloat(row.cells[5].textContent.trim()) || 0,
+        };
+
+        // Set values in the modal with the latest table data
+        modalStartDate.value = data.startDate;
+        modalEndDate.value = data.endDate;
+        modalPax.value = data.pax;
+        modalSinglePrice.value = data.singlePrice;
+        modalDoublePrice.value = data.doublePrice;
+        modalTriplePrice.value = data.triplePrice;
+
+        $("#addTourPriceModal").modal("show"); // Show the modal
+      }
+
+      function deleteRow(row) {
+        if (confirm("Are you sure you want to delete this row?")) {
+          const index = Array.from(
+            document.getElementById("tourPriceTableBody").children
+          ).indexOf(row);
+          tourPricings.splice(index, 1);
+          row.remove();
+        }
+      }
+
+      function populatePrices(prices) {
+        const tourPriceTableBody =
+          document.getElementById("tourPriceTableBody");
+
+        // Clear existing tourPricings array and repopulate it
+        tourPricings = [];
+
+        // Sort prices by start_date in ascending order
+        const sortedPrices = [...prices].sort((a, b) => {
+          const dateA = new Date(a.start_date);
+          const dateB = new Date(b.start_date);
+          return dateA - dateB;
+        });
+
+        sortedPrices.forEach((price) => {
+          const row = document.createElement("tr");
+
+          // Format dates to DD/MM/YYYY
+          const formattedStartDate = formatToDDMMYYYY(price.start_date);
+          const formattedEndDate = formatToDDMMYYYY(price.end_date);
+
+          row.innerHTML = `
+              <td>${formattedStartDate}</td>
+              <td>${formattedEndDate}</td>
+              <td>${price.pax}</td>
+              <td>${price.single_price}</td>
+              <td>${price.double_price}</td>
+              <td>${price.triple_price}</td>
+              <td>
+                <div class="btn-group" role="group">
+                  <div class="tooltip-btn">
+                    <button type="button" class="btn btn-sm btn-primary edit-btn">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <span class="tooltip-text">Edit</span>
+                  </div>
+                  <div class="tooltip-btn">
+                    <button type="button" class="btn btn-sm btn-danger delete-btn ml-1">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                    <span class="tooltip-text">Delete</span>
+                  </div>
+                </div>
+              </td>
+            `;
+
+          // Add the price data to the global tourPricings array with formatted dates
+          tourPricings.push({
+            startDate: formattedStartDate,
+            endDate: formattedEndDate,
+            pax: price.pax,
+            singlePrice: price.single_price,
+            doublePrice: price.double_price,
+            triplePrice: price.triple_price,
+          });
+
+          // Add event listeners for Edit and Delete buttons
+          row
+            .querySelector(".edit-btn")
+            .addEventListener("click", () => editRow(row, price));
+          row
+            .querySelector(".delete-btn")
+            .addEventListener("click", () => deleteRow(row));
+
+          tourPriceTableBody.appendChild(row);
+        });
+      }
+
+      // Form validation function
+      function validateTourValidity() {
+        const selectedDays = document.querySelectorAll(
+          'input[id^="tourDay"]:checked'
+        );
+
+        if (selectedDays.length === 0) {
+          alert(
+            "Please select at least one day of the week for tour validity."
+          );
+          return false;
+        }
+
+        return true;
+      }
+
+      document
+        .getElementById("tourForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+
+          // Validate tour validity first
+          if (!validateTourValidity()) {
+            return;
+          }
+
+          console.log("Submit event called");
+
+          const itinerarySections = document.querySelectorAll(
+            "#itineraryDetails .day-section"
+          );
+
+          const tourDays = Array.from(itinerarySections).map(
+            (section, index) => {
+              const day = index + 1; // Day number
+              const itinerary = section.querySelector("textarea").value.trim(); // Itinerary details
+
+              // Find all activity rows within the current section
+              const activityRows = section.querySelectorAll(
+                ".activity-row, .activity-item"
+              );
+
+              const details = [];
+
+              // Handle hotels - find the hotels activity container specifically
+              const hotelsContainer = section
+                .querySelector(".activity-container h6 i.fa-bed")
+                ?.closest(".activity-container");
+              const hotelRows = hotelsContainer
+                ? hotelsContainer.querySelectorAll(".activity-item")
+                : [];
+
+              console.log(`Day ${day}: Found ${hotelRows.length} hotel rows`);
+
+              hotelRows.forEach((row) => {
+                const hotelDropdown = row.querySelector(".hotel-dropdown");
+                const roomTypeDropdown =
+                  row.querySelector(".roomtype-dropdown");
+                const cityHotel =
+                  row.querySelector(".city-dropdown-hotel")?.value || "";
+                const fromTime = row.querySelector(".from-time")?.value || null;
+                const toTime = row.querySelector(".to-time")?.value || null;
+
+                const hotelId = parseInt(hotelDropdown?.value, 10) || null;
+                const hotelName =
+                  hotelDropdown?.options[hotelDropdown.selectedIndex]?.text ||
+                  "";
+                const roomTypeId =
+                  parseInt(roomTypeDropdown?.value, 10) || null;
+                const roomTypeName =
+                  roomTypeDropdown?.options[roomTypeDropdown.selectedIndex]
+                    ?.text || "";
+
+                if (hotelId) {
+                  const hotelDetail = {
+                    from_time: fromTime,
+                    to_time: toTime,
+                    city: cityHotel,
+                    type_of_tour: "hotels",
+                    hotel_id: hotelId,
+                    hotel_name: hotelName,
+                    room_type_id: roomTypeId,
+                    room_type: roomTypeName,
+                  };
+                  details.push(hotelDetail);
+                  console.log(`Day ${day}: Added hotel detail:`, hotelDetail);
+                } else {
+                  console.log(
+                    `Day ${day}: Hotel ID not found, skipping hotel data`
+                  );
+                }
+              });
+
+              // Handle excursions
+              const excursionRows = section.querySelectorAll(
+                ".excursions-list .activity-item"
+              );
+              excursionRows.forEach((row) => {
+                const excursionDropdown = row.querySelector(
+                  ".excursion-dropdown"
+                );
+                const cityExcursion =
+                  row.querySelector(".city-dropdown-excursion")?.value || "";
+                const fromTime = row.querySelector(".from-time")?.value || null;
+                const toTime = row.querySelector(".to-time")?.value || null;
+
+                const excursionId =
+                  parseInt(excursionDropdown?.value, 10) || null;
+                const excursionName =
+                  excursionDropdown?.options[excursionDropdown.selectedIndex]
+                    ?.text || "";
+
+                if (excursionId) {
+                  details.push({
+                    from_time: fromTime,
+                    to_time: toTime,
+                    city: cityExcursion,
+                    type_of_tour: "excursions",
+                    excursion_id: excursionId,
+                    excursion_name: excursionName,
+                  });
+                }
+              });
+
+              // Handle transfers
+              const transferRows = section.querySelectorAll(
+                ".transfers-list .activity-item"
+              );
+              transferRows.forEach((row) => {
+                const transferDropdown =
+                  row.querySelector(".transfer-dropdown");
+                const cityTransfer =
+                  row.querySelector(".city-dropdown-transfer")?.value || "";
+                const fromTime = row.querySelector(".from-time")?.value || null;
+                const toTime = row.querySelector(".to-time")?.value || null;
+
+                const transferId =
+                  parseInt(transferDropdown?.value, 10) || null;
+                const transferName =
+                  transferDropdown?.options[transferDropdown.selectedIndex]
+                    ?.text || "";
+
+                if (transferId) {
+                  details.push({
+                    from_time: fromTime,
+                    to_time: toTime,
+                    city: cityTransfer,
+                    type_of_tour: "transfers",
+                    transfer_id: transferId,
+                    transfer_name: transferName,
+                  });
+                }
+              });
+
+              return {
+                day,
+                itinerary,
+                details, // Attach the array of details
+              };
+            }
+          );
+
+          // Log the constructed tourDays array
+          console.log("Constructed tourDays:", tourDays);
+
+          // Collect Pricing Details
+          const pricingRows = document.querySelectorAll(
+            "#tourPriceTableBody tr"
+          );
+          const tourPricings = Array.from(pricingRows).map((row) => ({
+            start_date: formatToYYYYMMDD(row.cells[0].textContent.trim()),
+            end_date: formatToYYYYMMDD(row.cells[1].textContent.trim()),
+            pax: parseInt(row.cells[2].textContent.trim()),
+            single_price: parseFloat(row.cells[3].textContent.trim()),
+            double_price: parseFloat(row.cells[4].textContent.trim()),
+            triple_price: parseFloat(row.cells[5].textContent.trim()),
+            currency_id: 1, // Assuming default currency
+          }));
+
+          // Collect tour validity data and convert to available_days format
+          const tourValidDays = Array.from(
+            document.querySelectorAll('input[id^="tourDay"]:checked')
+          ).map((cb) => parseInt(cb.value));
+
+          // Convert to available_days format for backend
+          const availableDays = tourValidDays.map((dayOfWeek) => ({
+            day_of_week: dayOfWeek,
+          }));
+
+          // Construct the full tour data
+          const tourData = {
+            name: document.getElementById("tourName").value,
+            city: document.getElementById("tourCode").value,
+            category: document.getElementById("tourCategory").value,
+            description: document.getElementById("tourDescription").value,
+            duration: tourDays.length,
+            route: document.getElementById("tourRoute").value,
+            tot: document.getElementById("tourDeparture").value,
+            date: new Date().toISOString(), // Use a specific date if required
+            available_days: availableDays,
+            tour_days: tourDays,
+            tour_pricings: tourPricings,
+          };
+
+          const token = localStorage.getItem("token");
+          if (!token) {
+            alert("You are not authorized. Please log in first.");
+            window.location.href = "login.html";
+            return;
+          }
+
+          const urlParams = new URLSearchParams(window.location.search);
+          const tourId = urlParams.get("id");
+
+          if (!tourId) {
+            alert("Invalid Tour ID.");
+            return;
+          }
+
+          // Log the final payload
+          console.log(
+            "Final tourData payload:",
+            JSON.stringify(tourData, null, 2)
+          );
+
+          // Send PUT request
+          fetch(`${Endpoint}/api/v1/tours/${tourId}`, {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(tourData),
+          })
+            .then((response) => {
+              if (response.ok) {
+                alert("Tour updated successfully!");
+                window.location.href = "tours.html";
+              } else {
+                return response.json().then((errorData) => {
+                  console.error("Failed to update tour:", errorData);
+                  alert(
+                    `Error: ${errorData.message || "Failed to update tour."}`
+                  );
+                });
+              }
+            })
+            .catch((error) => {
+              console.error("Error updating tour:", error);
+              alert("Failed to update tour. Please try again later.");
+            });
+        });
+    </script>
+  </body>
+</html>

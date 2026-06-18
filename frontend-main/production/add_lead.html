@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Create Lead</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
+    <link href="../build/css/custom.css" rel="stylesheet" />
+    <style>
+      .modal-xl {
+        max-width: 90% !important;
+      }
+
+      /* Reduce form section padding */
+      .form-section {
+        margin-bottom: 15px;
+      }
+
+      .form-section h4 {
+        margin-bottom: 10px;
+        margin-top: 5px;
+      }
+
+      .form-section hr {
+        margin-top: 5px;
+        margin-bottom: 15px;
+      }
+
+      .form-group {
+        margin-bottom: 12px;
+      }
+
+      /* Lead-specific styling */
+      .lead-header {
+        background: #2a3f54;
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+      }
+
+      .pricing-summary {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 20px;
+      }
+
+      .service-section {
+        border: 1px solid #e3e6f0;
+        border-radius: 8px;
+        margin-bottom: 15px;
+      }
+
+      .service-section .card-header {
+        background: #f8f9fc;
+        border-bottom: 1px solid #e3e6f0;
+        font-weight: 600;
+      }
+
+      .cost-input {
+        background-color: #fff3cd;
+        border-color: #ffeaa7;
+      }
+
+      .total-cost {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #28a745;
+      }
+
+      /* Make specific headings black */
+      .form-section h4,
+      .card-header h5,
+      .pricing-summary h4 {
+        color: #000000 !important;
+      }
+    </style>
+  </head>
+
+  <body class="nav-md">
+    <div class="container mt-5">
+      <!-- Lead Header -->
+      <div class="lead-header">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h2><i class="fa fa-rocket mr-3"></i>Create New Lead</h2>
+            <p class="mb-0">
+              Build a travel proposal with direct service selection
+            </p>
+          </div>
+          <div class="col-md-4 text-right">
+            <button
+              type="button"
+              class="btn btn-light"
+              onclick="window.location.href='leads.html'"
+            >
+              <i class="fa fa-arrow-left mr-2"></i>Back to Leads
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="x_panel">
+        <div class="x_content">
+          <form id="addLeadForm" class="form-label-left input_mask">
+            <!-- Lead Configuration Section -->
+            <div class="row form-section">
+              <div class="col-md-12">
+                <h4><i class="fa fa-cog"></i> Lead Configuration</h4>
+                <hr />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-3 col-sm-3 form-group">
+                <label for="optionName">Option Name *</label>
+                <input
+                  type="text"
+                  id="optionName"
+                  class="form-control"
+                  placeholder="e.g., Budget Package"
+                  required
+                />
+              </div>
+              <div class="col-md-3 col-sm-3 form-group">
+                <label for="templateType">Template Type *</label>
+                <select id="templateType" class="form-control" required>
+                  <option value="simple">Simple</option>
+                  <option value="smart">Smart</option>
+                  <option value="modern">Modern</option>
+                </select>
+              </div>
+              <div class="col-md-3 col-sm-3 form-group">
+                <label for="markupPercentage">Markup Percentage *</label>
+                <input
+                  type="number"
+                  id="markupPercentage"
+                  class="form-control"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value="15"
+                  required
+                />
+              </div>
+              <div class="col-md-3 col-sm-3 form-group">
+                <label for="expiryDays">Lead Expiry Days *</label>
+                <input
+                  type="number"
+                  id="expiryDays"
+                  class="form-control"
+                  min="1"
+                  max="30"
+                  value="3"
+                  required
+                />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-3 col-sm-3 form-group">
+                <label for="urgency">Urgency *</label>
+                <select id="urgency" class="form-control" required>
+                  <option value="low">Low Urgency</option>
+                  <option value="medium" selected>Medium Urgency</option>
+                  <option value="high">High Urgency</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Client Information Section -->
+            <div class="row form-section">
+              <div class="col-md-12">
+                <h4><i class="fa fa-user"></i> Client Information</h4>
+                <hr />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-4 col-sm-4 form-group">
+                <label for="clientName">Client Name *</label>
+                <input
+                  type="text"
+                  id="clientName"
+                  class="form-control"
+                  placeholder="Enter client name"
+                  required
+                />
+              </div>
+              <div class="col-md-4 col-sm-4 form-group">
+                <label for="clientEmail">Client Email *</label>
+                <input
+                  type="email"
+                  id="clientEmail"
+                  class="form-control"
+                  placeholder="client@example.com"
+                  required
+                />
+              </div>
+              <div class="col-md-4 col-sm-4 form-group">
+                <label for="clientPhone">Client Phone *</label>
+                <input
+                  type="tel"
+                  id="clientPhone"
+                  class="form-control"
+                  placeholder="Enter phone number"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Trip Details Section -->
+            <div class="row form-section">
+              <div class="col-md-12">
+                <h4><i class="fa fa-calendar"></i> Trip Details</h4>
+                <hr />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-3 col-sm-3 form-group">
+                <label for="bookingDate">Booking Date *</label>
+                <input
+                  type="date"
+                  id="bookingDate"
+                  class="form-control"
+                  readonly
+                  required
+                />
+              </div>
+              <div class="col-md-3 col-sm-3 form-group">
+                <label for="startDate">Trip Start Date *</label>
+                <input
+                  type="date"
+                  id="startDate"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="col-md-3 col-sm-3 form-group">
+                <label for="numberOfAdults">Adults *</label>
+                <input
+                  type="number"
+                  id="numberOfAdults"
+                  class="form-control"
+                  min="1"
+                  value="2"
+                  required
+                />
+              </div>
+              <div class="col-md-3 col-sm-3 form-group">
+                <label for="numberOfKids">Children</label>
+                <input
+                  type="number"
+                  id="numberOfKids"
+                  class="form-control"
+                  min="0"
+                  value="0"
+                />
+              </div>
+            </div>
+
+            <!-- Notes Section -->
+            <div class="row">
+              <div class="col-md-6 col-sm-6 form-group">
+                <label for="internalNotes">Internal Notes</label>
+                <textarea
+                  id="internalNotes"
+                  class="form-control"
+                  placeholder="Notes for internal use..."
+                  rows="3"
+                ></textarea>
+              </div>
+              <div class="col-md-6 col-sm-6 form-group">
+                <label for="clientNotes">Client Notes</label>
+                <textarea
+                  id="clientNotes"
+                  class="form-control"
+                  placeholder="Notes visible to client..."
+                  rows="3"
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Service Selection Buttons -->
+            <div class="row form-section">
+              <div class="col-md-12">
+                <h4><i class="fa fa-list"></i> Services Selection</h4>
+                <hr />
+              </div>
+            </div>
+            <div
+              class="btn-group btn-group-toggle d-flex justify-content-center mb-4"
+              data-toggle="buttons"
+            >
+              <button
+                id="btnFlights"
+                class="btn btn-primary btn-lg"
+                type="button"
+                data-toggle="collapse"
+                data-target="#flightsSection"
+                aria-expanded="false"
+                aria-controls="flightsSection"
+              >
+                <i class="fa fa-plane"></i> Flights
+              </button>
+              <button
+                id="btnTransfers"
+                class="btn btn-info btn-lg"
+                type="button"
+                data-toggle="collapse"
+                data-target="#transfersSection"
+                aria-expanded="false"
+                aria-controls="transfersSection"
+              >
+                <i class="fa fa-bus"></i> Transfers
+              </button>
+              <button
+                id="btnHotels"
+                class="btn btn-secondary btn-lg"
+                type="button"
+                data-toggle="collapse"
+                data-target="#hotelsSection"
+                aria-expanded="false"
+                aria-controls="hotelsSection"
+              >
+                <i class="fa fa-hotel"></i> Hotels
+              </button>
+              <button
+                id="btnExcursions"
+                class="btn btn-warning btn-lg"
+                type="button"
+                data-toggle="collapse"
+                data-target="#excursionsSection"
+                aria-expanded="false"
+                aria-controls="excursionsSection"
+              >
+                <i class="fa fa-binoculars"></i> Excursions
+              </button>
+              <button
+                id="btnTours"
+                class="btn btn-success btn-lg"
+                type="button"
+                data-toggle="collapse"
+                data-target="#toursSection"
+                aria-expanded="false"
+                aria-controls="toursSection"
+              >
+                <i class="fa fa-map-signs"></i> Tours
+              </button>
+              <button
+                id="btnOthers"
+                class="btn btn-dark btn-lg"
+                type="button"
+                data-toggle="collapse"
+                data-target="#othersSection"
+                aria-expanded="false"
+                aria-controls="othersSection"
+              >
+                <i class="fa fa-plus"></i> Others
+              </button>
+            </div>
+
+            <!-- Service Sections -->
+
+            <!-- Flights Section -->
+            <div class="collapse service-section" id="flightsSection">
+              <div class="card">
+                <div class="card-header">
+                  <h5><i class="fa fa-plane mr-2"></i>Flight Details</h5>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table table-bordered" id="flightsTable">
+                      <thead>
+                        <tr>
+                          <th>Flight Name</th>
+                          <th>Date</th>
+                          <th>Departure</th>
+                          <th>Arrival</th>
+                          <th>Cost</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="flightsTableBody">
+                        <!-- Rows will be added dynamically -->
+                      </tbody>
+                    </table>
+                    <div class="text-center mt-3">
+                      <button
+                        type="button"
+                        id="addFlightBtn"
+                        class="btn btn-primary btn-sm"
+                      >
+                        <i class="fa fa-plus"></i> Add Flight
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Transfers Section -->
+            <div class="collapse service-section" id="transfersSection">
+              <div class="card">
+                <div class="card-header">
+                  <h5><i class="fa fa-bus mr-2"></i>Transfer Details</h5>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table table-bordered" id="transfersTable">
+                      <thead>
+                        <tr>
+                          <th>From</th>
+                          <th>To</th>
+                          <th>Date</th>
+                          <th>Pickup Time</th>
+                          <th>Cost (THB)</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="transfersTableBody">
+                        <!-- Rows will be added dynamically -->
+                      </tbody>
+                    </table>
+                    <div class="text-center mt-3">
+                      <button
+                        type="button"
+                        id="addTransferBtn"
+                        class="btn btn-info btn-sm"
+                      >
+                        <i class="fa fa-plus"></i> Add Transfer
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Hotels Section -->
+            <div class="collapse service-section" id="hotelsSection">
+              <div class="card">
+                <div class="card-header">
+                  <h5><i class="fa fa-hotel mr-2"></i>Hotel Details</h5>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table table-bordered" id="hotelsTable">
+                      <thead>
+                        <tr>
+                          <th>Hotel Name</th>
+                          <th>City</th>
+                          <th>Check In</th>
+                          <th>Check Out</th>
+                          <th>Nights</th>
+                          <th>Room Types</th>
+                          <th>Cost (THB)</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="hotelsTableBody">
+                        <!-- Rows will be added dynamically -->
+                      </tbody>
+                    </table>
+                    <div class="text-center mt-3">
+                      <button
+                        type="button"
+                        id="addHotelBtn"
+                        class="btn btn-secondary btn-sm"
+                      >
+                        <i class="fa fa-plus"></i> Add Hotel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Excursions Section -->
+            <div class="collapse service-section" id="excursionsSection">
+              <div class="card">
+                <div class="card-header">
+                  <h5>
+                    <i class="fa fa-binoculars mr-2"></i>Excursion Details
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table table-bordered" id="excursionsTable">
+                      <thead>
+                        <tr>
+                          <th>Excursion Name</th>
+                          <th>Date</th>
+                          <th>Time</th>
+                          <th>Hotel</th>
+                          <th>Cost (THB)</th>
+                          <th>Remarks</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="excursionsTableBody">
+                        <!-- Rows will be added dynamically -->
+                      </tbody>
+                    </table>
+                    <div class="text-center mt-3">
+                      <button
+                        type="button"
+                        id="addExcursionBtn"
+                        class="btn btn-warning btn-sm"
+                      >
+                        <i class="fa fa-plus"></i> Add Excursion
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tours Section -->
+            <div class="collapse service-section" id="toursSection">
+              <div class="card">
+                <div class="card-header">
+                  <h5><i class="fa fa-map-signs mr-2"></i>Tour Details</h5>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table table-bordered" id="toursTable">
+                      <thead>
+                        <tr>
+                          <th>Tour Name</th>
+                          <th>From Date</th>
+                          <th>To Date</th>
+                          <th>Route</th>
+                          <th>Cost (THB)</th>
+                          <th>Remarks</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="toursTableBody">
+                        <!-- Rows will be added dynamically -->
+                      </tbody>
+                    </table>
+                    <div class="text-center mt-3">
+                      <button
+                        type="button"
+                        id="addTourBtn"
+                        class="btn btn-success btn-sm"
+                      >
+                        <i class="fa fa-plus"></i> Add Tour
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Others Section -->
+            <div class="collapse service-section" id="othersSection">
+              <div class="card">
+                <div class="card-header">
+                  <h5><i class="fa fa-plus mr-2"></i>Other Services</h5>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table table-bordered" id="othersTable">
+                      <thead>
+                        <tr>
+                          <th>Description</th>
+                          <th>Date</th>
+                          <th>Cost (THB)</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="othersTableBody">
+                        <!-- Rows will be added dynamically -->
+                      </tbody>
+                    </table>
+                    <div class="text-center mt-3">
+                      <button
+                        type="button"
+                        id="addOtherBtn"
+                        class="btn btn-dark btn-sm"
+                      >
+                        <i class="fa fa-plus"></i> Add Other Service
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pricing Summary -->
+            <div class="pricing-summary">
+              <div class="row">
+                <div class="col-md-12">
+                  <h4><i class="fa fa-calculator mr-2"></i>Pricing Summary</h4>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-3">
+                  <label>Total Cost:</label>
+                  <div class="total-cost" id="baseCost">$0.00</div>
+                </div>
+                <div class="col-md-3">
+                  <label>Markup (<span id="markupPercent">15</span>%):</label>
+                  <div class="total-cost text-info" id="markupAmount">
+                    $0.00
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <label>Final Cost:</label>
+                  <div class="total-cost text-success" id="finalCost">
+                    $0.00
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <button
+                    type="button"
+                    class="btn btn-info btn-sm"
+                    id="previewLeadBtn"
+                  >
+                    <i class="fa fa-eye mr-2"></i>Preview Lead
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Save and Cancel Buttons -->
+            <div class="mt-4 text-center">
+              <button
+                id="submitLead"
+                type="submit"
+                class="btn btn-primary btn-lg"
+              >
+                <i class="fa fa-save mr-2"></i>Create Lead
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary btn-lg ml-3"
+                onclick="window.location.href='leads.html'"
+              >
+                <i class="fa fa-times mr-2"></i>Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Service Modals will be added here -->
+
+    <!-- Flight Modal -->
+    <div
+      class="modal fade"
+      id="flightModal"
+      tabindex="-1"
+      aria-labelledby="flightModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title font-weight-bold" id="flightModalLabel">
+              Add Flight
+            </h5>
+            <button
+              type="button"
+              class="close text-white"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="flightForm">
+              <div class="form-row">
+                <!-- Flight Name -->
+                <div class="form-group col-md-4">
+                  <label for="flight">Flight Name</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="flight"
+                    placeholder="Flight Name"
+                    required
+                  />
+                </div>
+                <!-- Flight Number -->
+                <div class="form-group col-md-4">
+                  <label for="number">Flight Number</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="number"
+                    placeholder="Flight Number"
+                    required
+                  />
+                </div>
+                <!-- Flight In/Out -->
+                <div class="form-group col-md-4">
+                  <label for="flightInOut">Flight In/Out</label>
+                  <select id="flightInOut" class="form-control" required>
+                    <option value="" disabled selected>Select</option>
+                    <option value="in">Flight In</option>
+                    <option value="out">Flight Out</option>
+                  </select>
+                </div>
+                <!-- Route -->
+                <div class="form-group col-md-4">
+                  <label for="flightRoute">Route</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="flightRoute"
+                    placeholder="Route"
+                    required
+                  />
+                </div>
+                <!-- Date -->
+                <div class="form-group col-md-4">
+                  <label for="flightDate">Date of Travel</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="flightDate"
+                    required
+                  />
+                </div>
+                <!-- Departure Time -->
+                <div class="form-group col-md-4">
+                  <label for="departureTime">Departure Time</label>
+                  <input
+                    type="time"
+                    class="form-control"
+                    id="departureTime"
+                    required
+                  />
+                </div>
+                <!-- Arrival Time -->
+                <div class="form-group col-md-4">
+                  <label for="arrivalTime">Arrival Time</label>
+                  <input
+                    type="time"
+                    class="form-control"
+                    id="arrivalTime"
+                    required
+                  />
+                </div>
+                <!-- Issued By -->
+                <div class="form-group col-md-4">
+                  <label for="issuedBy">Issued By</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="issuedBy"
+                    placeholder="Issued By"
+                  />
+                </div>
+                <!-- Cost -->
+                <div class="form-group col-md-4">
+                  <label for="flightCost">Cost (THB)</label>
+                  <input
+                    type="number"
+                    class="form-control cost-input"
+                    id="flightCost"
+                    placeholder="Enter cost (optional)"
+                    min="0"
+                    step="0.01"
+                    value="0"
+                  />
+                  <small class="text-muted"
+                    >Flight booking not supported - can be 0</small
+                  >
+                </div>
+                <!-- Remarks -->
+                <div class="form-group col-md-12">
+                  <label for="flightRemarks">Remarks</label>
+                  <textarea
+                    class="form-control"
+                    id="flightRemarks"
+                    rows="3"
+                    placeholder="Enter remarks"
+                  ></textarea>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+            <button type="button" class="btn btn-primary" id="saveFlight">
+              Save Flight
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transfer Modal -->
+    <div
+      class="modal fade"
+      id="transferModal"
+      tabindex="-1"
+      aria-labelledby="transferModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header bg-info text-white">
+            <h5 class="modal-title font-weight-bold" id="transferModalLabel">
+              Add Transfer
+            </h5>
+            <button
+              type="button"
+              class="close text-white"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="transferForm">
+              <div class="form-row">
+                <!-- Country -->
+                <div class="form-group col-md-4">
+                  <label for="transferCountry">Country *</label>
+                  <select
+                    class="form-control"
+                    id="transferCountry"
+                    required
+                  >
+                    <option value="" disabled selected>Loading countries...</option>
+                  </select>
+                </div>
+                <!-- City -->
+                <div class="form-group col-md-4">
+                  <label for="transferCity">City *</label>
+                  <select
+                    class="form-control city-dropdown-transfer"
+                    id="transferCity"
+                    required
+                  >
+                    <option value="" disabled selected>Select country first</option>
+                    <!-- Cities will be populated dynamically -->
+                  </select>
+                </div>
+                <!-- Date -->
+                <div class="form-group col-md-4">
+                  <label for="transferDate">Date *</label>
+                  <input
+                    type="date"
+                    class="form-control transfer-date"
+                    id="transferDate"
+                    required
+                  />
+                </div>
+                <!-- Transfer Dropdown -->
+                <div class="form-group col-md-4">
+                  <label for="transferType">Transfer *</label>
+                  <select
+                    id="transferType"
+                    class="form-control transfer-dropdown"
+                    required
+                  >
+                    <option value="" disabled selected>Select Transfer</option>
+                  </select>
+                </div>
+                <!-- From -->
+                <div class="form-group col-md-4">
+                  <label for="transferFrom">From</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="transferFrom"
+                    placeholder="Enter origin"
+                    required
+                  />
+                </div>
+                <!-- To -->
+                <div class="form-group col-md-4">
+                  <label for="transferTo">To</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="transferTo"
+                    placeholder="Enter destination"
+                    required
+                  />
+                </div>
+                <!-- Flight -->
+                <div class="form-group col-md-4">
+                  <label for="transferFlight">Flight</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="transferFlight"
+                    placeholder="Flight details"
+                  />
+                </div>
+                <!-- Flight Time -->
+                <div class="form-group col-md-4">
+                  <label for="flightTime">Flight Time</label>
+                  <input type="time" class="form-control" id="flightTime" />
+                </div>
+                <!-- ToT -->
+                <div class="form-group col-md-4">
+                  <label for="transferToT">ToT *</label>
+                  <select class="form-control" id="transferToT" required>
+                    <option value="" disabled selected>Select ToT</option>
+                    <option value="PVT">PVT</option>
+                    <option value="SIC">SIC</option>
+                  </select>
+                </div>
+                <!-- Pickup Time -->
+                <div class="form-group col-md-4">
+                  <label for="transferPickupTime">Pickup Time</label>
+                  <input
+                    type="time"
+                    class="form-control"
+                    id="transferPickupTime"
+                  />
+                </div>
+                <!-- Backend Price Section -->
+                <div class="col-md-6 col-sm-6 form-group">
+                  <label for="backendTransferPrice">Backend Price (THB)</label>
+                  <div class="d-flex align-items-center">
+                    <input
+                      type="text"
+                      id="backendTransferPrice"
+                      class="form-control"
+                      style="font-size: 1.2rem; max-width: 150px"
+                      readonly
+                      placeholder="0.00"
+                    />
+                    <div class="ml-2">
+                      <button
+                        type="button"
+                        id="getTransferPriceBtn"
+                        class="btn btn-info btn-sm"
+                      >
+                        <i class="fa fa-download"></i> Get Price
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <!-- Remarks -->
+                <div class="form-group col-md-12">
+                  <label for="transferRemarks">Remarks</label>
+                  <textarea
+                    class="form-control"
+                    id="transferRemarks"
+                    rows="2"
+                    placeholder="Additional remarks"
+                  ></textarea>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="button" class="btn btn-info" id="saveTransfer">
+              Save Transfer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hotel Modal -->
+    <div
+      class="modal fade"
+      id="hotelModal"
+      tabindex="-1"
+      aria-labelledby="hotelModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header bg-secondary text-white">
+            <h5 class="modal-title font-weight-bold" id="hotelModalLabel">
+              Add Hotel Booking
+            </h5>
+            <button
+              type="button"
+              class="close text-white"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="hotelBookingForm">
+              <div class="container-fluid">
+                <div class="form-row g-3">
+                  <!-- Check-in Date -->
+                  <div class="form-group col-md-3">
+                    <label for="checkInDate">Check-In *</label>
+                    <input
+                      type="date"
+                      class="form-control"
+                      id="checkInDate"
+                      required
+                    />
+                  </div>
+                  <!-- Check-out Date -->
+                  <div class="form-group col-md-3">
+                    <label for="checkOutDate">Check-Out *</label>
+                    <input
+                      type="date"
+                      class="form-control"
+                      id="checkOutDate"
+                      required
+                    />
+                  </div>
+                  <!-- Country Dropdown -->
+                  <div class="form-group col-md-3">
+                    <label for="hotelCountry">Country *</label>
+                    <select
+                      id="hotelCountry"
+                      class="form-control"
+                      required
+                    >
+                      <option value="" disabled selected>Loading countries...</option>
+                    </select>
+                  </div>
+                  <!-- City Dropdown -->
+                  <div class="form-group col-md-3">
+                    <label for="hotelCity">City *</label>
+                    <select
+                      id="hotelCity"
+                      class="form-control city-dropdown-hotel"
+                      required
+                    >
+                      <option disabled selected>Select country first</option>
+                    </select>
+                  </div>
+                  <!-- Hotel Dropdown -->
+                  <div class="form-group col-md-3">
+                    <label for="hotelType">Hotel *</label>
+                    <select
+                      id="hotelType"
+                      class="form-control hotel-dropdown"
+                      required
+                    >
+                      <option value="">Select Hotel</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-row align-items-end">
+                  <!-- Number of Nights -->
+                  <div class="form-group col-md-2">
+                    <label for="numberOfNights">Nights</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="numberOfNights"
+                      readonly
+                    />
+                  </div>
+                  <!-- Single/Double Rooms -->
+                  <div class="form-group col-md-2">
+                    <label for="singleRooms">Single</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="singleRooms"
+                      value="0"
+                      min="0"
+                    />
+                  </div>
+                  <div class="form-group col-md-2">
+                    <label for="doubleRooms">Double</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="doubleRooms"
+                      value="1"
+                      min="0"
+                    />
+                  </div>
+                  <!-- Early Check-In -->
+                  <div class="form-group col-md-3 d-flex align-items-center">
+                    <div class="form-check">
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        id="earlyCheckIn"
+                      />
+                      <label class="form-check-label" for="earlyCheckIn"
+                        >Early Check-In</label
+                      >
+                    </div>
+                  </div>
+                  <!-- Late Check-Out -->
+                  <div class="form-group col-md-3 d-flex align-items-center">
+                    <div class="form-check">
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        id="lateCheckOut"
+                      />
+                      <label class="form-check-label" for="lateCheckOut"
+                        >Late Check-Out</label
+                      >
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Room Types Wrapper -->
+                <div id="roomTypesWrapper"></div>
+
+                <!-- Add Room Type Button -->
+                <button
+                  type="button"
+                  class="btn btn-success mb-3"
+                  id="addRoomTypeBtn"
+                >
+                  <i class="fa fa-plus"></i> Add Room Type
+                </button>
+
+                <!-- Promotion Dropdown -->
+                <div class="form-group col-md-4">
+                  <input type="hidden" id="couponCode" name="couponCode" />
+                  <label for="promotion">Promotion</label>
+                  <select
+                    id="promotion"
+                    class="form-control promotion-dropdown"
+                  >
+                    <option value="">Select Promotion</option>
+                    <!-- Populate options dynamically -->
+                  </select>
+                </div>
+
+                <!-- Backend Price Section -->
+                <div class="col-md-6 col-sm-6 form-group">
+                  <label for="backendHotelPrice">Backend Price (THB)</label>
+                  <div class="d-flex align-items-center">
+                    <input
+                      type="text"
+                      id="backendHotelPrice"
+                      class="form-control"
+                      style="font-size: 1.2rem; max-width: 150px"
+                      readonly
+                      placeholder="0.00"
+                    />
+                    <div class="ml-2">
+                      <button
+                        type="button"
+                        id="getHotelPriceBtn"
+                        class="btn btn-info btn-sm"
+                      >
+                        <i class="fa fa-download"></i> Get Price
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Hotel Additional Fields -->
+                <div class="form-row"></div>
+
+                <!-- Notes Section -->
+                <div class="form-group col-md-12">
+                  <label for="hotelNotes">Notes</label>
+                  <textarea
+                    class="form-control"
+                    id="hotelNotes"
+                    rows="3"
+                    placeholder="Enter any additional notes"
+                  ></textarea>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="saveHotelBooking"
+            >
+              Save Hotel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Excursion Modal -->
+    <div
+      class="modal fade"
+      id="excursionModal"
+      tabindex="-1"
+      aria-labelledby="excursionModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header bg-warning text-white">
+            <h5 class="modal-title font-weight-bold" id="excursionModalLabel">
+              Add Excursion
+            </h5>
+            <button
+              type="button"
+              class="close text-white"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="excursionForm">
+              <div class="form-row">
+                <!-- Country Dropdown -->
+                <div class="form-group col-md-4">
+                  <label for="excursionCountry">Country *</label>
+                  <select
+                    id="excursionCountry"
+                    class="form-control"
+                    required
+                  >
+                    <option value="" disabled selected>Loading countries...</option>
+                  </select>
+                </div>
+                <!-- City Dropdown -->
+                <div class="form-group col-md-4">
+                  <label for="excursionCity">City *</label>
+                  <select
+                    id="excursionCity"
+                    class="form-control city-dropdown-excursion"
+                    required
+                  >
+                    <option value="" disabled selected>Select country first</option>
+                    <!-- Populate with city options dynamically -->
+                  </select>
+                </div>
+                <!-- Date -->
+                <div class="form-group col-md-4">
+                  <label for="excursionDate">Date *</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="excursionDate"
+                    required
+                  />
+                </div>
+                <!-- Excursion Dropdown -->
+                <div class="form-group col-md-4">
+                  <label for="excursionName">Excursion *</label>
+                  <select
+                    id="excursionName"
+                    class="form-control excursion-dropdown"
+                    required
+                  >
+                    <option value="" disabled selected>Select Excursion</option>
+                    <!-- Populate with excursions based on selected city dynamically -->
+                  </select>
+                </div>
+                <!-- Hotel -->
+                <div class="form-group col-md-4">
+                  <label for="excursionHotel">Hotel *</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="excursionHotel"
+                    placeholder="Enter hotel name"
+                    required
+                  />
+                </div>
+                <!-- Pickup Time -->
+                <div class="form-group col-md-4">
+                  <label for="excursionPickupTime">Pickup Time</label>
+                  <input
+                    type="time"
+                    class="form-control"
+                    id="excursionPickupTime"
+                  />
+                </div>
+                <!-- Type of Excursion -->
+                <div class="form-group col-md-4">
+                  <label for="typeOfExcursion">Type of Excursion *</label>
+                  <select class="form-control" id="typeOfExcursion" required>
+                    <option value="" disabled selected>Select Type</option>
+                    <option value="PVT">PVT</option>
+                    <option value="SIC">SIC</option>
+                  </select>
+                </div>
+                <!-- Backend Price Section -->
+                <div class="col-md-6 col-sm-6 form-group">
+                  <label for="backendExcursionPrice">Backend Price (THB)</label>
+                  <div class="d-flex align-items-center">
+                    <input
+                      type="text"
+                      id="backendExcursionPrice"
+                      class="form-control"
+                      style="font-size: 1.2rem; max-width: 150px"
+                      readonly
+                      placeholder="0.00"
+                    />
+                    <div class="ml-2">
+                      <button
+                        type="button"
+                        id="getExcursionPriceBtn"
+                        class="btn btn-info btn-sm"
+                      >
+                        <i class="fa fa-download"></i> Get Price
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <!-- Discount -->
+                <!-- Remarks -->
+                <div class="form-group col-md-12">
+                  <label for="excursionRemarks">Remarks</label>
+                  <textarea
+                    class="form-control"
+                    id="excursionRemarks"
+                    rows="2"
+                    placeholder="Additional remarks"
+                  ></textarea>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="button" class="btn btn-warning" id="saveExcursion">
+              Save Excursion
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tour Modal -->
+    <div
+      class="modal fade"
+      id="tourModal"
+      tabindex="-1"
+      aria-labelledby="tourModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title font-weight-bold" id="tourModalLabel">
+              Add Tour
+            </h5>
+            <button
+              type="button"
+              class="close text-white"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="tourForm">
+              <div class="form-row">
+                <!-- Country -->
+                <div class="form-group col-md-4">
+                  <label for="tourCountry">Country *</label>
+                  <select
+                    class="form-control"
+                    id="tourCountry"
+                    required
+                  >
+                    <option value="" disabled selected>Loading countries...</option>
+                  </select>
+                </div>
+                <!-- Start City -->
+                <div class="form-group col-md-4">
+                  <label for="tourCity">Start City *</label>
+                  <select
+                    class="form-control city-dropdown-tour"
+                    id="tourCity"
+                    required
+                  >
+                    <option value="">Select country first</option>
+                  </select>
+                </div>
+                <!-- Tour Dropdown -->
+                <div class="form-group col-md-4">
+                  <label for="tourName">Tour *</label>
+                  <select
+                    id="tourName"
+                    class="form-control tour-dropdown"
+                    required
+                  >
+                    <option value="" disabled selected>Select Tour</option>
+                    <!-- Populate dynamically -->
+                  </select>
+                </div>
+                <!-- Route -->
+                <div class="form-group col-md-4">
+                  <label for="tourRoute">Route</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="tourRoute"
+                    readonly
+                  />
+                </div>
+                <!-- Start Date -->
+                <div class="form-group col-md-4">
+                  <label for="tourStartDate">Start Date</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="tourStartDate"
+                    required
+                  />
+                </div>
+                <!-- End Date -->
+                <div class="form-group col-md-4">
+                  <label for="tourEndDate">End Date</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="tourEndDate"
+                    readonly
+                  />
+                </div>
+                <!-- ToT Dropdown -->
+                <div class="form-group col-md-4">
+                  <label for="tourToT">ToT *</label>
+                  <select id="tourToT" class="form-control" required>
+                    <option value="" disabled selected>Select Type</option>
+                    <option value="PVT">PVT</option>
+                    <option value="SIC">SIC</option>
+                  </select>
+                </div>
+                <!-- Room Type Selection -->
+                <div class="form-group col-md-12">
+                  <label class="font-weight">Room Type</label>
+                  <div class="row">
+                    <!-- Single Room -->
+                    <div class="col-md-4 col-sm-6">
+                      <div
+                        class="room-type-box d-flex align-items-center p-2 border rounded"
+                      >
+                        <input
+                          type="checkbox"
+                          id="tourSingleRoom"
+                          class="mr-2 room-checkbox"
+                        />
+                        <label for="tourSingleRoom" class="flex-grow-1 mb-0"
+                          >Single Room</label
+                        >
+                        <input
+                          type="number"
+                          class="form-control room-count"
+                          id="tourSingleRoomCount"
+                          placeholder="0"
+                          disabled
+                        />
+                      </div>
+                    </div>
+                    <!-- Double Room -->
+                    <div class="col-md-4 col-sm-6">
+                      <div
+                        class="room-type-box d-flex align-items-center p-2 border rounded"
+                      >
+                        <input
+                          type="checkbox"
+                          id="tourDoubleRoom"
+                          class="mr-2 room-checkbox"
+                        />
+                        <label for="tourDoubleRoom" class="flex-grow-1 mb-0"
+                          >Double Room</label
+                        >
+                        <input
+                          type="number"
+                          class="form-control room-count"
+                          id="tourDoubleRoomCount"
+                          placeholder="0"
+                          disabled
+                        />
+                      </div>
+                    </div>
+                    <!-- Triple Room -->
+                    <div class="col-md-4 col-sm-6">
+                      <div
+                        class="room-type-box d-flex align-items-center p-2 border rounded"
+                      >
+                        <input
+                          type="checkbox"
+                          id="tourTripleRoom"
+                          class="mr-2 room-checkbox"
+                        />
+                        <label for="tourTripleRoom" class="flex-grow-1 mb-0"
+                          >Triple Room</label
+                        >
+                        <input
+                          type="number"
+                          class="form-control room-count"
+                          id="tourTripleRoomCount"
+                          placeholder="0"
+                          disabled
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Backend Price Section -->
+                <div class="col-md-6 col-sm-6 form-group">
+                  <label for="backendTourPrice">Backend Price (THB)</label>
+                  <div class="d-flex align-items-center">
+                    <input
+                      type="text"
+                      id="backendTourPrice"
+                      class="form-control"
+                      style="font-size: 1.2rem; max-width: 150px"
+                      readonly
+                      placeholder="0.00"
+                    />
+                    <div class="ml-2">
+                      <button
+                        type="button"
+                        id="getTourPriceBtn"
+                        class="btn btn-info btn-sm"
+                      >
+                        <i class="fa fa-download"></i> Get Price
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <!-- Remarks -->
+                <div class="form-group col-md-12">
+                  <label for="tourRemarks">Remarks</label>
+                  <textarea
+                    class="form-control"
+                    id="tourRemarks"
+                    rows="2"
+                    placeholder="Additional remarks"
+                  ></textarea>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="button" class="btn btn-success" id="saveTour">
+              Save Tour
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Others Modal -->
+    <div
+      class="modal fade"
+      id="othersModal"
+      tabindex="-1"
+      aria-labelledby="othersModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-white">
+            <h5 class="modal-title font-weight-bold" id="othersModalLabel">
+              Add Other Service
+            </h5>
+            <button
+              type="button"
+              class="close text-white"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="othersForm">
+              <div class="form-row">
+                <!-- Description -->
+                <div class="form-group col-md-12">
+                  <label for="otherDescription">Description *</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="otherDescription"
+                    placeholder="Enter service description"
+                    required
+                  />
+                </div>
+                <!-- Date -->
+                <div class="form-group col-md-6">
+                  <label for="otherDate">Date</label>
+                  <input type="date" class="form-control" id="otherDate" />
+                </div>
+                <!-- Cost -->
+                <div class="form-group col-md-6">
+                  <label for="otherCost">Cost (THB) *</label>
+                  <input
+                    type="number"
+                    class="form-control cost-input"
+                    id="otherCost"
+                    placeholder="Enter cost"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="button" class="btn btn-dark" id="saveOther">
+              Save Service
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/leads/add_lead.js"></script>
+
+    <script>
+      // Date validation for booking date and trip start date
+      function updateTripStartDateMin() {
+        const bookingDate = document.getElementById("bookingDate").value;
+        const tripStartDate = document.getElementById("startDate");
+
+        if (bookingDate) {
+          tripStartDate.min = bookingDate;
+
+          // If trip start date is already selected and is before booking date, clear it
+          if (tripStartDate.value && tripStartDate.value < bookingDate) {
+            alert(
+              "Trip start date cannot be before booking date. Please select a valid date."
+            );
+            tripStartDate.value = "";
+          }
+        }
+      }
+
+      function validateTripStartDate() {
+        const bookingDate = document.getElementById("bookingDate").value;
+        const tripStartDate = document.getElementById("startDate").value;
+
+        if (bookingDate && tripStartDate && tripStartDate < bookingDate) {
+          alert(
+            "Trip start date cannot be before booking date. Please select a valid date."
+          );
+          document.getElementById("startDate").value = "";
+          return false;
+        }
+        return true;
+      }
+
+      // Add event listeners when DOM is loaded
+      document.addEventListener("DOMContentLoaded", function () {
+        // Initial setup
+        updateTripStartDateMin();
+
+        // Add event listeners
+        document
+          .getElementById("bookingDate")
+          .addEventListener("change", updateTripStartDateMin);
+        document
+          .getElementById("startDate")
+          .addEventListener("change", validateTripStartDate);
+      });
+    </script>
+  </body>
+</html>

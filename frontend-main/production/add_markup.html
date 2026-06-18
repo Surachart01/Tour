@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Markup</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- FontAwesome 5 for modern icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
+
+    <style>
+      /* Modern form enhancements */
+      .form-control:focus {
+        border-color: #1abb9c !important;
+        box-shadow: 0 0 0 0.2rem rgba(26, 187, 156, 0.25) !important;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #1abb9c 0%, #16a085 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary:hover {
+        background: linear-gradient(135deg, #16a085 0%, #138d75 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-secondary:hover {
+        background: linear-gradient(135deg, #7f8c8d 0%, #6c7b7d 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-success {
+        background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-success:hover {
+        background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-warning {
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-warning:hover {
+        background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-danger {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-danger:hover {
+        background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+        transform: translateY(-1px);
+      }
+
+      .form-control {
+        height: 45px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        background-color: #fafbfc;
+        transition: all 0.3s ease;
+      }
+
+      .form-control:hover {
+        border-color: #1abb9c;
+      }
+
+      textarea.form-control {
+        height: auto;
+        min-height: 100px;
+      }
+
+      .form-group label {
+        font-weight: 600;
+        color: #34495e;
+        margin-bottom: 8px;
+      }
+
+      .table {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .table thead th {
+        background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+        color: white;
+        font-weight: 600;
+        border: none;
+        padding: 15px;
+      }
+
+      .table tbody td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        border-color: #ecf0f1;
+      }
+
+      .table tbody tr:hover {
+        background-color: #f8f9fa;
+      }
+
+      .modal-content {
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      .modal-header {
+        background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+        color: white;
+        border-radius: 10px 10px 0 0;
+        border-bottom: none;
+      }
+
+      .modal-title {
+        font-weight: 600;
+      }
+
+      .close {
+        color: white;
+        opacity: 0.8;
+        text-shadow: none;
+      }
+
+      .close:hover {
+        color: white;
+        opacity: 1;
+      }
+
+      .input-group-append .btn {
+        height: 45px;
+        border-radius: 0 6px 6px 0;
+      }
+
+      /* Custom tooltip styles */
+      .tooltip-btn {
+        position: relative;
+        display: inline-block;
+      }
+
+      .tooltip-btn .tooltip-text {
+        visibility: hidden;
+        width: 80px;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 4px;
+        padding: 5px 8px;
+        position: absolute;
+        z-index: 1000;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -40px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 12px;
+        font-weight: normal;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+
+      .tooltip-btn .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #333 transparent transparent transparent;
+      }
+
+      .tooltip-btn:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+      }
+
+      .tooltip-btn .btn {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+
+      .tooltip-btn .btn i {
+        pointer-events: none;
+      }
+    </style>
+  </head>
+
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background: #ecf0f1;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    "
+  >
+    <div
+      class="container-fluid"
+      style="
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+      "
+    >
+      <!-- Full-width header -->
+      <div
+        style="
+          background: linear-gradient(135deg, #2a3f54 0%, #34495e 100%);
+          color: white;
+          padding: 30px 60px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        "
+      >
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          "
+        >
+          <div style="display: flex; align-items: center">
+            <i
+              class="fas fa-plus-circle"
+              style="font-size: 28px; margin-right: 15px; color: #1abb9c"
+            ></i>
+            <h1 style="margin: 0; font-size: 28px; font-weight: 700">
+              Add New Markup
+            </h1>
+          </div>
+          <div style="display: flex; gap: 15px">
+            <button
+              type="button"
+              class="btn btn-outline-light"
+              onclick="window.location.href='markup.html'"
+              style="
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                padding: 8px 20px;
+                border-radius: 6px;
+                transition: all 0.3s ease;
+              "
+            >
+              <i class="fas fa-arrow-left" style="margin-right: 8px"></i>
+              Back to Markups
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main content area -->
+      <div style="flex: 1; padding: 40px 60px; background: #ecf0f1">
+        <div
+          style="
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+          "
+        >
+          <div style="padding: 40px">
+          <form id="addMarkupForm" class="form-label-left input_mask">
+            <!-- Basic Information Section -->
+            <div class="mb-4">
+              <h5 style="color: #34495e; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; font-size: 16px;">
+                <i class="fas fa-info-circle" style="margin-right: 8px; color: #1abb9c;"></i>
+                Basic Information
+              </h5>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="groupName" style="display: flex; align-items: center;">
+                      <i class="fas fa-users" style="margin-right: 8px; color: #1abb9c;"></i>
+                      Group Name *
+                    </label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="groupName"
+                      placeholder="Enter group name"
+                      required
+                    />
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="hotelMarkupUnit" style="display: flex; align-items: center;">
+                      <i class="fas fa-hotel" style="margin-right: 8px; color: #1abb9c;"></i>
+                      Hotel Markup Unit *
+                    </label>
+                    <select id="hotelMarkupUnit" class="form-control">
+                      <option value="%">%</option>
+                      <option value="flat rate">flat rate</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Hotel Markup Section -->
+            <div class="mb-4">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h5 style="color: #34495e; font-weight: 600; margin: 0; display: flex; align-items: center; font-size: 16px;">
+                  <i class="fas fa-hotel" style="margin-right: 8px; color: #1abb9c;"></i>
+                  Hotel Markup Configuration
+                </h5>
+                <button
+                  type="button"
+                  class="btn btn-success"
+                  data-toggle="modal"
+                  data-target="#addMarkupModal"
+                  style="display: flex; align-items: center;"
+                >
+                  <i class="fas fa-plus" style="margin-right: 8px;"></i>
+                  Add Markup Range
+                </button>
+              </div>
+
+              <table class="table table-striped mt-3" id="addHotelMarkup">
+                <thead>
+                  <tr>
+                    <th><i class="fas fa-dollar-sign" style="margin-right: 5px;"></i>Price From</th>
+                    <th><i class="fas fa-dollar-sign" style="margin-right: 5px;"></i>Price To</th>
+                    <th><i class="fas fa-percentage" style="margin-right: 5px;"></i>Markup (%)</th>
+                    <th><i class="fas fa-cogs" style="margin-right: 5px;"></i>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="hotelMarkupTableBody"></tbody>
+              </table>
+            </div>
+
+            <!-- Other Markup Types Section -->
+            <div class="mb-4">
+              <h5 style="color: #34495e; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; font-size: 16px;">
+                <i class="fas fa-tags" style="margin-right: 8px; color: #1abb9c;"></i>
+                Other Markup Types
+              </h5>
+              
+              <div class="row">
+                <!-- Excursion Markup -->
+                <div class="col-md-4 mb-3">
+                  <div class="form-group">
+                    <label for="excursionMarkupUnit" style="display: flex; align-items: center;">
+                      <i class="fas fa-map-marked-alt" style="margin-right: 8px; color: #1abb9c;"></i>
+                      Excursion Markup Unit *
+                    </label>
+                    <select id="excursionMarkupUnit" class="form-control">
+                      <option value="%">%</option>
+                      <option value="flat rate">flat rate</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="excursionMarkup" style="display: flex; align-items: center;">
+                      <i class="fas fa-percentage" style="margin-right: 8px; color: #1abb9c;"></i>
+                      Excursion Markup Value *
+                    </label>
+                    <div class="input-group">
+                      <input
+                        type="number"
+                        id="excursionMarkup"
+                        class="form-control"
+                        placeholder="Enter Excursion Markup"
+                        required
+                      />
+                      <div class="input-group-append">
+                        <span class="input-group-text" id="excursionMarkupUnitDisplay">%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tour Markup -->
+                <div class="col-md-4 mb-3">
+                  <div class="form-group">
+                    <label for="tourMarkupUnit" style="display: flex; align-items: center;">
+                      <i class="fas fa-route" style="margin-right: 8px; color: #1abb9c;"></i>
+                      Tour Markup Unit *
+                    </label>
+                    <select id="tourMarkupUnit" class="form-control">
+                      <option value="%">%</option>
+                      <option value="flat rate">flat rate</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="tourMarkup" style="display: flex; align-items: center;">
+                      <i class="fas fa-percentage" style="margin-right: 8px; color: #1abb9c;"></i>
+                      Tour Markup Value *
+                    </label>
+                    <div class="input-group">
+                      <input
+                        type="number"
+                        id="tourMarkup"
+                        class="form-control"
+                        placeholder="Enter Tour Markup"
+                        required
+                      />
+                      <div class="input-group-append">
+                        <span class="input-group-text" id="tourMarkupUnitDisplay">%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Transfer Markup -->
+                <div class="col-md-4 mb-3">
+                  <div class="form-group">
+                    <label for="transferMarkupUnit" style="display: flex; align-items: center;">
+                      <i class="fas fa-shuttle-van" style="margin-right: 8px; color: #1abb9c;"></i>
+                      Transfer Markup Unit *
+                    </label>
+                    <select id="transferMarkupUnit" class="form-control">
+                      <option value="%">%</option>
+                      <option value="flat rate">flat rate</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="transferMarkup" style="display: flex; align-items: center;">
+                      <i class="fas fa-percentage" style="margin-right: 8px; color: #1abb9c;"></i>
+                      Transfer Markup Value *
+                    </label>
+                    <div class="input-group">
+                      <input
+                        type="number"
+                        id="transferMarkup"
+                        class="form-control"
+                        placeholder="Enter Transfer Markup"
+                        required
+                      />
+                      <div class="input-group-append">
+                        <span class="input-group-text" id="transferMarkupUnitDisplay">%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-4 pt-3" style="border-top: 1px solid #ecf0f1;">
+              <button
+                id="submitMarkup"
+                type="submit"
+                class="btn btn-primary"
+                style="margin-right: 10px;"
+              >
+                <i class="fas fa-save" style="margin-right: 8px;"></i>
+                Save Markup
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                onclick="window.location.href='markup.html'"
+              >
+                <i class="fas fa-times" style="margin-right: 8px;"></i>
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for adding Hotel Markup -->
+    <div
+      class="modal fade"
+      id="addMarkupModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="addMarkupModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addMarkupModalLabel">
+              Add Hotel Markup
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" style="padding: 30px;">
+            <form id="hotelMarkupForm">
+              <div class="form-group">
+                <label for="priceFrom" style="display: flex; align-items: center; font-weight: 600; color: #34495e;">
+                  <i class="fas fa-dollar-sign" style="margin-right: 8px; color: #1abb9c;"></i>
+                  Price From *
+                </label>
+                <input
+                  type="number"
+                  id="priceFrom"
+                  class="form-control"
+                  placeholder="Enter minimum price"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="priceTo" style="display: flex; align-items: center; font-weight: 600; color: #34495e;">
+                  <i class="fas fa-dollar-sign" style="margin-right: 8px; color: #1abb9c;"></i>
+                  Price To *
+                </label>
+                <input
+                  type="number"
+                  id="priceTo"
+                  class="form-control"
+                  placeholder="Enter maximum price"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="markupPercentage" style="display: flex; align-items: center; font-weight: 600; color: #34495e;">
+                  <i class="fas fa-percentage" style="margin-right: 8px; color: #1abb9c;"></i>
+                  Markup (%) *
+                </label>
+                <input
+                  type="number"
+                  id="markupPercentage"
+                  class="form-control"
+                  placeholder="Enter markup percentage"
+                  required
+                />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer" style="padding: 20px 30px; border-top: 1px solid #ecf0f1;">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              <i class="fas fa-times" style="margin-right: 8px;"></i>
+              Cancel
+            </button>
+            <button
+              type="button"
+              id="saveMarkup"
+              class="btn btn-primary"
+              data-dismiss="modal"
+            >
+              <i class="fas fa-plus" style="margin-right: 8px;"></i>
+              Save Markup
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for editing Hotel Markup -->
+    <div
+      class="modal fade"
+      id="editMarkupModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="editMarkupModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editMarkupModalLabel">
+              Edit Hotel Markup
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" style="padding: 30px;">
+            <form id="editHotelMarkupForm">
+              <div class="form-group">
+                <label for="editPriceFrom" style="display: flex; align-items: center; font-weight: 600; color: #34495e;">
+                  <i class="fas fa-dollar-sign" style="margin-right: 8px; color: #1abb9c;"></i>
+                  Price From *
+                </label>
+                <input
+                  type="number"
+                  id="editPriceFrom"
+                  class="form-control"
+                  placeholder="Enter minimum price"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="editPriceTo" style="display: flex; align-items: center; font-weight: 600; color: #34495e;">
+                  <i class="fas fa-dollar-sign" style="margin-right: 8px; color: #1abb9c;"></i>
+                  Price To *
+                </label>
+                <input
+                  type="number"
+                  id="editPriceTo"
+                  class="form-control"
+                  placeholder="Enter maximum price"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="editMarkupPercentage" style="display: flex; align-items: center; font-weight: 600; color: #34495e;">
+                  <i class="fas fa-percentage" style="margin-right: 8px; color: #1abb9c;"></i>
+                  Markup (%) *
+                </label>
+                <input
+                  type="number"
+                  id="editMarkupPercentage"
+                  class="form-control"
+                  placeholder="Enter markup percentage"
+                  required
+                />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer" style="padding: 20px 30px; border-top: 1px solid #ecf0f1;">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              <i class="fas fa-times" style="margin-right: 8px;"></i>
+              Cancel
+            </button>
+            <button
+              type="button"
+              id="saveEditedMarkup"
+              class="btn btn-primary"
+              data-dismiss="modal"
+            >
+              <i class="fas fa-save" style="margin-right: 8px;"></i>
+              Save Changes
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+    <script>
+      let currentRow = null;
+
+      // Function to update unit display for Excursion, Tour, and Transfer
+      function updateUnitDisplay(selectElement, displayElement) {
+        const unit = selectElement.value === "flat rate" ? "THB" : "%";
+        displayElement.textContent = unit;
+      }
+
+      // Add event listeners to update the display for units dynamically
+      document
+        .getElementById("excursionMarkupUnit")
+        .addEventListener("change", function () {
+          updateUnitDisplay(
+            this,
+            document.getElementById("excursionMarkupUnitDisplay")
+          );
+        });
+      document
+        .getElementById("tourMarkupUnit")
+        .addEventListener("change", function () {
+          updateUnitDisplay(
+            this,
+            document.getElementById("tourMarkupUnitDisplay")
+          );
+        });
+      document
+        .getElementById("transferMarkupUnit")
+        .addEventListener("change", function () {
+          updateUnitDisplay(
+            this,
+            document.getElementById("transferMarkupUnitDisplay")
+          );
+        });
+
+      // Trigger initial unit display
+      updateUnitDisplay(
+        document.getElementById("excursionMarkupUnit"),
+        document.getElementById("excursionMarkupUnitDisplay")
+      );
+      updateUnitDisplay(
+        document.getElementById("tourMarkupUnit"),
+        document.getElementById("tourMarkupUnitDisplay")
+      );
+      updateUnitDisplay(
+        document.getElementById("transferMarkupUnit"),
+        document.getElementById("transferMarkupUnitDisplay")
+      );
+
+      // Save Markup Data and send to backend
+      document
+        .getElementById("submitMarkup")
+        .addEventListener("click", function (event) {
+          event.preventDefault();
+
+          const groupName = document.getElementById("groupName").value;
+          const hotelMarkupUnit =
+            document.getElementById("hotelMarkupUnit").value;
+
+          // Collect hotel markup rows
+          const hotelMarkups = [];
+          document
+            .querySelectorAll("#hotelMarkupTableBody tr")
+            .forEach((row) => {
+              const cells = row.querySelectorAll("td");
+              hotelMarkups.push({
+                price_from: parseFloat(cells[0].textContent),
+                price_to: parseFloat(cells[1].textContent),
+                markup_percentage: parseFloat(cells[2].textContent),
+              });
+            });
+
+          // Collect excursion, tour, and transfer markup data
+          const excursionMarkup = parseFloat(
+            document.getElementById("excursionMarkup").value
+          );
+          const excursionMarkupUnit = document.getElementById(
+            "excursionMarkupUnit"
+          ).value;
+
+          const tourMarkup = parseFloat(
+            document.getElementById("tourMarkup").value
+          );
+          const tourMarkupUnit =
+            document.getElementById("tourMarkupUnit").value;
+
+          const transferMarkup = parseFloat(
+            document.getElementById("transferMarkup").value
+          );
+          const transferMarkupUnit =
+            document.getElementById("transferMarkupUnit").value;
+
+          // Construct the payload to send to the backend
+          const markupData = {
+            markup_group: groupName,
+            hotel_markup_unit: hotelMarkupUnit,
+            hotel_markup_percentages: hotelMarkups,
+            excursion_markup: excursionMarkup,
+            excursion_markup_unit: excursionMarkupUnit,
+            tour_markup: tourMarkup,
+            tour_markup_unit: tourMarkupUnit,
+            transfer_markup: transferMarkup,
+            transfer_markup_unit: transferMarkupUnit,
+          };
+
+          // Replace "API_BASE_URL" with your actual API endpoint URL
+          fetch(`${Endpoint}/api/v1/markups`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`, // Authorization header
+            },
+            body: JSON.stringify(markupData), // Send the markup data as JSON
+          })
+            .then((response) => {
+              if (response.ok) {
+                alert("Markup added successfully.");
+                window.location.href = "markup.html"; // Redirect to markup listing page after successful creation
+              } else if (response.status === 401) {
+                // Handle 401 Unauthorized
+                alert("Unauthorized. Please log in again.");
+                window.location.href = "login.html"; // Redirect to login page
+              } else if (response.status === 403) {
+                // Handle 403 Forbidden
+                alert(
+                  "You don't have sufficient permissions to perform this action."
+                );
+                return;
+              } else {
+                response.json().then((data) => {
+                  let errorMessage = "Error adding markup.";
+                  if (data && data.message) {
+                    errorMessage = data.message; // Use the backend-provided message
+                  }
+                  alert(errorMessage);
+                });
+              }
+            })
+            .catch((error) => {
+              console.error("Error adding markup:", error);
+              alert("An unexpected error occurred. Please try again later.");
+            });
+        });
+
+      // Add Hotel Markup Row to the table
+      document
+        .getElementById("saveMarkup")
+        .addEventListener("click", function () {
+          const priceFrom = document.getElementById("priceFrom").value;
+          const priceTo = document.getElementById("priceTo").value;
+          const markup = document.getElementById("markupPercentage").value;
+
+          if (priceFrom && priceTo && markup) {
+            const tableBody = document.getElementById("hotelMarkupTableBody");
+            const row = `
+            <tr>
+              <td>${priceFrom}</td>
+              <td>${priceTo}</td>
+              <td>${markup}</td>
+              <td>
+                <div style="display: flex; gap: 5px;">
+                  <div class="tooltip-btn">
+                    <button type="button" class="btn btn-warning btn-sm edit-btn">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <span class="tooltip-text">Edit</span>
+                  </div>
+                  <div class="tooltip-btn">
+                    <button type="button" class="btn btn-danger btn-sm delete-btn">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                    <span class="tooltip-text">Delete</span>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          `;
+            tableBody.insertAdjacentHTML("beforeend", row);
+          }
+          document.getElementById("hotelMarkupForm").reset(); // Reset form fields after adding
+        });
+
+      // Edit Hotel Markup Row
+      document
+        .getElementById("hotelMarkupTableBody")
+        .addEventListener("click", function (event) {
+          if (event.target.classList.contains("edit-btn") || event.target.closest(".edit-btn")) {
+            const button = event.target.classList.contains("edit-btn") ? event.target : event.target.closest(".edit-btn");
+            currentRow = button.closest("tr");
+            document.getElementById("editPriceFrom").value =
+              currentRow.cells[0].textContent;
+            document.getElementById("editPriceTo").value =
+              currentRow.cells[1].textContent;
+            document.getElementById("editMarkupPercentage").value =
+              currentRow.cells[2].textContent;
+            $("#editMarkupModal").modal("show");
+          }
+        });
+
+      // Save Edited Markup
+      document
+        .getElementById("saveEditedMarkup")
+        .addEventListener("click", function () {
+          if (currentRow) {
+            currentRow.cells[0].textContent =
+              document.getElementById("editPriceFrom").value;
+            currentRow.cells[1].textContent =
+              document.getElementById("editPriceTo").value;
+            currentRow.cells[2].textContent = document.getElementById(
+              "editMarkupPercentage"
+            ).value;
+          }
+        });
+
+      // Delete Hotel Markup Row
+      document
+        .getElementById("hotelMarkupTableBody")
+        .addEventListener("click", function (event) {
+          if (event.target.classList.contains("delete-btn") || event.target.closest(".delete-btn")) {
+            if (confirm("Are you sure you want to delete this row?")) {
+              const button = event.target.classList.contains("delete-btn") ? event.target : event.target.closest(".delete-btn");
+              button.closest("tr").remove();
+            }
+          }
+        });
+    </script>
+  </body>
+</html>

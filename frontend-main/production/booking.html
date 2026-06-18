@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>List of Bookings</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- Custom Theme Style -->
+    <link rel="stylesheet" href="../build/css/custom.min.css" />
+
+    <style>
+      /* Sidebar and navbar text size */
+      .nav_title span,
+      .profile_info span,
+      .profile_info h2,
+      .side-menu a,
+      .navbar-right a {
+        font-size: 1rem; /* Slightly increased for better readability */
+      }
+    </style>
+
+    <style>
+      .edit-btn,
+      .delete-btn,
+      .print-btn {
+        cursor: pointer;
+      }
+      /* Removed constraining CSS for sidebar-menu to allow proper submenu expansion */
+
+      /* Sidebar scrolling - allow scroll when expanded, but not when collapsed */
+      .left_col.scroll-view {
+        overflow-y: auto;
+        max-height: 100vh;
+      }
+
+      /* When sidebar is collapsed, remove height constraints to allow submenu expansion */
+      body.nav-sm .left_col.scroll-view {
+        overflow-y: visible;
+        max-height: none;
+      }
+
+      /* Sortable column styles */
+      .sortable {
+        cursor: pointer;
+        position: relative;
+        user-select: none;
+      }
+
+      .sortable:hover {
+        background-color: #f5f5f5;
+      }
+
+      .sort-icon {
+        margin-left: 5px;
+        font-size: 12px;
+        color: #999;
+      }
+
+      .sort-icon.active {
+        color: #007bff;
+      }
+
+      /* Enhanced button hover effects */
+      #addBookingButtonTop:hover {
+        background: linear-gradient(
+          135deg,
+          #218838 0%,
+          #1e7e34 100%
+        ) !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3) !important;
+      }
+    </style>
+  </head>
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+        <div class="col-md-3 left_col menu_fixed">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border: 0">
+              <a
+                href="index.html"
+                class="site_title"
+                style="
+                  display: block;
+                  text-align: center;
+                  font-size: 2rem;
+                  font-weight: bold;
+                  color: #007bff;
+                  text-decoration: none;
+                "
+              >
+                <span style="font-size: 1.5rem">VeraThailandia!</span>
+              </a>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- menu profile quick info -->
+            <div class="profile clearfix">
+              <div class="profile_pic">
+                <img
+                  src="images/verathailandlogo.png"
+                  alt="..."
+                  class="img-circle profile_img"
+                />
+              </div>
+              <div class="profile_info">
+                <span>Welcome,</span>
+                <h2 id="profileName"></h2>
+              </div>
+            </div>
+            <!-- /menu profile quick info -->
+
+            <br />
+
+            <!-- sidebar menu -->
+            <div
+              id="sidebar-menu"
+              class="main_menu_side hidden-print main_menu"
+            >
+              <div class="menu_section">
+                <h3>General</h3>
+                <ul class="nav side-menu">
+                  <li>
+                    <a href="index.html"><i class="fa fa-home"></i> Home</a>
+                  </li>
+                  <li id="controlPanelMenu">
+                    <a>
+                      <i class="fa fa-edit"></i> Control-Panel
+                      <span class="fa fa-chevron-down"></span>
+                    </a>
+                    <ul class="nav child_menu">
+                      <li><a href="activities.html">Activities</a></li>
+                      <li><a href="agents.html">Agents</a></li>
+                      <li><a href="booking.html">Bookings</a></li>
+                      <li><a href="excursions.html">Excursions</a></li>
+                      <li><a href="hotels.html">Hotels</a></li>
+                      <li><a href="markup.html">Markups</a></li>
+                      <!-- <li><a href="operations.html">Operations</a></li> -->
+                      <li><a href="othercharges.html">Other Charges</a></li>
+                      <!-- <li><a href="stop_sale.html">Stop Sale</a></li> -->
+                      <li><a href="suppliers.html">Suppliers</a></li>
+                      <li><a href="tools.html">Tools</a></li>
+                      <li><a href="tours.html">Tours</a></li>
+                      <li><a href="transfers.html">Transfers</a></li>
+                      <li><a href="users.html">Users</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="trip.html"
+                      ><i class="fa fa-book"></i> Quotation
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <!-- <li>
+                    <a href="leads.html"
+                      ><i class="fa fa-rocket"></i> Leads
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li> -->
+                  <li>
+                    <a href="payment.html"
+                      ><i class="fa fa-pencil-square-o"></i> Payment
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <!--<li>
+                    <a href="tax_invoices.html"
+                      ><i class="fa fa-file-text-o"></i> Tax Invoices
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li> -->
+                  <li>
+                    <a href="itinerary.html"
+                      ><i class="fa fa-ticket"></i> Itinerary
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li>
+                    <a href="analytics.html"
+                      ><i class="fa fa-bar-chart"></i> Analytics
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- /sidebar menu -->
+
+            <!-- /menu footer buttons -->
+            <div class="sidebar-footer hidden-small">
+              <a data-toggle="tooltip" data-placement="top" title="Settings">
+                <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="FullScreen">
+                <span
+                  class="glyphicon glyphicon-fullscreen"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="Lock">
+                <span
+                  class="glyphicon glyphicon-eye-close"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a
+                data-toggle="tooltip"
+                data-placement="top"
+                title="Logout"
+                href="logout.html"
+              >
+                <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+              </a>
+            </div>
+            <!-- /menu footer buttons -->
+          </div>
+        </div>
+
+        <!-- top navigation -->
+        <div class="top_nav">
+          <div class="nav_menu">
+            <div class="nav toggle">
+              <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+            </div>
+            <nav class="nav navbar-nav">
+              <ul class="navbar-right">
+                <li class="nav-item dropdown open" style="padding-left: 15px">
+                  <a
+                    href="javascript:;"
+                    class="user-profile dropdown-toggle"
+                    aria-haspopup="true"
+                    id="navbarDropdown"
+                    data-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    <img
+                      id="navProfileImage"
+                      src="images/verathailandlogo.png"
+                      alt=""
+                    />
+                    <span id="navProfileName"></span>
+                  </a>
+                  <div
+                    class="dropdown-menu dropdown-usermenu pull-right"
+                    aria-labelledby="navbarDropdown"
+                  >
+                    <a class="dropdown-item" href="profile.html"
+                      ><i class="fa fa-user pull-right"></i> Profile</a
+                    >
+                    <a class="dropdown-item" href="logout.html"
+                      ><i class="fa fa-sign-out pull-right"></i> Log Out</a
+                    >
+                  </div>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+        <!-- /top navigation -->
+
+        <!-- Page content -->
+        <div class="right_col" role="main">
+          <div class="page-title">
+            <div class="title_left">
+              <h3>Bookings</h3>
+            </div>
+          </div>
+
+          <div class="clearfix"></div>
+
+          <!-- Search Box and Date Range Filters -->
+          <div class="row" style="margin-bottom: 20px">
+            <div class="col-md-3">
+              <input
+                type="text"
+                id="searchBox"
+                class="form-control"
+                placeholder="Search for bookings..."
+              />
+            </div>
+            <div class="col-md-2">
+              <input
+                type="date"
+                id="fromDate"
+                class="form-control"
+                title="Start Date"
+              />
+            </div>
+            <div class="col-md-2">
+              <input
+                type="date"
+                id="toDate"
+                class="form-control"
+                title="End Date"
+              />
+            </div>
+            <div class="col-md-2">
+              <select
+                id="statusFilter"
+                class="form-control"
+                title="Filter by Status"
+              >
+                <option value="all">All Status</option>
+                <option value="Approved">Approved</option>
+                <option value="InProgress">InProgress</option>
+                <option value="Declined">Declined</option>
+              </select>
+            </div>
+            <div class="col-md-1">
+              <button
+                id="filterByDateBtn"
+                class="btn btn-primary btn-block"
+                title="Filter by date range"
+              >
+                <i class="fa fa-calendar"></i> Filter
+              </button>
+            </div>
+            <div class="col-md-2 text-right">
+              <label for="rowsSelect">Show: </label>
+              <select
+                id="rowsSelect"
+                class="form-control"
+                style="width: 70px; display: inline-block"
+              >
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="All">All</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Filter Status Display -->
+          <div class="row" style="margin-bottom: 15px">
+            <div class="col-md-12">
+              <div
+                id="filterStatus"
+                class="alert alert-info"
+                style="display: none; margin-bottom: 10px"
+              >
+                <!-- Filter status will be shown here -->
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12 col-sm-12">
+              <div class="x_panel">
+                <div
+                  class="x_title"
+                  style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                  "
+                >
+                  <h2 style="margin: 0">List of Bookings</h2>
+                  <div style="display: flex; align-items: center; gap: 15px">
+                    <button
+                      id="addBookingButtonTop"
+                      class="btn btn-success btn-sm"
+                      style="
+                        background: linear-gradient(
+                          135deg,
+                          #28a745 0%,
+                          #20c997 100%
+                        );
+                        border: none;
+                        padding: 8px 16px;
+                        border-radius: 6px;
+                        font-weight: 500;
+                        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+                        transition: all 0.3s ease;
+                      "
+                    >
+                      <i class="fa fa-plus"></i> Add Booking
+                    </button>
+                  </div>
+                </div>
+                <div class="x_content">
+                  <div class="row">
+                    <div class="col-sm-12">
+                      <div class="card-box table-responsive">
+                        <table
+                          id="datatable-buttons"
+                          class="table table-striped table-bordered"
+                          style="width: 100%"
+                        >
+                          <thead>
+                            <tr>
+                              <th>Agent</th>
+                              <th>Quotations Ref</th>
+                              <th>Client Name</th>
+                              <th class="sortable" data-column="booking_date">
+                                Booking Date
+                                <i
+                                  class="fa fa-sort sort-icon"
+                                  id="sort-booking_date"
+                                ></i>
+                              </th>
+                              <th class="sortable" data-column="start_date">
+                                Trip Start Date
+                                <i
+                                  class="fa fa-sort sort-icon"
+                                  id="sort-start_date"
+                                ></i>
+                              </th>
+                              <th>Pax</th>
+                              <th>Telephone</th>
+                              <th
+                                class="sortable"
+                                data-column="booking_reference"
+                              >
+                                Booking Ref
+                                <i
+                                  class="fa fa-sort-up sort-icon active"
+                                  id="sort-booking_reference"
+                                ></i>
+                              </th>
+                              <th>Status</th>
+                              <th class="sortable" data-column="final_cost">
+                                Final Cost
+                                <i
+                                  class="fa fa-sort sort-icon"
+                                  id="sort-final_cost"
+                                ></i>
+                              </th>
+                              <th>View</th>
+                              <th>Save</th>
+                            </tr>
+                          </thead>
+                          <tbody id="tripTableBody">
+                            <!-- Table rows will be dynamically added here -->
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="d-flex justify-content-end">
+                    <div class="pagination">
+                      <button
+                        id="prevPage"
+                        class="btn btn-secondary btn-sm"
+                        disabled
+                      >
+                        Previous
+                      </button>
+                      <button id="nextPage" class="btn btn-secondary btn-sm">
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /Page content -->
+
+        <!-- Footer -->
+        <footer></footer>
+        <!-- /Footer -->
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const token = localStorage.getItem("token");
+        const role = localStorage.getItem("role"); // Get the user's role
+
+        if (!token) {
+          alert("You are not authorized. Please log in first.");
+          window.location.href = "login.html";
+          return;
+        }
+
+        const username = localStorage.getItem("username") || "Guest";
+        document.getElementById("profileName").innerText = username;
+        document.getElementById("navProfileName").innerText = username;
+
+        // Hide Control Panel for non-admin users
+        if (role !== "admin" && role !== "superadmin") {
+          const controlPanelMenu = document.getElementById("controlPanelMenu");
+          if (controlPanelMenu) {
+            controlPanelMenu.style.display = "none";
+          }
+        }
+
+        const tripTableBody = document.getElementById("tripTableBody");
+        const searchBox = document.getElementById("searchBox");
+        const statusFilter = document.getElementById("statusFilter");
+        const rowsSelect = document.getElementById("rowsSelect");
+        const prevPageButton = document.getElementById("prevPage");
+        const nextPageButton = document.getElementById("nextPage");
+
+        let trips = [];
+        let filteredTrips = [];
+        let currentPage = 1;
+        let rowsPerPage = 25;
+        let totalPages = 1;
+        let currentFilterMode = "all"; // 'all' or 'date_range'
+        let currentDateRange = { start: null, end: null };
+
+        // Sorting state
+        let currentSortColumn = "booking_reference";
+        let currentSortDirection = "asc"; // 'asc', 'desc', 'none'
+
+        // Initialize page
+        function initializePage() {
+          // Try to restore saved date filters for booking page
+          const savedFromDate = localStorage.getItem("booking_fromDate");
+          const savedToDate = localStorage.getItem("booking_toDate");
+          const savedFilterMode = localStorage.getItem("booking_filterMode");
+
+          if (savedFromDate && savedToDate && savedFilterMode) {
+            // Restore saved dates
+            document.getElementById("fromDate").value = savedFromDate;
+            document.getElementById("toDate").value = savedToDate;
+            console.log(
+              "Restored saved booking date filters:",
+              savedFromDate,
+              "to",
+              savedToDate
+            );
+          } else {
+            // Set default dates (current month)
+            const today = new Date();
+            const endDate = today.toISOString().split("T")[0];
+            const startDate = new Date(today.getFullYear(), today.getMonth(), 1)
+              .toISOString()
+              .split("T")[0];
+
+            document.getElementById("fromDate").value = startDate;
+            document.getElementById("toDate").value = endDate;
+          }
+        }
+
+        // Save date filters to localStorage
+        function saveDateFilters() {
+          const fromDate = document.getElementById("fromDate").value;
+          const toDate = document.getElementById("toDate").value;
+
+          if (fromDate && toDate) {
+            localStorage.setItem("booking_fromDate", fromDate);
+            localStorage.setItem("booking_toDate", toDate);
+            localStorage.setItem("booking_filterMode", currentFilterMode);
+            console.log("Saved booking date filters:", fromDate, "to", toDate);
+          }
+        }
+
+        // Add event listener for filter button
+        document
+          .getElementById("filterByDateBtn")
+          .addEventListener("click", filterByDateRange);
+
+        // Filter by date range
+        function filterByDateRange() {
+          const fromDate = document.getElementById("fromDate").value;
+          const toDate = document.getElementById("toDate").value;
+
+          // Save the date filters
+          saveDateFilters();
+
+          // If both dates are not selected, fall back to all data
+          if (!fromDate || !toDate) {
+            showInfoMessage("No date range selected. Loading all bookings...");
+            setTimeout(() => {
+              loadTripsFromAPI(true); // Load all data
+            }, 1000);
+            return;
+          }
+
+          // If dates are selected, use date range filtering
+          loadTripsFromAPI(false); // false means use date range filtering
+        }
+
+        // Show loading state
+        function showLoadingState() {
+          const tableBody = document.getElementById("tripTableBody");
+          tableBody.innerHTML = `
+            <tr>
+              <td colspan="12" class="text-center">
+                <i class="fa fa-spinner fa-spin fa-2x"></i>
+                <p>Loading bookings...</p>
+              </td>
+            </tr>
+          `;
+        }
+
+        // Show info message
+        function showInfoMessage(message) {
+          const statusDiv = document.getElementById("filterStatus");
+          statusDiv.innerHTML = `<i class="fa fa-info-circle"></i> ${message}`;
+          statusDiv.className = "alert alert-info";
+          statusDiv.style.display = "block";
+        }
+
+        // Show error message
+        function showErrorMessage(message) {
+          const statusDiv = document.getElementById("filterStatus");
+          statusDiv.innerHTML = `<i class="fa fa-exclamation-triangle"></i> ${message}`;
+          statusDiv.className = "alert alert-danger";
+          statusDiv.style.display = "block";
+        }
+
+        // Update filter status display
+        function updateFilterStatus(count) {
+          const statusDiv = document.getElementById("filterStatus");
+
+          if (currentFilterMode === "all") {
+            // For all data, show simple message
+            statusDiv.innerHTML = `<i class="fa fa-info-circle"></i> Showing all ${count} bookings`;
+            statusDiv.className = "alert alert-info";
+            statusDiv.style.display = "block";
+          } else if (
+            currentFilterMode === "date_range" &&
+            currentDateRange.start &&
+            currentDateRange.end
+          ) {
+            // Show date range
+            statusDiv.innerHTML = `<i class="fa fa-calendar"></i> Showing all ${count} bookings from ${formatDateForDisplay(
+              currentDateRange.start
+            )} to ${formatDateForDisplay(currentDateRange.end)}`;
+            statusDiv.className = "alert alert-info";
+            statusDiv.style.display = "block";
+          } else {
+            statusDiv.style.display = "none";
+          }
+        }
+
+        // Format date for display
+        function formatDateForDisplay(dateString) {
+          const date = new Date(dateString);
+          return date.toLocaleDateString("en-GB");
+        }
+
+        tripTableBody.addEventListener("click", function (event) {
+          if (event.target.classList.contains("edit-btn")) {
+            const tripId = event.target.getAttribute("data-id");
+            window.location.href = `edit_booking.html?id=${tripId}`;
+          }
+          if (event.target.classList.contains("print-btn")) {
+            const tripId = event.target.getAttribute("data-id");
+
+            if (!tripId) {
+              alert("Invalid booking ID.");
+              return;
+            }
+
+            if (!confirm("Are you sure you want to save invoice to pdf?")) {
+              return;
+            }
+
+            fetch(`${Endpoint}/api/v1/bookings/${tripId}/generate-pdf`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`, // ✅ Ensures authentication is sent
+                "Content-Type": "application/pdf", // ✅ Ensures correct response type
+              },
+            })
+              .then((response) => {
+                if (!response.ok) {
+                  return response.text().then((errorText) => {
+                    throw new Error(`Failed to print invoice: ${errorText}`);
+                  });
+                }
+                return response.blob(); // ✅ Convert response to a Blob (binary file)
+              })
+              .then((blob) => {
+                const blobUrl = window.URL.createObjectURL(blob); // ✅ Create a URL for the Blob
+                window.open(blobUrl, "_blank"); // ✅ Open the PDF in a new tab
+              })
+              .catch((error) => {
+                console.error("Error printing invoice:", error);
+                alert(`Error: ${error.message}`);
+              });
+          }
+        });
+
+        // Fetch trips from backend API
+        function loadTripsFromAPI(useAllData = true) {
+          showLoadingState();
+
+          const token = localStorage.getItem("token");
+
+          // Debug: Check if token exists
+          if (!token) {
+            console.error("No authentication token found");
+            alert("No authentication token found. Please log in again.");
+            window.location.href = "login.html";
+            return;
+          }
+
+          let url;
+
+          if (useAllData) {
+            // Use the default endpoint for all bookings
+            url = `${Endpoint}/api/v1/bookings`;
+            currentFilterMode = "all";
+          } else {
+            // Use date range endpoint
+            const fromDate = document.getElementById("fromDate").value;
+            const toDate = document.getElementById("toDate").value;
+
+            if (!fromDate || !toDate) {
+              showErrorMessage("Please select both start and end dates");
+              return;
+            }
+
+            url = `${Endpoint}/api/v1/bookings/date-range?start_date=${fromDate}&end_date=${toDate}`;
+            currentFilterMode = "date_range";
+            currentDateRange = { start: fromDate, end: toDate };
+          }
+
+          console.log("Loading bookings from:", url);
+
+          fetch(url, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          })
+            .then((response) => {
+              console.log("Response status:", response.status);
+              console.log("Response ok:", response.ok);
+
+              if (!response.ok) {
+                if (response.status === 401) {
+                  console.error("Authentication failed - 401 Unauthorized");
+                  alert("Unauthorized. Please log in again.");
+                  localStorage.removeItem("token");
+                  localStorage.removeItem("role");
+                  localStorage.removeItem("username");
+                  window.location.href = "login.html";
+                  return;
+                } else if (response.status === 403) {
+                  console.error("Access forbidden - 403 Forbidden");
+                  showErrorMessage(
+                    "You don't have permission to access bookings."
+                  );
+                  return;
+                } else {
+                  return response.text().then((errorData) => {
+                    console.error("Raw response data:", errorData);
+                    throw new Error("Failed to fetch bookings.");
+                  });
+                }
+              }
+              return response.json();
+            })
+            .then((data) => {
+              console.log("Bookings data received:", data);
+
+              // Handle response - could be array or object with bookings array
+              let bookingsArray = [];
+              if (Array.isArray(data)) {
+                bookingsArray = data;
+              } else if (data && data.bookings) {
+                bookingsArray = data.bookings;
+              } else if (data && data.quotations) {
+                bookingsArray = data.quotations;
+              } else if (data && data.data) {
+                bookingsArray = data.data;
+              }
+
+              trips = bookingsArray;
+              filteredTrips = [...trips];
+
+              // Apply current filters (search and status) after loading data
+              filterTrips();
+
+              totalPages = Math.ceil(filteredTrips.length / rowsPerPage);
+              currentPage = 1;
+
+              updateFilterStatus(filteredTrips.length);
+              renderTrips();
+              updatePaginationButtons();
+            })
+            .catch((error) => {
+              console.error("Error fetching bookings:", error);
+              showErrorMessage(`Error loading bookings: ${error.message}`);
+
+              // Reset data on error
+              trips = [];
+              filteredTrips = [];
+              totalPages = 1;
+              currentPage = 1;
+              renderTrips();
+              updatePaginationButtons();
+            });
+        }
+
+        // Render trips into the table
+        function renderTrips() {
+          tripTableBody.innerHTML = "";
+
+          // Apply sorting based on current sort settings
+          applySorting();
+
+          // ✅ Show all bookings instead of filtering by booking_reference
+          const start = (currentPage - 1) * rowsPerPage;
+          const end = Math.min(start + rowsPerPage, filteredTrips.length);
+
+          filteredTrips.slice(start, end).forEach((trip) => {
+            const row = document.createElement("tr");
+
+            // ✅ Apply background color based on approval and booking reference
+            if (trip.status === "Approved") {
+              row.style.backgroundColor = "#A2D9A5"; // Green for approved trips
+            } else if (
+              trip.status === "Declined" ||
+              trip.status === "Cancelled"
+            ) {
+              row.style.backgroundColor = "#E74C3C"; // Red for cancelled or declined trips
+            } else if (
+              trip.booking_reference &&
+              trip.booking_reference.trim() !== ""
+            ) {
+              row.style.backgroundColor = "#FFD580"; // Yellow if booking_reference is not empty
+            }
+
+            // Convert the date to DD/MM/YYYY format
+            const formattedDate = new Date(trip.start_date)
+              .toLocaleDateString("en-GB")
+              .split("/")
+              .join("/");
+
+            // Format booking date to DD/MM/YYYY format, handle cases where booking_date might be null or invalid
+            let formattedBookingDate = "N/A";
+            if (
+              trip.booking_date &&
+              trip.booking_date !== "0001-01-01T00:00:00Z"
+            ) {
+              const bookingDate = new Date(trip.booking_date);
+              if (!isNaN(bookingDate.getTime())) {
+                formattedBookingDate = bookingDate.toLocaleDateString("en-GB");
+              }
+            }
+
+            row.innerHTML = `
+            <td>${trip.agent.name}</td>
+            <td>${trip.quotation_reference}</td>
+            <td>${trip.client_name}</td>
+            <td>${formattedBookingDate}</td>
+            <td>${formattedDate}</td>
+            <td>${trip.number_of_adults + trip.number_of_kids}</td>
+            <td>${trip.client_phone}</td>
+            <td>${trip.booking_reference || ""}</td>
+            <td>${trip.status}</td>
+            <td>${trip.final_cost || "N/A"}</td>
+            <td><button class="btn btn-primary btn-sm edit-btn" data-id="${
+              trip.id
+            }">View</button></td>
+            <td><button class="btn btn-success btn-sm print-btn" data-id="${
+              trip.id
+            }">Save</button></td>
+        `;
+
+            tripTableBody.appendChild(row);
+          });
+
+          updatePaginationButtons();
+        }
+
+        function updatePaginationButtons() {
+          prevPageButton.disabled = currentPage === 1;
+          nextPageButton.disabled =
+            currentPage === totalPages || totalPages === 0;
+        }
+
+        function filterTrips() {
+          const searchValue = searchBox.value.trim().toLowerCase();
+          const statusValue = statusFilter.value;
+
+          // Search and status filter for booking-related fields (client-side search on already loaded data)
+          filteredTrips = trips.filter((trip) => {
+            const matchesSearch =
+              (trip.client_name &&
+                trip.client_name.toLowerCase().includes(searchValue)) ||
+              (trip.quotation_reference &&
+                trip.quotation_reference.toLowerCase().includes(searchValue)) ||
+              (trip.status &&
+                trip.status.toLowerCase().includes(searchValue)) ||
+              (trip.client_phone && trip.client_phone.includes(searchValue)) ||
+              (trip.booking_reference &&
+                trip.booking_reference.toLowerCase().includes(searchValue)) ||
+              (trip.agent &&
+                trip.agent.name &&
+                trip.agent.name.toLowerCase().includes(searchValue));
+
+            const matchesStatus =
+              statusValue === "all" || trip.status === statusValue;
+
+            return matchesSearch && matchesStatus;
+          });
+
+          currentPage = 1;
+          totalPages = Math.ceil(filteredTrips.length / rowsPerPage);
+          renderTrips();
+          updatePaginationButtons();
+        }
+
+        // Attach event listeners for search input and status filter (client-side filtering)
+        searchBox.addEventListener("input", filterTrips);
+        statusFilter.addEventListener("change", filterTrips);
+
+        rowsSelect.addEventListener("change", function () {
+          rowsPerPage =
+            this.value === "All"
+              ? filteredTrips.length
+              : parseInt(this.value, 10);
+          currentPage = 1;
+          totalPages = Math.ceil(filteredTrips.length / rowsPerPage);
+          renderTrips();
+          updatePaginationButtons();
+        });
+
+        prevPageButton.addEventListener("click", function () {
+          if (currentPage > 1) {
+            currentPage--;
+            renderTrips();
+            updatePaginationButtons();
+          }
+        });
+
+        nextPageButton.addEventListener("click", function () {
+          if (currentPage < totalPages) {
+            currentPage++;
+            renderTrips();
+            updatePaginationButtons();
+          }
+        });
+
+        // Sorting functionality
+        function applySorting() {
+          if (currentSortDirection === "none") {
+            // Return to original order (by booking_date ascending as default)
+            filteredTrips.sort((a, b) => {
+              const getValidDate = (trip) => {
+                if (
+                  !trip.booking_date ||
+                  trip.booking_date === "0001-01-01T00:00:00Z"
+                ) {
+                  return new Date(trip.start_date);
+                }
+                return new Date(trip.booking_date);
+              };
+
+              const dateA = getValidDate(a);
+              const dateB = getValidDate(b);
+
+              if (dateA < dateB) return -1;
+              if (dateA > dateB) return 1;
+              return a.client_name.localeCompare(b.client_name);
+            });
+            return;
+          }
+
+          filteredTrips.sort((a, b) => {
+            let valueA, valueB;
+
+            switch (currentSortColumn) {
+              case "booking_date":
+                valueA =
+                  a.booking_date && a.booking_date !== "0001-01-01T00:00:00Z"
+                    ? new Date(a.booking_date)
+                    : new Date(a.start_date);
+                valueB =
+                  b.booking_date && b.booking_date !== "0001-01-01T00:00:00Z"
+                    ? new Date(b.booking_date)
+                    : new Date(b.start_date);
+                break;
+              case "start_date":
+                valueA = new Date(a.start_date);
+                valueB = new Date(b.start_date);
+                break;
+              case "final_cost":
+                valueA = parseFloat(a.final_cost) || 0;
+                valueB = parseFloat(b.final_cost) || 0;
+                break;
+              case "booking_reference":
+                // Parse booking reference format: B2025JUN0001
+                const parseBookingRef = (ref) => {
+                  if (!ref || ref.trim() === "")
+                    return { year: 0, month: 0, number: 0 };
+
+                  const match = ref.match(/^B(\d{4})([A-Z]{3})(\d+)$/);
+                  if (!match) return { year: 0, month: 0, number: 0 };
+
+                  const monthMap = {
+                    JAN: 1,
+                    FEB: 2,
+                    MAR: 3,
+                    APR: 4,
+                    MAY: 5,
+                    JUN: 6,
+                    JUL: 7,
+                    AUG: 8,
+                    SEP: 9,
+                    OCT: 10,
+                    NOV: 11,
+                    DEC: 12,
+                  };
+
+                  return {
+                    year: parseInt(match[1]),
+                    month: monthMap[match[2]] || 0,
+                    number: parseInt(match[3]),
+                  };
+                };
+
+                const refA = parseBookingRef(a.booking_reference);
+                const refB = parseBookingRef(b.booking_reference);
+
+                // Compare by year, then month, then number
+                if (refA.year !== refB.year) {
+                  valueA = refA.year;
+                  valueB = refB.year;
+                } else if (refA.month !== refB.month) {
+                  valueA = refA.month;
+                  valueB = refB.month;
+                } else {
+                  valueA = refA.number;
+                  valueB = refB.number;
+                }
+                break;
+              default:
+                return 0;
+            }
+
+            let comparison = 0;
+            if (valueA < valueB) {
+              comparison = -1;
+            } else if (valueA > valueB) {
+              comparison = 1;
+            }
+
+            return currentSortDirection === "asc" ? comparison : -comparison;
+          });
+        }
+
+        function updateSortIcons() {
+          // Reset all sort icons
+          document.querySelectorAll(".sort-icon").forEach((icon) => {
+            icon.className = "fa fa-sort sort-icon";
+          });
+
+          // Update the active sort icon
+          const activeIcon = document.getElementById(
+            `sort-${currentSortColumn}`
+          );
+          if (activeIcon) {
+            activeIcon.classList.add("active");
+            if (currentSortDirection === "asc") {
+              activeIcon.className = "fa fa-sort-up sort-icon active";
+            } else if (currentSortDirection === "desc") {
+              activeIcon.className = "fa fa-sort-down sort-icon active";
+            } else {
+              activeIcon.className = "fa fa-sort sort-icon active";
+            }
+          }
+        }
+
+        // Add click event listeners to sortable columns
+        document.querySelectorAll(".sortable").forEach((header) => {
+          header.addEventListener("click", function () {
+            const column = this.getAttribute("data-column");
+
+            if (currentSortColumn === column) {
+              // Cycle through sort directions: asc -> desc -> none -> asc
+              if (currentSortDirection === "asc") {
+                currentSortDirection = "desc";
+              } else if (currentSortDirection === "desc") {
+                currentSortDirection = "none";
+              } else {
+                currentSortDirection = "asc";
+              }
+            } else {
+              // New column selected, start with ascending
+              currentSortColumn = column;
+              currentSortDirection = "asc";
+            }
+
+            updateSortIcons();
+            renderTrips();
+            updatePaginationButtons();
+          });
+        });
+
+        // Initialize sort icons
+        updateSortIcons();
+
+        // Initialize the page
+        initializePage();
+
+        // Load trips from API when the page is ready
+        // Check if we have saved filters and should use them
+        const savedFilterMode = localStorage.getItem("booking_filterMode");
+        if (savedFilterMode === "date_range") {
+          // Use saved date range filters
+          loadTripsFromAPI(false);
+        } else {
+          // Load all data by default
+          loadTripsFromAPI();
+        }
+
+        // Add event listener for the top Add Booking button
+        const addBookingButtonTop = document.getElementById(
+          "addBookingButtonTop"
+        );
+        if (addBookingButtonTop) {
+          addBookingButtonTop.addEventListener("click", function () {
+            window.location.href = "add_trip.html";
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

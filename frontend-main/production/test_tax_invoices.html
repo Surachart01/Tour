@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Invoice System Test</title>
+    <!-- Bootstrap -->
+    <link href="../vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Font Awesome -->
+    <link href="../vendors/font-awesome/css/font-awesome.min.css" rel="stylesheet" />
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 50px 0;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .test-button {
+            margin: 10px;
+            padding: 15px 30px;
+            font-size: 16px;
+        }
+        .info-box {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .warning-box {
+            background-color: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="test-container">
+            <h1 class="text-center mb-4">
+                <i class="fa fa-file-text-o"></i> Tax Invoice System Test
+            </h1>
+            
+            <div class="info-box">
+                <h5><i class="fa fa-info-circle"></i> Testing Information</h5>
+                <p><strong>Fallback Data:</strong> The system will automatically show sample data if no backend data is available.</p>
+                <p><strong>Sample Invoices:</strong> 3 test invoices with realistic data including hotels, transfers, and excursions.</p>
+                <p><strong>Features:</strong> In-place editing, automatic VAT calculations, PDF generation, and Thai Baht formatting.</p>
+                <p><strong>Edit Page:</strong> Access without invoice ID to see sample data with detailed category breakdown.</p>
+            </div>
+
+            <div class="warning-box">
+                <h5><i class="fa fa-exclamation-triangle"></i> Important Notes</h5>
+                <p><strong>Authentication:</strong> You need to be logged in to access the tax invoice system.</p>
+                <p><strong>Calculation Logic:</strong> Non-VAT editing automatically calculates VAT amounts using 7% Thailand tax rate.</p>
+                <p><strong>Data Format:</strong> All amounts are in Thai Baht (THB) with proper thousand separators.</p>
+                <p><strong>Sample Data:</strong> Edit page shows sample data when accessed without an invoice ID parameter.</p>
+            </div>
+
+            <div class="text-center">
+                <h3 class="mb-4">Test the Tax Invoice System</h3>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-primary btn-lg test-button" onclick="window.open('tax_invoices.html', '_blank')">
+                            <i class="fa fa-list"></i><br>
+                            Tax Invoices List
+                        </button>
+                        <p class="small text-muted">View all tax invoices with search, pagination, and CRUD operations</p>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-success btn-lg test-button" onclick="window.open('edit_invoices.html', '_blank')">
+                            <i class="fa fa-edit"></i><br>
+                            Edit Invoice (Sample Data)
+                        </button>
+                        <p class="small text-muted">Test the edit interface with sample data and in-place editing</p>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 text-center">
+                        <div class="alert alert-success" style="margin: 20px 0;">
+                            <h6><i class="fa fa-lightbulb-o"></i> Pro Tip:</h6>
+                            <p class="mb-0">The edit page will automatically display sample data with categories (Hotels, Transfers, Excursions) including detailed items, locations, dates, and amounts. Try editing the Non-VAT amounts to see automatic VAT calculations!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-info btn-lg test-button" onclick="window.open('index.html', '_blank')">
+                            <i class="fa fa-home"></i><br>
+                            Dashboard
+                        </button>
+                        <p class="small text-muted">Go to main dashboard</p>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-warning btn-lg test-button" onclick="window.open('payment.html', '_blank')">
+                            <i class="fa fa-money"></i><br>
+                            Payments
+                        </button>
+                        <p class="small text-muted">View payment system</p>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-secondary btn-lg test-button" onclick="window.open('trip.html', '_blank')">
+                            <i class="fa fa-book"></i><br>
+                            Quotations
+                        </button>
+                        <p class="small text-muted">View quotation system</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-5">
+                <h4>Sample Data Preview</h4>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Trip ID</th>
+                                <th>Agent</th>
+                                <th>Total Cost</th>
+                                <th>VAT Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>001_2024</td>
+                                <td>TR2024001</td>
+                                <td>Bangkok Travel Co.</td>
+                                <td>THB 25,000.00</td>
+                                <td>THB 2,334.58</td>
+                                <td><span class="badge badge-warning">Draft</span></td>
+                            </tr>
+                            <tr>
+                                <td>002_2024</td>
+                                <td>TR2024002</td>
+                                <td>Phuket Paradise Tours</td>
+                                <td>THB 18,500.00</td>
+                                <td>THB 1,728.97</td>
+                                <td><span class="badge badge-success">Finalized</span></td>
+                            </tr>
+                            <tr>
+                                <td>003_2024</td>
+                                <td>TR2024003</td>
+                                <td>Northern Thailand Adventures</td>
+                                <td>THB 32,000.00</td>
+                                <td>THB 2,990.65</td>
+                                <td><span class="badge badge-warning">Draft</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery and Bootstrap -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

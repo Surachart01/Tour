@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>List of Excursions</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- Custom Theme Style -->
+    <link rel="stylesheet" href="../build/css/custom.min.css" />
+
+    <style>
+      /* Sidebar and navbar text size */
+      .nav_title span,
+      .profile_info span,
+      .profile_info h2,
+      .side-menu a,
+      .navbar-right a {
+        font-size: 1rem; /* Slightly increased for better readability */
+      }
+    </style>
+
+    <style>
+      .edit-btn,
+      .delete-btn {
+        cursor: pointer;
+      }
+      /* Removed constraining CSS for sidebar-menu to allow proper submenu expansion */
+
+      /* Sidebar scrolling - allow scroll when expanded, but not when collapsed */
+      .left_col.scroll-view {
+        overflow-y: auto;
+        max-height: 100vh;
+      }
+
+      /* When sidebar is collapsed, remove height constraints to allow submenu expansion */
+      body.nav-sm .left_col.scroll-view {
+        overflow-y: visible;
+        max-height: none;
+      }
+
+      /* Description column styling */
+      .description-cell {
+        max-width: 300px;
+        word-wrap: break-word;
+        white-space: normal;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        position: relative;
+      }
+
+      .description-text {
+        display: -webkit-box;
+        /* -webkit-line-clamp: 3; */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.4;
+        max-height: 4.2em; /* 3 lines * 1.4 line-height */
+      }
+
+      .description-cell:hover .description-text {
+        /* -webkit-line-clamp: unset; */
+        max-height: none;
+        background-color: #f8f9fa;
+        padding: 8px;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        position: relative;
+      }
+
+      /* Table column width control */
+      #datatable-buttons th:nth-child(1) {
+        width: 10%;
+      } /* City */
+      #datatable-buttons th:nth-child(2) {
+        width: 15%;
+      } /* Name */
+      #datatable-buttons th:nth-child(3) {
+        width: 12%;
+      } /* Valid Days */
+      #datatable-buttons th:nth-child(4) {
+        width: 15%;
+      } /* Supplier Name */
+      #datatable-buttons th:nth-child(5) {
+        width: 30%;
+      } /* Description */
+      #datatable-buttons th:nth-child(6) {
+        width: 9%;
+      } /* Edit */
+      #datatable-buttons th:nth-child(7) {
+        width: 9%;
+      } /* Delete */
+    </style>
+
+    <style>
+      /* Enhanced button hover effects */
+      #addExcursionButtonTop:hover {
+        background: linear-gradient(
+          135deg,
+          #218838 0%,
+          #1e7e34 100%
+        ) !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3) !important;
+      }
+
+      /* Count badge animation */
+      #excursionsCount {
+        transition: all 0.3s ease;
+      }
+    </style>
+  </head>
+
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+        <div class="col-md-3 left_col menu_fixed">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border: 0">
+              <a
+                href="index.html"
+                class="site_title"
+                style="
+                  display: block;
+                  text-align: center;
+                  font-size: 2rem;
+                  font-weight: bold;
+                  color: #007bff;
+                  text-decoration: none;
+                "
+              >
+                <span style="font-size: 1.5rem">VeraThailandia!</span>
+              </a>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- menu profile quick info -->
+            <div class="profile clearfix">
+              <div class="profile_pic">
+                <img
+                  src="images/verathailandlogo.png"
+                  alt="..."
+                  class="img-circle profile_img"
+                />
+              </div>
+              <div class="profile_info">
+                <span>Welcome,</span>
+                <h2 id="profileName"></h2>
+              </div>
+            </div>
+            <!-- /menu profile quick info -->
+
+            <br />
+
+            <!-- sidebar menu -->
+            <div
+              id="sidebar-menu"
+              class="main_menu_side hidden-print main_menu"
+            >
+              <div class="menu_section">
+                <h3>General</h3>
+                <ul class="nav side-menu">
+                  <li>
+                    <a href="index.html"><i class="fa fa-home"></i> Home</a>
+                  </li>
+                  <li>
+                    <a
+                      ><i class="fa fa-edit"></i> Control-Panel
+                      <span class="fa fa-chevron-down"></span
+                    ></a>
+                    <ul class="nav child_menu">
+                      <li><a href="activities.html">Activities</a></li>
+                      <li><a href="agents.html">Agents</a></li>
+                      <li><a href="booking.html">Bookings</a></li>
+                      <li><a href="excursions.html">Excursions</a></li>
+                      <li><a href="hotels.html">Hotels</a></li>
+                      <li><a href="markup.html">Markups</a></li>
+                      <!-- <li><a href="operations.html">Operations</a></li> -->
+                      <li><a href="othercharges.html">Other Charges</a></li>
+                      <!-- <li><a href="stop_sale.html">Stop Sale</a></li> -->
+                      <li><a href="suppliers.html">Suppliers</a></li>
+                      <li><a href="tools.html">Tools</a></li>
+                      <li><a href="tours.html">Tours</a></li>
+                      <li><a href="transfers.html">Transfers</a></li>
+                      <li><a href="users.html">Users</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="trip.html"
+                      ><i class="fa fa-book"></i> Quotation
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li>
+                    <a href="payment.html"
+                      ><i class="fa fa-pencil-square-o"></i> Payment
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <!--<li>
+                    <a href="tax_invoices.html"
+                      ><i class="fa fa-file-text-o"></i> Tax Invoices
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li> -->
+                  <li>
+                    <a href="itinerary.html"
+                      ><i class="fa fa-ticket"></i> Itinerary
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li>
+                    <a href="analytics.html"
+                      ><i class="fa fa-bar-chart"></i> Analytics
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- /sidebar menu -->
+
+            <!-- /menu footer buttons -->
+            <div class="sidebar-footer hidden-small">
+              <a data-toggle="tooltip" data-placement="top" title="Settings">
+                <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="FullScreen">
+                <span
+                  class="glyphicon glyphicon-fullscreen"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="Lock">
+                <span
+                  class="glyphicon glyphicon-eye-close"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a
+                data-toggle="tooltip"
+                data-placement="top"
+                title="Logout"
+                href="logout.html"
+              >
+                <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+              </a>
+            </div>
+            <!-- /menu footer buttons -->
+          </div>
+        </div>
+
+        <!-- top navigation -->
+        <div class="top_nav">
+          <div class="nav_menu">
+            <div class="nav toggle">
+              <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+            </div>
+            <nav class="nav navbar-nav">
+              <ul class="navbar-right">
+                <li class="nav-item dropdown open" style="padding-left: 15px">
+                  <a
+                    href="javascript:;"
+                    class="user-profile dropdown-toggle"
+                    aria-haspopup="true"
+                    id="navbarDropdown"
+                    data-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    <img
+                      id="navProfileImage"
+                      src="images/verathailandlogo.png"
+                      alt=""
+                    />
+                    <span id="navProfileName"></span>
+                  </a>
+                  <div
+                    class="dropdown-menu dropdown-usermenu pull-right"
+                    aria-labelledby="navbarDropdown"
+                  >
+                    <a class="dropdown-item" href="profile.html"
+                      ><i class="fa fa-user pull-right"></i> Profile</a
+                    >
+                    <a class="dropdown-item" href="logout.html"
+                      ><i class="fa fa-sign-out pull-right"></i> Log Out</a
+                    >
+                  </div>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+        <!-- /top navigation -->
+
+        <!-- Page content -->
+        <div class="right_col" role="main">
+          <div class="page-title">
+            <div class="title_left">
+              <h3>Excursions</h3>
+            </div>
+          </div>
+
+          <div class="clearfix"></div>
+
+          <!-- Search Box and Rows Display Dropdown -->
+          <div class="row" style="margin-bottom: 30px">
+            <div class="col-md-6">
+              <input
+                type="text"
+                id="searchBox"
+                class="form-control"
+                placeholder="Search for excursions..."
+              />
+            </div>
+            <div class="col-md-6 text-right">
+              <label for="rowsSelect">Show: </label>
+              <select
+                id="rowsSelect"
+                class="form-control"
+                style="width: 100px; display: inline-block"
+              >
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="All">All</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12 col-sm-12">
+              <div class="x_panel">
+                <div
+                  class="x_title"
+                  style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                  "
+                >
+                  <h2 style="margin: 0">List of Excursions</h2>
+                  <div style="display: flex; align-items: center; gap: 15px">
+                    <div
+                      style="
+                        display: inline-flex;
+                        align-items: center;
+                        background: linear-gradient(
+                          135deg,
+                          #f8f9fa 0%,
+                          #e9ecef 100%
+                        );
+                        padding: 6px 12px;
+                        border-radius: 20px;
+                        border: 1px solid #dee2e6;
+                        font-size: 13px;
+                        color: #495057;
+                      "
+                    >
+                      <i
+                        class="fa fa-map-marker"
+                        style="margin-right: 6px; color: #6c757d"
+                      ></i>
+                      Total:
+                      <span
+                        id="excursionsCount"
+                        style="
+                          font-weight: 600;
+                          color: #28a745;
+                          margin-left: 4px;
+                        "
+                        >0</span
+                      >
+                    </div>
+                    <button
+                      id="addExcursionButtonTop"
+                      class="btn btn-success btn-sm"
+                      style="
+                        background: linear-gradient(
+                          135deg,
+                          #28a745 0%,
+                          #20c997 100%
+                        );
+                        border: none;
+                        padding: 8px 16px;
+                        border-radius: 6px;
+                        font-weight: 500;
+                        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+                        transition: all 0.3s ease;
+                      "
+                    >
+                      <i class="fa fa-plus"></i> Add Excursion
+                    </button>
+                  </div>
+                </div>
+                <div class="x_content">
+                  <div class="row">
+                    <div class="col-sm-12">
+                      <div class="card-box table-responsive">
+                        <table
+                          id="datatable-buttons"
+                          class="table table-striped table-bordered"
+                          style="width: 100%"
+                        >
+                          <thead>
+                            <tr>
+                              <th>City</th>
+                              <th>Name</th>
+                              <th>Valid Days</th>
+                              <th>Supplier Name</th>
+                              <th>Description</th>
+                              <th>Edit</th>
+                              <th>Delete</th>
+                            </tr>
+                          </thead>
+                          <tbody id="excursionTableBody">
+                            <!-- Table rows will be dynamically added here -->
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="d-flex justify-content-end">
+                    <div class="pagination">
+                      <button
+                        id="prevPage"
+                        class="btn btn-secondary btn-sm"
+                        disabled
+                      >
+                        Previous
+                      </button>
+                      <button id="nextPage" class="btn btn-secondary btn-sm">
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                  <div class="text-center">
+                    <button
+                      id="addExcursionButton"
+                      class="btn btn-round btn-success"
+                    >
+                      Add Excursion
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /Page content -->
+
+        <!-- Footer -->
+        <footer></footer>
+        <!-- /Footer -->
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const excursionTableBody =
+          document.getElementById("excursionTableBody");
+        const addExcursionButton =
+          document.getElementById("addExcursionButton");
+        const profileName = document.getElementById("profileName");
+        const navProfileName = document.getElementById("navProfileName");
+        const searchBox = document.getElementById("searchBox");
+        const rowsSelect = document.getElementById("rowsSelect");
+        const prevPageButton = document.getElementById("prevPage");
+        const nextPageButton = document.getElementById("nextPage");
+
+        let excursions = [];
+        let filteredExcursions = [];
+        let currentPage = 1;
+        let rowsPerPage = 25;
+        let totalPages = 1;
+
+        // Load excursions from the backend
+        function loadExcursions() {
+          const token = localStorage.getItem("token");
+          if (!token) {
+            alert("You are not authorized. Please log in first.");
+            window.location.href = "login.html";
+            return;
+          }
+
+          fetch(`${Endpoint}/api/v1/excursions`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          })
+            .then((response) => {
+              if (!response.ok) {
+                if (response.status === 401) {
+                  alert("Unauthorized. Please log in again.");
+                  window.location.href = "login.html";
+                } else if (response.status === 403) {
+                  alert(
+                    "You don't have sufficient permissions to perform this action."
+                  );
+                  return;
+                } else {
+                  throw new Error("Failed to load excursions");
+                }
+              }
+              return response.json();
+            })
+            .then((data) => {
+              // ✅ Sort excursions in ascending order based on `order`
+              excursions = data.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+              filteredExcursions = [...excursions]; // Copy sorted data for filtering
+              totalPages = Math.ceil(filteredExcursions.length / rowsPerPage);
+              updateExcursionsCount();
+              renderExcursions();
+              updatePaginationButtons();
+            })
+            .catch((error) => {
+              console.error("Error loading excursions:", error);
+              alert("Failed to load excursions. Please try again later.");
+            });
+        }
+
+        // Render the excursions data
+        function renderExcursions() {
+          excursionTableBody.innerHTML = "";
+
+          const start = (currentPage - 1) * rowsPerPage;
+          const end = Math.min(start + rowsPerPage, filteredExcursions.length);
+          const rowsToShow = filteredExcursions.slice(start, end);
+
+          rowsToShow.forEach((excursion) => {
+            // Format available days
+            const formatAvailableDays = (availableDays) => {
+              if (!availableDays || availableDays.length === 0) {
+                return "All Days";
+              }
+
+              const dayNames = [
+                "Sun",
+                "Mon",
+                "Tue",
+                "Wed",
+                "Thu",
+                "Fri",
+                "Sat",
+              ];
+              const sortedDays = availableDays
+                .map((day) => dayNames[day.day_of_week])
+                .sort((a, b) => {
+                  const order = [
+                    "Mon",
+                    "Tue",
+                    "Wed",
+                    "Thu",
+                    "Fri",
+                    "Sat",
+                    "Sun",
+                  ];
+                  return order.indexOf(a) - order.indexOf(b);
+                });
+
+              return sortedDays.join(", ");
+            };
+
+            const validDays = formatAvailableDays(excursion.available_days);
+            const supplierName = excursion.supplier_name || "N/A";
+
+            const row = `
+          <tr>
+            <td>${excursion.city}</td>
+            <td>${excursion.name}</td>
+            <td>${validDays}</td>
+            <td>${supplierName}</td>
+            <td class="description-cell"><div class="description-text">${excursion.description}</div></td>
+            <td><button class="btn btn-primary btn-sm edit-btn" data-id="${excursion.id}"><i class="fa fa-edit"></i> Edit</button></td>
+            <td><button class="btn btn-danger btn-sm delete-btn" data-id="${excursion.id}"><i class="fa fa-trash"></i> Delete</button></td>
+          </tr>`;
+            excursionTableBody.innerHTML += row;
+          });
+
+          // Attach edit event listeners
+          document.querySelectorAll(".edit-btn").forEach((btn) => {
+            btn.addEventListener("click", function () {
+              const excursionId = this.getAttribute("data-id");
+              window.location.href = `edit_excursion.html?id=${excursionId}`;
+            });
+          });
+
+          // Attach delete event listeners
+          document.querySelectorAll(".delete-btn").forEach((btn) => {
+            btn.addEventListener("click", function () {
+              const id = this.getAttribute("data-id");
+              if (confirm("Are you sure you want to delete this excursion?")) {
+                deleteExcursion(id);
+              }
+            });
+          });
+        }
+
+        // Function to delete an excursion
+        function deleteExcursion(id) {
+          const token = localStorage.getItem("token");
+
+          fetch(`${Endpoint}/api/v1/excursions/${id}`, {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          })
+            .then((response) => {
+              if (!response.ok) {
+                if (response.status === 401) {
+                  // Handle 401 Unauthorized
+                  alert("Unauthorized. Please log in again.");
+                  window.location.href = "login.html"; // Redirect to login page
+                } else if (response.status === 403) {
+                  // Handle 403 Forbidden
+                  alert(
+                    "You don't have sufficient permissions to perform this action."
+                  );
+                  return;
+                } else {
+                  throw new Error("Failed to delete excursion");
+                }
+              }
+              // Reload the excursions after deletion
+              loadExcursions();
+            })
+            .catch((error) => {
+              console.error("Error deleting excursion:", error);
+              alert("Failed to delete excursion. Please try again later.");
+            });
+        }
+
+        // Update pagination buttons based on current page
+        function updatePaginationButtons() {
+          prevPageButton.disabled = currentPage === 1;
+          nextPageButton.disabled = currentPage === totalPages;
+        }
+
+        // Move to the next page
+        function nextPage() {
+          if (currentPage < totalPages) {
+            currentPage++;
+            renderExcursions();
+            updatePaginationButtons();
+          }
+        }
+
+        // Move to the previous page
+        function prevPage() {
+          if (currentPage > 1) {
+            currentPage--;
+            renderExcursions();
+            updatePaginationButtons();
+          }
+        }
+
+        // Filter excursions based on search input
+        function filterExcursionsTable() {
+          const searchValue = searchBox.value.toLowerCase();
+
+          // Filter the excursions based on the search value
+          filteredExcursions = excursions.filter((excursion) => {
+            // Format available days for search
+            const formatAvailableDaysForSearch = (availableDays) => {
+              if (!availableDays || availableDays.length === 0) {
+                return "all days";
+              }
+              const dayNames = [
+                "sunday",
+                "monday",
+                "tuesday",
+                "wednesday",
+                "thursday",
+                "friday",
+                "saturday",
+              ];
+              return availableDays
+                .map((day) => dayNames[day.day_of_week])
+                .join(" ");
+            };
+
+            const validDaysText = formatAvailableDaysForSearch(
+              excursion.available_days
+            );
+            const supplierName = excursion.supplier_name || "";
+
+            return (
+              excursion.city.toLowerCase().includes(searchValue) ||
+              excursion.name.toLowerCase().includes(searchValue) ||
+              excursion.description.toLowerCase().includes(searchValue) ||
+              validDaysText.toLowerCase().includes(searchValue) ||
+              supplierName.toLowerCase().includes(searchValue)
+            );
+          });
+
+          currentPage = 1; // Reset to the first page on search
+          totalPages = Math.ceil(filteredExcursions.length / rowsPerPage);
+
+          // Update count and render the filtered table
+          updateExcursionsCount();
+          renderExcursions();
+          updatePaginationButtons();
+        }
+
+        // Event listeners for buttons and inputs
+        addExcursionButton.addEventListener("click", function () {
+          window.location.href = "add_excursion.html";
+        });
+
+        // Add event listener for the top Add Excursion button
+        const addExcursionButtonTop = document.getElementById(
+          "addExcursionButtonTop"
+        );
+        addExcursionButtonTop.addEventListener("click", function () {
+          window.location.href = "add_excursion.html";
+        });
+
+        searchBox.addEventListener("keyup", filterExcursionsTable);
+
+        rowsSelect.addEventListener("change", function () {
+          rowsPerPage =
+            this.value === "All" ? excursions.length : parseInt(this.value);
+          currentPage = 1; // Reset to first page
+          totalPages = Math.ceil(filteredExcursions.length / rowsPerPage);
+          renderExcursions();
+          updatePaginationButtons();
+        });
+
+        nextPageButton.addEventListener("click", nextPage);
+        prevPageButton.addEventListener("click", prevPage);
+
+        // Set the username in the profile info
+        const username = localStorage.getItem("username");
+        profileName.innerText = username;
+        navProfileName.innerText = username;
+
+        // Function to update the excursions count display
+        function updateExcursionsCount() {
+          const excursionsCountElement =
+            document.getElementById("excursionsCount");
+          const totalCount = excursions.length;
+          const filteredCount = filteredExcursions.length;
+
+          if (filteredCount === totalCount) {
+            excursionsCountElement.textContent = totalCount;
+          } else {
+            excursionsCountElement.textContent = `${filteredCount} of ${totalCount}`;
+          }
+        }
+
+        // Load excursions on page load
+        loadExcursions();
+      });
+    </script>
+  </body>
+</html>

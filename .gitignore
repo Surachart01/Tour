@@ -14,7 +14,7 @@
 
 # Exclude Legacy Go Backend and Legacy Frontend
 backend-main/
-frontend-main/
+
 
 # Environment & Sensitive files
 **/.env

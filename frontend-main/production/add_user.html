@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <!-- Meta, title, CSS, favicons, etc. -->
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Create New User</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- FontAwesome 5 for modern icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <!-- NProgress -->
+    <link href="../vendors/nprogress/nprogress.css" rel="stylesheet" />
+    <!-- iCheck -->
+    <link href="../vendors/iCheck/skins/flat/green.css" rel="stylesheet" />
+    <!-- bootstrap-wysiwyg -->
+    <link
+      href="../vendors/google-code-prettify/bin/prettify.min.css"
+      rel="stylesheet"
+    />
+    <!-- Select2 -->
+    <link href="../vendors/select2/dist/css/select2.min.css" rel="stylesheet" />
+    <!-- Switchery -->
+    <link href="../vendors/switchery/dist/switchery.min.css" rel="stylesheet" />
+    <!-- starrr -->
+    <link href="../vendors/starrr/dist/starrr.css" rel="stylesheet" />
+    <!-- bootstrap-daterangepicker -->
+    <link
+      href="../vendors/bootstrap-daterangepicker/daterangepicker.css"
+      rel="stylesheet"
+    />
+
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.css" rel="stylesheet" />
+
+    <style>
+      /* Modern form enhancements */
+      .form-control:focus {
+        border-color: #1abb9c !important;
+        box-shadow: 0 0 0 0.2rem rgba(26, 187, 156, 0.25) !important;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #1abb9c 0%, #16a085 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary:hover {
+        background: linear-gradient(135deg, #16a085 0%, #138d75 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-secondary:hover {
+        background: linear-gradient(135deg, #7f8c8d 0%, #6c7b7d 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-success {
+        background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-success:hover {
+        background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-warning {
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-warning:hover {
+        background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-danger {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-danger:hover {
+        background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+        transform: translateY(-1px);
+      }
+
+      .form-control {
+        height: 45px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        background-color: #fafbfc;
+        transition: all 0.3s ease;
+      }
+
+      .form-control:hover {
+        border-color: #1abb9c;
+      }
+
+      textarea.form-control {
+        height: auto;
+        min-height: 100px;
+      }
+
+      .form-group label {
+        font-weight: 600;
+        color: #34495e;
+        margin-bottom: 8px;
+      }
+
+      .input-group-append .btn {
+        height: 45px;
+        border-radius: 0 6px 6px 0;
+      }
+
+      /* Loading animation */
+      .fa-spin {
+        animation: fa-spin 1s infinite linear;
+      }
+
+      @keyframes fa-spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Responsive improvements */
+      @media (max-width: 768px) {
+        .main-content {
+          padding: 20px !important;
+        }
+
+        .form-control {
+          height: 42px !important;
+        }
+
+        .btn {
+          padding: 10px 20px !important;
+          font-size: 13px !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background: #ecf0f1;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    "
+  >
+    <div
+      class="container-fluid"
+      style="
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+      "
+    >
+      <!-- Full-width header -->
+      <div
+        style="
+          background: linear-gradient(135deg, #2a3f54 0%, #34495e 100%);
+          color: white;
+          padding: 30px 60px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        "
+      >
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          "
+        >
+          <div style="display: flex; align-items: center">
+            <i
+              class="fas fa-user-plus"
+              style="font-size: 28px; margin-right: 15px; color: #1abb9c"
+            ></i>
+            <h1 style="margin: 0; font-size: 28px; font-weight: 700">
+              Create New User Account
+            </h1>
+          </div>
+          <div style="display: flex; gap: 15px">
+            <button
+              type="button"
+              class="btn btn-outline-light"
+              onclick="window.location.href='users.html'"
+              style="
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                padding: 8px 20px;
+                border-radius: 6px;
+                transition: all 0.3s ease;
+              "
+            >
+              <i class="fas fa-arrow-left" style="margin-right: 8px"></i>
+              Back to Users
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main content area -->
+      <div
+        style="flex: 1; padding: 40px 60px; background: #ecf0f1"
+        class="main-content"
+      >
+        <div
+          style="
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+          "
+        >
+          <div style="padding: 40px">
+            <form id="userForm" class="form-label-left input_mask" autocomplete="off">
+              <div class="row">
+                <div class="col-md-6 form-group">
+                  <label for="username">
+                    <i
+                      class="fas fa-user"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Username *
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="username"
+                    placeholder="Enter username"
+                    required
+                    value=""
+                    autocomplete="off"
+                  />
+                </div>
+
+                <div class="col-md-6 form-group">
+                  <label for="email">
+                    <i
+                      class="fas fa-envelope"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    class="form-control"
+                    id="email"
+                    placeholder="Enter email address"
+                    required
+                    value=""
+                    autocomplete="off"
+                  />
+                </div>
+
+                <div class="col-md-6 form-group">
+                  <label for="selectRole">
+                    <i
+                      class="fas fa-shield-alt"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    User Role *
+                  </label>
+                  <select class="form-control" id="selectRole" required>
+                    <option value="" disabled selected>Select user role</option>
+                    <option value="agent">Agent</option>
+                    <option value="admin">Admin</option>
+                    <option value="user">User</option>
+                  </select>
+                </div>
+
+                <div class="col-md-6 form-group">
+                  <label for="selectAgent">
+                    <i
+                      class="fas fa-building"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Agent *
+                  </label>
+                  <select class="form-control" id="selectAgent" required>
+                    <option value="" disabled selected>Select agent</option>
+                    <!-- Agent options will be dynamically loaded here -->
+                  </select>
+                  <small class="form-text text-muted">
+                    <i class="fas fa-info-circle" style="margin-right: 4px"></i>
+                    Associate user to agent
+                  </small>
+                </div>
+
+                <div class="col-md-6 form-group">
+                  <label for="password">
+                    <i
+                      class="fas fa-lock"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Password *
+                  </label>
+                  <div class="input-group">
+                    <input
+                      type="password"
+                      class="form-control"
+                      id="password"
+                      placeholder="Enter password (min 6 characters)"
+                      minlength="6"
+                      required
+                      value=""
+                      autocomplete="new-password"
+                    />
+                    <div class="input-group-append">
+                      <span
+                        class="input-group-text"
+                        id="togglePassword"
+                        style="cursor: pointer; user-select: none"
+                        title="Toggle password visibility"
+                      >
+                        <i class="fas fa-eye" id="passwordEyeIcon"></i>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-6 form-group">
+                  <label for="confirmPassword">
+                    <i
+                      class="fas fa-lock"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Confirm Password *
+                  </label>
+                  <div class="input-group">
+                    <input
+                      type="password"
+                      class="form-control"
+                      id="confirmPassword"
+                      placeholder="Confirm password"
+                      minlength="6"
+                      required
+                      value=""
+                      autocomplete="new-password"
+                    />
+                    <div class="input-group-append">
+                      <span
+                        class="input-group-text"
+                        id="toggleConfirmPassword"
+                        style="cursor: pointer; user-select: none"
+                        title="Toggle password visibility"
+                      >
+                        <i class="fas fa-eye" id="confirmPasswordEyeIcon"></i>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </form>
+
+            <!-- Action Buttons -->
+            <div
+              style="
+                display: flex;
+                gap: 15px;
+                justify-content: center;
+                padding-top: 30px;
+                border-top: 2px solid #ecf0f1;
+              "
+            >
+              <button
+                type="button"
+                class="btn btn-secondary"
+                onclick="window.location.href='users.html'"
+                style="padding: 12px 30px; border-radius: 6px; font-weight: 600"
+              >
+                <i class="fas fa-times" style="margin-right: 8px"></i>
+                Cancel
+              </button>
+              <button
+                id="submitUser"
+                type="submit"
+                class="btn btn-primary"
+                style="padding: 12px 30px; border-radius: 6px; font-weight: 600"
+              >
+                <i class="fas fa-save" style="margin-right: 8px"></i>
+                Create Account
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/Users/add_user.js"></script>
+
+    <script>
+      // Toggle password visibility functionality
+      document.addEventListener("DOMContentLoaded", function () {
+        // Force clear all form fields and prevent auto-population
+        setTimeout(function() {
+          document.getElementById("username").value = "";
+          document.getElementById("email").value = "";
+          document.getElementById("password").value = "";
+          document.getElementById("confirmPassword").value = "";
+          document.getElementById("selectRole").selectedIndex = 0;
+          document.getElementById("selectAgent").selectedIndex = 0;
+          
+          // Clear any browser autocomplete values
+          const form = document.getElementById("userForm");
+          if (form) {
+            form.reset();
+            // Force clear again after reset
+            document.getElementById("username").value = "";
+            document.getElementById("email").value = "";
+            document.getElementById("password").value = "";
+            document.getElementById("confirmPassword").value = "";
+          }
+        }, 100);
+
+        // Also clear on page focus/visibility change
+        window.addEventListener('focus', function() {
+          document.getElementById("username").value = "";
+          document.getElementById("email").value = "";
+          document.getElementById("password").value = "";
+          document.getElementById("confirmPassword").value = "";
+        });
+
+        // Toggle for main password field with eye icon
+        const togglePassword = document.getElementById("togglePassword");
+        const passwordField = document.getElementById("password");
+        const passwordEyeIcon = document.getElementById("passwordEyeIcon");
+
+        if (togglePassword && passwordField && passwordEyeIcon) {
+          togglePassword.addEventListener("click", function () {
+            if (passwordField.type === "password") {
+              passwordField.type = "text";
+              passwordEyeIcon.classList.remove("fa-eye");
+              passwordEyeIcon.classList.add("fa-eye-slash");
+            } else {
+              passwordField.type = "password";
+              passwordEyeIcon.classList.remove("fa-eye-slash");
+              passwordEyeIcon.classList.add("fa-eye");
+            }
+          });
+        }
+
+        // Toggle for confirm password field with eye icon
+        const toggleConfirmPassword = document.getElementById(
+          "toggleConfirmPassword"
+        );
+        const confirmPasswordField = document.getElementById("confirmPassword");
+        const confirmPasswordEyeIcon = document.getElementById(
+          "confirmPasswordEyeIcon"
+        );
+
+        if (
+          toggleConfirmPassword &&
+          confirmPasswordField &&
+          confirmPasswordEyeIcon
+        ) {
+          toggleConfirmPassword.addEventListener("click", function () {
+            if (confirmPasswordField.type === "password") {
+              confirmPasswordField.type = "text";
+              confirmPasswordEyeIcon.classList.remove("fa-eye");
+              confirmPasswordEyeIcon.classList.add("fa-eye-slash");
+            } else {
+              confirmPasswordField.type = "password";
+              confirmPasswordEyeIcon.classList.remove("fa-eye-slash");
+              confirmPasswordEyeIcon.classList.add("fa-eye");
+            }
+          });
+        }
+
+        // Form submission handler
+        const submitButton = document.getElementById("submitUser");
+        const userForm = document.getElementById("userForm");
+
+        if (submitButton && userForm) {
+          submitButton.addEventListener("click", function (event) {
+            event.preventDefault();
+
+            // Check if the form is valid
+            if (!userForm.checkValidity()) {
+              userForm.classList.add("was-validated");
+              return;
+            }
+
+            // Trigger the form submission (handled by add_user.js)
+            const submitEvent = new Event("submit", {
+              bubbles: true,
+              cancelable: true,
+            });
+            userForm.dispatchEvent(submitEvent);
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

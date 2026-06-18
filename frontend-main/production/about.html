@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About Us - VeraThailandia!</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
+    <style>
+      /* Ensure the body and html elements allow full-page scrolling */
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        background-color: #f4f6f9;
+        font-size: 1rem;
+      }
+
+      .about-section {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin: 20px 0;
+        padding: 30px;
+      }
+
+      .feature-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 15px 0;
+        border-left: 4px solid #007bff;
+        transition: transform 0.2s ease;
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+      }
+
+      .feature-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .feature-icon {
+        font-size: 2.5rem;
+        color: #007bff;
+        margin-bottom: 0;
+        flex-shrink: 0;
+        margin-top: 5px;
+      }
+
+      .feature-content {
+        flex: 1;
+      }
+
+      .feature-content h4 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: #333;
+        font-size: 1.3rem;
+        font-weight: 600;
+      }
+
+      .feature-content p {
+        margin-bottom: 0;
+        color: #666;
+        line-height: 1.6;
+      }
+
+      .stats-card {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        border-radius: 8px;
+        padding: 25px;
+        text-align: center;
+        margin: 10px 0;
+      }
+
+      .stats-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      .team-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 30px;
+        margin: 20px 0;
+      }
+
+      .section-title {
+        color: #007bff;
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      .subsection-title {
+        color: #333;
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 5px;
+      }
+
+      .company-logo {
+        max-width: 150px;
+        margin: 20px auto;
+        display: block;
+      }
+
+      .mission-vision {
+        background: linear-gradient(135deg, #f8f9ff 0%, #e3f2fd 100%);
+        border: none;
+        border-radius: 15px;
+        padding: 35px;
+        margin: 20px 0;
+        min-height: 280px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        font-size: 1.15rem;
+        box-shadow: 0 8px 25px rgba(0, 123, 255, 0.15);
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .mission-vision:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 35px rgba(0, 123, 255, 0.25);
+      }
+
+      .mission-vision::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #007bff, #0056b3);
+      }
+
+      .mission-vision h3 {
+        font-size: 2.2rem;
+        margin-bottom: 20px;
+        color: #007bff;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .mission-vision h3 i {
+        font-size: 2rem;
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .mission-vision p {
+        font-size: 1.2rem;
+        line-height: 1.8;
+        color: #2c3e50;
+        font-weight: 400;
+        text-align: justify;
+      }
+
+      .team-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin: 15px 0;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid #007bff;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .team-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+      }
+
+      .team-card h4 {
+        color: #007bff;
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .team-card h4 i {
+        font-size: 1.3rem;
+      }
+
+      .team-card p {
+        color: #555;
+        line-height: 1.6;
+        margin-bottom: 15px;
+      }
+
+      .team-card ul {
+        margin-bottom: 0;
+      }
+
+      .team-card ul li {
+        padding: 8px 0;
+        color: #444;
+        font-size: 1rem;
+      }
+
+      .team-card ul li i {
+        margin-right: 10px;
+        font-size: 1.1rem;
+      }
+
+      .commitment-highlight {
+        background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
+        border: 2px solid #28a745;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 15px;
+        text-align: center;
+      }
+
+      .commitment-highlight p {
+        margin: 0;
+        font-size: 1.1rem;
+        color: #155724;
+        font-weight: 600;
+      }
+
+      .contact-info {
+        background: #17a2b8;
+        color: white;
+        border-radius: 8px;
+        padding: 25px;
+        margin: 20px 0;
+      }
+
+      .btn-custom {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 5px;
+        font-size: 1rem;
+        transition: background-color 0.3s ease;
+      }
+
+      .btn-custom:hover {
+        background-color: #0056b3;
+        color: white;
+      }
+
+      .contact-form {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-top: 20px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+      }
+
+      .form-control {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 12px 15px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        outline: none;
+      }
+
+      .btn-submit {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .btn-submit:hover {
+        background: linear-gradient(135deg, #0056b3, #004085);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+      }
+
+      .alert {
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        display: none;
+      }
+
+      .alert-success {
+        color: #155724;
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+      }
+
+      .alert-danger {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+      }
+      /* Removed constraining CSS for sidebar-menu to allow proper submenu expansion */
+      /* Sidebar scrolling - allow scroll when expanded, but not when collapsed */
+      .left_col.scroll-view {
+        overflow-y: auto;
+        max-height: 100vh;
+      }
+
+      /* When sidebar is collapsed, remove height constraints to allow submenu expansion */
+      body.nav-sm .left_col.scroll-view {
+        overflow-y: visible;
+        max-height: none;
+      }
+    </style>
+  </head>
+
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+        <!-- Sidebar -->
+        <div class="col-md-3 left_col menu_fixed">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border: 0">
+              <a
+                href="index.html"
+                class="site_title"
+                style="
+                  display: block;
+                  text-align: center;
+                  font-size: 2rem;
+                  font-weight: bold;
+                  color: #007bff;
+                  text-decoration: none;
+                "
+              >
+                <span style="font-size: 1.5rem">VeraThailandia!</span>
+              </a>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- Profile info -->
+            <div class="profile clearfix">
+              <div class="profile_pic">
+                <img
+                  src="images/verathailandlogo.png"
+                  alt="..."
+                  class="img-circle profile_img"
+                />
+              </div>
+              <div class="profile_info">
+                <span>Welcome,</span>
+                <h2 id="profileName"></h2>
+              </div>
+            </div>
+            <!-- /Profile info -->
+
+            <br />
+
+            <!-- Sidebar menu -->
+            <div
+              id="sidebar-menu"
+              class="main_menu_side hidden-print main_menu"
+            >
+              <div class="menu_section">
+                <h3>General</h3>
+                <ul class="nav side-menu">
+                  <li>
+                    <a href="index.html"
+                      ><i class="fa fa-home"></i> Home
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li id="controlPanelMenu">
+                    <a>
+                      <i class="fa fa-edit"></i> Control-Panel
+                      <span class="fa fa-chevron-down"></span>
+                    </a>
+                    <ul class="nav child_menu">
+                      <li><a href="activities.html">Activities</a></li>
+                      <li><a href="agents.html">Agents</a></li>
+                      <li><a href="booking.html">Bookings</a></li>
+                      <li><a href="excursions.html">Excursions</a></li>
+                      <li><a href="hotels.html">Hotels</a></li>
+                      <li><a href="markup.html">Markups</a></li>
+                      <!-- <li><a href="operations.html">Operations</a></li> -->
+                      <li><a href="othercharges.html">Other Charges</a></li>
+                      <!-- <li><a href="stop_sale.html">Stop Sale</a></li> -->
+                      <li><a href="suppliers.html">Suppliers</a></li>
+                      <li><a href="tools.html">Tools</a></li>
+                      <li><a href="tours.html">Tours</a></li>
+                      <li><a href="transfers.html">Transfers</a></li>
+                      <li><a href="users.html">Users</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="trip.html"
+                      ><i class="fa fa-book"></i> Quotation
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li>
+                    <a href="payment.html"
+                      ><i class="fa fa-pencil-square-o"></i> Payment
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <!--<li>
+                    <a href="tax_invoices.html"
+                      ><i class="fa fa-file-text-o"></i> Tax Invoices
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li> -->
+                  <!-- <li>
+                    <a href="invoice_management.html"
+                      ><i class="fa fa-table"></i> Invoice Management
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li> -->
+                  <li>
+                    <a href="itinerary.html"
+                      ><i class="fa fa-ticket"></i> Itinerary
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li>
+                    <a href="analytics.html"
+                      ><i class="fa fa-bar-chart"></i> Analytics
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li class="active">
+                    <a href="about.html"
+                      ><i class="fa fa-info-circle"></i> About Us
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- /Sidebar menu -->
+
+            <!-- Footer buttons -->
+            <div class="sidebar-footer hidden-small">
+              <a data-toggle="tooltip" data-placement="top" title="Settings">
+                <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="FullScreen">
+                <span
+                  class="glyphicon glyphicon-fullscreen"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="Lock">
+                <span
+                  class="glyphicon glyphicon-eye-close"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a
+                data-toggle="tooltip"
+                data-placement="top"
+                title="Logout"
+                href="logout.html"
+              >
+                <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+              </a>
+            </div>
+            <!-- /Footer buttons -->
+          </div>
+        </div>
+        <!-- /Sidebar -->
+
+        <!-- Top navigation -->
+        <div class="top_nav">
+          <div class="nav_menu">
+            <div class="nav toggle">
+              <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+            </div>
+            <nav class="nav navbar-nav">
+              <ul class="navbar-right">
+                <li class="nav-item dropdown open" style="padding-left: 15px">
+                  <a
+                    href="javascript:;"
+                    class="user-profile dropdown-toggle"
+                    aria-haspopup="true"
+                    id="navbarDropdown"
+                    data-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    <img
+                      id="navProfileImage"
+                      src="images/verathailandlogo.png"
+                      alt=""
+                    />
+                    <span id="navProfileName"></span>
+                  </a>
+                  <div
+                    class="dropdown-menu dropdown-usermenu pull-right"
+                    aria-labelledby="navbarDropdown"
+                  >
+                    <a class="dropdown-item" href="javascript:;"> Profile</a>
+                    <a class="dropdown-item" href="logout.html"
+                      ><i class="fa fa-sign-out pull-right"></i> Log Out</a
+                    >
+                  </div>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+        <!-- /Top navigation -->
+
+        <!-- Page content -->
+        <div class="right_col" role="main">
+          <div class="container-fluid">
+            <!-- Header Section -->
+            <div class="about-section">
+              <div class="text-center">
+                <img
+                  src="images/verathailandlogo.png"
+                  alt="VeraThailandia Logo"
+                  class="company-logo"
+                />
+                <h1 class="section-title">About VeraThailandia!</h1>
+                <p class="lead">
+                  Your comprehensive travel management solution designed to
+                  streamline operations, enhance customer experiences, and drive
+                  business growth in the travel industry.
+                </p>
+              </div>
+            </div>
+
+            <!-- Why Choose Us -->
+            <div class="about-section">
+              <h2 class="subsection-title">
+                <i class="fa fa-thumbs-up"></i> Why Choose VeraThailandia?
+              </h2>
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="text-center">
+                    <i class="fa fa-cogs feature-icon"></i>
+                    <h4>Advanced Technology</h4>
+                    <p>
+                      Built with modern technology stack ensuring scalability,
+                      security, and performance.
+                    </p>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="text-center">
+                    <i class="fa fa-rocket feature-icon"></i>
+                    <h4>Easy Onboarding</h4>
+                    <p>
+                      Easy migration from your current usage with seamless data
+                      transfer and minimal downtime.
+                    </p>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="text-center">
+                    <i class="fa fa-users feature-icon"></i>
+                    <h4>Expert Support</h4>
+                    <p>
+                      Dedicated support team with deep travel industry knowledge
+                      available 24/7.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Key Features -->
+            <div class="about-section">
+              <h2 class="subsection-title">
+                <i class="fa fa-star"></i> Key Features
+              </h2>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="feature-card">
+                    <div class="feature-icon">
+                      <i class="fa fa-hotel"></i>
+                    </div>
+                    <div class="feature-content">
+                      <h4>Hotel Management</h4>
+                      <p>
+                        Comprehensive hotel inventory management with room
+                        types, pricing, availability, and promotional offers.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="feature-card">
+                    <div class="feature-icon">
+                      <i class="fa fa-bus"></i>
+                    </div>
+                    <div class="feature-content">
+                      <h4>Transfer Services</h4>
+                      <p>
+                        Efficient transportation management between locations
+                        with flexible pricing and scheduling options.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="feature-card">
+                    <div class="feature-icon">
+                      <i class="fa fa-binoculars"></i>
+                    </div>
+                    <div class="feature-content">
+                      <h4>Excursion Management</h4>
+                      <p>
+                        Create and manage day trips, activities, and experiences
+                        with detailed pricing and availability tracking.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="feature-card">
+                    <div class="feature-icon">
+                      <i class="fa fa-map-signs"></i>
+                    </div>
+                    <div class="feature-content">
+                      <h4>Tour Packages</h4>
+                      <p>
+                        Build comprehensive tour packages combining multiple
+                        services with dynamic pricing and itinerary management.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="feature-card">
+                    <div class="feature-icon">
+                      <i class="fa fa-file-text-o"></i>
+                    </div>
+                    <div class="feature-content">
+                      <h4>Quotation System</h4>
+                      <p>
+                        Generate professional quotations with detailed
+                        breakdowns, terms, and automated follow-up capabilities.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="feature-card">
+                    <div class="feature-icon">
+                      <i class="fa fa-credit-card"></i>
+                    </div>
+                    <div class="feature-content">
+                      <h4>Payment Management</h4>
+                      <p>
+                        Track payments, generate invoices, and manage financial
+                        transactions with comprehensive reporting.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Services -->
+            <div class="about-section">
+              <h2 class="subsection-title">
+                <i class="fa fa-briefcase"></i> Our Services
+              </h2>
+              <div class="row">
+                <div class="col-md-6">
+                  <ul class="list-unstyled">
+                    <li>
+                      <i class="fa fa-check text-success"></i>
+                      <strong>Inventory Management:</strong> Hotels, transfers,
+                      excursions, and tours
+                    </li>
+                    <li>
+                      <i class="fa fa-check text-success"></i>
+                      <strong>Booking Management:</strong> End-to-end booking
+                      lifecycle
+                    </li>
+                    <li>
+                      <i class="fa fa-check text-success"></i>
+                      <strong>Financial Management:</strong> Invoicing,
+                      payments, and reporting
+                    </li>
+                    <li>
+                      <i class="fa fa-check text-success"></i>
+                      <strong>Customer Management:</strong> CRM and
+                      communication tools
+                    </li>
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <ul class="list-unstyled">
+                    <li>
+                      <i class="fa fa-check text-success"></i>
+                      <strong>Supplier Integration:</strong> Seamless supplier
+                      management
+                    </li>
+                    <li>
+                      <i class="fa fa-check text-success"></i>
+                      <strong>Analytics & Reporting:</strong> Business
+                      intelligence and insights
+                    </li>
+                    <li>
+                      <i class="fa fa-check text-success"></i>
+                      <strong>Multi-user Access:</strong> Role-based permissions
+                      and security
+                    </li>
+                    <li>
+                      <i class="fa fa-check text-success"></i>
+                      <strong>API Integration:</strong> Connect with third-party
+                      systems
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="contact-info">
+              <h2
+                class="subsection-title"
+                style="color: white; border-bottom-color: white"
+              >
+                <i class="fa fa-envelope"></i> Get in Touch
+              </h2>
+              <div class="text-center">
+                <p style="font-size: 1.2rem; margin-bottom: 20px">
+                  Ready to streamline your travel business operations?
+                </p>
+                <p>
+                  <i class="fa fa-envelope"></i>
+                  <strong>Email:</strong> info@verathailandia.com
+                </p>
+              </div>
+
+              <!-- Contact Form -->
+              <div class="contact-form">
+                <div id="alertMessage" class="alert"></div>
+                <form id="contactForm">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="contactName">
+                          <i class="fa fa-user"></i> Full Name *
+                        </label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="contactName"
+                          name="name"
+                          required
+                          placeholder="Enter your full name"
+                        />
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="contactMobile">
+                          <i class="fa fa-phone"></i> Mobile Number *
+                        </label>
+                        <input
+                          type="tel"
+                          class="form-control"
+                          id="contactMobile"
+                          name="mobile"
+                          required
+                          placeholder="Enter your mobile number"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="contactEmail">
+                      <i class="fa fa-envelope"></i> Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      class="form-control"
+                      id="contactEmail"
+                      name="email"
+                      required
+                      placeholder="Enter your email address"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="contactMessage">
+                      <i class="fa fa-comment"></i> Message *
+                    </label>
+                    <textarea
+                      class="form-control"
+                      id="contactMessage"
+                      name="message"
+                      rows="5"
+                      required
+                      placeholder="Tell us about your requirements or questions..."
+                    ></textarea>
+                  </div>
+                  <div class="text-center">
+                    <button type="submit" class="btn-submit">
+                      <i class="fa fa-paper-plane"></i> Send Message
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <div class="text-center" style="margin-top: 25px">
+                <a href="trip.html" class="btn btn-custom">
+                  <i class="fa fa-book"></i> Start a Quotation
+                </a>
+              </div>
+            </div>
+
+            <!-- Team Section -->
+            <div class="team-section">
+              <h2 class="subsection-title">
+                <i class="fa fa-users"></i> Our Team
+              </h2>
+              <p class="text-center">
+                Our dedicated team of travel industry experts, software
+                engineers, and customer success specialists work tirelessly to
+                ensure your travel business operates smoothly and efficiently.
+                With years of combined experience in both technology and travel
+                sectors, we understand the unique challenges faced by travel
+                professionals and are committed to providing solutions that
+                drive real results.
+              </p>
+
+              <div class="row" style="margin-top: 30px">
+                <div class="col-md-4">
+                  <div class="team-card">
+                    <h4>
+                      <i class="fa fa-briefcase"></i> Our Professional
+                      Background
+                    </h4>
+                    <p>
+                      Our team brings extensive experience from leading
+                      technology companies including:
+                    </p>
+                    <ul class="list-unstyled">
+                      <li>
+                        <i class="fa fa-check text-primary"></i>
+                        <strong>Apple</strong> - Innovation and user experience
+                        design
+                      </li>
+                      <li>
+                        <i class="fa fa-check text-primary"></i>
+                        <strong>HPE (Hewlett Packard Enterprise)</strong> -
+                        Enterprise solutions
+                      </li>
+                      <li>
+                        <i class="fa fa-check text-primary"></i>
+                        <strong>LG</strong> - Technology development and
+                        integration
+                      </li>
+                      <li>
+                        <i class="fa fa-check text-primary"></i>
+                        <strong>Agoda</strong> - Travel industry expertise
+                      </li>
+                      <li>
+                        <i class="fa fa-check text-primary"></i>
+                        <strong>NetApp</strong> - Data management and cloud
+                        solutions
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="team-card">
+                    <h4>
+                      <i class="fa fa-graduation-cap"></i> Educational
+                      Excellence
+                    </h4>
+                    <p>
+                      Our team is built on a strong foundation of academic
+                      excellence:
+                    </p>
+                    <ul class="list-unstyled">
+                      <li>
+                        <i class="fa fa-check text-primary"></i>
+                        <strong>Computer Science and Engineering</strong>
+                        degrees from top universities
+                      </li>
+                      <li>
+                        <i class="fa fa-check text-primary"></i> Specialized
+                        training in travel technology
+                      </li>
+                      <li>
+                        <i class="fa fa-check text-primary"></i> Continuous
+                        learning and certification programs
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="team-card">
+                    <h4><i class="fa fa-shield"></i> Our Commitment</h4>
+                    <p>
+                      We are dedicated to providing reliable and consistent
+                      service to ensure your business success.
+                    </p>
+                    <div class="commitment-highlight">
+                      <p>
+                        <i class="fa fa-clock-o"></i>
+                        <strong>99.9% Uptime Guarantee</strong><br />
+                        Your business operations run smoothly without
+                        interruption
+                      </p>
+                    </div>
+                    <ul class="list-unstyled" style="margin-top: 15px">
+                      <li>
+                        <i class="fa fa-check text-success"></i>
+                        24/7 System monitoring
+                      </li>
+                      <li>
+                        <i class="fa fa-check text-success"></i>
+                        Instant issue resolution
+                      </li>
+                      <li>
+                        <i class="fa fa-check text-success"></i>
+                        Proactive maintenance
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-center" style="margin-top: 30px">
+                <p>
+                  <strong>Available 24/7 to support your business needs</strong>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /Page content -->
+
+        <!-- Footer content -->
+        <footer>
+          <div class="text-center" style="padding: 20px; color: #666">
+            <p>
+              &copy; 2024 VeraThailandia! Travel Management System. All rights
+              reserved.
+            </p>
+          </div>
+        </footer>
+        <!-- /Footer content -->
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const token = localStorage.getItem("token");
+        const role = localStorage.getItem("role");
+
+        // If the user is not logged in, redirect to the login page
+        if (!token) {
+          alert("You are not authorized. Please log in first.");
+          window.location.href = "login.html";
+          return;
+        }
+
+        // Retrieve the username from localStorage
+        const username = localStorage.getItem("username") || "Guest";
+        document.getElementById("profileName").innerText = username;
+        document.getElementById("navProfileName").innerText = username;
+
+        // Hide the Control Panel menu item if the user is not an admin or superadmin
+        if (role !== "admin" && role !== "superadmin") {
+          const controlPanelMenu = document.getElementById("controlPanelMenu");
+          if (controlPanelMenu) {
+            controlPanelMenu.style.display = "none";
+          }
+        }
+      });
+
+      // Contact Form Submission
+      document
+        .getElementById("contactForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+
+          const formData = new FormData(this);
+          const alertDiv = document.getElementById("alertMessage");
+
+          // Get form values
+          const name = formData.get("name");
+          const mobile = formData.get("mobile");
+          const email = formData.get("email");
+          const message = formData.get("message");
+
+          // Basic validation
+          if (!name || !mobile || !email || !message) {
+            showAlert("Please fill in all required fields.", "danger");
+            return;
+          }
+
+          // Email validation
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(email)) {
+            showAlert("Please enter a valid email address.", "danger");
+            return;
+          }
+
+          // Mobile validation (basic)
+          const mobileRegex = /^[\+]?[1-9][\d]{0,15}$/;
+          if (!mobileRegex.test(mobile.replace(/[\s\-\(\)]/g, ""))) {
+            showAlert("Please enter a valid mobile number.", "danger");
+            return;
+          }
+
+          // Simulate form submission (replace with actual backend call)
+          const submitButton = document.querySelector(".btn-submit");
+          const originalText = submitButton.innerHTML;
+          submitButton.innerHTML =
+            '<i class="fa fa-spinner fa-spin"></i> Sending...';
+          submitButton.disabled = true;
+
+          // Simulate API call delay
+          setTimeout(() => {
+            // Reset form
+            this.reset();
+
+            // Show success message
+            showAlert(
+              "Thank you for your message! We will get back to you soon.",
+              "success"
+            );
+
+            // Reset button
+            submitButton.innerHTML = originalText;
+            submitButton.disabled = false;
+
+            // In a real implementation, you would send this data to your backend
+            console.log("Contact form data:", {
+              name: name,
+              mobile: mobile,
+              email: email,
+              message: message,
+              timestamp: new Date().toISOString(),
+            });
+          }, 2000);
+        });
+
+      function showAlert(message, type) {
+        const alertDiv = document.getElementById("alertMessage");
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.textContent = message;
+        alertDiv.style.display = "block";
+
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+          alertDiv.style.display = "none";
+        }, 5000);
+      }
+    </script>
+  </body>
+</html>

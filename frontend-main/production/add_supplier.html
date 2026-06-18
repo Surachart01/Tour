@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Supplier</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- FontAwesome 5 for modern icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
+
+    <style>
+      /* Modern form enhancements */
+      .form-control:focus {
+        border-color: #1abb9c !important;
+        box-shadow: 0 0 0 0.2rem rgba(26, 187, 156, 0.25) !important;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #1abb9c 0%, #16a085 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary:hover {
+        background: linear-gradient(135deg, #16a085 0%, #138d75 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-secondary:hover {
+        background: linear-gradient(135deg, #7f8c8d 0%, #6c7b7d 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-success {
+        background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-success:hover {
+        background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-warning {
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-warning:hover {
+        background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-danger {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-danger:hover {
+        background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+        transform: translateY(-1px);
+      }
+
+      .form-control {
+        height: 45px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        background-color: #fafbfc;
+        transition: all 0.3s ease;
+      }
+
+      .form-control:hover {
+        border-color: #1abb9c;
+      }
+
+      textarea.form-control {
+        height: auto;
+        min-height: 100px;
+      }
+
+      .form-group label {
+        font-weight: 600;
+        color: #34495e;
+        margin-bottom: 8px;
+      }
+
+      .table {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .table thead th {
+        background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+        color: white;
+        font-weight: 600;
+        border: none;
+        padding: 15px;
+      }
+
+      .table tbody td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        border-color: #ecf0f1;
+      }
+
+      .table tbody tr:hover {
+        background-color: #f8f9fa;
+      }
+
+      .modal-content {
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      .modal-header {
+        background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+        color: white;
+        border-radius: 10px 10px 0 0;
+        border-bottom: none;
+      }
+
+      .modal-title {
+        font-weight: 600;
+      }
+
+      .close {
+        color: white;
+        opacity: 0.8;
+        text-shadow: none;
+      }
+
+      .close:hover {
+        color: white;
+        opacity: 1;
+      }
+
+      .input-group-append .btn {
+        height: 45px;
+        border-radius: 0 6px 6px 0;
+      }
+
+      /* Service type checkboxes styling */
+      .service-checkboxes {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .form-check {
+        margin-bottom: 10px;
+      }
+
+      .form-check-input:checked {
+        background-color: #1abb9c;
+        border-color: #1abb9c;
+      }
+
+      .form-check-input:focus {
+        border-color: #1abb9c;
+        box-shadow: 0 0 0 0.2rem rgba(26, 187, 156, 0.25);
+      }
+
+      .form-check-label {
+        font-weight: 500;
+        color: #34495e;
+        margin-left: 8px;
+      }
+    </style>
+  </head>
+
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background: #ecf0f1;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    "
+  >
+    <div
+      class="container-fluid"
+      style="
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+      "
+    >
+      <!-- Full-width header -->
+      <div
+        style="
+          background: linear-gradient(135deg, #2a3f54 0%, #34495e 100%);
+          color: white;
+          padding: 30px 60px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        "
+      >
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          "
+        >
+          <div style="display: flex; align-items: center">
+            <i
+              class="fas fa-plus-circle"
+              style="font-size: 28px; margin-right: 15px; color: #1abb9c"
+            ></i>
+            <h1 style="margin: 0; font-size: 28px; font-weight: 700">
+              Add New Supplier
+            </h1>
+          </div>
+          <div style="display: flex; gap: 15px">
+            <button
+              type="button"
+              class="btn btn-outline-light"
+              onclick="window.location.href='suppliers.html'"
+              style="
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                padding: 8px 20px;
+                border-radius: 6px;
+                transition: all 0.3s ease;
+              "
+            >
+              <i class="fas fa-arrow-left" style="margin-right: 8px"></i>
+              Back to Suppliers
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main content area -->
+      <div style="flex: 1; padding: 40px 60px; background: #ecf0f1">
+        <div
+          style="
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+          "
+        >
+          <div style="padding: 40px">
+            <form id="supplierForm" class="form-label-left input_mask">
+              <div class="row">
+                <div class="col-md-6 form-group">
+                  <label for="supplierName">
+                    <i
+                      class="fas fa-building"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Supplier Name *
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="supplierName"
+                    placeholder="Enter supplier name"
+                    required
+                  />
+                </div>
+
+                <div class="col-md-6 form-group">
+                  <label for="supplierEmail">
+                    <i
+                      class="fas fa-envelope"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    class="form-control"
+                    id="supplierEmail"
+                    placeholder="Enter email address"
+                    required
+                  />
+                </div>
+
+                <div class="col-md-6 form-group">
+                  <label for="supplierTelephone">
+                    <i
+                      class="fas fa-phone"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Telephone *
+                  </label>
+                  <input
+                    type="tel"
+                    class="form-control"
+                    id="supplierTelephone"
+                    placeholder="Enter telephone number"
+                    pattern="^\+?[0-9]{7,13}$"
+                    required
+                  />
+                  <small class="form-text text-muted">
+                    Telephone number should be 7-13 digits and can start with +
+                  </small>
+                </div>
+
+                <div class="col-md-6 form-group">
+                  <label for="supplierCountry">
+                    <i
+                      class="fas fa-globe"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Country *
+                  </label>
+                  <select class="form-control" id="supplierCountry" required>
+                    <option value="" disabled selected>
+                      Loading countries...
+                    </option>
+                  </select>
+                </div>
+
+                <div class="col-md-6 form-group">
+                  <label for="supplierLocation">
+                    <i
+                      class="fas fa-map-marker-alt"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Location *
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="supplierLocation"
+                    placeholder="Enter location"
+                    required
+                  />
+                </div>
+
+                <div class="col-md-12 form-group">
+                  <label for="supplierDescription">
+                    <i
+                      class="fas fa-align-left"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Description *
+                  </label>
+                  <textarea
+                    class="form-control"
+                    id="supplierDescription"
+                    rows="3"
+                    placeholder="Enter supplier description..."
+                    required
+                  ></textarea>
+                </div>
+              </div>
+            </form>
+
+            <hr style="margin: 40px 0; border-color: #ecf0f1" />
+
+            <!-- Service Types Section -->
+            <div style="margin-bottom: 30px">
+              <h4
+                style="
+                  margin: 0 0 20px 0;
+                  color: #34495e;
+                  font-weight: 700;
+                  font-size: 18px;
+                "
+              >
+                <i
+                  class="fas fa-cogs"
+                  style="margin-right: 10px; color: #1abb9c"
+                ></i>
+                Service Types
+              </h4>
+              <div class="service-checkboxes">
+                <div>
+                  <label
+                    style="
+                      font-weight: 600;
+                      color: #34495e;
+                      margin-bottom: 15px;
+                    "
+                    >Supplier For *</label
+                  >
+                  <div class="row">
+                    <div class="col-md-4">
+                      <div class="form-check">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="supplierTransfers"
+                          value="Transfers"
+                        />
+                        <label class="form-check-label" for="supplierTransfers">
+                          <i
+                            class="fas fa-shuttle-van"
+                            style="margin-right: 8px"
+                          ></i>
+                          Transfers
+                        </label>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-check">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="supplierExcursions"
+                          value="Excursions"
+                        />
+                        <label
+                          class="form-check-label"
+                          for="supplierExcursions"
+                        >
+                          <i
+                            class="fas fa-map-marked-alt"
+                            style="margin-right: 8px"
+                          ></i>
+                          Excursions
+                        </label>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-check">
+                        <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="supplierTours"
+                          value="Tours"
+                        />
+                        <label class="form-check-label" for="supplierTours">
+                          <i class="fas fa-route" style="margin-right: 8px"></i>
+                          Tours
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    id="checkboxError"
+                    class="text-danger"
+                    style="display: none; margin-top: 10px"
+                  >
+                    <i
+                      class="fas fa-exclamation-triangle"
+                      style="margin-right: 5px"
+                    ></i>
+                    Please select at least one service type.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Payment & Cancellation Policy Section -->
+            <div style="margin-bottom: 30px">
+              <h4
+                style="
+                  margin: 0 0 20px 0;
+                  color: #34495e;
+                  font-weight: 700;
+                  font-size: 18px;
+                "
+              >
+                <i
+                  class="fas fa-calendar-times"
+                  style="margin-right: 10px; color: #1abb9c"
+                ></i>
+                Payment & Cancellation Policy
+              </h4>
+              <div class="service-checkboxes">
+                <div class="row">
+                  <div class="col-md-6 form-group">
+                    <label for="cancellationAllowedBeforeDays">
+                      <i
+                        class="fas fa-ban"
+                        style="margin-right: 8px; color: #e74c3c"
+                      ></i>
+                      Cancellation Allowed Before (Days) *
+                    </label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="cancellationAllowedBeforeDays"
+                      placeholder="Enter days before travel"
+                      min="-1"
+                      value="1"
+                      required
+                    />
+                    <small class="form-text text-muted">
+                      Days before travel when cancellation is allowed. Use -1
+                      for no cancellation allowed.
+                    </small>
+                  </div>
+
+                  <div class="col-md-6 form-group">
+                    <label for="paymentDeadlineBeforeDays">
+                      <i
+                        class="fas fa-credit-card"
+                        style="margin-right: 8px; color: #1abb9c"
+                      ></i>
+                      Payment Deadline Before (Days) *
+                    </label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="paymentDeadlineBeforeDays"
+                      placeholder="Enter days before travel"
+                      min="0"
+                      value="1"
+                      required
+                    />
+                    <small class="form-text text-muted">
+                      Days before travel when payment is due. Use 0 for payment
+                      due on travel date.
+                    </small>
+                  </div>
+                </div>
+
+                <!-- Policy Preview -->
+                <div class="row mt-3">
+                  <div class="col-md-12">
+                    <div class="alert alert-info" style="margin-bottom: 0">
+                      <h6 style="margin-bottom: 10px; font-weight: 600">
+                        <i
+                          class="fas fa-info-circle"
+                          style="margin-right: 8px"
+                        ></i>
+                        Policy Preview:
+                      </h6>
+                      <div class="row">
+                        <div class="col-md-6">
+                          <strong>Cancellation:</strong>
+                          <span id="cancellationPreview"
+                            >Cancellation allowed until 1 day before
+                            travel</span
+                          >
+                        </div>
+                        <div class="col-md-6">
+                          <strong>Payment:</strong>
+                          <span id="paymentPreview"
+                            >Payment due 1 day before travel</span
+                          >
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div
+              style="
+                display: flex;
+                gap: 15px;
+                justify-content: center;
+                padding-top: 30px;
+                border-top: 2px solid #ecf0f1;
+              "
+            >
+              <button
+                type="button"
+                class="btn btn-secondary"
+                onclick="window.location.href='suppliers.html'"
+                style="padding: 12px 30px; border-radius: 6px; font-weight: 600"
+              >
+                <i class="fas fa-times" style="margin-right: 8px"></i>
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="supplierForm"
+                class="btn btn-primary"
+                style="padding: 12px 30px; border-radius: 6px; font-weight: 600"
+              >
+                <i class="fas fa-save" style="margin-right: 8px"></i>
+                Save Supplier
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+
+    <script>
+      // Cache for location data
+      let locationCache = {
+        countries: null,
+        profileCountry: null,
+        citiesByCountry: {},
+      };
+
+      // Cache expiration times (in milliseconds)
+      const CACHE_EXPIRY = {
+        countries: 24 * 60 * 60 * 1000, // 24 hours
+        profileCountry: 60 * 60 * 1000, // 1 hour
+        cities: 12 * 60 * 60 * 1000, // 12 hours
+      };
+
+      // Load cache from localStorage
+      function loadCacheFromStorage() {
+        try {
+          const stored = localStorage.getItem("locationCache");
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            const now = Date.now();
+
+            // Check if countries cache is still valid
+            if (
+              parsed.countries &&
+              parsed.countriesTimestamp &&
+              now - parsed.countriesTimestamp < CACHE_EXPIRY.countries
+            ) {
+              locationCache.countries = parsed.countries;
+              console.log("Loaded countries from localStorage cache");
+            }
+
+            // Check if profile country cache is still valid
+            if (
+              parsed.profileCountry &&
+              parsed.profileCountryTimestamp &&
+              now - parsed.profileCountryTimestamp < CACHE_EXPIRY.profileCountry
+            ) {
+              locationCache.profileCountry = parsed.profileCountry;
+              console.log("Loaded profile country from localStorage cache");
+            }
+          }
+        } catch (error) {
+          console.error("Error loading cache from localStorage:", error);
+          // Clear corrupted cache
+          localStorage.removeItem("locationCache");
+        }
+      }
+
+      // Save cache to localStorage
+      function saveCacheToStorage() {
+        try {
+          const now = Date.now();
+          const cacheData = {
+            countries: locationCache.countries,
+            countriesTimestamp: locationCache.countries ? now : null,
+            profileCountry: locationCache.profileCountry,
+            profileCountryTimestamp: locationCache.profileCountry ? now : null,
+          };
+
+          localStorage.setItem("locationCache", JSON.stringify(cacheData));
+          console.log("Saved location cache to localStorage");
+        } catch (error) {
+          console.error("Error saving cache to localStorage:", error);
+        }
+      }
+
+      // Get authentication token
+      function getAuthToken() {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          alert("You are not authorized. Please log in first.");
+          window.location.href = "login.html";
+          return null;
+        }
+        return token;
+      }
+
+      // Handle API errors
+      function handleApiError(response, defaultMessage) {
+        if (response.status === 401) {
+          alert("Unauthorized. Please log in again.");
+          window.location.href = "login.html";
+          return true;
+        } else if (response.status === 403) {
+          alert(
+            "You don't have sufficient permissions to perform this action."
+          );
+          return true;
+        }
+        return false;
+      }
+
+      // Load countries from API with caching
+      async function loadCountries() {
+        const token = getAuthToken();
+        if (!token) return;
+
+        // Return cached data if available
+        if (locationCache.countries) {
+          console.log("Using cached countries data");
+          return locationCache.countries;
+        }
+
+        try {
+          console.log("Fetching countries from API...");
+          const response = await fetch(
+            `${Endpoint}/api/v1/locations/countries`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (!response.ok) {
+            if (handleApiError(response, "Failed to load countries")) return;
+            throw new Error("Failed to load countries");
+          }
+
+          const data = await response.json();
+          locationCache.countries = data.countries || data; // Handle different response formats
+          console.log(
+            "Countries loaded from API and cached:",
+            locationCache.countries
+          );
+
+          // Save to localStorage
+          saveCacheToStorage();
+
+          return locationCache.countries;
+        } catch (error) {
+          console.error("Error loading countries:", error);
+          alert("Failed to load countries. Please try again.");
+          return [];
+        }
+      }
+
+      // Detect country from profile with caching
+      async function detectCountryFromProfile() {
+        const token = getAuthToken();
+        if (!token) return null;
+
+        // Return cached data if available
+        if (locationCache.profileCountry) {
+          console.log(
+            "Using cached profile country:",
+            locationCache.profileCountry
+          );
+          return locationCache.profileCountry;
+        }
+
+        try {
+          console.log("Detecting country from profile...");
+          const profileData = {};
+
+          const response = await fetch(
+            `${Endpoint}/api/v1/locations/detect-country`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(profileData),
+            }
+          );
+
+          if (!response.ok) {
+            if (handleApiError(response, "Failed to detect country"))
+              return null;
+            console.log("Country detection not available, using default");
+            return null;
+          }
+
+          const data = await response.json();
+          locationCache.profileCountry =
+            data.detected_country || data.country_info?.code;
+          console.log(
+            "Profile country detected from API and cached:",
+            locationCache.profileCountry
+          );
+
+          // Save to localStorage
+          saveCacheToStorage();
+
+          return locationCache.profileCountry;
+        } catch (error) {
+          console.error("Error detecting country from profile:", error);
+          return null;
+        }
+      }
+
+      // Populate countries dropdown
+      async function populateCountriesDropdown() {
+        const countryDropdown = document.getElementById("supplierCountry");
+        const countries = await loadCountries();
+
+        if (!countries || countries.length === 0) {
+          countryDropdown.innerHTML =
+            '<option value="" disabled>Failed to load countries</option>';
+          return;
+        }
+
+        // Clear existing options
+        countryDropdown.innerHTML =
+          '<option value="" disabled>Select country</option>';
+
+        // Add country options
+        countries.forEach((country) => {
+          const option = document.createElement("option");
+          option.value = country.code || country.country_code;
+          option.textContent = country.name || country.country_name;
+          countryDropdown.appendChild(option);
+        });
+
+        // Try to detect and select profile country
+        const profileCountry = await detectCountryFromProfile();
+        if (profileCountry) {
+          countryDropdown.value = profileCountry;
+        } else {
+          countryDropdown.selectedIndex = 0;
+        }
+      }
+
+      // Find country name by country code
+      function findCountryNameByCode(countryCode) {
+        if (!locationCache.countries || !countryCode) {
+          return null;
+        }
+
+        const country = locationCache.countries.find(
+          (c) => (c.code || c.country_code) === countryCode
+        );
+
+        return country ? country.name || country.country_name : null;
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          alert("You are not authorized. Please log in first.");
+          window.location.href = "login.html";
+          return;
+        }
+
+        // Load cache from localStorage first
+        loadCacheFromStorage();
+
+        // Load initial data
+        populateCountriesDropdown();
+
+        // Policy preview update functions
+        function updatePolicyPreview() {
+          const cancellationDays =
+            parseInt(
+              document.getElementById("cancellationAllowedBeforeDays").value
+            ) || 1;
+          const paymentDays =
+            parseInt(
+              document.getElementById("paymentDeadlineBeforeDays").value
+            ) || 1;
+
+          const cancellationPreview = document.getElementById(
+            "cancellationPreview"
+          );
+          const paymentPreview = document.getElementById("paymentPreview");
+
+          // Update cancellation preview
+          if (cancellationDays === -1) {
+            cancellationPreview.textContent = "No cancellation allowed";
+          } else if (cancellationDays === 0) {
+            cancellationPreview.textContent =
+              "Cancellation allowed until travel date";
+          } else if (cancellationDays === 1) {
+            cancellationPreview.textContent =
+              "Cancellation allowed until 1 day before travel";
+          } else {
+            cancellationPreview.textContent = `Cancellation allowed until ${cancellationDays} days before travel`;
+          }
+
+          // Update payment preview
+          if (paymentDays === 0) {
+            paymentPreview.textContent = "Payment due on travel date";
+          } else if (paymentDays === 1) {
+            paymentPreview.textContent = "Payment due 1 day before travel";
+          } else {
+            paymentPreview.textContent = `Payment due ${paymentDays} days before travel`;
+          }
+        }
+
+        // Add event listeners for policy preview updates
+        document
+          .getElementById("cancellationAllowedBeforeDays")
+          .addEventListener("input", updatePolicyPreview);
+        document
+          .getElementById("paymentDeadlineBeforeDays")
+          .addEventListener("input", updatePolicyPreview);
+
+        // Initialize policy preview
+        updatePolicyPreview();
+
+        // Handle form submission
+        document
+          .getElementById("supplierForm")
+          .addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            // Validate that at least one checkbox is checked
+            const supplierFor = [];
+            if (document.getElementById("supplierTransfers").checked) {
+              supplierFor.push("Transfers");
+            }
+            if (document.getElementById("supplierExcursions").checked) {
+              supplierFor.push("Excursions");
+            }
+            if (document.getElementById("supplierTours").checked) {
+              supplierFor.push("Tours");
+            }
+
+            if (supplierFor.length === 0) {
+              document.getElementById("checkboxError").style.display = "block";
+              return;
+            } else {
+              document.getElementById("checkboxError").style.display = "none";
+            }
+
+            // Get the selected country code and convert it to country name for backend compatibility
+            const selectedCountryCode =
+              document.getElementById("supplierCountry").value;
+            const countryName =
+              findCountryNameByCode(selectedCountryCode) || selectedCountryCode;
+
+            const supplier = {
+              name: document.getElementById("supplierName").value,
+              description: document.getElementById("supplierDescription").value,
+              email: document.getElementById("supplierEmail").value,
+              telephone: document.getElementById("supplierTelephone").value,
+              country: countryName,
+              location: document.getElementById("supplierLocation").value,
+              offers_transfers: supplierFor.includes("Transfers"),
+              offers_excursions: supplierFor.includes("Excursions"),
+              offers_tours: supplierFor.includes("Tours"),
+              cancellation_allowed_before_days: parseInt(
+                document.getElementById("cancellationAllowedBeforeDays").value
+              ),
+              payment_deadline_before_days: parseInt(
+                document.getElementById("paymentDeadlineBeforeDays").value
+              ),
+            };
+
+            fetch(`${Endpoint}/api/v1/suppliers`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(supplier),
+            })
+              .then((response) => {
+                if (response.ok) {
+                  alert("Supplier saved successfully!");
+                  window.location.href = "suppliers.html";
+                } else if (response.status === 401) {
+                  // Handle 401 Unauthorized
+                  alert("Unauthorized. Please log in again.");
+                  window.location.href = "login.html"; // Redirect to login page
+                } else if (response.status === 403) {
+                  // Handle 403 Forbidden
+                  alert(
+                    "You don't have sufficient permissions to perform this action."
+                  );
+                  return;
+                } else {
+                  throw new Error("Failed to save supplier");
+                }
+              })
+              .catch((error) => {
+                console.error("Error saving supplier:", error);
+                alert("Failed to save supplier. Please try again later.");
+              });
+          });
+      });
+    </script>
+  </body>
+</html>

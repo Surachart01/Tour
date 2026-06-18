@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Tax Invoice</title>
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
+
+    <style>
+      /* Sidebar and navbar text size */
+      .nav_title span,
+      .profile_info span,
+      .profile_info h2,
+      .side-menu a,
+      .navbar-right a {
+        font-size: 1rem;
+      }
+
+      #sidebar-menu {
+        overflow-y: auto;
+        max-height: calc(100vh - 100px);
+        padding-bottom: 10px;
+      }
+
+      .editable-field {
+        border: 1px solid #ddd;
+        padding: 5px;
+        border-radius: 3px;
+        min-width: 100px;
+        background-color: #f9f9f9;
+      }
+
+      .editable-field:focus {
+        border-color: #007bff;
+        background-color: white;
+        outline: none;
+      }
+
+      .category-section {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        padding: 15px;
+      }
+
+      .category-header {
+        background-color: #007bff;
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        font-weight: bold;
+      }
+
+      .calculation-summary {
+        background-color: #e9ecef;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        padding: 15px;
+        margin-top: 20px;
+      }
+
+      .total-section {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 5px;
+        padding: 15px;
+        margin-top: 20px;
+      }
+
+      .readonly-field {
+        background-color: #e9ecef;
+        border: 1px solid #ced4da;
+        padding: 5px;
+        border-radius: 3px;
+        min-width: 100px;
+      }
+
+      .btn-save {
+        background-color: #28a745;
+        border-color: #28a745;
+      }
+
+      .btn-save:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+      }
+
+      .alert-calculation {
+        background-color: #fff3cd;
+        border-color: #ffeaa7;
+        color: #856404;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+      }
+
+      /* Compact Invoice Information styling */
+      .invoice-info-compact {
+        padding: 10px 15px;
+      }
+
+      .invoice-info-compact label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 2px;
+        display: block;
+      }
+
+      .invoice-info-compact .readonly-field {
+        font-size: 0.85rem;
+        padding: 3px 6px;
+        margin-bottom: 8px;
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 3px;
+        min-height: 24px;
+      }
+
+      /* Signature section styling */
+      .signature-section {
+        margin-top: 40px;
+        margin-bottom: 20px;
+        page-break-inside: avoid;
+      }
+
+      .signature-line {
+        border-bottom: 1px solid #000;
+        margin-bottom: 5px;
+        height: 40px;
+        position: relative;
+      }
+
+      .signature-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+      }
+
+      /* Tax Categories Breakdown Optimizations */
+      .category-section .card-header h5 {
+        font-size: 1rem; /* Smaller category headers */
+        margin-bottom: 0;
+      }
+
+      .category-section .card-body {
+        padding: 5px; /* Further reduced padding around table */
+      }
+
+      .category-section .table {
+        margin-bottom: 0; /* Removed margin after tables */
+      }
+
+      /* Reduce spacing between category sections */
+      .category-section.card {
+        margin-bottom: 10px !important; /* Reduced from mb-4 (1.5rem) to smaller spacing */
+      }
+
+      /* Blue table headers like other pages */
+      .category-section .thead-blue {
+        background-color: #007bff !important;
+        color: white;
+      }
+
+      .category-section .thead-blue th {
+        border-color: #0056b3;
+        font-size: 0.85rem; /* Slightly smaller header text */
+        padding: 6px 4px; /* Further reduced header padding */
+      }
+
+      .category-section .table td {
+        padding: 4px; /* Further reduced cell padding */
+        font-size: 0.85rem; /* Smaller text in cells */
+        vertical-align: middle; /* Better alignment */
+      }
+
+      .category-section .table .form-control {
+        font-size: 0.8rem; /* Smaller form controls */
+        padding: 2px 4px; /* More compact form inputs */
+        margin-bottom: 2px; /* Reduced margin for form controls */
+      }
+
+      .category-section .readonly-field {
+        font-size: 0.8rem; /* Smaller readonly fields */
+        padding: 2px 4px; /* More compact readonly fields */
+        margin-bottom: 2px; /* Reduced margin for readonly fields */
+      }
+
+      .category-section small {
+        font-size: 0.65rem; /* Even smaller helper text */
+        margin-bottom: 0; /* Remove margin from small text */
+        line-height: 1.2; /* Tighter line height */
+      }
+
+      /* Reduce spacing in card headers */
+      .category-section .card-header {
+        padding: 8px 10px; /* Reduced header padding */
+      }
+
+      /* Make table more compact */
+      .category-section .table-bordered td,
+      .category-section .table-bordered th {
+        border: 1px solid #dee2e6; /* Thinner borders */
+      }
+
+      /* Reduce spacing inside table cells with multiple elements */
+      .category-section .table td br {
+        line-height: 0.8; /* Tighter line breaks */
+      }
+
+      /* Invoice Information Section Styling */
+      .invoice-info-section .x_panel {
+        background: linear-gradient(
+          135deg,
+          #e3f2fd 0%,
+          #f8fcff 100%
+        ); /* Light blue gradient background */
+        border: 1px solid #bbdefb;
+        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1);
+      }
+
+      .invoice-info-section .x_title {
+        background: rgba(33, 150, 243, 0.05);
+        border-bottom: 2px solid #2196f3;
+        margin-bottom: 0;
+      }
+
+      .invoice-info-section .x_title h2 {
+        color: #1976d2;
+        font-weight: 600;
+      }
+
+      .invoice-info-section .x_content {
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 0 0 5px 5px;
+      }
+
+      .invoice-info-section label {
+        font-weight: 600;
+        color: #1565c0;
+        font-size: 0.95rem;
+        margin-bottom: 5px;
+      }
+
+      .invoice-info-section .readonly-field {
+        background: white;
+        border: 2px solid #e1f5fe;
+        color: #0d47a1;
+        font-weight: 600;
+        font-size: 1rem;
+        padding: 10px 12px;
+        border-radius: 5px;
+        box-shadow: 0 1px 3px rgba(33, 150, 243, 0.2);
+        transition: all 0.3s ease;
+      }
+
+      .invoice-info-section .readonly-field:hover {
+        border-color: #2196f3;
+        box-shadow: 0 2px 5px rgba(33, 150, 243, 0.3);
+        transform: translateY(-1px);
+      }
+
+      /* Invoice Information Bold Fonts */
+      .invoice-info-section label,
+      .invoice-info-section .readonly-field {
+        font-weight: bold !important;
+      }
+
+      .invoice-info-section .x_title h2 {
+        font-weight: bold !important;
+      }
+
+      .signature-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+      }
+
+      /* Invoice Information Bold Fonts - NO background styling */
+      .invoice-info-bold label {
+        font-weight: bold !important;
+      }
+
+      .invoice-info-bold .readonly-field {
+        font-weight: bold !important;
+      }
+
+      .invoice-info-bold .x_title h2 {
+        font-weight: bold !important;
+      }
+
+      /* Action buttons top padding */
+      .action-buttons-section {
+        padding-top: 30px;
+      }
+
+      .signature-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+      }
+    </style>
+  </head>
+
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+        <div class="col-md-3 left_col menu_fixed">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border: 0">
+              <a
+                href="index.html"
+                class="site_title"
+                style="
+                  display: block;
+                  text-align: center;
+                  font-size: 2rem;
+                  font-weight: bold;
+                  color: #007bff;
+                  text-decoration: none;
+                "
+              >
+                <span style="font-size: 1.5rem">VeraThailandia!</span>
+              </a>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- menu profile quick info -->
+            <div class="profile clearfix">
+              <div class="profile_pic">
+                <img
+                  src="images/verathailandlogo.png"
+                  alt="..."
+                  class="img-circle profile_img"
+                />
+              </div>
+              <div class="profile_info">
+                <span>Welcome,</span>
+                <h2 id="profileName"></h2>
+              </div>
+            </div>
+            <!-- /menu profile quick info -->
+
+            <br />
+
+            <!-- sidebar menu -->
+            <div
+              id="sidebar-menu"
+              class="main_menu_side hidden-print main_menu"
+            >
+              <div class="menu_section">
+                <h3>General</h3>
+                <ul class="nav side-menu">
+                  <li>
+                    <a href="index.html"
+                      ><i class="fa fa-home"></i> Home
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li>
+                    <a
+                      ><i class="fa fa-edit"></i> Control-Panel
+                      <span class="fa fa-chevron-down"></span
+                    ></a>
+                    <ul class="nav child_menu">
+                      <li><a href="activities.html">Activities</a></li>
+                      <li><a href="agents.html">Agents</a></li>
+                      <li><a href="booking.html">Bookings</a></li>
+                      <li><a href="excursions.html">Excursions</a></li>
+                      <li><a href="hotels.html">Hotels</a></li>
+                      <li><a href="markup.html">Markups</a></li>
+                      <!-- <li><a href="operations.html">Operations</a></li> -->
+                      <li><a href="othercharges.html">Other Charges</a></li>
+                      <!-- <li><a href="stop_sale.html">Stop Sale</a></li> -->
+                      <li><a href="suppliers.html">Suppliers</a></li>
+                      <li><a href="tools.html">Tools</a></li>
+                      <li><a href="tours.html">Tours</a></li>
+                      <li><a href="transfers.html">Transfers</a></li>
+                      <li><a href="users.html">Users</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="trip.html"
+                      ><i class="fa fa-book"></i> Quotation
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li>
+                    <a href="payment.html"
+                      ><i class="fa fa-pencil-square-o"></i> Payment
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <!--<li>
+                    <a href="tax_invoices.html"
+                      ><i class="fa fa-file-text-o"></i> Tax Invoices
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li> -->
+                  <li>
+                    <a href="itinerary.html"
+                      ><i class="fa fa-ticket"></i> Itinerary
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- /sidebar menu -->
+
+            <!-- /menu footer buttons -->
+            <div class="sidebar-footer hidden-small">
+              <a data-toggle="tooltip" data-placement="top" title="Settings">
+                <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="FullScreen">
+                <span
+                  class="glyphicon glyphicon-fullscreen"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="Lock">
+                <span
+                  class="glyphicon glyphicon-eye-close"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a
+                data-toggle="tooltip"
+                data-placement="top"
+                title="Logout"
+                href="logout.html"
+              >
+                <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+              </a>
+            </div>
+            <!-- /menu footer buttons -->
+          </div>
+        </div>
+
+        <!-- top navigation -->
+        <div class="top_nav">
+          <div class="nav_menu">
+            <div class="nav toggle">
+              <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+            </div>
+            <nav class="nav navbar-nav">
+              <ul class="navbar-right">
+                <li class="nav-item dropdown open" style="padding-left: 15px">
+                  <a
+                    href="javascript:;"
+                    class="user-profile dropdown-toggle"
+                    aria-haspopup="true"
+                    id="navbarDropdown"
+                    data-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    <img
+                      id="navProfileImage"
+                      src="images/verathailandlogo.png"
+                      alt=""
+                    />
+                    <span id="navProfileName"></span>
+                  </a>
+                  <div
+                    class="dropdown-menu dropdown-usermenu pull-right"
+                    aria-labelledby="navbarDropdown"
+                  >
+                    <a class="dropdown-item" href="javascript:;"> Profile</a>
+                    <a class="dropdown-item" href="logout.html"
+                      ><i class="fa fa-sign-out pull-right"></i> Log Out</a
+                    >
+                  </div>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+        <!-- /top navigation -->
+
+        <!-- Page content -->
+        <div class="right_col" role="main">
+          <div class="">
+            <div class="page-title">
+              <div class="title_left">
+                <h3>Edit Tax Invoice</h3>
+              </div>
+              <div class="title_right">
+                <div class="form-group pull-right">
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="window.location.href='tax_invoices.html'"
+                    style="margin-right: 0"
+                  >
+                    <i class="fa fa-arrow-left"></i> Back to List
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- Invoice Header Information -->
+            <div class="row">
+              <div class="col-md-12 invoice-info-bold">
+                <div class="x_panel">
+                  <div class="x_title">
+                    <h2>Invoice Information</h2>
+                    <div class="clearfix"></div>
+                  </div>
+                  <div class="x_content">
+                    <div class="row">
+                      <div class="col-md-4">
+                        <label>Invoice Number:</label>
+                        <div class="readonly-field" id="invoiceNumber">
+                          Loading...
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <label>Trip ID:</label>
+                        <div class="readonly-field" id="tripId">Loading...</div>
+                      </div>
+                      <div class="col-md-4">
+                        <label>Created Date:</label>
+                        <div class="readonly-field" id="createdDate">
+                          Loading...
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Calculation Guide -->
+            <div class="row">
+              <div class="col-md-12">
+                <div class="alert-calculation">
+                  <strong>Note:</strong> When you edit the Non-VAT amount, the
+                  VAT amount will automatically adjust. Tax percentage can be
+                  selected per item (0% to 25%). Total Cost (Before Tax) + Tax
+                  Price = Final Amount.
+                </div>
+              </div>
+            </div>
+
+            <!-- Categories Breakdown -->
+            <div class="row">
+              <div class="col-md-12">
+                <div class="x_panel">
+                  <div class="x_title">
+                    <h2>Tax Categories Breakdown</h2>
+                    <div class="clearfix"></div>
+                  </div>
+                  <div class="x_content" id="categoriesContainer">
+                    <!-- Categories will be dynamically loaded here -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Summary Section -->
+            <div class="row">
+              <div class="col-md-12">
+                <div class="total-section">
+                  <h3>Invoice Summary</h3>
+                  <div class="row">
+                    <div class="col-md-3">
+                      <label><strong>Total Cost (Before Tax):</strong></label>
+                      <div class="readonly-field" id="summaryTotalCost">
+                        ฿ 0.00
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <label><strong>Total VAT Amount:</strong></label>
+                      <div class="readonly-field" id="summaryVATAmount">
+                        ฿ 0.00
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <label><strong>Total Tax Price:</strong></label>
+                      <div class="readonly-field" id="summaryTaxPrice">
+                        ฿ 0.00
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <label><strong>Final Amount:</strong></label>
+                      <div
+                        class="readonly-field"
+                        style="
+                          background-color: #d4edda;
+                          font-weight: bold;
+                          font-size: 1.1em;
+                        "
+                        id="summaryFinalAmount"
+                      >
+                        ฿ 0.00
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="row action-buttons-section">
+              <div class="col-md-12 text-center">
+                <button
+                  type="button"
+                  class="btn btn-save"
+                  id="saveInvoiceBtn"
+                  style="margin-right: 15px"
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  id="generatePdfBtn"
+                  style="margin-right: 15px"
+                >
+                  PDF
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  onclick="window.location.href='tax_invoices.html'"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /Page content -->
+
+        <!-- Footer content -->
+        <footer></footer>
+        <!-- /Footer content -->
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/tax_invoices/edit_invoices.js"></script>
+    <script src="js/config.js"></script>
+  </body>
+</html>

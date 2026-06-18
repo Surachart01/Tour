@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <!-- Meta, title, CSS, favicons, etc. -->
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Add Agent</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- FontAwesome 5 for modern icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <!-- NProgress -->
+    <link href="../vendors/nprogress/nprogress.css" rel="stylesheet" />
+    <!-- iCheck -->
+    <link href="../vendors/iCheck/skins/flat/green.css" rel="stylesheet" />
+    <!-- Select2 -->
+    <link href="../vendors/select2/dist/css/select2.min.css" rel="stylesheet" />
+    <!-- bootstrap-daterangepicker -->
+    <link
+      href="../vendors/bootstrap-daterangepicker/daterangepicker.css"
+      rel="stylesheet"
+    />
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
+    <link href="../build/css/custom.css" rel="stylesheet" />
+
+    <style>
+      /* Modern form enhancements */
+      .form-control:focus {
+        border-color: #1abb9c !important;
+        box-shadow: 0 0 0 3px rgba(26, 187, 156, 0.1) !important;
+        background: #fff !important;
+      }
+
+      .form-control:hover {
+        border-color: #16a085 !important;
+        background: #fff !important;
+      }
+
+      .btn-success:hover {
+        background: linear-gradient(
+          135deg,
+          #16a085 0%,
+          #138d75 100%
+        ) !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(26, 187, 156, 0.4) !important;
+      }
+
+      .btn-secondary:hover {
+        background: #7f8c8d !important;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(149, 165, 166, 0.4) !important;
+      }
+
+      .x_panel {
+        transition: all 0.3s ease;
+      }
+
+      .x_panel:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+      }
+
+      /* Loading animation for form submission */
+      .btn-loading {
+        position: relative;
+        pointer-events: none;
+      }
+
+      .btn-loading::after {
+        content: "";
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        margin: auto;
+        border: 2px solid transparent;
+        border-top-color: #ffffff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Responsive improvements */
+      @media (max-width: 768px) {
+        .container-fluid {
+          padding: 0 !important;
+        }
+
+        .x_content {
+          padding: 20px !important;
+        }
+
+        .x_title {
+          padding: 20px !important;
+        }
+
+        .x_title h2 {
+          font-size: 20px !important;
+        }
+
+        .form-control {
+          height: 42px !important;
+        }
+
+        .btn {
+          padding: 10px 20px !important;
+          font-size: 13px !important;
+        }
+
+        .row > div {
+          margin-bottom: 15px;
+        }
+
+        .x_title div {
+          flex-direction: column !important;
+          align-items: flex-start !important;
+          gap: 15px !important;
+        }
+      }
+
+      /* Full page layout improvements */
+      .x_panel:hover {
+        box-shadow: none !important;
+      }
+
+      @media (min-width: 1400px) {
+        .x_content {
+          padding: 60px !important;
+        }
+      }
+
+      /* Success/Error message styling */
+      .alert-modern {
+        border: none;
+        border-radius: 6px;
+        padding: 15px 20px;
+        margin-bottom: 20px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+      }
+
+      .alert-modern i {
+        margin-right: 10px;
+        font-size: 16px;
+      }
+
+      .alert-success-modern {
+        background: linear-gradient(135deg, #1abb9c 0%, #16a085 100%);
+        color: white;
+      }
+
+      .alert-error-modern {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+      }
+    </style>
+  </head>
+
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background: #ecf0f1;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    "
+  >
+    <div
+      class="container-fluid"
+      style="
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+      "
+    >
+      <!-- Full-width header -->
+      <div
+        style="
+          background: linear-gradient(135deg, #2a3f54 0%, #34495e 100%);
+          color: white;
+          padding: 30px 60px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        "
+      >
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          "
+        >
+          <div style="display: flex; align-items: center">
+            <i
+              class="fas fa-user-plus"
+              style="font-size: 28px; margin-right: 15px; color: #1abb9c"
+            ></i>
+            <h1 style="margin: 0; font-size: 28px; font-weight: 700">
+              Create New Agent
+            </h1>
+          </div>
+          <div style="display: flex; gap: 15px">
+            <button
+              type="button"
+              class="btn btn-outline-light"
+              onclick="window.location.href='agents.html'"
+              style="
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                padding: 8px 20px;
+                border-radius: 6px;
+                transition: all 0.3s ease;
+              "
+            >
+              <i class="fas fa-arrow-left" style="margin-right: 8px"></i>
+              Back to Agents
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main content area -->
+      <div style="flex: 1; padding: 40px 60px; background: #ecf0f1">
+        <div
+          style="
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+          "
+        >
+          <div style="padding: 40px">
+            <form id="agentForm">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group" style="margin-bottom: 25px">
+                    <label
+                      for="agentName"
+                      style="
+                        font-weight: 600;
+                        color: #34495e;
+                        margin-bottom: 8px;
+                        display: block;
+                        font-size: 14px;
+                      "
+                    >
+                      <i
+                        class="fas fa-user"
+                        style="margin-right: 8px; color: #1abb9c"
+                      ></i>
+                      Name <span style="color: #e74c3c">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="agentName"
+                      placeholder="Enter agent name"
+                      required
+                      style="
+                        height: 45px;
+                        border: 2px solid #e6e9ed;
+                        border-radius: 6px;
+                        padding: 12px 16px;
+                        font-size: 14px;
+                        transition: all 0.3s ease;
+                        background: #fafbfc;
+                      "
+                    />
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group" style="margin-bottom: 25px">
+                    <label
+                      for="agentMarkup"
+                      style="
+                        font-weight: 600;
+                        color: #34495e;
+                        margin-bottom: 8px;
+                        display: block;
+                        font-size: 14px;
+                      "
+                    >
+                      <i
+                        class="fas fa-percent"
+                        style="margin-right: 8px; color: #1abb9c"
+                      ></i>
+                      Markup <span style="color: #e74c3c">*</span>
+                    </label>
+                    <select
+                      class="form-control"
+                      id="agentMarkup"
+                      required
+                      style="
+                        height: 45px;
+                        border: 2px solid #e6e9ed;
+                        border-radius: 6px;
+                        padding: 12px 16px;
+                        font-size: 14px;
+                        transition: all 0.3s ease;
+                        background: #fafbfc;
+                      "
+                    >
+                      <option value="" disabled selected>
+                        Select markup group
+                      </option>
+                      <!-- Markup options will be dynamically loaded here -->
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 25px">
+                <label
+                  for="agentAddress"
+                  style="
+                    font-weight: 600;
+                    color: #34495e;
+                    margin-bottom: 8px;
+                    display: block;
+                    font-size: 14px;
+                  "
+                >
+                  <i
+                    class="fas fa-map-marker-alt"
+                    style="margin-right: 8px; color: #1abb9c"
+                  ></i>
+                  Address <span style="color: #e74c3c">*</span>
+                </label>
+                <textarea
+                  id="agentAddress"
+                  class="form-control"
+                  rows="4"
+                  required
+                  placeholder="Enter complete address..."
+                  style="
+                    border: 2px solid #e6e9ed;
+                    border-radius: 6px;
+                    padding: 12px 16px;
+                    font-size: 14px;
+                    transition: all 0.3s ease;
+                    background: #fafbfc;
+                    resize: vertical;
+                    min-height: 100px;
+                  "
+                ></textarea>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group" style="margin-bottom: 25px">
+                    <label
+                      for="agentEmail"
+                      style="
+                        font-weight: 600;
+                        color: #34495e;
+                        margin-bottom: 8px;
+                        display: block;
+                        font-size: 14px;
+                      "
+                    >
+                      <i
+                        class="fas fa-envelope"
+                        style="margin-right: 8px; color: #1abb9c"
+                      ></i>
+                      Email <span style="color: #e74c3c">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      class="form-control"
+                      id="agentEmail"
+                      placeholder="Enter email address"
+                      required
+                      style="
+                        height: 45px;
+                        border: 2px solid #e6e9ed;
+                        border-radius: 6px;
+                        padding: 12px 16px;
+                        font-size: 14px;
+                        transition: all 0.3s ease;
+                        background: #fafbfc;
+                      "
+                    />
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group" style="margin-bottom: 25px">
+                    <label
+                      for="agentTelephone"
+                      style="
+                        font-weight: 600;
+                        color: #34495e;
+                        margin-bottom: 8px;
+                        display: block;
+                        font-size: 14px;
+                      "
+                    >
+                      <i
+                        class="fas fa-phone"
+                        style="margin-right: 8px; color: #1abb9c"
+                      ></i>
+                      Telephone <span style="color: #e74c3c">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="agentTelephone"
+                      class="form-control"
+                      required
+                      pattern="^\+?[0-9]{7,13}$"
+                      placeholder="Enter telephone number"
+                      style="
+                        height: 45px;
+                        border: 2px solid #e6e9ed;
+                        border-radius: 6px;
+                        padding: 12px 16px;
+                        font-size: 14px;
+                        transition: all 0.3s ease;
+                        background: #fafbfc;
+                      "
+                    />
+                    <small
+                      class="form-text"
+                      style="
+                        color: #73879c;
+                        font-size: 12px;
+                        margin-top: 5px;
+                        display: block;
+                      "
+                    >
+                      <i
+                        class="fa fa-info-circle"
+                        style="margin-right: 4px"
+                      ></i>
+                      7-13 digits, can start with +
+                    </small>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 35px">
+                <label
+                  for="agentFax"
+                  style="
+                    font-weight: 600;
+                    color: #34495e;
+                    margin-bottom: 8px;
+                    display: block;
+                    font-size: 14px;
+                  "
+                >
+                  <i
+                    class="fas fa-fax"
+                    style="margin-right: 8px; color: #1abb9c"
+                  ></i>
+                  Fax
+                  <span style="color: #95a5a6; font-weight: 400"
+                    >(Optional)</span
+                  >
+                </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="agentFax"
+                  placeholder="Enter fax number"
+                  style="
+                    height: 45px;
+                    border: 2px solid #e6e9ed;
+                    border-radius: 6px;
+                    padding: 12px 16px;
+                    font-size: 14px;
+                    transition: all 0.3s ease;
+                    background: #fafbfc;
+                  "
+                />
+              </div>
+
+              <!-- Payment Deadline Configuration Section -->
+              <div style="margin-bottom: 30px">
+                <h4
+                  style="
+                    margin: 0 0 20px 0;
+                    color: #34495e;
+                    font-weight: 700;
+                    font-size: 18px;
+                  "
+                >
+                  <i
+                    class="fas fa-calendar-check"
+                    style="margin-right: 10px; color: #1abb9c"
+                  ></i>
+                  Payment Deadline Configuration
+                </h4>
+                <div
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      #f8f9fa 0%,
+                      #e9ecef 100%
+                    );
+                    border-radius: 12px;
+                    padding: 20px;
+                    margin-bottom: 20px;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                  "
+                >
+                  <div class="row">
+                    <div class="col-md-6 form-group">
+                      <label for="paymentDeadlineType">
+                        <i
+                          class="fas fa-clock"
+                          style="margin-right: 8px; color: #1abb9c"
+                        ></i>
+                        Payment Deadline Type *
+                      </label>
+                      <select
+                        class="form-control"
+                        id="paymentDeadlineType"
+                        required
+                        style="
+                          height: 45px;
+                          border: 2px solid #e6e9ed;
+                          border-radius: 6px;
+                          padding: 12px 16px;
+                          font-size: 14px;
+                          transition: all 0.3s ease;
+                          background: #fafbfc;
+                        "
+                      >
+                        <option value="" disabled selected>
+                          Select payment deadline type
+                        </option>
+                        <option value="24_hours_before">
+                          24 Hours Before Trip Start
+                        </option>
+                        <option value="end_of_month">
+                          End of Travel Month
+                        </option>
+                        <option value="custom_days_before">
+                          Custom Days Before Trip Start
+                        </option>
+                      </select>
+                      <small class="form-text text-muted">
+                        Choose when agents must make payments for bookings
+                      </small>
+                    </div>
+
+                    <div
+                      class="col-md-6 form-group"
+                      id="customDaysContainer"
+                      style="display: none"
+                    >
+                      <label for="paymentDeadlineDays">
+                        <i
+                          class="fas fa-calendar-day"
+                          style="margin-right: 8px; color: #e67e22"
+                        ></i>
+                        Days Before Trip Start *
+                      </label>
+                      <input
+                        type="number"
+                        class="form-control"
+                        id="paymentDeadlineDays"
+                        placeholder="Enter number of days"
+                        min="1"
+                        max="365"
+                        style="
+                          height: 45px;
+                          border: 2px solid #e6e9ed;
+                          border-radius: 6px;
+                          padding: 12px 16px;
+                          font-size: 14px;
+                          transition: all 0.3s ease;
+                          background: #fafbfc;
+                        "
+                      />
+                      <small class="form-text text-muted">
+                        Number of days before trip start when payment is due
+                        (1-365 days)
+                      </small>
+                    </div>
+                  </div>
+
+                  <!-- Payment Deadline Preview -->
+                  <div class="row mt-3">
+                    <div class="col-md-12">
+                      <div class="alert alert-info" style="margin-bottom: 0">
+                        <h6 style="margin-bottom: 10px; font-weight: 600">
+                          <i
+                            class="fas fa-info-circle"
+                            style="margin-right: 8px"
+                          ></i>
+                          Payment Deadline Preview:
+                        </h6>
+                        <div>
+                          <strong>Current Setting:</strong>
+                          <span id="paymentDeadlinePreview"
+                            >24 hours before trip start (default)</span
+                          >
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div
+                style="
+                  display: flex;
+                  gap: 15px;
+                  justify-content: center;
+                  padding-top: 30px;
+                  border-top: 2px solid #ecf0f1;
+                "
+              >
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  onclick="window.location.href='agents.html'"
+                  style="
+                    padding: 12px 30px;
+                    border-radius: 6px;
+                    font-weight: 600;
+                  "
+                >
+                  <i class="fas fa-times" style="margin-right: 8px"></i>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  style="
+                    padding: 12px 30px;
+                    border-radius: 6px;
+                    font-weight: 600;
+                  "
+                >
+                  <i class="fas fa-save" style="margin-right: 8px"></i>
+                  Save Agent
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- FastClick -->
+    <script src="../vendors/fastclick/lib/fastclick.js"></script>
+    <!-- NProgress -->
+    <script src="../vendors/nprogress/nprogress.js"></script>
+    <!-- Select2 -->
+    <script src="../vendors/select2/dist/js/select2.min.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+
+    <script>
+      // Load markup options dynamically
+      document.addEventListener("DOMContentLoaded", function () {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          alert("You are not authorized. Please log in first.");
+          window.location.href = "login.html";
+          return;
+        }
+
+        // Fetch markup groups from the backend and populate the dropdown
+        fetch(`${Endpoint}/api/v1/markups/names`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              if (response.status === 401) {
+                // Handle 401 Unauthorized
+                alert("Unauthorized. Please log in again.");
+                window.location.href = "login.html"; // Redirect to login page
+              } else if (response.status === 403) {
+                // Handle 403 Forbidden
+                alert(
+                  "You don't have sufficient permissions to perform this action."
+                );
+                return;
+              }
+              throw new Error("Failed to load markup groups");
+            }
+            return response.json();
+          })
+          .then((markupGroups) => {
+            const markupSelect = document.getElementById("agentMarkup");
+            markupSelect.innerHTML = ""; // Clear the current options
+
+            markupGroups.forEach((group) => {
+              const optionElement = document.createElement("option");
+              optionElement.value = group; // Use group ID or name as value
+              optionElement.textContent = group; // Display the group name
+              markupSelect.appendChild(optionElement);
+            });
+          })
+          .catch((error) => {
+            console.error("Error fetching markup groups:", error);
+            alert("Failed to load markup groups. Please try again later.");
+          });
+        // Payment deadline configuration functions
+        function updatePaymentDeadlinePreview() {
+          const paymentDeadlineType = document.getElementById(
+            "paymentDeadlineType"
+          ).value;
+          const paymentDeadlineDays = document.getElementById(
+            "paymentDeadlineDays"
+          ).value;
+          const preview = document.getElementById("paymentDeadlinePreview");
+
+          switch (paymentDeadlineType) {
+            case "end_of_month":
+              preview.textContent = "End of travel month";
+              break;
+            case "24_hours_before":
+              preview.textContent = "24 hours before trip start";
+              break;
+            case "custom_days_before":
+              if (paymentDeadlineDays && paymentDeadlineDays > 0) {
+                if (paymentDeadlineDays == 1) {
+                  preview.textContent = "1 day before trip start";
+                } else {
+                  preview.textContent = `${paymentDeadlineDays} days before trip start`;
+                }
+              } else {
+                preview.textContent =
+                  "Custom days before trip start (not configured)";
+              }
+              break;
+            default:
+              preview.textContent = "24 hours before trip start (default)";
+          }
+        }
+
+        function toggleCustomDaysField() {
+          const paymentDeadlineType = document.getElementById(
+            "paymentDeadlineType"
+          ).value;
+          const customDaysContainer = document.getElementById(
+            "customDaysContainer"
+          );
+          const paymentDeadlineDaysInput = document.getElementById(
+            "paymentDeadlineDays"
+          );
+
+          if (paymentDeadlineType === "custom_days_before") {
+            customDaysContainer.style.display = "block";
+            paymentDeadlineDaysInput.required = true;
+          } else {
+            customDaysContainer.style.display = "none";
+            paymentDeadlineDaysInput.required = false;
+            paymentDeadlineDaysInput.value = "";
+          }
+
+          updatePaymentDeadlinePreview();
+        }
+
+        // Add event listeners for payment deadline configuration
+        document
+          .getElementById("paymentDeadlineType")
+          .addEventListener("change", toggleCustomDaysField);
+        document
+          .getElementById("paymentDeadlineDays")
+          .addEventListener("input", updatePaymentDeadlinePreview);
+
+        // Initialize payment deadline preview
+        updatePaymentDeadlinePreview();
+      });
+
+      // Save agent details to the backend
+      document
+        .getElementById("agentForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+
+          const token = localStorage.getItem("token");
+
+          // Validate payment deadline configuration
+          const paymentDeadlineType = document.getElementById(
+            "paymentDeadlineType"
+          ).value;
+          const paymentDeadlineDays = document.getElementById(
+            "paymentDeadlineDays"
+          ).value;
+
+          if (
+            paymentDeadlineType === "custom_days_before" &&
+            (!paymentDeadlineDays || paymentDeadlineDays < 1)
+          ) {
+            alert(
+              "Please enter a valid number of days (1-365) for custom payment deadline."
+            );
+            return;
+          }
+
+          const agent = {
+            name: document.getElementById("agentName").value,
+            markup_group: document.getElementById("agentMarkup").value,
+            address: document.getElementById("agentAddress").value,
+            email: document.getElementById("agentEmail").value,
+            telephone: document.getElementById("agentTelephone").value,
+            fax: document.getElementById("agentFax").value,
+            payment_deadline_type: paymentDeadlineType,
+            payment_deadline_days:
+              paymentDeadlineType === "custom_days_before"
+                ? parseInt(paymentDeadlineDays)
+                : null,
+          };
+
+          fetch(`${Endpoint}/api/v1/agents`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(agent),
+          })
+            .then((response) => {
+              if (!response.ok) {
+                if (response.status === 401) {
+                  // Handle 401 Unauthorized
+                  alert("Unauthorized. Please log in again.");
+                  window.location.href = "login.html"; // Redirect to login page
+                } else if (response.status === 403) {
+                  // Handle 403 Forbidden
+                  alert(
+                    "You don't have sufficient permissions to perform this action."
+                  );
+                  return;
+                }
+                throw new Error("Failed to save agent");
+              }
+              alert("Agent saved successfully!");
+              window.location.href = "agents.html";
+            })
+            .catch((error) => {
+              console.error("Error saving agent:", error);
+              alert("Failed to save agent. Please try again later.");
+            });
+        });
+    </script>
+  </body>
+</html>

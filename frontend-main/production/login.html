@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <!-- Meta, title, CSS, favicons, etc. -->
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Login</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- NProgress -->
+    <link href="../vendors/nprogress/nprogress.css" rel="stylesheet" />
+    <!-- Animate.css -->
+    <link href="../vendors/animate.css/animate.min.css" rel="stylesheet" />
+
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
+    
+    <style>
+      /* OAuth Login Styles */
+      .oauth-section {
+        margin-bottom: 25px;
+      }
+      
+      .oauth-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      
+      .oauth-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 12px 20px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        background: white;
+        color: #333;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        width: 100%;
+      }
+      
+      .oauth-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        text-decoration: none;
+        color: white;
+      }
+      
+      .btn-google {
+        border-color: #db4437;
+        color: #db4437;
+      }
+      
+      .btn-google:hover {
+        background: #db4437;
+        border-color: #db4437;
+      }
+      
+      .btn-microsoft {
+        border-color: #0078d4;
+        color: #0078d4;
+      }
+      
+      .btn-microsoft:hover {
+        background: #0078d4;
+        border-color: #0078d4;
+      }
+      
+      /* Login Divider */
+      .login-divider {
+        position: relative;
+        text-align: center;
+        margin: 25px 0;
+      }
+      
+      .login-divider:before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: #ddd;
+      }
+      
+      .login-divider span {
+        background: white;
+        padding: 0 15px;
+        color: #666;
+        font-weight: 500;
+      }
+      
+      /* Traditional Login Section */
+      .traditional-login {
+        margin-top: 20px;
+      }
+      
+      /* Loading state */
+      .oauth-btn.loading {
+        opacity: 0.7;
+        pointer-events: none;
+      }
+      
+      .oauth-btn.loading:after {
+        content: '';
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        margin-left: 10px;
+        border: 2px solid currentColor;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      
+      /* Mobile responsiveness */
+      @media (max-width: 480px) {
+        .oauth-btn {
+          padding: 10px 15px;
+          font-size: 14px;
+        }
+      }
+    </style>
+  </head>
+
+  <body class="login">
+    <div>
+      <a class="hiddenanchor" id="signup"></a>
+      <a class="hiddenanchor" id="signin"></a>
+
+      <div class="login_wrapper">
+        <div class="animate form login_form">
+          <section class="login_content">
+            <img
+              src="/production/images/Verathailand_logo.jpg"
+              alt="Login Image"
+              style="width: 350px; height: auto; margin-bottom: 20px"
+            />
+            <form id="loginForm">
+              <h1>Welcome Back</h1>
+              
+              <!-- OAuth Login Buttons -->
+              <div class="oauth-section mb-4">
+                <h5 class="text-center mb-3" style="color: #666;">Quick Login</h5>
+                
+                <div class="oauth-buttons">
+                  <button type="button" class="btn btn-google oauth-btn" onclick="loginWithOAuthPopup('google')">
+                    <i class="fa fa-google"></i>
+                    Continue with Google
+                  </button>
+                  
+                  <button type="button" class="btn btn-microsoft oauth-btn" onclick="loginWithOAuthPopup('microsoft')">
+                    <i class="fa fa-windows"></i>
+                    Continue with Microsoft
+                  </button>
+                </div>
+              </div>
+
+              <!-- Divider -->
+              <div class="login-divider">
+                <span>OR</span>
+              </div>
+
+              <!-- Traditional Login Form -->
+              <div class="traditional-login">
+                <h5 class="text-center mb-3" style="color: #666;">Agent Login</h5>
+                
+              <div>
+                <input
+                  type="text"
+                  id="username"
+                  class="form-control"
+                  placeholder="Username"
+                  required=""
+                />
+              </div>
+              <div>
+                <input
+                  type="password"
+                  id="password"
+                  class="form-control"
+                  placeholder="Password"
+                  required=""
+                />
+              </div>
+              <div>
+                  <button type="submit" class="btn btn-primary submit">
+                    <i class="fa fa-sign-in"></i> Sign In
+                </button>
+                <a class="reset_pass" href="#">Lost your password?</a>
+                </div>
+              </div>
+
+              <div class="clearfix"></div>
+
+              <div class="separator">
+                <p class="change_link">
+                  New to site?
+                  <a href="#signup" class="to_register"> Create Account </a>
+                </p>
+                
+                <!-- OAuth Status (for popup mode only) -->
+                <div id="oauthStatus" class="mt-3" style="display: none;">
+                  <div class="alert alert-info text-center">
+                    <i class="fa fa-spinner fa-spin"></i>
+                    <strong>Popup OAuth in Progress...</strong><br>
+                    <small>Please complete the login in the popup window</small>
+                    <br><br>
+                    <small>
+                      <button type="button" class="btn btn-link btn-sm" onclick="checkForAuthTokenInStorage()" style="text-decoration: underline;">
+                        Click here if popup closed but you're not redirected
+                      </button>
+                    </small>
+                  </div>
+                </div>
+                
+                <div class="login-info mt-3">
+                  <small class="text-muted">
+                    <i class="fa fa-info-circle"></i>
+                    <strong>Quick Login:</strong> For business owners and managers (popup-based)<br>
+                    <strong>Agent Login:</strong> For travel agents and team members<br>
+                    <strong id="firefoxNotice" style="color: #e74c3c; display: none;">🦊 Firefox Users:</strong> <span id="firefoxText" style="display: none;">Use "Try Google Redirect Login" below if popup doesn't work</span>
+                  </small>
+                </div>
+                
+                <!-- Alternative Login Methods -->
+                <div class="alternative-methods mt-2" style="border-top: 1px solid #eee; padding-top: 10px;">
+                  <small class="text-muted">
+                    <strong>Having issues?</strong>
+                    <button type="button" class="btn btn-link btn-sm p-0" onclick="loginWithOAuth('google')" style="text-decoration: underline;">
+                      Try Google Redirect Login
+                    </button>
+                    or
+                    <button type="button" class="btn btn-link btn-sm p-0" onclick="testOAuthEndpoint('google')" style="text-decoration: underline;">
+                      Test OAuth Endpoint
+                    </button>
+                  </small>
+                </div>
+                <br />
+              </div>
+            </form>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- FastClick -->
+    <script src="../vendors/fastclick/lib/fastclick.js"></script>
+    <!-- NProgress -->
+    <script src="../vendors/nprogress/nprogress.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/authUtils.js"></script>
+
+    <script>
+      // OAuth Login Function (Redirect-Based - RECOMMENDED)
+      function loginWithOAuth(provider) {
+        console.log(`Initiating ${provider} OAuth login via redirect...`);
+        
+        // Add loading state to the clicked button (briefly)
+        const button = event.target.closest('.oauth-btn');
+        button.classList.add('loading');
+        button.disabled = true;
+        
+        // Store OAuth state for potential callback detection
+        localStorage.setItem('oauth_provider', provider);
+        localStorage.setItem('oauth_login_time', Date.now().toString());
+        
+        // Use redirect-based OAuth (backend handles auth, frontend handles redirection)
+        const oauthUrl = `${Endpoint}/api/v1/auth/${provider}/login`;
+        console.log(`Redirecting to OAuth provider: ${oauthUrl}`);
+        console.log('Backend will store auth data in localStorage, frontend will handle redirection to index.html');
+        
+        // Simple redirect - backend stores auth data, frontend decides navigation
+        window.location.href = oauthUrl;
+      }
+
+      // Alternative: OAuth Login Function (Popup-Based - FALLBACK)
+      function loginWithOAuthPopup(provider) {
+        console.log(`⚠️ Using popup OAuth (may be blocked by browsers)...`);
+        
+        // Add loading state to the clicked button
+        const button = event.target.closest('.oauth-btn');
+        button.classList.add('loading');
+        button.disabled = true;
+        
+        // Show OAuth status
+        showOAuthStatus();
+        
+        // Open OAuth popup
+        const oauthUrl = `${Endpoint}/api/v1/auth/${provider}/login`;
+        console.log(`Opening OAuth popup: ${oauthUrl}`);
+        
+        // Firefox-friendly popup options
+        const isFirefox = navigator.userAgent.includes('Firefox');
+        const popupFeatures = isFirefox ? 
+          'width=600,height=700,scrollbars=yes,resizable=yes,status=yes,toolbar=no,menubar=no,location=yes' :
+          'width=500,height=600,scrollbars=yes,resizable=yes,left=' + 
+          (window.screen.width / 2 - 250) + ',top=' + (window.screen.height / 2 - 300);
+          
+        console.log('🔥 Firefox Debug - Opening popup with features:', popupFeatures);
+        
+        const popup = window.open(oauthUrl, `${provider}-oauth`, popupFeatures);
+
+        if (!popup) {
+          console.error('🔥 Firefox Debug - Popup was blocked');
+          
+          if (isFirefox) {
+            alert('Firefox blocked the popup. Please:\n1. Click the shield icon in address bar\n2. Allow popups for this site\n3. Or try "Try Google Redirect Login" below');
+          } else {
+            alert('Popup was blocked. Switching to redirect-based login...');
+          }
+          
+          resetOAuthButtons();
+          hideOAuthStatus();
+          
+          // Fallback to redirect for non-Firefox browsers
+          if (!isFirefox) {
+            loginWithOAuth(provider);
+          }
+          return;
+        }
+        
+        console.log('🔥 Firefox Debug - Popup opened successfully');
+
+        // Set up message listener for auth response from popup
+        let hasReceivedMessage = false;
+        const messageListener = function(event) {
+          console.log('🔥 Firefox Debug - Received postMessage:', {
+            origin: event.origin,
+            expectedOrigin: window.location.origin,
+            data: event.data,
+            userAgent: navigator.userAgent.includes('Firefox') ? 'Firefox' : 'Other'
+          });
+          
+          // More flexible origin checking for Firefox
+          const currentOrigin = window.location.origin;
+          const isValidOrigin = event.origin === currentOrigin || 
+                               event.origin.includes('127.0.0.1') || 
+                               event.origin.includes('localhost') ||
+                               event.origin.includes('8080') || // Backend origin
+                               event.origin === 'http://127.0.0.1:8080' ||
+                               event.origin === 'http://localhost:8080';
+          
+          console.log('🔥 Firefox Debug - Origin check:', {
+            eventOrigin: event.origin,
+            currentOrigin: currentOrigin,
+            isValid: isValidOrigin
+          });
+          
+          if (!isValidOrigin) {
+            console.warn('⚠️ Firefox Debug - Ignoring message from unknown origin:', event.origin);
+            return;
+          }
+
+          console.log('Processing message from popup:', event.data);
+          const authData = event.data;
+          
+          // Verify successful authentication
+          if (authData && authData.success && authData.token) {
+            console.log('OAuth authentication successful via popup:', authData);
+            hasReceivedMessage = true;
+            
+            // Remove message listener
+            window.removeEventListener('message', messageListener);
+            
+            // Close popup
+            if (popup && !popup.closed) {
+              popup.close();
+            }
+            
+            // Process the auth data
+            handleOAuthSuccess(authData);
+            
+          } else {
+            console.error('OAuth authentication failed or incomplete data:', authData);
+            alert('Login failed. Please try again.');
+            
+            // Close popup and reset state
+            if (popup && !popup.closed) {
+              popup.close();
+            }
+            resetOAuthButtons();
+            hideOAuthStatus();
+            window.removeEventListener('message', messageListener);
+          }
+        };
+
+        // Add message listener
+        window.addEventListener('message', messageListener);
+
+        // Handle popup blocked or closed manually
+        const checkClosed = setInterval(function() {
+          if (popup.closed) {
+            clearInterval(checkClosed);
+            console.log('OAuth popup was closed, hasReceivedMessage:', hasReceivedMessage);
+            
+            if (!hasReceivedMessage) {
+              console.log('Popup closed - checking for auth data in localStorage');
+              
+              // The backend stores auth data in localStorage and shows "Authentication Successful"
+              // Check if we now have auth data
+              setTimeout(() => {
+                const token = localStorage.getItem('token');
+                const authToken = localStorage.getItem('auth_token');
+                const userInfo = localStorage.getItem('user_info');
+                
+                                 if (token || authToken || userInfo) {
+                   console.log('✅ Firefox Debug - Auth data found after popup closed! OAuth was successful');
+                   console.log('🔥 Firefox Debug - Found data:', {
+                     hasToken: !!token,
+                     hasAuthToken: !!authToken, 
+                     hasUserInfo: !!userInfo
+                   });
+                   
+                   // Process the auth data
+                   if (authToken && !token) {
+                     localStorage.setItem('token', authToken);
+                     localStorage.removeItem('auth_token');
+                   }
+                   
+                   if (userInfo) {
+                     try {
+                       const user = JSON.parse(userInfo);
+                       console.log('🔥 Firefox Debug - Parsed user info:', { 
+                         username: user.username, 
+                         role: user.role,
+                         hasEmail: !!user.email 
+                       });
+                       if (user.username) localStorage.setItem('username', user.username);
+                       if (user.role) localStorage.setItem('role', user.role);
+                       if (user.user_id) localStorage.setItem('userId', user.user_id);
+                       if (user.email) localStorage.setItem('email', user.email);
+                       if (user.user_type) localStorage.setItem('userType', user.user_type);
+                     } catch (e) {
+                       console.error('🔥 Firefox Debug - Error parsing user info:', e);
+                     }
+                   }
+                   
+                   console.log('🔥 Firefox Debug - Redirecting to index.html...');
+                   window.location.href = 'index.html';
+                 } else {
+                   console.log('🔥 Firefox Debug - No auth data found - OAuth may have failed or been cancelled');
+                   
+                                       // Firefox fallback: try checking with longer delay
+                    if (isFirefox) {
+                      console.log('🔥 Firefox Debug - Trying extended delay for auth data...');
+                      setTimeout(() => {
+                        const retryToken = localStorage.getItem('token');
+                        const retryAuthToken = localStorage.getItem('auth_token');
+                        const retryUserInfo = localStorage.getItem('user_info');
+                        
+                        if (retryToken || retryAuthToken || retryUserInfo) {
+                          console.log('✅ Firefox Debug - Found auth data on retry!');
+                          window.location.href = 'index.html';
+                        } else {
+                          console.log('🔥 Firefox Debug - Still no auth data found');
+                          console.log('🔥 Firefox Debug - This is likely due to Firefox\'s stricter security policies');
+                          alert('Firefox has stricter security policies that may block OAuth popups.\n\nPlease try "Try Google Redirect Login" below instead.');
+                        }
+                      }, 3000); // 3 second delay for Firefox
+                    } else {
+                      alert('OAuth login was not completed. Please try again.');
+                    }
+                 }
+              }, 1000);
+            }
+            
+            // Clean up
+            window.removeEventListener('message', messageListener);
+            resetOAuthButtons();
+            hideOAuthStatus();
+          }
+        }, 1000);
+
+        // Set a timeout
+        setTimeout(() => {
+          if (popup && !popup.closed) {
+            console.warn(`OAuth popup timeout for ${provider}`);
+            popup.close();
+            resetOAuthButtons();
+            hideOAuthStatus();
+            window.removeEventListener('message', messageListener);
+            alert('OAuth login timed out. Please try the redirect method instead.');
+          }
+        }, 120000); // 2 minutes timeout
+      }
+
+      // Reset all OAuth button states
+      function resetOAuthButtons() {
+        document.querySelectorAll('.oauth-btn').forEach(button => {
+          button.classList.remove('loading');
+          button.disabled = false;
+        });
+      }
+
+
+
+      // Handle successful OAuth login response (Both Redirect and Popup)
+      function handleOAuthSuccess(authData) {
+        console.log('Handling OAuth success:', authData);
+        
+        try {
+          // Hide OAuth status indicator (for popup mode)
+          hideOAuthStatus();
+          
+          // Store auth token
+          localStorage.setItem("token", authData.token);
+          
+          // Store user information
+          localStorage.setItem("username", authData.username || "Guest");
+          localStorage.setItem("role", authData.role || "agent");
+          localStorage.setItem("userId", authData.user_id || "");
+          
+          // Store additional OAuth-specific info
+          if (authData.email) localStorage.setItem("email", authData.email);
+          if (authData.user_type) localStorage.setItem("userType", authData.user_type);
+          if (authData.login_type) localStorage.setItem("loginType", authData.login_type);
+          if (authData.expires_in) localStorage.setItem("tokenExpiresIn", authData.expires_in);
+          
+          // Also store in format expected by backend callback (for consistency)
+          localStorage.setItem("user_info", JSON.stringify({
+            user_id: authData.user_id,
+            username: authData.username,
+            email: authData.email,
+            role: authData.role,
+            user_type: authData.user_type,
+            login_type: authData.login_type
+          }));
+          
+          // Clear OAuth state
+          localStorage.removeItem('oauth_provider');
+          localStorage.removeItem('oauth_login_time');
+          
+          // Reset OAuth buttons
+          resetOAuthButtons();
+          
+          // Show success message
+          console.log("OAuth login successful! Redirecting to index...");
+          
+          // Optional: Show welcome message for new users
+          if (authData.login_type === 'new_user') {
+            console.log('Welcome new user!');
+          }
+          
+          // Brief delay to ensure all data is stored
+          setTimeout(() => {
+            window.location.href = "index.html";
+          }, 100);
+          
+        } catch (error) {
+          console.error("Error handling OAuth success:", error);
+          hideOAuthStatus();
+          resetOAuthButtons();
+          alert("Login successful but there was an error storing user data. Please try logging in again.");
+        }
+      }
+
+
+
+      function isTokenExpired(token) {
+        try {
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          console.log("Token payload:", payload);
+          const expired = Date.now() > payload.exp * 1000;
+          console.log("Is token expired?", expired);
+          return expired;
+        } catch (error) {
+          console.error("Error parsing token:", error);
+          return true;
+        }
+      }
+      
+      // Enhanced token validation with additional checks
+      function validateToken(token) {
+        if (!token) {
+          console.log("No token provided for validation");
+          return false;
+        }
+        
+        // Check token format (should have 3 parts separated by dots)
+        const tokenParts = token.split('.');
+        if (tokenParts.length !== 3) {
+          console.warn("Invalid token format");
+          return false;
+        }
+        
+        // Check if token is expired
+        if (isTokenExpired(token)) {
+          console.warn("Token is expired");
+          return false;
+        }
+        
+        return true;
+      }
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log('Login page loaded, checking existing authentication...');
+        
+        // Show Firefox-specific notice if using Firefox
+        if (navigator.userAgent.includes('Firefox')) {
+          document.getElementById('firefoxNotice').style.display = 'inline';
+          document.getElementById('firefoxText').style.display = 'inline';
+        }
+
+        // Check for OAuth success (after redirect from OAuth provider)
+        checkOAuthSuccess();
+        
+        // Set up periodic monitoring for auth data (in case backend stores it without redirecting)
+        setupAuthDataMonitor();
+        
+        // Also listen for localStorage changes (more immediate detection)
+        window.addEventListener('storage', function(e) {
+          if (e.key === 'token' || e.key === 'auth_token' || e.key === 'user_info') {
+            console.log('🔥 Storage change detected for auth data:', e.key);
+            if (e.newValue) {
+              console.log('✅ Auth data added to localStorage! Redirecting immediately...');
+              setTimeout(() => {
+                window.location.href = 'index.html';
+              }, 500); // Small delay to ensure all data is stored
+            }
+          }
+        });
+        
+        const token = localStorage.getItem("token");
+        console.log("Checking token on login page:", token ? "Token present" : "No token");
+
+        // Use AuthUtils for better token validation if available
+        let isValidToken = false;
+        if (typeof window.AuthUtils !== 'undefined') {
+          isValidToken = AuthUtils.initializeAuth();
+        } else {
+          isValidToken = validateToken(token);
+        }
+
+        if (isValidToken) {
+          console.log("Valid token found. Redirecting to index.html.");
+          window.location.href = "index.html";
+        } else {
+          console.warn("No valid token. Staying on login page.");
+          
+          // Clean up invalid tokens using AuthUtils if available
+          if (typeof window.AuthUtils !== 'undefined') {
+            AuthUtils.cleanupAuthState();
+          } else {
+            // Fallback cleanup
+            if (token) {
+              console.log("Removing invalid token from localStorage");
+              localStorage.removeItem("token");
+            }
+          }
+          
+          // Clear any old OAuth state that didn't complete
+          const oauthTime = localStorage.getItem('oauth_login_time');
+          if (oauthTime && (Date.now() - parseInt(oauthTime)) > 300000) { // 5 minutes
+            console.log('Clearing old OAuth state');
+            localStorage.removeItem('oauth_provider');
+            localStorage.removeItem('oauth_login_time');
+          }
+          resetOAuthButtons();
+        }
+      });
+
+      // Check for OAuth success on page load (after redirect)
+      function checkOAuthSuccess() {
+        console.log('Checking for OAuth success after redirect...');
+        
+        // Check if we have auth data stored by the OAuth callback
+        const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+        const userInfo = localStorage.getItem('user_info');
+        
+        if (token && userInfo) {
+          console.log('OAuth authentication successful! Auth data found in localStorage.');
+          const user = JSON.parse(userInfo);
+          
+          // Migrate auth_token to token if needed
+          if (localStorage.getItem('auth_token') && !localStorage.getItem('token')) {
+            localStorage.setItem('token', localStorage.getItem('auth_token'));
+            localStorage.removeItem('auth_token');
+          }
+          
+          // Store user data in the expected format for the app
+          localStorage.setItem('username', user.username || 'Guest');
+          localStorage.setItem('role', user.role || 'agent');
+          localStorage.setItem('userId', user.user_id || '');
+          if (user.email) localStorage.setItem('email', user.email);
+          
+          // Clear OAuth state
+          localStorage.removeItem('oauth_provider');
+          localStorage.removeItem('oauth_login_time');
+          
+          // Show success message briefly before redirect
+          console.log('Redirecting to index page...');
+          
+          // Optional: Show welcome message for new users
+          if (user.login_type === 'new_user') {
+            console.log('Welcome new user!');
+          }
+          
+          // Redirect to main application page
+          window.location.href = 'index.html';
+          return true;
+        }
+        
+        // Check URL parameters as fallback
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlToken = urlParams.get('token');
+        const urlSuccess = urlParams.get('success');
+        
+        if (urlSuccess === 'true' && urlToken) {
+          console.log('OAuth success found in URL parameters');
+          const authData = {
+            success: true,
+            token: urlToken,
+            username: urlParams.get('username') || 'guest',
+            email: urlParams.get('email') || '',
+            role: urlParams.get('role') || 'agent',
+            user_id: urlParams.get('user_id') || '',
+            user_type: urlParams.get('user_type') || 'agent',
+            login_type: urlParams.get('login_type') || 'existing_user'
+          };
+          
+          handleOAuthSuccess(authData);
+          return true;
+        }
+        
+        return false;
+      }
+
+      // Monitor localStorage for auth data and auto-redirect
+      function setupAuthDataMonitor() {
+        console.log('Setting up auth data monitor...');
+        
+        let monitorCount = 0;
+        const maxChecks = 30; // Check for 30 seconds max
+        
+        const authMonitor = setInterval(() => {
+          monitorCount++;
+          
+          // Check for auth data in localStorage
+          const token = localStorage.getItem('token');
+          const authToken = localStorage.getItem('auth_token');
+          const userInfo = localStorage.getItem('user_info');
+          
+          if (token || authToken || userInfo) {
+            console.log('✅ Auth data detected by monitor! Redirecting to index.html...');
+            console.log('Token found:', token ? 'Yes' : 'No');
+            console.log('Auth Token found:', authToken ? 'Yes' : 'No');
+            console.log('User Info found:', userInfo ? 'Yes' : 'No');
+            
+            clearInterval(authMonitor);
+            
+            // Ensure we have the token in the right place
+            if (authToken && !token) {
+              localStorage.setItem('token', authToken);
+              localStorage.removeItem('auth_token');
+            }
+            
+            // Redirect to index.html
+            window.location.href = 'index.html';
+            return;
+          }
+          
+          // Stop monitoring after max checks
+          if (monitorCount >= maxChecks) {
+            console.log('Auth monitor timeout - no auth data detected');
+            clearInterval(authMonitor);
+          }
+        }, 1000); // Check every second
+      }
+
+
+
+      // Show OAuth status indicator
+      function showOAuthStatus() {
+        const statusElement = document.getElementById('oauthStatus');
+        if (statusElement) {
+          statusElement.style.display = 'block';
+        }
+      }
+
+      // Hide OAuth status indicator
+      function hideOAuthStatus() {
+        const statusElement = document.getElementById('oauthStatus');
+        if (statusElement) {
+          statusElement.style.display = 'none';
+        }
+      }
+
+      // Fallback: Check if authentication was successful via other means
+      window.checkForAuthTokenInStorage = function checkForAuthTokenInStorage() {
+        console.log('Checking for successful authentication via fallback methods...');
+        
+        // Check if the user is now authenticated (token exists and is valid)
+        const token = localStorage.getItem("token");
+        if (token && !isTokenExpired(token)) {
+          console.log('Found valid token in storage - OAuth was successful');
+          hideOAuthStatus();
+          resetOAuthButtons();
+          window.location.href = "index.html";
+          return;
+        }
+        
+        // Check URL parameters (in case backend used URL redirect instead of postMessage)
+        const urlParams = new URLSearchParams(window.location.search);
+        const token_param = urlParams.get('token');
+        const success_param = urlParams.get('success');
+        
+        if (success_param === 'true' && token_param) {
+          console.log('Found OAuth success in URL parameters');
+          const authData = {
+            success: true,
+            token: token_param,
+            username: urlParams.get('username') || 'guest',
+            email: urlParams.get('email') || '',
+            role: urlParams.get('role') || 'agent',
+            user_id: urlParams.get('user_id') || '',
+            user_type: urlParams.get('user_type') || 'agent',
+            login_type: urlParams.get('login_type') || 'existing_user'
+          };
+          
+          handleOAuthSuccess(authData);
+          return;
+        }
+        
+        // If no success indicators found, the OAuth likely failed
+        console.log('No authentication success detected - OAuth may have failed or been cancelled');
+        
+        // Show debugging info
+        console.log('Current URL:', window.location.href);
+        console.log('Local storage token:', localStorage.getItem("token"));
+        console.log('URL parameters:', window.location.search);
+        
+        alert('OAuth login was not completed. Please try again or use the traditional login form.\n\nIf you completed OAuth successfully but weren\'t redirected, check the browser console for debugging information.');
+      }
+
+      // Debug function to test OAuth endpoint in a new tab (not popup)
+      window.testOAuthEndpoint = function(provider = 'google') {
+        console.log(`Testing OAuth endpoint for ${provider} in new tab...`);
+        const testUrl = `${Endpoint}/api/v1/auth/${provider}/login`;
+        console.log('Opening URL:', testUrl);
+        
+        // Open in new tab instead of popup to see what actually happens
+        const testTab = window.open(testUrl, '_blank');
+        
+        if (!testTab) {
+          console.error('Test tab was blocked - please allow popups');
+          alert('Tab was blocked. Please allow popups/tabs and try again.');
+        } else {
+          console.log('Test tab opened. Check what happens in the new tab and report back.');
+          alert(`Test tab opened to:\n${testUrl}\n\nPlease check what happens in the new tab and report back what you see.`);
+        }
+      }
+
+
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault(); // Prevent form from submitting normally
+
+          // Get the input values
+          const username = document.getElementById("username").value;
+          const password = document.getElementById("password").value;
+
+          // Create the JSON payload
+          const payload = {
+            username: username,
+            password: password,
+          };
+
+          // Send the POST request to the regular user login API  
+          console.log("Attempting login to:", `${Endpoint}/api/v1/login`);
+          console.log("Login payload:", { username: payload.username, password: "[REDACTED]" });
+          
+          fetch(`${Endpoint}/api/v1/login`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify(payload),
+          })
+            .then(async (response) => {
+              console.log("Login response status:", response.status);
+              console.log("Login response headers:", response.headers.get('content-type'));
+              
+              // Get the response text first to see what we're dealing with
+              const responseText = await response.text();
+              console.log("Login response body:", responseText);
+              
+              if (response.ok) {
+                // Try to parse as JSON
+                try {
+                  return JSON.parse(responseText);
+                } catch (jsonError) {
+                  console.error("Response is not valid JSON:", jsonError);
+                  console.log("Raw response:", responseText);
+                  throw new Error("Server returned invalid response format");
+                }
+              } else if (response.status === 401) {
+                throw new Error("Invalid credentials");
+              } else if (response.status === 404) {
+                throw new Error("Login endpoint not found. Please contact administrator.");
+              } else {
+                // Try to extract error message from response
+                let errorMessage = "An error occurred while logging in";
+                try {
+                  const errorData = JSON.parse(responseText);
+                  if (errorData.message) {
+                    errorMessage = errorData.message;
+                  } else if (errorData.error) {
+                    errorMessage = errorData.error;
+                  }
+                } catch (e) {
+                  // If response is not JSON, use the text directly if it's short
+                  if (responseText && responseText.length < 200) {
+                    errorMessage = responseText;
+                  }
+                }
+                throw new Error(errorMessage);
+              }
+            })
+            .then((data) => {
+              console.log("Login successful:", data);
+              
+              // Store the token and user information
+              localStorage.setItem("token", data.token);
+              
+              // Handle different response formats (OAuth vs dependent users)
+              if (data.user) {
+                localStorage.setItem("username", data.user.username || data.user.user);
+              localStorage.setItem("role", data.user.role);
+                localStorage.setItem("userId", data.user.id || data.user.user_id);
+                
+                // Store additional info if available
+                if (data.user.agent) localStorage.setItem("agentname", data.user.agent);
+                if (data.user.email) localStorage.setItem("email", data.user.email);
+                if (data.user.profile) localStorage.setItem("userProfile", JSON.stringify(data.user.profile));
+                
+                // Store agent assistance fee configuration
+                if (data.user.enable_assistance_fee !== undefined) {
+                  localStorage.setItem("enableAssistanceFee", data.user.enable_assistance_fee);
+                }
+                if (data.user.default_assistance_fee !== undefined) {
+                  localStorage.setItem("defaultAssistanceFee", data.user.default_assistance_fee);
+                }
+              }
+              
+              // Clear OAuth state
+              localStorage.removeItem('oauth_provider');
+              localStorage.removeItem('oauth_login_time');
+              
+              // Redirect to index.html
+              console.log("Redirecting to index page...");
+              window.location.href = "index.html";
+            })
+            .catch((error) => {
+              console.error("Login error:", error);
+              
+              // Show user-friendly error messages
+              let errorMessage = "Login failed. Please try again.";
+              
+              if (error.message.includes("Invalid credentials")) {
+                errorMessage = "Invalid username or password. Please check your credentials and try again.";
+              } else if (error.message.includes("network") || error.message.includes("fetch")) {
+                errorMessage = "Network error. Please check your connection and try again.";
+              } else if (error.message) {
+                errorMessage = error.message;
+              }
+              
+              alert(errorMessage);
+            });
+        });
+    </script>
+  </body>
+</html>

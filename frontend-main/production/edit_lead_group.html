@@ -1,0 +1,1976 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Edit Lead Group</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
+    <link href="../build/css/custom.css" rel="stylesheet" />
+    <style>
+      .modal-xl {
+        max-width: 90% !important;
+      }
+
+      /* Lead Group specific styling */
+      .lead-group-header {
+        background: #2a3f54;
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+      }
+
+      .lead-option {
+        border: 2px solid #e3e6f0;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        background: #f8f9fc;
+      }
+
+      .lead-option.active {
+        border-color: #667eea;
+        background: #fff;
+      }
+
+      .lead-option-header {
+        background: #2a3f54;
+        color: white;
+        padding: 15px;
+        border-radius: 8px 8px 0 0;
+        cursor: pointer;
+      }
+
+      .lead-option-content {
+        padding: 20px;
+      }
+
+      .service-section {
+        border: 1px solid #e3e6f0;
+        border-radius: 8px;
+        margin-bottom: 15px;
+      }
+
+      .service-section .card-header {
+        background: #f8f9fc;
+        border-bottom: 1px solid #e3e6f0;
+        font-weight: 600;
+      }
+
+      .cost-input {
+        background-color: #fff3cd;
+        border-color: #ffeaa7;
+      }
+
+      .pricing-summary {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+      }
+
+      .total-cost {
+        font-size: 1.1em;
+        font-weight: bold;
+        color: #28a745;
+      }
+
+      .group-summary {
+        background: #e8f4fd;
+        border: 1px solid #bee5eb;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 20px;
+      }
+
+      /* Make specific headings black */
+      .form-section h4,
+      .card-header h5 {
+        color: #000000 !important;
+      }
+    </style>
+  </head>
+
+  <body class="nav-md">
+    <div class="container mt-5">
+      <!-- Lead Group Header -->
+      <div class="lead-group-header">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h2><i class="fa fa-edit mr-3"></i>Edit Lead Group</h2>
+            <p class="mb-0">Update travel options for your client</p>
+          </div>
+          <div class="col-md-4 text-right">
+            <button
+              type="button"
+              class="btn btn-light"
+              onclick="window.location.href='leads.html'"
+            >
+              <i class="fa fa-arrow-left mr-2"></i>Back to Leads
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="x_panel">
+        <div class="x_content">
+          <form id="editLeadGroupForm" class="form-label-left input_mask">
+            <!-- Group Information Section -->
+            <div class="row form-section">
+              <div class="col-md-12">
+                <h4><i class="fa fa-info-circle"></i> Group Information</h4>
+                <hr />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6 col-sm-6 form-group">
+                <label for="groupName">Group Name *</label>
+                <input
+                  type="text"
+                  id="groupName"
+                  class="form-control"
+                  placeholder="e.g., Bangkok Adventure Options"
+                  required
+                />
+              </div>
+              <div class="col-md-6 col-sm-6 form-group">
+                <label for="expiryDays">Expiry Days *</label>
+                <input
+                  type="number"
+                  id="expiryDays"
+                  class="form-control"
+                  min="1"
+                  max="30"
+                  value="3"
+                  required
+                />
+              </div>
+              <div class="col-md-12 form-group">
+                <label for="groupDescription">Description</label>
+                <textarea
+                  id="groupDescription"
+                  class="form-control"
+                  placeholder="Brief description of the lead group..."
+                  rows="2"
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Client Information Section -->
+            <div class="row form-section">
+              <div class="col-md-12">
+                <h4><i class="fa fa-user"></i> Client Information</h4>
+                <hr />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-4 col-sm-4 form-group">
+                <label for="clientName">Client Name *</label>
+                <input
+                  type="text"
+                  id="clientName"
+                  class="form-control"
+                  placeholder="Enter client name"
+                  required
+                />
+              </div>
+              <div class="col-md-4 col-sm-4 form-group">
+                <label for="clientEmail">Client Email *</label>
+                <input
+                  type="email"
+                  id="clientEmail"
+                  class="form-control"
+                  placeholder="client@example.com"
+                  required
+                />
+              </div>
+              <div class="col-md-4 col-sm-4 form-group">
+                <label for="clientPhone">Client Phone *</label>
+                <input
+                  type="tel"
+                  id="clientPhone"
+                  class="form-control"
+                  placeholder="Enter phone number"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Trip Details Section -->
+            <div class="row form-section">
+              <div class="col-md-12">
+                <h4><i class="fa fa-calendar"></i> Trip Details</h4>
+                <hr />
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-3 col-sm-3 form-group">
+                <label for="bookingDate">Booking Date *</label>
+                <input
+                  type="date"
+                  id="bookingDate"
+                  class="form-control"
+                  readonly
+                  required
+                />
+              </div>
+              <div class="col-md-3 col-sm-3 form-group">
+                <label for="startDate">Trip Start Date *</label>
+                <input
+                  type="date"
+                  id="startDate"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="col-md-3 col-sm-3 form-group">
+                <label for="numberOfAdults">Adults *</label>
+                <input
+                  type="number"
+                  id="numberOfAdults"
+                  class="form-control"
+                  min="1"
+                  value="2"
+                  required
+                />
+              </div>
+              <div class="col-md-3 col-sm-3 form-group">
+                <label for="numberOfKids">Children</label>
+                <input
+                  type="number"
+                  id="numberOfKids"
+                  class="form-control"
+                  min="0"
+                  value="0"
+                />
+              </div>
+            </div>
+
+            <!-- Notes Section -->
+            <div class="row">
+              <div class="col-md-6 col-sm-6 form-group">
+                <label for="internalNotes">Internal Notes</label>
+                <textarea
+                  id="internalNotes"
+                  class="form-control"
+                  placeholder="Notes for internal use..."
+                  rows="3"
+                ></textarea>
+              </div>
+              <div class="col-md-6 col-sm-6 form-group">
+                <label for="clientNotes">Client Notes</label>
+                <textarea
+                  id="clientNotes"
+                  class="form-control"
+                  placeholder="Notes visible to client..."
+                  rows="3"
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Lead Options Section -->
+            <div class="row form-section">
+              <div class="col-md-12">
+                <h4><i class="fa fa-list"></i> Lead Options</h4>
+                <p class="text-muted">
+                  Update travel options for your client to choose from
+                </p>
+                <hr />
+              </div>
+            </div>
+
+            <!-- Lead Options Container -->
+            <div id="leadOptionsContainer">
+              <!-- Lead options will be added dynamically -->
+            </div>
+
+            <!-- Add Lead Option Button -->
+            <div class="text-center mb-4">
+              <button
+                type="button"
+                id="addLeadOptionBtn"
+                class="btn btn-primary btn-lg"
+              >
+                <i class="fa fa-plus mr-2"></i>Add Lead Option
+              </button>
+              <p class="text-muted mt-2">You can add up to 5 lead options</p>
+            </div>
+
+            <!-- Group Summary -->
+            <div class="group-summary" id="groupSummary" style="display: none">
+              <h4><i class="fa fa-chart-bar mr-2"></i>Group Summary</h4>
+              <div class="row">
+                <div class="col-md-3">
+                  <label>Total Options:</label>
+                  <div class="total-cost" id="totalOptions">0</div>
+                </div>
+                <div class="col-md-3">
+                  <label>Price Range:</label>
+                  <div class="total-cost" id="priceRange">$0 - $0</div>
+                </div>
+                <div class="col-md-3">
+                  <label>Avg Markup:</label>
+                  <div class="total-cost text-info" id="avgMarkup">0%</div>
+                </div>
+                <div class="col-md-3">
+                  <button
+                    type="button"
+                    class="btn btn-info btn-sm"
+                    id="previewGroupBtn"
+                  >
+                    <i class="fa fa-eye mr-2"></i>Preview Group
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Save and Cancel Buttons -->
+            <div class="mt-4 text-center">
+              <button
+                id="submitLeadGroup"
+                type="submit"
+                class="btn btn-primary btn-lg"
+              >
+                <i class="fa fa-save mr-2"></i>Update Lead Group
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary btn-lg ml-3"
+                onclick="window.location.href='leads.html'"
+              >
+                <i class="fa fa-times mr-2"></i>Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Service Modals -->
+
+    <!-- Flight Modal -->
+    <div
+      class="modal fade"
+      id="flightModal"
+      tabindex="-1"
+      aria-labelledby="flightModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title font-weight-bold" id="flightModalLabel">
+              Add Flight
+            </h5>
+            <button
+              type="button"
+              class="close text-white"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="flightForm">
+              <div class="form-row">
+                <!-- Flight -->
+                <div class="form-group col-md-4">
+                  <label for="flight">Flight</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="flight"
+                    placeholder="Flight"
+                    required
+                  />
+                </div>
+                <!-- Number -->
+                <div class="form-group col-md-4">
+                  <label for="number">Number</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="number"
+                    placeholder="Number"
+                    required
+                  />
+                </div>
+                <!-- Flight In/Out -->
+                <div class="form-group col-md-4">
+                  <label for="flightInOut">Flight In/Out</label>
+                  <select id="flightInOut" class="form-control" required>
+                    <option value="" disabled selected>Select</option>
+                    <option value="Flight In">Flight In</option>
+                    <option value="Flight Out">Flight Out</option>
+                  </select>
+                </div>
+                <!-- Route -->
+                <div class="form-group col-md-4">
+                  <label for="flightRoute">Route</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="flightRoute"
+                    placeholder="Route"
+                    required
+                  />
+                </div>
+                <!-- Date -->
+                <div class="form-group col-md-4">
+                  <label for="flightDate">Date of Travel</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="flightDate"
+                    required
+                  />
+                </div>
+                <!-- Departure Time -->
+                <div class="form-group col-md-4">
+                  <label for="departureTime">Departure Time</label>
+                  <input
+                    type="time"
+                    class="form-control"
+                    id="departureTime"
+                    required
+                  />
+                </div>
+                <!-- Arrival Time -->
+                <div class="form-group col-md-4">
+                  <label for="arrivalTime">Arrival Time</label>
+                  <input
+                    type="time"
+                    class="form-control"
+                    id="arrivalTime"
+                    required
+                  />
+                </div>
+                <!-- Issued By -->
+                <div class="form-group col-md-4">
+                  <label for="issuedBy">Issued By</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="issuedBy"
+                    placeholder="Issued By"
+                  />
+                </div>
+                <!-- Cost -->
+                <div class="form-group col-md-4">
+                  <label for="flightCost">Cost (THB)</label>
+                  <input
+                    type="number"
+                    class="form-control cost-input"
+                    id="flightCost"
+                    placeholder="Enter cost (optional)"
+                    min="0"
+                    step="0.01"
+                    value="0"
+                  />
+                  <small class="text-muted"
+                    >Flight booking not supported - can be 0</small
+                  >
+                </div>
+                <!-- Remarks -->
+                <div class="form-group col-md-12">
+                  <label for="flightRemarks">Remarks</label>
+                  <textarea
+                    class="form-control"
+                    id="flightRemarks"
+                    rows="3"
+                    placeholder="Enter remarks"
+                  ></textarea>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+            <button type="button" class="btn btn-primary" id="saveFlight">
+              Save Flight
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transfer Modal -->
+    <div
+      class="modal fade"
+      id="transferModal"
+      tabindex="-1"
+      aria-labelledby="transferModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header bg-info text-white">
+            <h5 class="modal-title font-weight-bold" id="transferModalLabel">
+              Add Transfer
+            </h5>
+            <button
+              type="button"
+              class="close text-white"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="transferForm">
+              <div class="form-row">
+                <!-- City -->
+                <div class="form-group col-md-4">
+                  <label for="transferCity">City *</label>
+                  <select
+                    class="form-control city-dropdown-transfer"
+                    id="transferCity"
+                    required
+                  >
+                    <option value="" disabled selected>Select City</option>
+                    <!-- Cities will be populated dynamically -->
+                  </select>
+                </div>
+                <!-- Date -->
+                <div class="form-group col-md-4">
+                  <label for="transferDate">Date *</label>
+                  <input
+                    type="date"
+                    class="form-control transfer-date"
+                    id="transferDate"
+                    required
+                  />
+                </div>
+                <!-- Transfer Dropdown -->
+                <div class="form-group col-md-4">
+                  <label for="transferType">Transfer *</label>
+                  <select
+                    id="transferType"
+                    class="form-control transfer-dropdown"
+                    required
+                  >
+                    <option value="" disabled selected>Select Transfer</option>
+                  </select>
+                </div>
+                <!-- From -->
+                <div class="form-group col-md-4">
+                  <label for="transferFrom">From</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="transferFrom"
+                    placeholder="Enter origin"
+                    required
+                  />
+                </div>
+                <!-- To -->
+                <div class="form-group col-md-4">
+                  <label for="transferTo">To</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="transferTo"
+                    placeholder="Enter destination"
+                    required
+                  />
+                </div>
+                <!-- Flight -->
+                <div class="form-group col-md-4">
+                  <label for="transferFlight">Flight</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="transferFlight"
+                    placeholder="Flight details"
+                  />
+                </div>
+                <!-- Flight Time -->
+                <div class="form-group col-md-4">
+                  <label for="flightTime">Flight Time</label>
+                  <input type="time" class="form-control" id="flightTime" />
+                </div>
+                <!-- ToT -->
+                <div class="form-group col-md-4">
+                  <label for="transferToT">ToT *</label>
+                  <select class="form-control" id="transferToT" required>
+                    <option value="" disabled selected>Select ToT</option>
+                    <option value="PVT">PVT</option>
+                    <option value="SIC">SIC</option>
+                  </select>
+                </div>
+                <!-- Pickup Time -->
+                <div class="form-group col-md-4">
+                  <label for="transferPickupTime">Pickup Time</label>
+                  <input
+                    type="time"
+                    class="form-control"
+                    id="transferPickupTime"
+                  />
+                </div>
+                <!-- Backend Price Section -->
+                <div class="col-md-6 col-sm-6 form-group">
+                  <label for="backendTransferPrice">Backend Price</label>
+                  <div class="d-flex align-items-center">
+                    <input
+                      type="text"
+                      id="backendTransferPrice"
+                      class="form-control"
+                      style="font-size: 1.2rem; max-width: 150px"
+                      readonly
+                      placeholder="0.00"
+                    />
+                    <div class="ml-2">
+                      <button
+                        type="button"
+                        id="getTransferPriceBtn"
+                        class="btn btn-info btn-sm"
+                      >
+                        <i class="fa fa-download"></i> Get Price
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <!-- Remarks -->
+                <div class="form-group col-md-12">
+                  <label for="transferRemarks">Remarks</label>
+                  <textarea
+                    class="form-control"
+                    id="transferRemarks"
+                    rows="2"
+                    placeholder="Additional remarks"
+                  ></textarea>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="button" class="btn btn-info" id="saveTransfer">
+              Save Transfer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hotel Modal -->
+    <div
+      class="modal fade"
+      id="hotelModal"
+      tabindex="-1"
+      aria-labelledby="hotelModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header bg-secondary text-white">
+            <h5 class="modal-title font-weight-bold" id="hotelModalLabel">
+              Add Hotel Booking
+            </h5>
+            <button
+              type="button"
+              class="close text-white"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="hotelBookingForm">
+              <div class="container-fluid">
+                <div class="form-row g-3">
+                  <!-- Check-in Date -->
+                  <div class="form-group col-md-3">
+                    <label for="checkInDate">Check-In *</label>
+                    <input
+                      type="date"
+                      class="form-control"
+                      id="checkInDate"
+                      required
+                    />
+                  </div>
+                  <!-- Check-out Date -->
+                  <div class="form-group col-md-3">
+                    <label for="checkOutDate">Check-Out *</label>
+                    <input
+                      type="date"
+                      class="form-control"
+                      id="checkOutDate"
+                      required
+                    />
+                  </div>
+                  <!-- City Dropdown -->
+                  <div class="form-group col-md-3">
+                    <label for="hotelCity">City *</label>
+                    <select
+                      id="hotelCity"
+                      class="form-control city-dropdown-hotel"
+                      required
+                    >
+                      <option disabled selected>Select City</option>
+                    </select>
+                  </div>
+                  <!-- Hotel Dropdown -->
+                  <div class="form-group col-md-3">
+                    <label for="hotelType">Hotel *</label>
+                    <select
+                      id="hotelType"
+                      class="form-control hotel-dropdown"
+                      required
+                    >
+                      <option value="">Select Hotel</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-row align-items-end">
+                  <!-- Number of Nights -->
+                  <div class="form-group col-md-2">
+                    <label for="numberOfNights">Nights</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="numberOfNights"
+                      readonly
+                    />
+                  </div>
+                  <!-- Single/Double Rooms -->
+                  <div class="form-group col-md-2">
+                    <label for="singleRooms">Single</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="singleRooms"
+                      value="0"
+                      min="0"
+                    />
+                  </div>
+                  <div class="form-group col-md-2">
+                    <label for="doubleRooms">Double</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="doubleRooms"
+                      value="1"
+                      min="0"
+                    />
+                  </div>
+                  <!-- Early Check-In -->
+                  <div class="form-group col-md-3 d-flex align-items-center">
+                    <div class="form-check">
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        id="earlyCheckIn"
+                      />
+                      <label class="form-check-label" for="earlyCheckIn"
+                        >Early Check-In</label
+                      >
+                    </div>
+                  </div>
+                  <!-- Late Check-Out -->
+                  <div class="form-group col-md-3 d-flex align-items-center">
+                    <div class="form-check">
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        id="lateCheckOut"
+                      />
+                      <label class="form-check-label" for="lateCheckOut"
+                        >Late Check-Out</label
+                      >
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Room Types Wrapper -->
+                <div id="roomTypesWrapper"></div>
+
+                <!-- Add Room Type Button -->
+                <button
+                  type="button"
+                  class="btn btn-success mb-3"
+                  id="addRoomTypeBtn"
+                >
+                  <i class="fa fa-plus"></i> Add Room Type
+                </button>
+
+                <!-- Promotion Dropdown -->
+                <div class="form-group col-md-4">
+                  <input type="hidden" id="couponCode" name="couponCode" />
+                  <label for="promotion">Promotion</label>
+                  <select
+                    id="promotion"
+                    class="form-control promotion-dropdown"
+                  >
+                    <option value="">Select Promotion</option>
+                    <!-- Populate options dynamically -->
+                  </select>
+                </div>
+
+                <!-- Backend Price Section -->
+                <div class="col-md-6 col-sm-6 form-group">
+                  <label for="backendHotelPrice">Backend Price</label>
+                  <div class="d-flex align-items-center">
+                    <input
+                      type="text"
+                      id="backendHotelPrice"
+                      class="form-control"
+                      style="font-size: 1.2rem; max-width: 150px"
+                      readonly
+                      placeholder="0.00"
+                    />
+                    <div class="ml-2">
+                      <button
+                        type="button"
+                        id="getHotelPriceBtn"
+                        class="btn btn-info btn-sm"
+                      >
+                        <i class="fa fa-download"></i> Get Price
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Notes Section -->
+                <div class="form-group col-md-12">
+                  <label for="hotelNotes">Notes</label>
+                  <textarea
+                    class="form-control"
+                    id="hotelNotes"
+                    rows="3"
+                    placeholder="Enter any additional notes"
+                  ></textarea>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="saveHotelBooking"
+            >
+              Save Hotel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Excursion Modal -->
+    <div
+      class="modal fade"
+      id="excursionModal"
+      tabindex="-1"
+      aria-labelledby="excursionModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header bg-warning text-white">
+            <h5 class="modal-title font-weight-bold" id="excursionModalLabel">
+              Add Excursion
+            </h5>
+            <button
+              type="button"
+              class="close text-white"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="excursionForm">
+              <div class="form-row">
+                <!-- City Dropdown -->
+                <div class="form-group col-md-4">
+                  <label for="excursionCity">City *</label>
+                  <select
+                    id="excursionCity"
+                    class="form-control city-dropdown-excursion"
+                    required
+                  >
+                    <option value="" disabled selected>Select City</option>
+                    <!-- Populate with city options dynamically -->
+                  </select>
+                </div>
+                <!-- Date -->
+                <div class="form-group col-md-4">
+                  <label for="excursionDate">Date *</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="excursionDate"
+                    required
+                  />
+                </div>
+                <!-- Excursion Dropdown -->
+                <div class="form-group col-md-4">
+                  <label for="excursionName">Excursion *</label>
+                  <select
+                    id="excursionName"
+                    class="form-control excursion-dropdown"
+                    required
+                  >
+                    <option value="" disabled selected>Select Excursion</option>
+                    <!-- Populate with excursions based on selected city dynamically -->
+                  </select>
+                </div>
+                <!-- Hotel -->
+                <div class="form-group col-md-4">
+                  <label for="excursionHotel">Hotel *</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="excursionHotel"
+                    placeholder="Enter hotel name"
+                    required
+                  />
+                </div>
+                <!-- Pickup Time -->
+                <div class="form-group col-md-4">
+                  <label for="excursionPickupTime">Pickup Time</label>
+                  <input
+                    type="time"
+                    class="form-control"
+                    id="excursionPickupTime"
+                  />
+                </div>
+                <!-- Type of Excursion -->
+                <div class="form-group col-md-4">
+                  <label for="typeOfExcursion">Type of Excursion *</label>
+                  <select class="form-control" id="typeOfExcursion" required>
+                    <option value="" disabled selected>Select Type</option>
+                    <option value="PVT">PVT</option>
+                    <option value="SIC">SIC</option>
+                  </select>
+                </div>
+                <!-- Backend Price Section -->
+                <div class="col-md-6 col-sm-6 form-group">
+                  <label for="backendExcursionPrice">Backend Price</label>
+                  <div class="d-flex align-items-center">
+                    <input
+                      type="text"
+                      id="backendExcursionPrice"
+                      class="form-control"
+                      style="font-size: 1.2rem; max-width: 150px"
+                      readonly
+                      placeholder="0.00"
+                    />
+                    <div class="ml-2">
+                      <button
+                        type="button"
+                        id="getExcursionPriceBtn"
+                        class="btn btn-info btn-sm"
+                      >
+                        <i class="fa fa-download"></i> Get Price
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <!-- Remarks -->
+                <div class="form-group col-md-12">
+                  <label for="excursionRemarks">Remarks</label>
+                  <textarea
+                    class="form-control"
+                    id="excursionRemarks"
+                    rows="2"
+                    placeholder="Additional remarks"
+                  ></textarea>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="button" class="btn btn-warning" id="saveExcursion">
+              Save Excursion
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tour Modal -->
+    <div
+      class="modal fade"
+      id="tourModal"
+      tabindex="-1"
+      aria-labelledby="tourModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title font-weight-bold" id="tourModalLabel">
+              Add Tour
+            </h5>
+            <button
+              type="button"
+              class="close text-white"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="tourForm">
+              <div class="form-row">
+                <!-- Start City -->
+                <div class="form-group col-md-4">
+                  <label for="tourCity">Start City *</label>
+                  <select
+                    class="form-control city-dropdown-tour"
+                    id="tourCity"
+                    required
+                  >
+                    <option value="">Select City</option>
+                  </select>
+                </div>
+                <!-- Tour Dropdown -->
+                <div class="form-group col-md-4">
+                  <label for="tourName">Tour *</label>
+                  <select
+                    id="tourName"
+                    class="form-control tour-dropdown"
+                    required
+                  >
+                    <option value="" disabled selected>Select Tour</option>
+                    <!-- Populate dynamically -->
+                  </select>
+                </div>
+                <!-- Route -->
+                <div class="form-group col-md-4">
+                  <label for="tourRoute">Route</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="tourRoute"
+                    readonly
+                  />
+                </div>
+                <!-- Start Date -->
+                <div class="form-group col-md-4">
+                  <label for="tourStartDate">Start Date</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="tourStartDate"
+                    required
+                  />
+                </div>
+                <!-- End Date -->
+                <div class="form-group col-md-4">
+                  <label for="tourEndDate">End Date</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="tourEndDate"
+                    readonly
+                  />
+                </div>
+                <!-- ToT Dropdown -->
+                <div class="form-group col-md-4">
+                  <label for="tourToT">ToT *</label>
+                  <select id="tourToT" class="form-control" required>
+                    <option value="" disabled selected>Select Type</option>
+                    <option value="PVT">PVT</option>
+                    <option value="SIC">SIC</option>
+                  </select>
+                </div>
+                <!-- Room Type Selection -->
+                <div class="form-group col-md-12">
+                  <label class="font-weight">Room Type</label>
+                  <div class="row">
+                    <!-- Single Room -->
+                    <div class="col-md-4 col-sm-6">
+                      <div
+                        class="room-type-box d-flex align-items-center p-2 border rounded"
+                      >
+                        <input
+                          type="checkbox"
+                          id="tourSingleRoom"
+                          class="mr-2 room-checkbox"
+                        />
+                        <label for="tourSingleRoom" class="flex-grow-1 mb-0"
+                          >Single Room</label
+                        >
+                        <input
+                          type="number"
+                          class="form-control room-count"
+                          id="tourSingleRoomCount"
+                          placeholder="0"
+                          disabled
+                        />
+                      </div>
+                    </div>
+                    <!-- Double Room -->
+                    <div class="col-md-4 col-sm-6">
+                      <div
+                        class="room-type-box d-flex align-items-center p-2 border rounded"
+                      >
+                        <input
+                          type="checkbox"
+                          id="tourDoubleRoom"
+                          class="mr-2 room-checkbox"
+                        />
+                        <label for="tourDoubleRoom" class="flex-grow-1 mb-0"
+                          >Double Room</label
+                        >
+                        <input
+                          type="number"
+                          class="form-control room-count"
+                          id="tourDoubleRoomCount"
+                          placeholder="0"
+                          disabled
+                        />
+                      </div>
+                    </div>
+                    <!-- Triple Room -->
+                    <div class="col-md-4 col-sm-6">
+                      <div
+                        class="room-type-box d-flex align-items-center p-2 border rounded"
+                      >
+                        <input
+                          type="checkbox"
+                          id="tourTripleRoom"
+                          class="mr-2 room-checkbox"
+                        />
+                        <label for="tourTripleRoom" class="flex-grow-1 mb-0"
+                          >Triple Room</label
+                        >
+                        <input
+                          type="number"
+                          class="form-control room-count"
+                          id="tourTripleRoomCount"
+                          placeholder="0"
+                          disabled
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Backend Price Section -->
+                <div class="col-md-6 col-sm-6 form-group">
+                  <label for="backendTourPrice">Backend Price</label>
+                  <div class="d-flex align-items-center">
+                    <input
+                      type="text"
+                      id="backendTourPrice"
+                      class="form-control"
+                      style="font-size: 1.2rem; max-width: 150px"
+                      readonly
+                      placeholder="0.00"
+                    />
+                    <div class="ml-2">
+                      <button
+                        type="button"
+                        id="getTourPriceBtn"
+                        class="btn btn-info btn-sm"
+                      >
+                        <i class="fa fa-download"></i> Get Price
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <!-- Remarks -->
+                <div class="form-group col-md-12">
+                  <label for="tourRemarks">Remarks</label>
+                  <textarea
+                    class="form-control"
+                    id="tourRemarks"
+                    rows="2"
+                    placeholder="Additional remarks"
+                  ></textarea>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="button" class="btn btn-success" id="saveTour">
+              Save Tour
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Others Modal -->
+    <div
+      class="modal fade"
+      id="othersModal"
+      tabindex="-1"
+      aria-labelledby="othersModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-white">
+            <h5 class="modal-title font-weight-bold" id="othersModalLabel">
+              Add Other Service
+            </h5>
+            <button
+              type="button"
+              class="close text-white"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="othersForm">
+              <div class="form-row">
+                <!-- Description -->
+                <div class="form-group col-md-12">
+                  <label for="otherDescription">Description *</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="otherDescription"
+                    placeholder="Enter service description"
+                    required
+                  />
+                </div>
+                <!-- Date -->
+                <div class="form-group col-md-6">
+                  <label for="otherDate">Date</label>
+                  <input type="date" class="form-control" id="otherDate" />
+                </div>
+                <!-- Cost -->
+                <div class="form-group col-md-6">
+                  <label for="otherCost">Cost *</label>
+                  <input
+                    type="number"
+                    class="form-control cost-input"
+                    id="otherCost"
+                    placeholder="Enter cost"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="button" class="btn btn-dark" id="saveOther">
+              Save Service
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/leads/edit_lead_group.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const token = localStorage.getItem("token");
+        let selectedHotelData = {}; // Add this above all functions
+
+        if (!token) {
+          alert("You are not authorized. Please log in first.");
+          window.location.href = "login.html";
+          return;
+        }
+
+        // Function to check and update the Add Room Type button state
+        function updateAddRoomTypeButtonState() {
+          const addRoomTypeBtn = document.getElementById("addRoomTypeBtn");
+
+          if (!addRoomTypeBtn) return;
+
+          const singleRooms =
+            parseInt(document.getElementById("singleRooms").value, 10) || 0;
+          const doubleRooms =
+            parseInt(document.getElementById("doubleRooms").value, 10) || 0;
+          const totalAllowedRooms = singleRooms + doubleRooms;
+
+          const currentRoomTypes = document.querySelectorAll(
+            "#roomTypesWrapper .room-type-block"
+          ).length;
+
+          if (totalAllowedRooms === 0) {
+            addRoomTypeBtn.disabled = true;
+            addRoomTypeBtn.title =
+              "Please specify the number of single or double rooms first";
+            addRoomTypeBtn.innerHTML =
+              '<i class="fa fa-plus"></i> Add Room Type (Specify rooms first)';
+            addRoomTypeBtn.classList.remove("btn-success");
+            addRoomTypeBtn.classList.add("btn-secondary");
+          } else if (currentRoomTypes >= totalAllowedRooms) {
+            addRoomTypeBtn.disabled = true;
+            addRoomTypeBtn.title = `Maximum ${totalAllowedRooms} room type(s) allowed`;
+            addRoomTypeBtn.innerHTML = `<i class="fa fa-plus"></i> Add Room Type (${currentRoomTypes}/${totalAllowedRooms})`;
+            addRoomTypeBtn.classList.remove("btn-success");
+            addRoomTypeBtn.classList.add("btn-secondary");
+          } else {
+            addRoomTypeBtn.disabled = false;
+            addRoomTypeBtn.title = "Add a new room type";
+            addRoomTypeBtn.innerHTML = `<i class="fa fa-plus"></i> Add Room Type (${currentRoomTypes}/${totalAllowedRooms})`;
+            addRoomTypeBtn.classList.add("btn-success");
+            addRoomTypeBtn.classList.remove("btn-secondary");
+          }
+        }
+
+        // Create hidden maxPax input if it doesn't exist
+        if (!document.getElementById("maxPax")) {
+          const maxPaxInput = document.createElement("input");
+          maxPaxInput.type = "hidden";
+          maxPaxInput.id = "maxPax";
+          maxPaxInput.value = "10"; // Default max value, adjust as needed
+          document.body.appendChild(maxPaxInput);
+        }
+
+        // Set up a mutation observer to detect when new room types are added
+        const roomTypesWrapper = document.getElementById("roomTypesWrapper");
+        const observer = new MutationObserver(function (mutations) {
+          mutations.forEach(function (mutation) {
+            if (
+              mutation.type === "childList" &&
+              mutation.addedNodes.length > 0
+            ) {
+              // Add event listeners to new number inputs
+              mutation.addedNodes.forEach((node) => {
+                if (node.querySelectorAll) {
+                  const newInputs = node.querySelectorAll(
+                    'input[type="number"]'
+                  );
+                  newInputs.forEach((input) => {
+                    input.addEventListener(
+                      "input",
+                      updateAddRoomTypeButtonState
+                    );
+                  });
+                }
+              });
+
+              // Update button state after adding a new room
+              updateAddRoomTypeButtonState();
+            }
+          });
+        });
+
+        // Start observing
+        observer.observe(roomTypesWrapper, { childList: true });
+
+        let roomTypeIndex = 0;
+
+        // Function to create a new room type block
+        function createRoomTypeBlock(index) {
+          const singleRooms =
+            parseInt(document.getElementById("singleRooms").value) || 0;
+          const doubleRooms =
+            parseInt(document.getElementById("doubleRooms").value) || 0;
+          const totalAllowedRooms = singleRooms + doubleRooms;
+
+          // Check current number of room type blocks
+          const currentRoomTypeBlocks = document.querySelectorAll(
+            "#roomTypesWrapper .room-type-block"
+          ).length;
+
+          if (totalAllowedRooms === 0) {
+            alert("Please specify the number of single or double rooms first");
+            return;
+          }
+
+          if (currentRoomTypeBlocks >= totalAllowedRooms) {
+            alert(
+              `You can only add ${totalAllowedRooms} room type(s) based on your room configuration (${singleRooms} Single + ${doubleRooms} Double)`
+            );
+            return;
+          }
+
+          const wrapper = document.getElementById("roomTypesWrapper");
+          const div = document.createElement("div");
+          div.classList.add("room-type-block", "border", "p-3", "mb-2");
+
+          div.innerHTML = `
+            <div class="form-row">
+              <div class="form-group col-md-3">
+                <label for="roomType_${index}">Room Type *</label>
+                <select class="form-control roomtype-dropdown" id="roomType_${index}" required>
+                  <option value="">Select Room Type</option>
+                </select>
+              </div>
+              <div class="form-group col-md-2">
+                <label for="adults_${index}">Adults</label>
+                <input type="number" class="form-control adults" id="adults_${index}" min="0" value="0" />
+              </div>
+              <div class="form-group col-md-2">
+                <label for="children_${index}">Children</label>
+                <input type="number" class="form-control children" id="children_${index}" min="0" value="0" />
+              </div>
+              <div class="form-group col-md-4">
+                <label>Options</label><br />
+                ${[
+                  "Complimentary ABF",
+                  "Extra Adult Bed",
+                  "Extra Child Bed",
+                  "Sharing Bed",
+                ]
+                  .map((label) => {
+                    const id =
+                      label.toLowerCase().replace(/ /g, "_") + `_${index}`;
+                    const dataType = label.toLowerCase().replace(/ /g, "_");
+                    return `
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input option-checkbox" type="checkbox" data-type="${dataType}" id="${id}" />
+                      <label class="form-check-label" for="${id}">${label}</label>
+                    </div>`;
+                  })
+                  .join("")}
+              </div>
+              <div class="form-group col-md-1 text-right">
+                <button type="button" class="btn btn-danger btn-sm remove-room-row">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </div>
+            </div>`;
+
+          wrapper.appendChild(div);
+
+          // Remove block on delete
+          div
+            .querySelector(".remove-room-row")
+            .addEventListener("click", () => {
+              wrapper.removeChild(div);
+              updateAddRoomTypeButtonState();
+            });
+
+          // Populate dropdown with external helper function
+          const hotelDropdown = document.getElementById("hotelType");
+          const roomTypeDropdown = div.querySelector(".roomtype-dropdown");
+          populateRoomTypeAndPromotionDropdown(hotelDropdown, roomTypeDropdown);
+
+          // Listen to changes inside new block
+          div.querySelectorAll('input[type="number"]').forEach((input) => {
+            input.addEventListener("input", updateAddRoomTypeButtonState);
+          });
+
+          roomTypeDropdown.addEventListener("change", () => {
+            const selectedOption =
+              roomTypeDropdown.options[roomTypeDropdown.selectedIndex];
+            const meals = JSON.parse(
+              selectedOption.getAttribute("data-meals") || "{}"
+            );
+
+            const abfCheckbox = div.querySelector(
+              ".option-checkbox[data-type='complimentary_abf']"
+            );
+            const extraAdultCheckbox = div.querySelector(
+              ".option-checkbox[data-type='extra_adult_bed']"
+            );
+            const extraChildCheckbox = div.querySelector(
+              ".option-checkbox[data-type='extra_child_bed']"
+            );
+            const sharingBedCheckbox = div.querySelector(
+              ".option-checkbox[data-type='sharing_bed']"
+            );
+
+            const roomTypeName = selectedOption.textContent.toLowerCase();
+
+            // Complimentary ABF
+            if (abfCheckbox) {
+              const enable =
+                roomTypeName.includes("abf") ||
+                roomTypeName.includes("breakfast");
+              abfCheckbox.checked = enable;
+              abfCheckbox.disabled = !enable;
+            }
+
+            if (extraAdultCheckbox) {
+              extraAdultCheckbox.disabled = meals.extra_bed_adult <= 0;
+              extraAdultCheckbox.checked = false;
+            }
+
+            if (extraChildCheckbox) {
+              extraChildCheckbox.disabled = meals.extra_bed_child <= 0;
+              extraChildCheckbox.checked = false;
+            }
+
+            if (sharingBedCheckbox) {
+              sharingBedCheckbox.disabled = meals.extra_bed_shared <= 0;
+              sharingBedCheckbox.checked = false;
+            }
+          });
+
+          // Update button state after adding a room type
+          updateAddRoomTypeButtonState();
+        }
+
+        // Add Room Type Button
+        const addRoomTypeBtn = document.getElementById("addRoomTypeBtn");
+        if (addRoomTypeBtn) {
+          addRoomTypeBtn.addEventListener("click", function () {
+            roomTypeIndex++;
+            createRoomTypeBlock(roomTypeIndex);
+          });
+        }
+
+        // Listen to Single/Double Room Changes
+        ["singleRooms", "doubleRooms"].forEach((id) => {
+          const input = document.getElementById(id);
+          if (input) {
+            input.addEventListener("input", function () {
+              updateAddRoomTypeButtonState();
+            });
+          }
+        });
+
+        // Delay initial creation until hotelType is selected
+        const hotelDropdown = document.getElementById("hotelType");
+        if (hotelDropdown) {
+          hotelDropdown.addEventListener("change", function () {
+            // If no room type blocks exist yet, create the first one
+            if (document.querySelectorAll(".room-type-block").length === 0) {
+              createRoomTypeBlock(roomTypeIndex);
+            }
+          });
+        }
+
+        // Function to get user's profile country
+        async function getProfileCountry() {
+          try {
+            const response = await fetch(`${Endpoint}/api/v1/profile`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+            
+            if (response.ok) {
+              const profile = await response.json();
+              console.log("Profile data:", profile);
+              const countryCode = profile.country_code || 'TH';
+              console.log("Using country code:", countryCode);
+              return countryCode;
+            } else {
+              console.warn("Profile API failed with status:", response.status);
+            }
+          } catch (error) {
+            console.warn("Could not fetch profile country:", error);
+          }
+          return 'TH'; // Default fallback country
+        }
+
+        // Function to populate cities dropdown with country filtering
+        async function populateCitiesDropdown(selector) {
+          try {
+            // Get user's profile country
+            const countryCode = await getProfileCountry();
+            console.log(`Loading cities for country: ${countryCode} into selector: ${selector}`);
+            
+            // Try country-filtered API first
+            const response = await fetch(`${Endpoint}/api/v1/locations/countries/${countryCode}/cities`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              console.log("Country-filtered cities response for", selector, ":", data);
+              
+              if (!data || (!Array.isArray(data) && !data.cities)) {
+                console.warn("No cities data received, falling back to global cities");
+                return populateGlobalCities(selector);
+              }
+              
+              populateCityDropdowns(selector, data);
+            } else {
+              console.warn("Country-filtered cities API failed, falling back to global cities");
+              return populateGlobalCities(selector);
+            }
+          } catch (error) {
+            console.error("Error in populateCitiesDropdown:", error);
+            return populateGlobalCities(selector);
+          }
+        }
+
+        // Helper function to populate city dropdowns from data
+        function populateCityDropdowns(selector, data) {
+          // Handle different response formats
+          let cities;
+          if (Array.isArray(data)) {
+            cities = data;
+          } else if (data && Array.isArray(data.cities)) {
+            cities = data.cities.map(cityObj => {
+              if (typeof cityObj === 'string') {
+                return cityObj;
+              } else if (cityObj && cityObj.city) {
+                return cityObj.city;
+              }
+              return cityObj;
+            });
+          } else {
+            console.error("Unexpected cities data format:", data);
+            cities = [];
+          }
+
+          const cityDropdowns = document.querySelectorAll(selector);
+
+          cityDropdowns.forEach((dropdown) => {
+            dropdown.innerHTML = '<option value="">Select City</option>';
+            cities.forEach((city) => {
+              const option = document.createElement("option");
+              option.value = city;
+              option.textContent = city;
+              dropdown.appendChild(option);
+            });
+          });
+
+          console.log(`Successfully loaded ${cities.length} cities into ${cityDropdowns.length} dropdown(s) with selector: ${selector}`);
+        }
+
+        // Fallback function for global cities
+        async function populateGlobalCities(selector) {
+          try {
+            const response = await fetch(`${Endpoint}/api/v1/cities`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              console.log("Global cities fallback response for", selector, ":", data);
+              populateCityDropdowns(selector, data);
+            } else {
+              throw new Error("Global cities API also failed");
+            }
+          } catch (error) {
+            console.error("Error in populateGlobalCities:", error);
+            alert("Failed to load cities. Please try again later.");
+          }
+        }
+
+        function searchHotelByCity(cityDropdown, hotelDropdown) {
+          const selectedCity = cityDropdown.value;
+
+          if (!selectedCity) {
+            alert("Please select a city.");
+            return;
+          }
+
+          const checkInDate = document.getElementById("checkInDate").value;
+          const checkoutDate = document.getElementById("checkOutDate").value;
+
+          if (!checkInDate || !checkoutDate) {
+            alert("Please select both Check-In and Check-Out dates.");
+            return;
+          }
+
+          const url = new URL(`${Endpoint}/api/v1/hotels`);
+          url.searchParams.append("city", selectedCity);
+          url.searchParams.append("from_date", checkInDate);
+          url.searchParams.append("to_date", checkoutDate);
+          url.searchParams.append("keyword", "");
+
+          fetch(url, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Failed to fetch hotels.");
+              }
+              return response.json();
+            })
+            .then((hotels) => {
+              // Reset hotel dropdown
+              hotelDropdown.innerHTML =
+                '<option value="">Select Hotel</option>';
+
+              // Reset global map
+              Object.keys(selectedHotelData).forEach(
+                (key) => delete selectedHotelData[key]
+              );
+
+              hotels.forEach((hotel) => {
+                const option = document.createElement("option");
+                option.value = hotel.id;
+                option.textContent = hotel.name;
+
+                const fees = hotel.fees || {};
+                const hotelMeta = {
+                  early_checkin_fee: fees.early_checkin_fee || 0,
+                  late_checkout_fee: fees.late_checkout_fee || 0,
+                };
+
+                // Store hotel-level data for future use
+                selectedHotelData[hotel.id] = {
+                  meta: hotelMeta,
+                  room_types: hotel.room_types || [],
+                  promotions: hotel.promotions || [],
+                };
+
+                // Store in data attributes for inline access
+                option.setAttribute("data-hotel", JSON.stringify(hotelMeta));
+                option.setAttribute(
+                  "data-roomtypes",
+                  JSON.stringify(hotel.room_types || [])
+                );
+                option.setAttribute(
+                  "data-promotions",
+                  JSON.stringify(hotel.promotions || [])
+                );
+
+                hotelDropdown.appendChild(option);
+              });
+            })
+            .catch((error) => {
+              console.error("Error fetching hotels:", error);
+              alert("Failed to load hotels. Please try again later.");
+            });
+        }
+
+        function populateRoomTypeAndPromotionDropdown(
+          hotelDropdown,
+          targetRoomTypeDropdown
+        ) {
+          const selectedOption =
+            hotelDropdown.options[hotelDropdown.selectedIndex];
+          if (!selectedOption) return;
+
+          // Extract hotel-related data from data-* attributes or fallback
+          let hotelData = JSON.parse(
+            selectedOption.getAttribute("data-hotel") || "{}"
+          );
+          let roomTypes = JSON.parse(
+            selectedOption.getAttribute("data-roomtypes") || "[]"
+          );
+          let promotions = JSON.parse(
+            selectedOption.getAttribute("data-promotions") || "[]"
+          );
+
+          // Fallback to global cache
+          if (
+            (!roomTypes.length || !promotions.length) &&
+            selectedOption.value &&
+            selectedHotelData[selectedOption.value]
+          ) {
+            const fallback = selectedHotelData[selectedOption.value];
+            hotelData = fallback.meta || {};
+            roomTypes = fallback.room_types || [];
+            promotions = fallback.promotions || [];
+          }
+
+          // Handle early check-in and late check-out checkboxes globally if present
+          const earlyCheckInCheckbox = document.getElementById("earlyCheckIn");
+          const lateCheckOutCheckbox = document.getElementById("lateCheckOut");
+
+          if (earlyCheckInCheckbox) {
+            if (hotelData.early_checkin_fee > 0) {
+              earlyCheckInCheckbox.disabled = false;
+            } else {
+              earlyCheckInCheckbox.disabled = true;
+              earlyCheckInCheckbox.checked = false;
+            }
+          }
+
+          if (lateCheckOutCheckbox) {
+            if (hotelData.late_checkout_fee > 0) {
+              lateCheckOutCheckbox.disabled = false;
+            } else {
+              lateCheckOutCheckbox.disabled = true;
+              lateCheckOutCheckbox.checked = false;
+            }
+          }
+
+          // Populate room type dropdown
+          if (targetRoomTypeDropdown) {
+            targetRoomTypeDropdown.innerHTML =
+              '<option value="">Select Room Type</option>';
+            roomTypes.forEach((roomType) => {
+              const option = document.createElement("option");
+              option.value = roomType.id;
+              option.textContent = roomType.name;
+              option.setAttribute(
+                "data-meals",
+                JSON.stringify({
+                  food_adult_abf: roomType.food_adult_abf || 0,
+                  food_adult_lunch: roomType.food_adult_lunch || 0,
+                  food_adult_dinner: roomType.food_adult_dinner || 0,
+                  food_adult_all_inclusive:
+                    roomType.food_adult_all_inclusive || 0,
+                  extra_bed_adult: roomType.extra_bed_adult || 0,
+                  extra_bed_child: roomType.extra_bed_child || 0,
+                  extra_bed_shared: roomType.extra_bed_shared || 0,
+                })
+              );
+              targetRoomTypeDropdown.appendChild(option);
+            });
+          }
+
+          // Look for promotion dropdown
+          let promotionDropdown = hotelDropdown
+            .closest(".form-row")
+            ?.querySelector(".promotion-dropdown");
+          if (!promotionDropdown) {
+            promotionDropdown = document.getElementById("promotion");
+          }
+
+          if (promotionDropdown) {
+            promotionDropdown.innerHTML =
+              '<option value="">Select Promotion</option>';
+            promotions.forEach((promotion) => {
+              const option = document.createElement("option");
+              option.value = promotion.id;
+              option.textContent = promotion.name;
+              option.setAttribute(
+                "data-promotion-code",
+                promotion.promotion_code || ""
+              );
+              promotionDropdown.appendChild(option);
+            });
+          }
+        }
+
+        // Event listeners for hotel city change
+        document
+          .querySelectorAll(".city-dropdown-hotel")
+          .forEach((cityDropdown) => {
+            cityDropdown.addEventListener("change", function () {
+              const hotelDropdown = document.getElementById("hotelType");
+              if (hotelDropdown) {
+                searchHotelByCity(cityDropdown, hotelDropdown);
+              }
+            });
+          });
+
+        // Event listener for hotel type change
+        document
+          .getElementById("hotelType")
+          .addEventListener("change", function () {
+            const selectedHotel = this;
+            const roomTypeDropdown =
+              document.querySelector(".roomtype-dropdown");
+            populateRoomTypeAndPromotionDropdown(
+              selectedHotel,
+              roomTypeDropdown
+            );
+          });
+
+        // Function to update number of nights
+        function updateNumberOfNights() {
+          const checkInDateInput = document.getElementById("checkInDate");
+          const checkOutDateInput = document.getElementById("checkOutDate");
+          const numberOfNightsInput = document.getElementById("numberOfNights");
+
+          const checkInDate = new Date(checkInDateInput.value);
+          const checkOutDate = new Date(checkOutDateInput.value);
+
+          if (
+            !isNaN(checkInDate) &&
+            !isNaN(checkOutDate) &&
+            checkOutDate > checkInDate
+          ) {
+            const diffTime = Math.abs(checkOutDate - checkInDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            numberOfNightsInput.value = diffDays;
+          } else if (checkOutDateInput.value && checkInDateInput.value) {
+            alert("Check-Out date must be later than Check-In date.");
+            checkOutDateInput.value = "";
+            numberOfNightsInput.value = "";
+          }
+        }
+
+        // Event listeners for check-in and check-out date changes
+        document
+          .getElementById("checkInDate")
+          .addEventListener("change", function () {
+            const checkOutDateInput = document.getElementById("checkOutDate");
+            checkOutDateInput.min = this.value;
+
+            if (new Date(checkOutDateInput.value) < new Date(this.value)) {
+              checkOutDateInput.value = "";
+            }
+            updateNumberOfNights();
+          });
+
+        document
+          .getElementById("checkOutDate")
+          .addEventListener("change", updateNumberOfNights);
+
+        // Initial check
+        updateAddRoomTypeButtonState();
+      });
+    </script>
+  </body>
+</html>

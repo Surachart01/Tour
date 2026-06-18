@@ -1,0 +1,113 @@
+name: Deploy Frontend to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Update backend endpoint configuration
+        run: |
+          echo "🔧 Updating backend endpoint..."
+          sed -i 's|const Endpoint = ".*";|const Endpoint = "${{ secrets.BACKEND_API_URL }}";|g' production/js/config.js
+          echo "Backend endpoint set to: ${{ secrets.BACKEND_API_URL }}"
+          cat production/js/config.js
+      
+      - name: Create deployment package
+        run: |
+          echo "📦 Creating deployment package..."
+          # Create tarball with only necessary files
+          tar --exclude='*.md' \
+              --exclude='.git*' \
+              -czf frontend-deploy.tar.gz \
+              production/ \
+              build/ \
+              vendors/
+          ls -lh frontend-deploy.tar.gz
+      
+      - name: Setup SSH
+        run: |
+          echo "🔑 Setting up SSH..."
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+      
+      - name: Upload to server
+        run: |
+          echo "📤 Uploading to server..."
+          scp -i ~/.ssh/deploy_key \
+            frontend-deploy.tar.gz \
+            ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/tmp/
+      
+      - name: Deploy on server
+        run: |
+          echo "🚀 Deploying on server..."
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'ENDSSH'
+            set -e
+            
+            # Backup existing deployment (if deploy user has write access to /var/backups)
+            if [ -d "${{ secrets.DEPLOY_PATH }}" ]; then
+              echo "Creating backup..."
+              tar -czf /tmp/frontend-backup-$(date +%Y%m%d-%H%M%S).tar.gz \
+                -C $(dirname ${{ secrets.DEPLOY_PATH }}) $(basename ${{ secrets.DEPLOY_PATH }}) 2>/dev/null || true
+              # Try to move to /var/backups if possible
+              mv /tmp/frontend-backup-*.tar.gz /var/backups/ 2>/dev/null || \
+                echo "Backup saved to /tmp/ (no access to /var/backups/)"
+            fi
+            
+            # Extract new files directly (deploy user should own DEPLOY_PATH)
+            echo "Extracting files..."
+            tar -xzf /tmp/frontend-deploy.tar.gz -C ${{ secrets.DEPLOY_PATH }}
+            
+            # Set permissions (if deploy user owns the directory)
+            echo "Setting permissions..."
+            chmod -R 755 ${{ secrets.DEPLOY_PATH }}
+            
+            # Reload web server (requires passwordless sudo)
+            echo "Reloading web server..."
+            sudo systemctl reload nginx 2>/dev/null || \
+              sudo systemctl reload apache2 2>/dev/null || \
+              sudo systemctl reload httpd 2>/dev/null || \
+              echo "⚠️  Could not reload web server - please reload manually"
+            
+            # Cleanup
+            rm -f /tmp/frontend-deploy.tar.gz
+            
+            echo "✅ Deployment complete!"
+          ENDSSH
+      
+      - name: Verify deployment
+        run: |
+          echo "✅ Verifying deployment..."
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'ENDSSH'
+            # Check if files exist
+            if [ -f "${{ secrets.DEPLOY_PATH }}/production/login.html" ]; then
+              echo "✓ Files deployed successfully"
+            else
+              echo "✗ Deployment verification failed"
+              exit 1
+            fi
+            
+            # Test web server response
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/production/login.html 2>/dev/null || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✓ Web server responding correctly (HTTP 200)"
+            else
+              echo "⚠ Web server returned HTTP $HTTP_CODE"
+            fi
+          ENDSSH
+      
+      - name: Deployment summary
+        if: success()
+        run: |
+          echo "🎉 Deployment successful!"
+          echo "Access your application at: http://${{ secrets.VM_HOST }}/production/login.html"

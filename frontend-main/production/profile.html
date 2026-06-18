@@ -1,0 +1,3233 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Profile</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- Custom Theme Style -->
+    <link rel="stylesheet" href="../build/css/custom.min.css" />
+
+    <style>
+      /* Sidebar and navbar text size */
+      .nav_title span,
+      .profile_info span,
+      .profile_info h2,
+      .side-menu a,
+      .navbar-right a {
+        font-size: 1rem;
+      }
+
+      /* Removed constraining CSS for sidebar-menu to allow proper submenu expansion */
+
+      /* Sidebar scrolling - allow scroll when expanded, but not when collapsed */
+      .left_col.scroll-view {
+        overflow-y: auto;
+        max-height: 100vh;
+      }
+
+      /* When sidebar is collapsed, remove height constraints to allow submenu expansion */
+      body.nav-sm .left_col.scroll-view {
+        overflow-y: visible;
+        max-height: none;
+      }
+
+      /* Profile specific styles */
+      .profile-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 30px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .profile-header::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>')
+          repeat;
+        animation: float 20s ease-in-out infinite;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px) rotate(0deg);
+        }
+        50% {
+          transform: translateY(-20px) rotate(5deg);
+        }
+      }
+
+      .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        border: 5px solid rgba(255, 255, 255, 0.3);
+        object-fit: cover;
+        position: relative;
+        z-index: 2;
+      }
+
+      .completeness-bar {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        height: 20px;
+        overflow: hidden;
+        position: relative;
+        z-index: 2;
+      }
+
+      .completeness-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+        border-radius: 10px;
+        transition: width 0.5s ease-in-out;
+      }
+
+      .info-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border: 1px solid #f1f5f9;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .info-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      }
+
+      .info-card .card-header {
+        background: linear-gradient(45deg, #f8fafc, #e2e8f0);
+        border-bottom: 1px solid #e2e8f0;
+        padding: 20px;
+        border-radius: 12px 12px 0 0;
+      }
+
+      .info-card .card-body {
+        padding: 25px;
+      }
+
+      .form-group label {
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 8px;
+      }
+
+      .form-control {
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 12px 16px;
+        transition: all 0.3s ease;
+      }
+
+      .form-control:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+      }
+
+      .metric-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        border: 1px solid #e5e7eb;
+        transition: all 0.3s ease;
+      }
+
+      .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 10px 0 5px 0;
+      }
+
+      .metric-label {
+        color: #6b7280;
+        font-size: 0.9rem;
+      }
+
+      .subscription-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .subscription-starter {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .subscription-pro {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+
+      .subscription-enterprise {
+        background: #f3e8ff;
+        color: #7c3aed;
+      }
+
+      .alert-custom {
+        border-radius: 10px;
+        border: none;
+        padding: 16px 20px;
+      }
+
+      .alert-warning {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #92400e;
+      }
+
+      .alert-info {
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        color: #1e40af;
+      }
+
+      .progress-step {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding: 15px;
+        border-radius: 8px;
+        background: #f8fafc;
+        transition: all 0.3s ease;
+      }
+
+      .progress-step.completed {
+        background: #ecfdf5;
+        border-left: 4px solid #10b981;
+      }
+
+      .progress-step.current {
+        background: #eff6ff;
+        border-left: 4px solid #3b82f6;
+      }
+
+      .step-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        font-weight: bold;
+      }
+
+      .step-icon.completed {
+        background: #10b981;
+        color: white;
+      }
+
+      .step-icon.current {
+        background: #3b82f6;
+        color: white;
+      }
+
+      .step-icon.pending {
+        background: #e5e7eb;
+        color: #6b7280;
+      }
+
+      .usage-bar {
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 8px 0;
+      }
+
+      .usage-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+        border-radius: 4px;
+        transition: width 0.5s ease;
+      }
+
+      .usage-fill.warning {
+        background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+      }
+
+      .usage-fill.danger {
+        background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+      }
+
+      .tab-content {
+        border: none;
+        padding: 0;
+      }
+
+      .nav-tabs {
+        border-bottom: 2px solid #e5e7eb;
+        margin-bottom: 30px;
+      }
+
+      .nav-tabs .nav-link {
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: #6b7280;
+        font-weight: 600;
+        padding: 15px 20px;
+        transition: all 0.3s ease;
+      }
+
+      .nav-tabs .nav-link:hover {
+        border-color: transparent;
+        color: #3b82f6;
+      }
+
+      .nav-tabs .nav-link.active {
+        background: none;
+        border-color: #3b82f6;
+        color: #3b82f6;
+      }
+
+      .feature-list {
+        list-style: none;
+        padding: 0;
+      }
+
+      .feature-list li {
+        padding: 8px 0;
+        border-bottom: 1px solid #f1f5f9;
+      }
+
+      .feature-list li:last-child {
+        border-bottom: none;
+      }
+
+      .feature-enabled {
+        color: #10b981;
+      }
+
+      .feature-disabled {
+        color: #6b7280;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .fade-in-up {
+        animation: fadeInUp 0.6s ease-out;
+      }
+
+      /* New styles for tax country fields */
+      .tax-country-fields {
+        display: none; /* Hide by default */
+      }
+
+      .tax-country-fields[data-country="IN"] {
+        display: block; /* Show for India */
+      }
+
+      .tax-country-fields[data-country="US"] {
+        display: block; /* Show for US */
+      }
+
+      .tax-country-fields[data-country="AU"] {
+        display: block; /* Show for Australia */
+      }
+
+      .tax-country-fields[data-country="AE"] {
+        display: block; /* Show for UAE */
+      }
+
+      .tax-country-fields[data-country="EU"] {
+        display: block; /* Show for EU countries */
+      }
+
+      /* Payment method and subscription upgrade styles */
+      .payment-method-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+      }
+
+      .payment-method-card:hover {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transform: translateY(-1px);
+      }
+
+      .subscription-plan-card {
+        transition: all 0.3s ease;
+        height: 100%;
+      }
+
+      .subscription-plan-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .spinner-border {
+        width: 3rem;
+        height: 3rem;
+      }
+
+      .modal-body .py-5 {
+        padding: 3rem 1rem;
+      }
+
+      .badge-success {
+        background-color: #10b981;
+      }
+
+      .card.h-100 {
+        height: 100% !important;
+      }
+
+      /* Email Footer Styles */
+      .section-header {
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+      }
+
+      .section-header h6 {
+        color: #374151;
+        font-weight: 600;
+        margin: 0;
+      }
+
+      .footer-preview {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 15px;
+        background-color: #f8fafc;
+        min-height: 200px;
+        max-height: 400px;
+        overflow-y: auto;
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+        line-height: 1.4;
+      }
+
+      .footer-preview table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .footer-preview td {
+        padding: 5px;
+        vertical-align: top;
+      }
+
+      .footer-preview hr {
+        border: 0;
+        border-top: 1px solid #ccc;
+        margin: 10px 0;
+      }
+
+      .footer-preview .company-logo {
+        max-width: 200px;
+        height: auto;
+      }
+
+      .footer-preview .social-links {
+        margin-top: 10px;
+      }
+
+      .footer-preview .social-links a {
+        display: inline-block;
+        margin-right: 10px;
+        text-decoration: none;
+      }
+
+      .footer-preview .eco-message {
+        font-style: italic;
+        color: #16a085;
+        margin-top: 10px;
+        font-size: 11px;
+      }
+
+      .footer-preview .custom-message {
+        margin-top: 10px;
+        font-weight: 500;
+      }
+
+      #emailFooterTabNav {
+        display: none; /* Hidden by default, shown only for admin/superadmin */
+      }
+
+      .email-footer-loading {
+        text-align: center;
+        padding: 20px;
+        color: #6b7280;
+      }
+
+      .email-footer-error {
+        background-color: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #dc2626;
+        padding: 10px;
+        border-radius: 6px;
+        margin-bottom: 15px;
+      }
+
+      .email-footer-success {
+        background-color: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #166534;
+        padding: 10px;
+        border-radius: 6px;
+        margin-bottom: 15px;
+      }
+
+      /* Fix for select field display issues - comprehensive styling for all select elements */
+      #businessType,
+      #companyType,
+      #country,
+      #primaryCurrency,
+      #timezone,
+      #taxExemptStatus,
+      #bankAccountType,
+      #billingCountry,
+      #primaryServiceCountry,
+      #serviceCountries {
+        display: block !important;
+        width: 100% !important;
+        height: calc(1.5em + 0.75rem + 2px) !important;
+        padding: 0.375rem 0.75rem !important;
+        font-size: 1rem !important;
+        font-weight: 400 !important;
+        line-height: 1.5 !important;
+        color: #495057 !important;
+        background-color: #fff !important;
+        background-image: none !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 0.25rem !important;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+      }
+
+      #businessType:focus,
+      #companyType:focus,
+      #country:focus,
+      #primaryCurrency:focus,
+      #timezone:focus,
+      #taxExemptStatus:focus,
+      #bankAccountType:focus,
+      #billingCountry:focus,
+      #primaryServiceCountry:focus,
+      #serviceCountries:focus {
+        color: #495057 !important;
+        background-color: #fff !important;
+        border-color: #80bdff !important;
+        outline: 0 !important;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+      }
+
+      /* Ensure the form groups containing these select fields are visible */
+      #businessType + .form-group,
+      .form-group:has(#businessType),
+      #companyType + .form-group,
+      .form-group:has(#companyType),
+      #country + .form-group,
+      .form-group:has(#country),
+      #primaryCurrency + .form-group,
+      .form-group:has(#primaryCurrency),
+      #timezone + .form-group,
+      .form-group:has(#timezone),
+      #taxExemptStatus + .form-group,
+      .form-group:has(#taxExemptStatus),
+      #bankAccountType + .form-group,
+      .form-group:has(#bankAccountType),
+      #billingCountry + .form-group,
+      .form-group:has(#billingCountry),
+      #primaryServiceCountry + .form-group,
+      .form-group:has(#primaryServiceCountry),
+      #serviceCountries + .form-group,
+      .form-group:has(#serviceCountries) {
+        display: block !important;
+        margin-bottom: 1rem !important;
+      }
+
+      /* Ensure the labels for these select fields are visible */
+      label[for="businessType"],
+      label[for="companyType"],
+      label[for="country"],
+      label[for="primaryCurrency"],
+      label[for="timezone"],
+      label[for="taxExemptStatus"],
+      label[for="bankAccountType"],
+      label[for="billingCountry"],
+      label[for="primaryServiceCountry"],
+      label[for="serviceCountries"] {
+        display: inline-block !important;
+        margin-bottom: 0.5rem !important;
+        font-weight: 500 !important;
+        color: #212529 !important;
+      }
+
+      /* Additional styling for select elements to ensure proper dropdown arrow display */
+      #businessType,
+      #companyType,
+      #country,
+      #primaryCurrency,
+      #timezone,
+      #taxExemptStatus,
+      #bankAccountType,
+      #billingCountry,
+      #primaryServiceCountry {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
+        background-position: right 0.5rem center !important;
+        background-repeat: no-repeat !important;
+        background-size: 1.5em 1.5em !important;
+        padding-right: 2.5rem !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        appearance: none !important;
+      }
+
+      /* Special styling for multi-select (serviceCountries) - no dropdown arrow needed */
+      #serviceCountries {
+        height: auto !important;
+        min-height: calc(1.5em + 0.75rem + 2px) !important;
+        background-image: none !important;
+        padding-right: 0.75rem !important;
+      }
+
+      /* Hover states for better user experience */
+      #businessType:hover,
+      #companyType:hover,
+      #country:hover,
+      #primaryCurrency:hover,
+      #timezone:hover,
+      #taxExemptStatus:hover,
+      #bankAccountType:hover,
+      #billingCountry:hover,
+      #primaryServiceCountry:hover,
+      #serviceCountries:hover {
+        border-color: #adb5bd !important;
+      }
+
+      /* Disabled state styling */
+      #businessType:disabled,
+      #companyType:disabled,
+      #country:disabled,
+      #primaryCurrency:disabled,
+      #timezone:disabled,
+      #taxExemptStatus:disabled,
+      #bankAccountType:disabled,
+      #billingCountry:disabled,
+      #primaryServiceCountry:disabled,
+      #serviceCountries:disabled {
+        background-color: #e9ecef !important;
+        opacity: 1 !important;
+      }
+    </style>
+  </head>
+
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+        <div class="col-md-3 left_col menu_fixed">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border: 0">
+              <a
+                href="index.html"
+                class="site_title"
+                style="
+                  display: block;
+                  text-align: center;
+                  font-size: 2rem;
+                  font-weight: bold;
+                  color: #007bff;
+                  text-decoration: none;
+                "
+              >
+                <span style="font-size: 1.5rem">VeraThailandia!</span>
+              </a>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- menu profile quick info -->
+            <div class="profile clearfix">
+              <div class="profile_pic">
+                <img
+                  src="images/verathailandlogo.png"
+                  alt="..."
+                  class="img-circle profile_img"
+                />
+              </div>
+              <div class="profile_info">
+                <span>Welcome,</span>
+                <h2 id="profileName"></h2>
+              </div>
+            </div>
+            <!-- /menu profile quick info -->
+
+            <br />
+
+            <!-- sidebar menu -->
+            <div
+              id="sidebar-menu"
+              class="main_menu_side hidden-print main_menu"
+            >
+              <div class="menu_section">
+                <h3>General</h3>
+                <ul class="nav side-menu">
+                  <li>
+                    <a href="index.html"><i class="fa fa-home"></i> Home</a>
+                  </li>
+                  <li id="controlPanelMenu">
+                    <a>
+                      <i class="fa fa-edit"></i> Control-Panel
+                      <span class="fa fa-chevron-down"></span>
+                    </a>
+                    <ul class="nav child_menu">
+                      <li><a href="activities.html">Activities</a></li>
+                      <li><a href="agents.html">Agents</a></li>
+                      <li><a href="booking.html">Bookings</a></li>
+                      <li><a href="excursions.html">Excursions</a></li>
+                      <li><a href="hotels.html">Hotels</a></li>
+                      <li><a href="markup.html">Markups</a></li>
+                      <!-- <li><a href="operations.html">Operations</a></li> -->
+                      <li><a href="othercharges.html">Other Charges</a></li>
+                      <!-- <li><a href="stop_sale.html">Stop Sale</a></li> -->
+                      <li><a href="suppliers.html">Suppliers</a></li>
+                      <li><a href="tools.html">Tools</a></li>
+                      <li><a href="tours.html">Tours</a></li>
+                      <li><a href="transfers.html">Transfers</a></li>
+                      <li><a href="users.html">Users</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="trip.html"><i class="fa fa-book"></i> Quotation</a>
+                  </li>
+                  <li>
+                    <a href="payment.html"
+                      ><i class="fa fa-pencil-square-o"></i> Payment</a
+                    >
+                  </li>
+                  <!-- <li>
+                    <a href="tax_invoices.html"
+                      ><i class="fa fa-file-text-o"></i> Tax Invoices</a
+                    >
+                  </li> -->
+                  <li>
+                    <a href="itinerary.html"
+                      ><i class="fa fa-ticket"></i> Itinerary</a
+                    >
+                  </li>
+                  <li>
+                    <a href="analytics.html"
+                      ><i class="fa fa-bar-chart"></i> Analytics</a
+                    >
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- /sidebar menu -->
+
+            <!-- /menu footer buttons -->
+            <div class="sidebar-footer hidden-small">
+              <a data-toggle="tooltip" data-placement="top" title="Settings">
+                <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="FullScreen">
+                <span
+                  class="glyphicon glyphicon-fullscreen"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="Lock">
+                <span
+                  class="glyphicon glyphicon-eye-close"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a
+                data-toggle="tooltip"
+                data-placement="top"
+                title="Logout"
+                href="logout.html"
+              >
+                <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+              </a>
+            </div>
+            <!-- /menu footer buttons -->
+          </div>
+        </div>
+
+        <!-- top navigation -->
+        <div class="top_nav">
+          <div class="nav_menu">
+            <div class="nav toggle">
+              <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+            </div>
+            <nav class="nav navbar-nav">
+              <ul class="navbar-right">
+                <li class="nav-item dropdown open" style="padding-left: 15px">
+                  <a
+                    href="javascript:;"
+                    class="user-profile dropdown-toggle"
+                    aria-haspopup="true"
+                    id="navbarDropdown"
+                    data-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    <img
+                      id="navProfileImage"
+                      src="images/verathailandlogo.png"
+                      alt=""
+                    />
+                    <span id="navProfileName"></span>
+                  </a>
+                  <div
+                    class="dropdown-menu dropdown-usermenu pull-right"
+                    aria-labelledby="navbarDropdown"
+                  >
+                    <a class="dropdown-item" href="profile.html"> Profile</a>
+                    <a class="dropdown-item" href="logout.html"
+                      ><i class="fa fa-sign-out pull-right"></i> Log Out</a
+                    >
+                  </div>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+        <!-- /top navigation -->
+
+        <!-- Page content -->
+        <div class="right_col" role="main">
+          <div class="page-title">
+            <div class="title_left">
+              <h3>User Profile</h3>
+            </div>
+          </div>
+
+          <div class="clearfix"></div>
+
+          <!-- Profile Header -->
+          <div class="profile-header fade-in-up">
+            <div class="row">
+              <div class="col-md-3 text-center">
+                <img
+                  id="profileAvatar"
+                  src="images/verathailandlogo.png"
+                  alt="Profile Avatar"
+                  class="profile-avatar"
+                />
+                <div class="mt-3">
+                  <button
+                    class="btn btn-sm"
+                    style="
+                      background: rgba(255, 255, 255, 0.2);
+                      color: white;
+                      border: 1px solid rgba(255, 255, 255, 0.3);
+                    "
+                  >
+                    <i class="fa fa-camera"></i> Change Photo
+                  </button>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <h2
+                  id="profileDisplayName"
+                  style="margin-bottom: 10px; position: relative; z-index: 2"
+                >
+                  Loading...
+                </h2>
+                <p
+                  id="profileEmail"
+                  style="
+                    opacity: 0.9;
+                    margin-bottom: 15px;
+                    position: relative;
+                    z-index: 2;
+                  "
+                >
+                  Loading...
+                </p>
+                <div
+                  id="subscriptionBadge"
+                  class="subscription-badge subscription-starter"
+                  style="position: relative; z-index: 2"
+                >
+                  Loading...
+                </div>
+                <div class="mt-3" style="position: relative; z-index: 2">
+                  <small style="opacity: 0.8"
+                    >Member since
+                    <span id="memberSince">Loading...</span></small
+                  >
+                </div>
+              </div>
+              <!-- <div class="col-md-3">
+                <div style="position: relative; z-index: 2">
+                  <h5 style="margin-bottom: 10px">Profile Completeness</h5>
+                  <div class="completeness-bar">
+                    <div
+                      id="completenessProgress"
+                      class="completeness-fill"
+                      style="width: 0%"
+                    ></div>
+                  </div>
+                  <small id="completenessText">0% Complete</small>
+                </div>
+              </div> -->
+            </div>
+          </div>
+
+          <!-- Alerts Section -->
+          <div id="alertsContainer" class="mb-4">
+            <!-- Dynamic alerts will be inserted here -->
+          </div>
+
+          <!-- Navigation Tabs -->
+          <ul class="nav nav-tabs" id="profileTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <a
+                class="nav-link active"
+                id="overview-tab"
+                data-toggle="tab"
+                href="#overview"
+                role="tab"
+              >
+                <i class="fa fa-dashboard"></i> Overview
+              </a>
+            </li>
+            <li class="nav-item" role="presentation">
+              <a
+                class="nav-link"
+                id="basic-tab"
+                data-toggle="tab"
+                href="#basic"
+                role="tab"
+              >
+                <i class="fa fa-user"></i> Basic Info
+              </a>
+            </li>
+            <li class="nav-item" role="presentation">
+              <a
+                class="nav-link"
+                id="tax-info-tab"
+                data-toggle="tab"
+                href="#tax-info"
+                role="tab"
+              >
+                <i class="fa fa-file-text"></i> Tax Information
+              </a>
+            </li>
+            <li class="nav-item" role="presentation">
+              <a
+                class="nav-link"
+                id="bank-tab"
+                data-toggle="tab"
+                href="#bank"
+                role="tab"
+              >
+                <i class="fa fa-bank"></i> Bank Details
+              </a>
+            </li>
+            <li class="nav-item" role="presentation">
+              <a
+                class="nav-link"
+                id="billing-tab"
+                data-toggle="tab"
+                href="#billing"
+                role="tab"
+              >
+                <i class="fa fa-credit-card"></i> Billing
+              </a>
+            </li>
+            <li class="nav-item" role="presentation">
+              <a
+                class="nav-link"
+                id="subscription-tab"
+                data-toggle="tab"
+                href="#subscription"
+                role="tab"
+              >
+                <i class="fa fa-star"></i> Subscription
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                id="organization-tab"
+                data-toggle="tab"
+                href="#organization"
+                role="tab"
+                aria-controls="organization"
+                aria-selected="false"
+              >
+                <i class="fa fa-users"></i> Organization
+              </a>
+            </li>
+            <li class="nav-item" id="emailFooterTabNav">
+              <a
+                class="nav-link"
+                id="email-footer-tab"
+                data-toggle="tab"
+                href="#email-footer"
+                role="tab"
+                aria-controls="email-footer"
+                aria-selected="false"
+              >
+                <i class="fa fa-envelope"></i> Email Footer
+              </a>
+            </li>
+          </ul>
+
+          <!-- Tab Content -->
+          <div class="tab-content" id="profileTabContent">
+            <!-- Overview Tab -->
+            <div
+              class="tab-pane fade show active"
+              id="overview"
+              role="tabpanel"
+            >
+              <div class="row">
+                <!-- Usage Metrics -->
+                <div class="col-md-4 mb-4">
+                  <div class="metric-card">
+                    <i class="fa fa-book fa-2x" style="color: #3b82f6"></i>
+                    <div id="tripsCount" class="metric-value">0</div>
+                    <div class="metric-label">Trips This Month</div>
+                    <div class="usage-bar">
+                      <div
+                        id="tripsUsage"
+                        class="usage-fill"
+                        style="width: 0%"
+                      ></div>
+                    </div>
+                    <small id="tripsLimit" class="text-muted"
+                      >0 / 0 limit</small
+                    >
+                  </div>
+                </div>
+
+                <div class="col-md-4 mb-4">
+                  <div class="metric-card">
+                    <i class="fa fa-users fa-2x" style="color: #10b981"></i>
+                    <div id="usersCount" class="metric-value">0</div>
+                    <div class="metric-label">Active Users</div>
+                    <div class="usage-bar">
+                      <div
+                        id="usersUsage"
+                        class="usage-fill"
+                        style="width: 0%"
+                      ></div>
+                    </div>
+                    <small id="usersLimit" class="text-muted"
+                      >0 / 0 limit</small
+                    >
+                  </div>
+                </div>
+
+                <div class="col-md-4 mb-4">
+                  <div class="metric-card">
+                    <i class="fa fa-database fa-2x" style="color: #f59e0b"></i>
+                    <div id="storageCount" class="metric-value">0 MB</div>
+                    <div class="metric-label">Storage Used</div>
+                    <div class="usage-bar">
+                      <div
+                        id="storageUsage"
+                        class="usage-fill"
+                        style="width: 0%"
+                      ></div>
+                    </div>
+                    <small id="storageLimit" class="text-muted"
+                      >0 / 0 MB limit</small
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <!-- Detailed Usage Statistics -->
+              <div id="usageStatistics" class="mb-4">
+                <!-- Dynamic usage statistics will be displayed here -->
+              </div>
+
+              <!-- Usage Alerts -->
+              <div id="usageAlerts" class="mb-4">
+                <!-- Dynamic usage alerts will be displayed here -->
+              </div>
+
+              <!-- Profile Completion Steps -->
+              <div class="row">
+                <div class="col-md-8 mb-4">
+                  <div class="info-card">
+                    <div class="card-header">
+                      <h5 class="mb-0">
+                        <i class="fa fa-tasks"></i> Complete Your Profile
+                      </h5>
+                    </div>
+                    <div class="card-body">
+                      <div id="profileSteps">
+                        <!-- Dynamic steps will be inserted here -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-4 mb-4">
+                  <div class="info-card">
+                    <div class="card-header">
+                      <h5 class="mb-0">
+                        <i class="fa fa-star"></i> Current Plan Features
+                      </h5>
+                    </div>
+                    <div class="card-body">
+                      <ul id="featuresList" class="feature-list">
+                        <!-- Dynamic features will be inserted here -->
+                      </ul>
+                      <div class="mt-3">
+                        <button
+                          class="btn btn-primary btn-sm btn-block"
+                          onclick="scrollToUpgradePlans()"
+                        >
+                          <i class="fa fa-arrow-up"></i> View Upgrade Options
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Basic Info Tab -->
+            <div class="tab-pane fade" id="basic" role="tabpanel">
+              <div class="info-card">
+                <div class="card-header">
+                  <h5 class="mb-0">
+                    <i class="fa fa-user"></i> Basic Profile Information
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <form id="basicProfileForm">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="companyName">Company Name *</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="companyName"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="contactPersonName"
+                            >Contact Person Name *</label
+                          >
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="contactPersonName"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="companyEmail">Company Email *</label>
+                          <input
+                            type="email"
+                            class="form-control"
+                            id="companyEmail"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="companyPhone">Company Phone *</label>
+                          <input
+                            type="tel"
+                            class="form-control"
+                            id="companyPhone"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="companyWebsite">Company Website</label>
+                          <input
+                            type="url"
+                            class="form-control"
+                            id="companyWebsite"
+                            placeholder="https://"
+                          />
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="companyType">Company Type</label>
+                          <select class="form-control" id="companyType">
+                            <option value="">Select Company Type</option>
+                            <option value="DMC">DMC</option>
+                            <option value="Travel Agency">Travel Agency</option>
+                            <option value="Tour Operator">Tour Operator</option>
+                            <option value="Event Management">
+                              Event Management
+                            </option>
+                            <option value="Hospitality">Hospitality</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="businessType">Business Type *</label>
+                          <select
+                            class="form-control"
+                            id="businessType"
+                            required
+                          >
+                            <option value="">Select Business Type</option>
+                            <option value="Corporation">Corporation</option>
+                            <option value="LLC">LLC</option>
+                            <option value="Partnership">Partnership</option>
+                            <option value="Sole Proprietorship">
+                              Sole Proprietorship
+                            </option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="industryCode">Company Code</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="industryCode"
+                            placeholder="Company identification code"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label for="address">Address *</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="address"
+                        required
+                      />
+                    </div>
+                    <div class="row">
+                      <div class="col-md-4">
+                        <div class="form-group">
+                          <label for="city">City *</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="city"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="form-group">
+                          <label for="state">State/Province *</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="state"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="form-group">
+                          <label for="postalCode">Postal Code *</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="postalCode"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="country">Country *</label>
+                          <select class="form-control" id="country" required>
+                            <option value="">Select Country</option>
+                            <option value="TH">Thailand</option>
+                            <option value="US">United States</option>
+                            <option value="GB">United Kingdom</option>
+                            <option value="SG">Singapore</option>
+                            <option value="MY">Malaysia</option>
+                            <option value="AU">Australia</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="primaryCurrency"
+                            >Primary Currency *</label
+                          >
+                          <select
+                            class="form-control"
+                            id="primaryCurrency"
+                            required
+                          >
+                            <option value="">Select Currency</option>
+                            <option value="THB">THB - Thai Baht</option>
+                            <option value="USD">USD - US Dollar</option>
+                            <option value="EUR">EUR - Euro</option>
+                            <option value="GBP">GBP - British Pound</option>
+                            <option value="AUD">AUD - Australian Dollar</option>
+                            <option value="SGD">SGD - Singapore Dollar</option>
+                            <option value="MYR">MYR - Malaysian Ringgit</option>
+                            <option value="VND">VND - Vietnamese Dong</option>
+                            <option value="INR">INR - Indian Rupee</option>
+                            <option value="JPY">JPY - Japanese Yen</option>
+                            <option value="CNY">CNY - Chinese Yuan</option>
+                            <option value="KRW">KRW - South Korean Won</option>
+                            <option value="HKD">HKD - Hong Kong Dollar</option>
+                            <option value="CAD">CAD - Canadian Dollar</option>
+                            <option value="NZD">
+                              NZD - New Zealand Dollar
+                            </option>
+                            <option value="CHF">CHF - Swiss Franc</option>
+                          </select>
+                          <small class="text-muted"
+                            >All pricing will be displayed in this
+                            currency</small
+                          >
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="timezone">Timezone</label>
+                          <select class="form-control" id="timezone">
+                            <option value="America/New_York">
+                              Eastern Time (UTC-5)
+                            </option>
+                            <option value="America/Chicago">
+                              Central Time (UTC-6)
+                            </option>
+                            <option value="America/Denver">
+                              Mountain Time (UTC-7)
+                            </option>
+                            <option value="America/Los_Angeles">
+                              Pacific Time (UTC-8)
+                            </option>
+                            <option value="Europe/London">
+                              London (UTC+0)
+                            </option>
+                            <option value="Asia/Bangkok">
+                              Bangkok (UTC+7)
+                            </option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="userType">User Type</label>
+                          <div class="input-group">
+                            <input
+                              type="text"
+                              class="form-control"
+                              id="userType"
+                              readonly
+                            />
+                            <div class="input-group-append">
+                              <span class="input-group-text"
+                                ><i class="fa fa-lock"></i
+                              ></span>
+                            </div>
+                          </div>
+                          <small class="text-muted"
+                            >User type cannot be changed for security
+                            reasons</small
+                          >
+                        </div>
+                      </div>
+                    </div>
+                    <div class="text-right">
+                      <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-save"></i> Save Basic Information
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tax Information Tab -->
+            <div class="tab-pane fade" id="tax-info" role="tabpanel">
+              <div class="info-card">
+                <div class="card-header">
+                  <h5 class="mb-0">
+                    <i class="fa fa-file-text"></i> Tax Information
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <!-- Tax Information Notice -->
+                  <div class="alert alert-info mb-4">
+                    <i class="fa fa-info-circle"></i>
+                    <strong>Important:</strong> Please fill in the tax
+                    information fields that apply to your company based on the
+                    country where your business is registered. Different
+                    countries have different tax requirements and identification
+                    numbers. Only complete the fields that are relevant to your
+                    jurisdiction. <br /><br />
+                    <i class="fa fa-lightbulb-o text-warning"></i>
+                    <strong>Tip:</strong> If you're unsure which fields to
+                    complete, consult with your local tax advisor or accountant
+                    for guidance on your country's specific requirements.
+                  </div>
+
+                  <form id="taxInfoForm">
+                    <!-- Common tax fields for all countries -->
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="taxId">Tax ID</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="taxId"
+                            placeholder="General tax ID"
+                          />
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="vatNumber">VAT/GST Number</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="vatNumber"
+                            placeholder="VAT/GST registration number"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="businessRegNumber"
+                            >Business Registration Number</label
+                          >
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="businessRegNumber"
+                            placeholder="Business registration number"
+                          />
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="companyNumber">Company Number</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="companyNumber"
+                            placeholder="Company incorporation number"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Country-specific tax fields - India -->
+                    <div class="tax-country-fields" data-country="IN">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <div class="form-group">
+                            <label for="panNumber">PAN Number</label>
+                            <input
+                              type="text"
+                              class="form-control"
+                              id="panNumber"
+                              placeholder="PAN (India)"
+                            />
+                          </div>
+                        </div>
+                        <div class="col-md-6">
+                          <div class="form-group">
+                            <label for="gstin">GSTIN</label>
+                            <input
+                              type="text"
+                              class="form-control"
+                              id="gstin"
+                              placeholder="GST Identification Number (India)"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Country-specific tax fields - US -->
+                    <div class="tax-country-fields" data-country="US">
+                      <div class="row">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label for="ein"
+                              >EIN (Employer Identification Number)</label
+                            >
+                            <input
+                              type="text"
+                              class="form-control"
+                              id="ein"
+                              placeholder="Employer Identification Number (US)"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Country-specific tax fields - Australia -->
+                    <div class="tax-country-fields" data-country="AU">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <div class="form-group">
+                            <label for="abn">ABN</label>
+                            <input
+                              type="text"
+                              class="form-control"
+                              id="abn"
+                              placeholder="Australian Business Number"
+                            />
+                          </div>
+                        </div>
+                        <div class="col-md-6">
+                          <div class="form-group">
+                            <label for="acn">ACN</label>
+                            <input
+                              type="text"
+                              class="form-control"
+                              id="acn"
+                              placeholder="Australian Company Number"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Country-specific tax fields - UAE -->
+                    <div class="tax-country-fields" data-country="AE">
+                      <div class="row">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label for="trn">TRN</label>
+                            <input
+                              type="text"
+                              class="form-control"
+                              id="trn"
+                              placeholder="Tax Registration Number (UAE)"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Country-specific tax fields - EU Countries -->
+                    <div class="tax-country-fields" data-country="EU">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <div class="form-group">
+                            <label for="eoriNumber">EORI Number</label>
+                            <input
+                              type="text"
+                              class="form-control"
+                              id="eoriNumber"
+                              placeholder="Economic Operators Registration and Identification (EU)"
+                            />
+                          </div>
+                        </div>
+                        <div class="col-md-6">
+                          <div class="form-group">
+                            <label for="lei">LEI</label>
+                            <input
+                              type="text"
+                              class="form-control"
+                              id="lei"
+                              placeholder="Legal Entity Identifier (EU/Global)"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Other tax fields -->
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="duns">DUNS Number</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="duns"
+                            placeholder="Data Universal Numbering System"
+                          />
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="taxExemptStatus">Tax Exempt Status</label>
+                          <select class="form-control" id="taxExemptStatus">
+                            <option value="">Select Status</option>
+                            <option value="not_exempt">Not Exempt</option>
+                            <option value="fully_exempt">Fully Exempt</option>
+                            <option value="partially_exempt">
+                              Partially Exempt
+                            </option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="text-right">
+                      <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-save"></i> Save Tax Information
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bank Tab -->
+            <div class="tab-pane fade" id="bank" role="tabpanel">
+              <div class="info-card">
+                <div class="card-header">
+                  <h5 class="mb-0">
+                    <i class="fa fa-bank"></i> Bank Account Information
+                  </h5>
+                  <small class="text-muted"
+                    >Secure bank details for payment processing</small
+                  >
+                </div>
+                <div class="card-body">
+                  <form id="bankForm">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="bankName">Bank Name *</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="bankName"
+                            required
+                            placeholder="e.g., Bangkok Bank, Chase Bank"
+                          />
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="bankAccountName"
+                            >Account Holder Name *</label
+                          >
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="bankAccountName"
+                            required
+                            placeholder="Name as it appears on bank account"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label for="bankAddress">Bank Address</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="bankAddress"
+                        placeholder="Bank branch address"
+                      />
+                      <small class="form-text text-muted"
+                        >Full address of the bank branch</small
+                      >
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="bankAccountType">Account Type</label>
+                          <select class="form-control" id="bankAccountType">
+                            <option value="">Select Account Type</option>
+                            <option value="Checking">Checking Account</option>
+                            <option value="Savings">Savings Account</option>
+                            <option value="Business">Business Account</option>
+                            <option value="Current">Current Account</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="bankAccountNo">Account Number *</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="bankAccountNo"
+                            required
+                            placeholder="Bank account number"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="bankBranchCode"
+                            >Branch Code / Routing Number</label
+                          >
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="bankBranchCode"
+                            placeholder="Branch code, sort code, or routing number"
+                          />
+                          <small class="form-text text-muted"
+                            >Required for domestic transfers</small
+                          >
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="bankSWIFT">SWIFT/BIC Code</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="bankSWIFT"
+                            placeholder="e.g., BKKBTHBK"
+                          />
+                          <small class="form-text text-muted"
+                            >Required for international transfers</small
+                          >
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label for="bankIBAN"
+                        >IBAN (International Bank Account Number)</label
+                      >
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="bankIBAN"
+                        placeholder="e.g., GB29 NWBK 6016 1331 9268 19"
+                      />
+                      <small class="form-text text-muted"
+                        >Required for international transfers in Europe</small
+                      >
+                    </div>
+
+                    <div class="alert alert-info">
+                      <i class="fa fa-shield"></i>
+                      <strong>Security Notice:</strong> Your bank information is
+                      encrypted and securely stored. We use this information
+                      only for payment processing and will never share it with
+                      third parties.
+                    </div>
+
+                    <div class="text-right">
+                      <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-save"></i> Save Bank Information
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Billing Tab -->
+            <div class="tab-pane fade" id="billing" role="tabpanel">
+              <div class="info-card">
+                <div class="card-header">
+                  <h5 class="mb-0">
+                    <i class="fa fa-credit-card"></i> Billing Information
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <form id="billingForm">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="billingEmail">Billing Email *</label>
+                          <input
+                            type="email"
+                            class="form-control"
+                            id="billingEmail"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="billingName">Billing Name *</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="billingName"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="billingContact"
+                            >Billing Contact Person</label
+                          >
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="billingContact"
+                          />
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="billingAddress">Billing Address *</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="billingAddress"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-4">
+                        <div class="form-group">
+                          <label for="billingCity">City *</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="billingCity"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="form-group">
+                          <label for="billingState">State/Province</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="billingState"
+                          />
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="form-group">
+                          <label for="billingCountry">Country *</label>
+                          <select
+                            class="form-control"
+                            id="billingCountry"
+                            required
+                          >
+                            <option value="">Select Country</option>
+                            <option value="US">United States</option>
+                            <option value="TH">Thailand</option>
+                            <option value="GB">United Kingdom</option>
+                            <option value="DE">Germany</option>
+                            <option value="FR">France</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="billingPostalCode">Postal Code *</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="billingPostalCode"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <hr />
+
+                    <h6><i class="fa fa-credit-card"></i> Payment Methods</h6>
+                    <div id="paymentMethods" class="mb-4">
+                      <!-- Payment methods will be loaded here -->
+                      <div class="text-center py-4">
+                        <i class="fa fa-credit-card fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No payment methods added yet</p>
+                      </div>
+                    </div>
+
+                    <div class="row">
+                      <div class="col-md-6">
+                        <button
+                          type="button"
+                          class="btn btn-outline-primary btn-block mb-2"
+                          onclick="addPaymentMethod('card')"
+                        >
+                          <i class="fa fa-credit-card"></i> Add Credit/Debit
+                          Card
+                        </button>
+                      </div>
+                      <div class="col-md-6">
+                        <button
+                          type="button"
+                          class="btn btn-outline-success btn-block mb-2"
+                          onclick="addPaymentMethod('upi')"
+                        >
+                          <i class="fa fa-mobile"></i> Add UPI Payment
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="alert alert-info mt-3">
+                      <i class="fa fa-info-circle"></i>
+                      <strong>Secure Payment Processing</strong><br />
+                      All payment information is processed securely through
+                      industry-standard encryption. We never store your card
+                      details on our servers.
+                    </div>
+
+                    <div class="text-right">
+                      <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-save"></i> Save Billing Information
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Subscription Tab -->
+            <div class="tab-pane fade" id="subscription" role="tabpanel">
+              <div class="row">
+                <div class="col-md-8">
+                  <div class="info-card">
+                    <div class="card-header">
+                      <h5 class="mb-0">
+                        <i class="fa fa-star"></i> Subscription Details
+                      </h5>
+                    </div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <h6>Current Plan</h6>
+                          <p id="currentPlan" class="text-muted">Loading...</p>
+                        </div>
+                        <div class="col-md-6">
+                          <h6>Status</h6>
+                          <p id="subscriptionStatus" class="text-muted">
+                            Loading...
+                          </p>
+                        </div>
+                      </div>
+                      <div class="row">
+                        <div class="col-md-6">
+                          <h6>Next Billing Date</h6>
+                          <p id="nextBillingDate" class="text-muted">
+                            Loading...
+                          </p>
+                        </div>
+                        <div class="col-md-6">
+                          <h6>Billing Cycle</h6>
+                          <p id="billingCycle" class="text-muted">Loading...</p>
+                        </div>
+                      </div>
+
+                      <hr />
+
+                      <div
+                        class="d-flex justify-content-between align-items-center mb-3"
+                      >
+                        <h6 class="mb-0">Available Plans</h6>
+                        <button
+                          class="btn btn-outline-primary btn-sm"
+                          onclick="loadAvailableUpgradePlans()"
+                          title="Refresh upgrade options"
+                        >
+                          <i class="fa fa-refresh"></i> Refresh
+                        </button>
+                      </div>
+                      <div class="row" id="subscriptionPlans">
+                        <!-- Dynamic plans will be loaded here based on current tier -->
+                        <div class="col-12">
+                          <div class="text-center py-4">
+                            <i class="fa fa-arrow-up fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Upgrade Options</h5>
+                            <p class="text-muted">
+                              Click refresh to load available upgrade plans for
+                              your current subscription.
+                            </p>
+                            <button
+                              class="btn btn-primary"
+                              onclick="loadAvailableUpgradePlans()"
+                            >
+                              <i class="fa fa-refresh"></i> Load Upgrade Plans
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        class="alert alert-info mt-3"
+                        id="pricingNote"
+                        style="display: none"
+                      >
+                        <i class="fa fa-info-circle"></i>
+                        <strong>Note:</strong> All prices are in USD and include
+                        payment processing fees. Your bank may apply additional
+                        currency conversion charges for non-USD payments.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-4">
+                  <div class="info-card">
+                    <div class="card-header">
+                      <h5 class="mb-0">
+                        <i class="fa fa-history"></i> Billing History
+                      </h5>
+                    </div>
+                    <div class="card-body">
+                      <div id="billingHistory">
+                        <!-- Billing history will be loaded here -->
+                      </div>
+                      <div class="mt-3">
+                        <button
+                          class="btn btn-outline-primary btn-sm btn-block"
+                        >
+                          <i class="fa fa-download"></i> Download Invoice
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- New Organization Users tab for admins -->
+            <div
+              class="tab-pane fade"
+              id="organization"
+              role="tabpanel"
+              aria-labelledby="organization-tab"
+            >
+              <div class="card">
+                <div class="card-header">
+                  <h5 class="card-title">Organization Users</h5>
+                  <p class="card-subtitle mb-2 text-muted">
+                    Manage users in your organization
+                  </p>
+                </div>
+                <div class="card-body">
+                  <!-- User Limits Section -->
+                  <div class="row mb-4">
+                    <div class="col-md-6">
+                      <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                          <h6 class="card-title">User Limits</h6>
+                          <div
+                            class="d-flex justify-content-between align-items-center"
+                          >
+                            <div>
+                              <h3 id="orgUserCount">0</h3>
+                              <small class="text-muted">Active Users</small>
+                            </div>
+                            <div>
+                              <h3 id="orgUserLimit">0</h3>
+                              <small class="text-muted">Maximum Users</small>
+                            </div>
+                          </div>
+                          <div class="progress mt-2" style="height: 10px">
+                            <div
+                              id="orgUserProgressBar"
+                              class="progress-bar bg-info"
+                              role="progressbar"
+                              style="width: 0%"
+                              aria-valuenow="0"
+                              aria-valuemin="0"
+                              aria-valuemax="100"
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center">
+                          <h6 class="card-title">Add Users</h6>
+                          <p>
+                            Your plan allows you to add more users to your
+                            organization.
+                          </p>
+                          <a href="add_user.html" class="btn btn-primary">
+                            <i class="fa fa-plus"></i> Add New User
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Serviceable Countries Section (Admin Only) -->
+                  <div
+                    id="serviceableCountriesSection"
+                    class="mb-4"
+                    style="display: none"
+                  >
+                    <div class="card border-0 shadow-sm">
+                      <div class="card-header">
+                        <h6 class="card-title mb-0">
+                          <i class="fa fa-globe"></i> Serviceable Countries
+                          Management
+                        </h6>
+                        <small class="text-muted">
+                          <strong>Expand your service area:</strong> Select
+                          multiple countries where your organization provides
+                          travel services.
+                          <br />
+                          <i class="fa fa-lightbulb-o text-warning"></i>
+                          <strong>Tip:</strong> Adding more countries allows
+                          your agents to create bookings for those destinations.
+                        </small>
+                      </div>
+                      <div class="card-body">
+                        <form id="serviceableCountriesForm">
+                          <div class="row">
+                            <div class="col-md-8">
+                              <div class="form-group">
+                                <label for="serviceCountries">
+                                  <i class="fa fa-globe text-primary"></i>
+                                  Service Countries
+                                  <span class="badge badge-info ml-2"
+                                    >Multi-select</span
+                                  >
+                                </label>
+                                <select
+                                  class="form-control"
+                                  id="serviceCountries"
+                                  multiple
+                                  size="8"
+                                  style="border: 2px dashed #007bff"
+                                >
+                                  <!-- Will be populated by JavaScript -->
+                                </select>
+                                <small class="text-muted">
+                                  <i class="fa fa-info-circle"></i>
+                                  <strong>Hold Ctrl/Cmd</strong> to select
+                                  multiple countries where your organization
+                                  provides travel services.
+                                  <br />
+                                  <i class="fa fa-plus-circle text-success"></i>
+                                  You can add new countries to expand your
+                                  service area.
+                                </small>
+                              </div>
+                            </div>
+                            <div class="col-md-4">
+                              <div class="form-group">
+                                <label for="primaryServiceCountry"
+                                  >Primary Country</label
+                                >
+                                <select
+                                  class="form-control"
+                                  id="primaryServiceCountry"
+                                >
+                                  <option value="">
+                                    Select Primary Country
+                                  </option>
+                                  <!-- Will be populated based on selected service countries -->
+                                </select>
+                                <small class="text-muted"
+                                  >Main country of operations</small
+                                >
+                              </div>
+                              <div class="mt-3">
+                                <button
+                                  type="submit"
+                                  class="btn btn-primary btn-block"
+                                >
+                                  <i class="fa fa-save"></i> Save Countries
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="row mt-3">
+                            <div class="col-12">
+                              <div
+                                id="currentServiceCountries"
+                                class="alert alert-info"
+                              >
+                                <strong>Current Service Countries:</strong>
+                                <span id="serviceCountriesList"
+                                  >Loading...</span
+                                >
+                              </div>
+                            </div>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Users List -->
+                  <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Username</th>
+                          <th>Email</th>
+                          <th>User Type</th>
+                        </tr>
+                      </thead>
+                      <tbody id="organizationUsers">
+                        <!-- Will be populated by JavaScript -->
+                        <tr>
+                          <td colspan="4" class="text-center">
+                            Loading users...
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Email Footer Tab -->
+            <div
+              class="tab-pane fade"
+              id="email-footer"
+              role="tabpanel"
+              aria-labelledby="email-footer-tab"
+            >
+              <div class="row">
+                <div class="col-md-8">
+                  <div class="info-card">
+                    <div class="card-header">
+                      <h5 class="mb-0">
+                        <i class="fa fa-envelope"></i> Email Footer
+                        Customization
+                      </h5>
+                      <small class="text-muted"
+                        >Customize your organization's email footer for all
+                        outgoing emails</small
+                      >
+                    </div>
+                    <div class="card-body">
+                      <form id="emailFooterForm">
+                        <!-- Company Information Section -->
+                        <div class="section-header">
+                          <h6>
+                            <i class="fa fa-building"></i> Company Information
+                          </h6>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div class="form-group">
+                              <label for="footerCompanyName"
+                                >Company Name *</label
+                              >
+                              <input
+                                type="text"
+                                class="form-control"
+                                id="footerCompanyName"
+                                required
+                                placeholder="Your Company Name"
+                              />
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div class="form-group">
+                              <label for="footerTeamName">Team Name</label>
+                              <input
+                                type="text"
+                                class="form-control"
+                                id="footerTeamName"
+                                placeholder="Your Team Name"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label for="footerAddress">Address</label>
+                          <textarea
+                            class="form-control"
+                            id="footerAddress"
+                            rows="3"
+                            placeholder="Full business address (HTML allowed)"
+                          ></textarea>
+                          <small class="form-text text-muted"
+                            >You can use HTML tags like &lt;br&gt; for line
+                            breaks</small
+                          >
+                        </div>
+
+                        <!-- Contact Information Section -->
+                        <div class="section-header mt-4">
+                          <h6>
+                            <i class="fa fa-phone"></i> Contact Information
+                          </h6>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-4">
+                            <div class="form-group">
+                              <label for="footerPhone">Phone</label>
+                              <input
+                                type="tel"
+                                class="form-control"
+                                id="footerPhone"
+                                placeholder="+66 2 123 4567"
+                              />
+                            </div>
+                          </div>
+                          <div class="col-md-4">
+                            <div class="form-group">
+                              <label for="footerEmail">Email</label>
+                              <input
+                                type="email"
+                                class="form-control"
+                                id="footerEmail"
+                                placeholder="contact@company.com"
+                              />
+                            </div>
+                          </div>
+                          <div class="col-md-4">
+                            <div class="form-group">
+                              <label for="footerWebsite">Website</label>
+                              <input
+                                type="url"
+                                class="form-control"
+                                id="footerWebsite"
+                                placeholder="www.company.com"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label for="footerTaxId">Tax ID</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="footerTaxId"
+                            placeholder="Tax identification number"
+                          />
+                        </div>
+
+                        <!-- Logo and Styling Section -->
+                        <div class="section-header mt-4">
+                          <h6><i class="fa fa-image"></i> Logo and Styling</h6>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div class="form-group">
+                              <label for="footerLogoWidth"
+                                >Logo Width (pixels)</label
+                              >
+                              <input
+                                type="number"
+                                class="form-control"
+                                id="footerLogoWidth"
+                                placeholder="200"
+                                min="50"
+                                max="500"
+                              />
+                              <small class="form-text text-muted"
+                                >Recommended: 150-250 pixels</small
+                              >
+                            </div>
+                          </div>
+                          <div class="col-md-3">
+                            <div class="form-group">
+                              <label for="footerPrimaryColor"
+                                >Primary Color</label
+                              >
+                              <input
+                                type="color"
+                                class="form-control"
+                                id="footerPrimaryColor"
+                                value="#0066CC"
+                              />
+                            </div>
+                          </div>
+                          <div class="col-md-3">
+                            <div class="form-group">
+                              <label for="footerSecondaryColor"
+                                >Secondary Color</label
+                              >
+                              <input
+                                type="color"
+                                class="form-control"
+                                id="footerSecondaryColor"
+                                value="#4A90E2"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Messages Section -->
+                        <div class="section-header mt-4">
+                          <h6><i class="fa fa-comment"></i> Messages</h6>
+                        </div>
+                        <div class="form-group">
+                          <div class="custom-control custom-checkbox">
+                            <input
+                              type="checkbox"
+                              class="custom-control-input"
+                              id="footerShowEcoMessage"
+                              checked
+                            />
+                            <label
+                              class="custom-control-label"
+                              for="footerShowEcoMessage"
+                              >Show Environmental Message</label
+                            >
+                          </div>
+                        </div>
+                        <div class="form-group" id="footerEcoMessageGroup">
+                          <label for="footerEcoMessage"
+                            >Environmental Message</label
+                          >
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="footerEcoMessage"
+                            placeholder="Think green before printing!"
+                            value="Think green before printing!"
+                          />
+                        </div>
+                        <div class="form-group">
+                          <label for="footerCustomMessage"
+                            >Custom Message</label
+                          >
+                          <textarea
+                            class="form-control"
+                            id="footerCustomMessage"
+                            rows="2"
+                            placeholder="Additional custom message (optional)"
+                          ></textarea>
+                        </div>
+
+                        <!-- Social Links Section -->
+                        <div class="section-header mt-4">
+                          <h6>
+                            <i class="fa fa-share-alt"></i> Social Media Links
+                          </h6>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div class="form-group">
+                              <label for="footerFacebookUrl"
+                                >Facebook URL</label
+                              >
+                              <input
+                                type="url"
+                                class="form-control"
+                                id="footerFacebookUrl"
+                                placeholder="https://facebook.com/yourcompany"
+                              />
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div class="form-group">
+                              <label for="footerInstagramUrl"
+                                >Instagram URL</label
+                              >
+                              <input
+                                type="url"
+                                class="form-control"
+                                id="footerInstagramUrl"
+                                placeholder="https://instagram.com/yourcompany"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div class="form-group">
+                              <label for="footerTwitterUrl">Twitter URL</label>
+                              <input
+                                type="url"
+                                class="form-control"
+                                id="footerTwitterUrl"
+                                placeholder="https://twitter.com/yourcompany"
+                              />
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div class="form-group">
+                              <label for="footerLinkedinUrl"
+                                >LinkedIn URL</label
+                              >
+                              <input
+                                type="url"
+                                class="form-control"
+                                id="footerLinkedinUrl"
+                                placeholder="https://linkedin.com/company/yourcompany"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="action-buttons mt-4">
+                          <button
+                            type="submit"
+                            class="btn btn-primary"
+                            id="saveFooterSettings"
+                          >
+                            <i class="fa fa-save"></i> Save Footer Settings
+                          </button>
+                          <button
+                            type="button"
+                            class="btn btn-outline-primary ml-2"
+                            id="previewFooter"
+                          >
+                            <i class="fa fa-eye"></i> Preview
+                          </button>
+                          <button
+                            type="button"
+                            class="btn btn-outline-secondary ml-2"
+                            id="resetFooterSettings"
+                          >
+                            <i class="fa fa-refresh"></i> Reset to Default
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Preview Section -->
+                <div class="col-md-4">
+                  <div class="info-card" id="footerPreviewCard">
+                    <div class="card-header">
+                      <h5 class="mb-0">
+                        <i class="fa fa-eye"></i> Live Preview
+                      </h5>
+                      <small class="text-muted"
+                        >See how your footer will look in emails</small
+                      >
+                    </div>
+                    <div class="card-body">
+                      <div id="footerPreviewContainer" class="footer-preview">
+                        <div class="text-center text-muted py-4">
+                          <i class="fa fa-envelope fa-3x mb-3"></i>
+                          <p>
+                            Fill in the form to see a preview of your email
+                            footer
+                          </p>
+                        </div>
+                      </div>
+                      <div class="mt-3">
+                        <small class="text-muted">
+                          <i class="fa fa-info-circle"></i>
+                          The preview updates automatically as you type
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /Page content -->
+
+        <!-- Payment Method Modal -->
+        <div
+          class="modal fade"
+          id="paymentMethodModal"
+          tabindex="-1"
+          role="dialog"
+          aria-labelledby="paymentMethodModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="paymentMethodModalLabel">
+                  Add Payment Method
+                </h5>
+                <button
+                  type="button"
+                  class="close"
+                  data-dismiss="modal"
+                  aria-label="Close"
+                >
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <form id="paymentMethodForm">
+                  <input
+                    type="hidden"
+                    id="paymentType"
+                    name="paymentType"
+                    value=""
+                  />
+                  <div id="cardPaymentSection" style="display: none">
+                    <h6>
+                      <i class="fa fa-credit-card"></i> Credit/Debit Card
+                      Information
+                    </h6>
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label for="cardNumber">Card Number *</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="cardNumber"
+                            placeholder="1234 5678 9012 3456"
+                            maxlength="19"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="expiryDate">Expiry Date *</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="expiryDate"
+                            placeholder="MM/YY"
+                            maxlength="5"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="cvv">CVV *</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            id="cvv"
+                            placeholder="123"
+                            maxlength="4"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label for="cardholderName">Cardholder Name *</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="cardholderName"
+                        placeholder="Name as on card"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div id="upiPaymentSection" style="display: none">
+                    <h6>
+                      <i class="fa fa-mobile"></i> UPI Payment Information
+                    </h6>
+                    <div class="form-group">
+                      <label for="upiId">UPI ID *</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="upiId"
+                        placeholder="yourname@paytm"
+                        required
+                      />
+                      <small class="form-text text-muted"
+                        >Enter your UPI ID (e.g., yourname@paytm,
+                        yourname@gpay)</small
+                      >
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <div class="custom-control custom-checkbox">
+                      <input
+                        type="checkbox"
+                        class="custom-control-input"
+                        id="setDefaultPayment"
+                      />
+                      <label
+                        class="custom-control-label"
+                        for="setDefaultPayment"
+                        >Set as default payment method</label
+                      >
+                    </div>
+                  </div>
+
+                  <div class="alert alert-info">
+                    <i class="fa fa-shield"></i>
+                    <strong>Security:</strong> Your payment information is
+                    encrypted and processed securely. We never store your card
+                    details.
+                  </div>
+                </form>
+              </div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  data-dismiss="modal"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  id="savePaymentMethod"
+                >
+                  <i class="fa fa-save"></i> Save Payment Method
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subscription Upgrade Modal -->
+        <div
+          class="modal fade"
+          id="upgradeModal"
+          tabindex="-1"
+          role="dialog"
+          aria-labelledby="upgradeModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="upgradeModalLabel">
+                  Upgrade Subscription
+                </h5>
+                <button
+                  type="button"
+                  class="close"
+                  data-dismiss="modal"
+                  aria-label="Close"
+                >
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <div id="upgradeConfirmation">
+                  <div class="text-center mb-4">
+                    <i class="fa fa-arrow-up fa-3x text-primary mb-3"></i>
+                    <h4 id="upgradeTitle">Upgrade to Professional</h4>
+                    <p class="text-muted" id="upgradeDescription">
+                      You're about to upgrade your subscription
+                    </p>
+                  </div>
+
+                  <div class="card">
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <h6>Plan Details</h6>
+                          <p><strong id="selectedPlan">Professional</strong></p>
+                          <p><strong id="selectedCycle">Monthly</strong></p>
+                        </div>
+                        <div class="col-md-6 text-right">
+                          <h6>Amount</h6>
+                          <h3 class="text-primary" id="upgradeAmount">
+                            $29.99
+                          </h3>
+                          <small class="text-muted">*Includes all fees</small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-group mt-3">
+                    <label for="upgradePaymentMethod"
+                      >Select Payment Method</label
+                    >
+                    <select
+                      class="form-control"
+                      id="upgradePaymentMethod"
+                      required
+                    >
+                      <option value="">Choose payment method...</option>
+                      <!-- Will be populated with user's saved payment methods -->
+                    </select>
+                    <small class="form-text text-muted">
+                      Don't have a payment method?
+                      <a href="#" onclick="addPaymentMethod('card')"
+                        >Add one now</a
+                      >
+                    </small>
+                  </div>
+
+                  <div class="alert alert-warning">
+                    <i class="fa fa-exclamation-triangle"></i>
+                    <strong>Important:</strong> Your subscription will be
+                    upgraded immediately after successful payment. You'll be
+                    billed according to your selected billing cycle.
+                  </div>
+                </div>
+
+                <div id="paymentProcessing" style="display: none">
+                  <div class="text-center py-5">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                      <span class="sr-only">Processing...</span>
+                    </div>
+                    <h5>Processing Payment...</h5>
+                    <p class="text-muted">
+                      Please don't refresh or close this window
+                    </p>
+                  </div>
+                </div>
+
+                <div id="paymentSuccess" style="display: none">
+                  <div class="text-center py-5">
+                    <i class="fa fa-check-circle fa-4x text-success mb-3"></i>
+                    <h4 class="text-success">Payment Successful!</h4>
+                    <p>Your subscription has been upgraded successfully.</p>
+                    <button class="btn btn-primary" onclick="location.reload()">
+                      <i class="fa fa-refresh"></i> Refresh Profile
+                    </button>
+                  </div>
+                </div>
+
+                <div id="paymentError" style="display: none">
+                  <div class="text-center py-5">
+                    <i class="fa fa-times-circle fa-4x text-danger mb-3"></i>
+                    <h4 class="text-danger">Payment Failed</h4>
+                    <p id="paymentErrorMessage">
+                      Something went wrong with your payment.
+                    </p>
+                    <button
+                      class="btn btn-outline-primary"
+                      onclick="resetUpgradeModal()"
+                    >
+                      <i class="fa fa-arrow-left"></i> Try Again
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer" id="upgradeModalFooter">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  data-dismiss="modal"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  id="confirmUpgrade"
+                >
+                  <i class="fa fa-credit-card"></i> Proceed to Payment
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Enterprise Contact Modal -->
+        <div
+          class="modal fade"
+          id="enterpriseContactModal"
+          tabindex="-1"
+          role="dialog"
+          aria-labelledby="enterpriseContactModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="enterpriseContactModalLabel">
+                  Contact Us for Enterprise Solutions
+                </h5>
+                <button
+                  type="button"
+                  class="close"
+                  data-dismiss="modal"
+                  aria-label="Close"
+                >
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <div class="text-center mb-4">
+                  <i class="fa fa-building fa-3x text-warning mb-3"></i>
+                  <h4>Ready for Enterprise?</h4>
+                  <p class="text-muted">
+                    Let us help you scale with our enterprise solutions
+                  </p>
+                </div>
+
+                <form id="enterpriseContactForm">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="contactName">Full Name *</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="contactName"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="contactEmail">Business Email *</label>
+                        <input
+                          type="email"
+                          class="form-control"
+                          id="contactEmail"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="contactPhone">Phone Number</label>
+                        <input
+                          type="tel"
+                          class="form-control"
+                          id="contactPhone"
+                        />
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="contactCompany">Company Name *</label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="contactCompany"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="contactRole">Your Role *</label>
+                        <select class="form-control" id="contactRole" required>
+                          <option value="">Select your role</option>
+                          <option value="ceo">CEO/Founder</option>
+                          <option value="cto">CTO/Tech Lead</option>
+                          <option value="manager">Manager</option>
+                          <option value="director">Director</option>
+                          <option value="procurement">Procurement</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label for="contactCompanySize">Company Size *</label>
+                        <select
+                          class="form-control"
+                          id="contactCompanySize"
+                          required
+                        >
+                          <option value="">Select company size</option>
+                          <option value="50-100">50-100 employees</option>
+                          <option value="100-500">100-500 employees</option>
+                          <option value="500-1000">500-1000 employees</option>
+                          <option value="1000+">1000+ employees</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="contactUseCase">Primary Use Case *</label>
+                    <select class="form-control" id="contactUseCase" required>
+                      <option value="">Select primary use case</option>
+                      <option value="travel-management">
+                        Corporate Travel Management
+                      </option>
+                      <option value="booking-platform">
+                        Internal Booking Platform
+                      </option>
+                      <option value="client-services">
+                        Client Services & Hospitality
+                      </option>
+                      <option value="event-management">
+                        Event & Conference Management
+                      </option>
+                      <option value="white-label">White-label Solution</option>
+                      <option value="api-integration">API Integration</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="contactCurrentUsers"
+                      >Expected Number of Users *</label
+                    >
+                    <select
+                      class="form-control"
+                      id="contactCurrentUsers"
+                      required
+                    >
+                      <option value="">Select expected users</option>
+                      <option value="50-100">50-100 users</option>
+                      <option value="100-500">100-500 users</option>
+                      <option value="500-1000">500-1000 users</option>
+                      <option value="1000+">1000+ users</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="contactBookingsVolume"
+                      >Expected Monthly Bookings *</label
+                    >
+                    <select
+                      class="form-control"
+                      id="contactBookingsVolume"
+                      required
+                    >
+                      <option value="">Select booking volume</option>
+                      <option value="100-500">100-500 bookings</option>
+                      <option value="500-2000">500-2000 bookings</option>
+                      <option value="2000-5000">2000-5000 bookings</option>
+                      <option value="5000+">5000+ bookings</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="contactTimeline"
+                      >Implementation Timeline *</label
+                    >
+                    <select class="form-control" id="contactTimeline" required>
+                      <option value="">Select timeline</option>
+                      <option value="immediate">
+                        Immediate (within 1 month)
+                      </option>
+                      <option value="3-months">Within 3 months</option>
+                      <option value="6-months">Within 6 months</option>
+                      <option value="planning">Still planning</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="contactBudget">Budget Range (Annual) *</label>
+                    <select class="form-control" id="contactBudget" required>
+                      <option value="">Select budget range</option>
+                      <option value="10k-50k">$10K - $50K</option>
+                      <option value="50k-100k">$50K - $100K</option>
+                      <option value="100k-500k">$100K - $500K</option>
+                      <option value="500k+">$500K+</option>
+                      <option value="discuss">Prefer to discuss</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="contactRequirements"
+                      >Specific Requirements</label
+                    >
+                    <textarea
+                      class="form-control"
+                      id="contactRequirements"
+                      rows="4"
+                      placeholder="Tell us about your specific needs, integrations, compliance requirements, or any other details that would help us understand your project better..."
+                    ></textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <div class="custom-control custom-checkbox">
+                      <input
+                        type="checkbox"
+                        class="custom-control-input"
+                        id="contactConsent"
+                        required
+                      />
+                      <label class="custom-control-label" for="contactConsent">
+                        I agree to be contacted by the sales team regarding
+                        enterprise solutions *
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="alert alert-info">
+                    <i class="fa fa-info-circle"></i>
+                    <strong>What happens next?</strong><br />
+                    Our enterprise team will review your requirements and
+                    contact you within 24 hours to schedule a personalized demo
+                    and discuss pricing.
+                  </div>
+                </form>
+              </div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  data-dismiss="modal"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-warning"
+                  id="submitEnterpriseContact"
+                >
+                  <i class="fa fa-send"></i> Submit Inquiry
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <footer></footer>
+        <!-- /Footer -->
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery UI (required for custom.min.js progressbar functionality) -->
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/common/role-permissions.js"></script>
+    <script src="js/profile.js"></script>
+    <script src="js/email-footer.js"></script>
+    <!-- Initialize country-specific tax fields -->
+    <script>
+      // When the document is ready, set up the country change handler
+      document.addEventListener("DOMContentLoaded", function () {
+        // Add event listener for country select changes to update tax fields
+        const countrySelect = document.getElementById("country");
+        if (countrySelect) {
+          countrySelect.addEventListener("change", function () {
+            // If the updateTaxFieldsVisibility function exists (from profile.js)
+            if (typeof updateTaxFieldsVisibility === "function") {
+              updateTaxFieldsVisibility(this.value);
+            }
+          });
+
+          // Initialize tax fields visibility based on current country value (if any)
+          if (
+            countrySelect.value &&
+            typeof updateTaxFieldsVisibility === "function"
+          ) {
+            updateTaxFieldsVisibility(countrySelect.value);
+          }
+        }
+
+        // Make the updateTaxFieldsVisibility function globally accessible
+        window.updateTaxFieldsVisibility = updateTaxFieldsVisibility;
+
+        // Add Control Panel menu functionality
+        $(document).ready(function () {
+          // Remove any existing event handlers to prevent conflicts
+          $("#controlPanelMenu > a").off("click");
+
+          $("#controlPanelMenu > a").on("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation(); // Prevent event bubbling to avoid conflicts
+
+            var $menuItem = $(this).parent();
+            var $submenu = $menuItem.find("ul.child_menu");
+            var $chevron = $(this).find(".fa-chevron-down, .fa-chevron-up");
+
+            if ($menuItem.hasClass("active")) {
+              // Close the menu
+              $menuItem.removeClass("active");
+              $submenu.slideUp(300);
+              $chevron.removeClass("fa-chevron-up").addClass("fa-chevron-down");
+            } else {
+              // Close other open menus first
+              $(".nav.side-menu > li.active")
+                .not($menuItem)
+                .each(function () {
+                  $(this).removeClass("active");
+                  $(this).find("ul.child_menu").slideUp(300);
+                  $(this)
+                    .find(".fa-chevron-up")
+                    .removeClass("fa-chevron-up")
+                    .addClass("fa-chevron-down");
+                });
+
+              // Open this menu
+              $menuItem.addClass("active");
+              $submenu.slideDown(300);
+              $chevron.removeClass("fa-chevron-down").addClass("fa-chevron-up");
+            }
+
+            return false; // Ensure the event doesn't propagate further
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

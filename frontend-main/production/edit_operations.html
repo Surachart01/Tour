@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Operation</title>
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
+
+    <style>
+      /* Sidebar and navbar text size */
+      .nav_title span,
+      .profile_info span,
+      .profile_info h2,
+      .side-menu a,
+      .navbar-right a {
+        font-size: 1rem;
+      }
+
+      #sidebar-menu {
+        overflow-y: auto;
+        max-height: calc(100vh - 100px);
+        padding-bottom: 10px;
+      }
+
+      .form-section {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        padding: 20px;
+      }
+
+      .form-section h4 {
+        background-color: #007bff;
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        font-weight: bold;
+      }
+
+      .form-group label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 5px;
+      }
+
+      .form-control {
+        border-radius: 4px;
+        border: 1px solid #ced4da;
+        padding: 8px 12px;
+      }
+
+      .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+      }
+
+      .btn-save {
+        background-color: #28a745;
+        border-color: #28a745;
+        padding: 10px 30px;
+        font-size: 1.1rem;
+      }
+
+      .btn-save:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+      }
+
+      .readonly-field {
+        background-color: #e9ecef;
+        border: 1px solid #ced4da;
+        padding: 8px 12px;
+        border-radius: 4px;
+        color: #6c757d;
+      }
+
+      .priority-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+      }
+
+      .priority-urgent {
+        background-color: #dc3545;
+        color: white;
+      }
+      .priority-high {
+        background-color: #fd7e14;
+        color: white;
+      }
+      .priority-medium {
+        background-color: #ffc107;
+        color: #212529;
+      }
+      .priority-low {
+        background-color: #28a745;
+        color: white;
+      }
+
+      .status-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+      }
+
+      .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+      }
+      .status-in_progress {
+        background-color: #cce5ff;
+        color: #004085;
+      }
+      .status-completed {
+        background-color: #d4edda;
+        color: #155724;
+      }
+      .status-cancelled {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
+
+      .operation-meta {
+        background-color: #e9ecef;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 20px;
+      }
+
+      .meta-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+
+      .meta-item:last-child {
+        margin-bottom: 0;
+      }
+
+      .meta-label {
+        font-weight: 600;
+        color: #495057;
+      }
+
+      .meta-value {
+        color: #6c757d;
+      }
+    </style>
+  </head>
+
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+        <div class="col-md-3 left_col menu_fixed">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border: 0">
+              <a
+                href="index.html"
+                class="site_title"
+                style="
+                  display: block;
+                  text-align: center;
+                  font-size: 2rem;
+                  font-weight: bold;
+                  color: #007bff;
+                  text-decoration: none;
+                "
+              >
+                <span style="font-size: 1.5rem">VeraThailandia!</span>
+              </a>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- menu profile quick info -->
+            <div class="profile clearfix">
+              <div class="profile_pic">
+                <img
+                  src="images/verathailandlogo.png"
+                  alt="..."
+                  class="img-circle profile_img"
+                />
+              </div>
+              <div class="profile_info">
+                <span>Welcome,</span>
+                <h2 id="profileName"></h2>
+              </div>
+            </div>
+            <!-- /menu profile quick info -->
+
+            <br />
+
+            <!-- sidebar menu -->
+            <div
+              id="sidebar-menu"
+              class="main_menu_side hidden-print main_menu"
+            >
+              <div class="menu_section">
+                <h3>General</h3>
+                <ul class="nav side-menu">
+                  <li>
+                    <a href="index.html"
+                      ><i class="fa fa-home"></i> Home
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li>
+                    <a
+                      ><i class="fa fa-edit"></i> Control-Panel
+                      <span class="fa fa-chevron-down"></span
+                    ></a>
+                    <ul class="nav child_menu">
+                      <li><a href="activities.html">Activities</a></li>
+                      <li><a href="agents.html">Agents</a></li>
+                      <li><a href="booking.html">Bookings</a></li>
+                      <li><a href="excursions.html">Excursions</a></li>
+                      <li><a href="hotels.html">Hotels</a></li>
+                      <li><a href="markup.html">Markups</a></li>
+                      <!-- <li><a href="operations.html">Operations</a></li> -->
+                      <li><a href="othercharges.html">Other Charges</a></li>
+                      <!-- <li><a href="stop_sale.html">Stop Sale</a></li> -->
+                      <li><a href="suppliers.html">Suppliers</a></li>
+                      <li><a href="tools.html">Tools</a></li>
+                      <li><a href="tours.html">Tours</a></li>
+                      <li><a href="transfers.html">Transfers</a></li>
+                      <li><a href="users.html">Users</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="trip.html"
+                      ><i class="fa fa-book"></i> Quotation
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li>
+                    <a href="payment.html"
+                      ><i class="fa fa-pencil-square-o"></i> Payment
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <!--<li>
+                    <a href="tax_invoices.html"
+                      ><i class="fa fa-file-text-o"></i> Tax Invoices
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li> -->
+                  <li>
+                    <a href="itinerary.html"
+                      ><i class="fa fa-ticket"></i> Itinerary
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- /sidebar menu -->
+
+            <!-- /menu footer buttons -->
+            <div class="sidebar-footer hidden-small">
+              <a data-toggle="tooltip" data-placement="top" title="Settings">
+                <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="FullScreen">
+                <span
+                  class="glyphicon glyphicon-fullscreen"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="Lock">
+                <span
+                  class="glyphicon glyphicon-eye-close"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a
+                data-toggle="tooltip"
+                data-placement="top"
+                title="Logout"
+                href="logout.html"
+              >
+                <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+              </a>
+            </div>
+            <!-- /menu footer buttons -->
+          </div>
+        </div>
+
+        <!-- top navigation -->
+        <div class="top_nav">
+          <div class="nav_menu">
+            <div class="nav toggle">
+              <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+            </div>
+            <nav class="nav navbar-nav">
+              <ul class="navbar-right">
+                <li class="nav-item dropdown open" style="padding-left: 15px">
+                  <a
+                    href="javascript:;"
+                    class="user-profile dropdown-toggle"
+                    aria-haspopup="true"
+                    id="navbarDropdown"
+                    data-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    <img
+                      id="navProfileImage"
+                      src="images/verathailandlogo.png"
+                      alt=""
+                    />
+                    <span id="navProfileName"></span>
+                  </a>
+                  <div
+                    class="dropdown-menu dropdown-usermenu pull-right"
+                    aria-labelledby="navbarDropdown"
+                  >
+                    <a class="dropdown-item" href="javascript:;"> Profile</a>
+                    <a class="dropdown-item" href="logout.html"
+                      ><i class="fa fa-sign-out pull-right"></i> Log Out</a
+                    >
+                  </div>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+        <!-- /top navigation -->
+
+        <!-- Page content -->
+        <div class="right_col" role="main">
+          <div class="">
+            <div class="page-title">
+              <div class="title_left">
+                <h3 id="pageTitle">Edit Operation</h3>
+              </div>
+              <div class="title_right">
+                <div class="col-md-5 col-sm-5 form-group pull-right top_search">
+                  <div class="input-group">
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      onclick="window.location.href='operations.html'"
+                    >
+                      <i class="fa fa-arrow-left"></i> Back to Operations
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- Operation Information -->
+            <div class="row">
+              <div class="col-md-12">
+                <div class="x_panel">
+                  <div class="x_title">
+                    <h2>Operation Information</h2>
+                    <div class="clearfix"></div>
+                  </div>
+                  <div class="x_content">
+                    <form id="operationForm">
+                      <div class="form-section">
+                        <h4>Basic Information</h4>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div class="form-group">
+                              <label for="operationTitle">Title *</label>
+                              <input
+                                type="text"
+                                class="form-control"
+                                id="operationTitle"
+                                required
+                              />
+                            </div>
+                          </div>
+                          <div class="col-md-3">
+                            <div class="form-group">
+                              <label for="operationType">Type</label>
+                              <select class="form-control" id="operationType">
+                                <option value="hotel_confirmation">
+                                  Hotel Confirmation
+                                </option>
+                                <option value="transfer_confirmation">
+                                  Transfer Confirmation
+                                </option>
+                                <option value="excursion_booking">
+                                  Excursion Booking
+                                </option>
+                                <option value="guide_assignment">
+                                  Guide Assignment
+                                </option>
+                                <option value="dining_reservation">
+                                  Dining Reservation
+                                </option>
+                                <option value="client_follow_up">
+                                  Client Follow-up
+                                </option>
+                                <option value="admin_task">Admin Task</option>
+                                <option value="other">Other</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div class="col-md-3">
+                            <div class="form-group">
+                              <label for="operationLocation">Location</label>
+                              <select
+                                class="form-control"
+                                id="operationLocation"
+                              >
+                                <option value="">Select Location</option>
+                                <option value="Rome">Rome</option>
+                                <option value="Florence">Florence</option>
+                                <option value="Milan">Milan</option>
+                                <option value="Venice">Venice</option>
+                                <option value="Naples">Naples</option>
+                                <option value="Dubai">Dubai</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-12">
+                            <div class="form-group">
+                              <label for="operationDescription"
+                                >Description *</label
+                              >
+                              <textarea
+                                class="form-control"
+                                id="operationDescription"
+                                rows="3"
+                                required
+                              ></textarea>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="form-section">
+                        <h4>Priority & Timing</h4>
+                        <div class="row">
+                          <div class="col-md-3">
+                            <div class="form-group">
+                              <label for="operationPriority">Priority</label>
+                              <select
+                                class="form-control"
+                                id="operationPriority"
+                              >
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div class="col-md-3">
+                            <div class="form-group">
+                              <label for="operationStatus">Status</label>
+                              <select class="form-control" id="operationStatus">
+                                <option value="pending" selected>
+                                  Pending
+                                </option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div class="col-md-3">
+                            <div class="form-group">
+                              <label for="operationDueDate">Due Date *</label>
+                              <input
+                                type="datetime-local"
+                                class="form-control"
+                                id="operationDueDate"
+                                required
+                              />
+                            </div>
+                          </div>
+                          <div class="col-md-3">
+                            <div class="form-group">
+                              <label for="estimatedHours"
+                                >Estimated Hours</label
+                              >
+                              <input
+                                type="number"
+                                class="form-control"
+                                id="estimatedHours"
+                                step="0.5"
+                                min="0"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="form-section">
+                        <h4>Assignment & Trip Details</h4>
+                        <div class="row">
+                          <div class="col-md-4">
+                            <div class="form-group">
+                              <label for="assigneeSelect">Assignee</label>
+                              <select class="form-control" id="assigneeSelect">
+                                <option value="">Unassigned</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div class="col-md-4">
+                            <div class="form-group">
+                              <label for="tripIdInput">Trip ID</label>
+                              <input
+                                type="number"
+                                class="form-control"
+                                id="tripIdInput"
+                                placeholder="Optional"
+                              />
+                            </div>
+                          </div>
+                          <div class="col-md-4">
+                            <div class="form-group">
+                              <label for="agentSelect">Agent</label>
+                              <select class="form-control" id="agentSelect">
+                                <option value="">Select Agent</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        class="form-section"
+                        id="completionSection"
+                        style="display: none"
+                      >
+                        <h4>Completion Details</h4>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div class="form-group">
+                              <label for="actualHours">Actual Hours</label>
+                              <input
+                                type="number"
+                                class="form-control"
+                                id="actualHours"
+                                step="0.5"
+                                min="0"
+                              />
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div class="form-group">
+                              <label for="completionNotes"
+                                >Completion Notes</label
+                              >
+                              <textarea
+                                class="form-control"
+                                id="completionNotes"
+                                rows="3"
+                              ></textarea>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Operation Metadata (for existing operations) -->
+            <div class="row" id="metadataSection" style="display: none">
+              <div class="col-md-12">
+                <div class="operation-meta">
+                  <h5><strong>Operation Metadata</strong></h5>
+                  <div class="meta-item">
+                    <span class="meta-label">Operation ID:</span>
+                    <span class="meta-value" id="operationId">-</span>
+                  </div>
+                  <div class="meta-item">
+                    <span class="meta-label">Created:</span>
+                    <span class="meta-value" id="createdDate">-</span>
+                  </div>
+                  <div class="meta-item">
+                    <span class="meta-label">Last Updated:</span>
+                    <span class="meta-value" id="updatedDate">-</span>
+                  </div>
+                  <div class="meta-item">
+                    <span class="meta-label">Current Status:</span>
+                    <span class="meta-value" id="currentStatus">-</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="row">
+              <div class="col-md-12 text-center">
+                <button
+                  type="button"
+                  class="btn btn-save btn-lg"
+                  id="saveOperationBtn"
+                >
+                  <i class="fa fa-save"></i> Save Operation
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-lg"
+                  onclick="window.location.href='operations.html'"
+                >
+                  <i class="fa fa-times"></i> Cancel
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-danger btn-lg"
+                  id="deleteOperationBtn"
+                  style="display: none"
+                >
+                  <i class="fa fa-trash"></i> Delete Operation
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /Page content -->
+
+        <!-- Footer content -->
+        <footer></footer>
+        <!-- /Footer content -->
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/operations/edit_operations.js"></script>
+    <script src="js/config.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const token = localStorage.getItem("token");
+        const role = localStorage.getItem("role");
+
+        // If the user is not logged in, redirect to the login page
+        if (!token) {
+          alert("You are not authorized. Please log in first.");
+          window.location.href = "login.html";
+          return;
+        }
+
+        // Retrieve the username from localStorage and set it immediately
+        const username = localStorage.getItem("username") || "Guest";
+        const profileNameEl = document.getElementById("profileName");
+        const navProfileNameEl = document.getElementById("navProfileName");
+
+        if (profileNameEl) profileNameEl.innerText = username;
+        if (navProfileNameEl) navProfileNameEl.innerText = username;
+
+        // Hide the Control Panel menu item if the user is not an admin or superadmin
+        if (role !== "admin" && role !== "superadmin") {
+          const controlPanelMenu = document.querySelector(
+            'a[href*="Control-Panel"]'
+          );
+          if (controlPanelMenu && controlPanelMenu.parentElement) {
+            controlPanelMenu.parentElement.style.display = "none";
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

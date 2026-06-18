@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VeraThailandia! - Tools</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
+    <style>
+      /* Ensure the body and html elements allow full-page scrolling */
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        background-color: #f4f6f9;
+      }
+
+      /* Tool cards styling */
+      .tool-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease;
+      }
+
+      .tool-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      }
+
+      .tool-card h5 {
+        color: #2c3e50;
+        margin-bottom: 8px;
+        font-weight: 600;
+        font-size: 1.3rem;
+      }
+
+      .tool-card p {
+        color: #7f8c8d;
+        margin-bottom: 0;
+        font-size: 0.95rem;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .btn-template {
+        background: linear-gradient(45deg, #3498db, #2980b9);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        font-size: 13px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+
+      .btn-template:hover {
+        background: linear-gradient(45deg, #2980b9, #1f618d);
+        transform: translateY(-1px);
+      }
+
+      .btn-export {
+        background: linear-gradient(45deg, #27ae60, #229954);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        font-size: 13px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+
+      .btn-export:hover {
+        background: linear-gradient(45deg, #229954, #1e8449);
+        transform: translateY(-1px);
+      }
+
+      .btn-import {
+        background: linear-gradient(45deg, #e67e22, #d35400);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        font-size: 13px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+
+      .btn-import:hover {
+        background: linear-gradient(45deg, #d35400, #c44a00);
+        transform: translateY(-1px);
+      }
+
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none !important;
+      }
+
+      .file-input {
+        display: none;
+      }
+
+      .section-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding: 20px;
+        background: transparent;
+        color: #333;
+        border: 2px solid #dee2e6;
+        border-radius: 10px;
+      }
+
+      .section-header h2 {
+        margin: 0;
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #333;
+      }
+
+      .section-header p {
+        margin: 10px 0 0 0;
+        font-size: 1.2rem;
+        opacity: 0.8;
+        color: #6c757d;
+      }
+
+      .help-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 30px;
+        border-left: 4px solid #3498db;
+      }
+
+      .help-section h4 {
+        color: #2c3e50;
+        margin-bottom: 15px;
+      }
+
+      .help-section ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .help-section li {
+        margin-bottom: 8px;
+        color: #555;
+      }
+
+      .currency-select {
+        margin-bottom: 15px;
+      }
+
+      .currency-select label {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 5px;
+        display: block;
+      }
+
+      .currency-select select {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+      }
+
+      .loading-spinner {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 10px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 5px;
+        color: white;
+        font-weight: 600;
+        z-index: 10000;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.3s ease;
+      }
+
+      .toast.show {
+        opacity: 1;
+        transform: translateX(0);
+      }
+
+      .toast.success {
+        background: #27ae60;
+      }
+
+      .toast.error {
+        background: #e74c3c;
+      }
+
+      .toast.info {
+        background: #3498db;
+      }
+
+      /* Validation Error Modal */
+      .validation-errors-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10001;
+      }
+
+      .validation-errors-content {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        max-width: 80%;
+        max-height: 80%;
+        overflow-y: auto;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .validation-errors-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e74c3c;
+      }
+
+      .validation-errors-header h3 {
+        color: #e74c3c;
+        margin: 0;
+      }
+
+      .close-errors-btn {
+        background: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        cursor: pointer;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .close-errors-btn:hover {
+        background: #c0392b;
+      }
+
+      .error-item {
+        background: #fff5f5;
+        border: 1px solid #fed7d7;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 10px;
+      }
+
+      .error-location {
+        font-weight: bold;
+        color: #e74c3c;
+        margin-bottom: 5px;
+      }
+
+      .error-field {
+        color: #2d3748;
+        margin-bottom: 5px;
+      }
+
+      .error-message {
+        color: #1a202c;
+        margin-bottom: 5px;
+      }
+
+      .error-value {
+        font-style: italic;
+        color: #718096;
+        font-size: 0.9em;
+      }
+
+      .error-summary {
+        background: #fed7d7;
+        border: 1px solid #e74c3c;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      .error-summary h4 {
+        color: #e74c3c;
+        margin: 0 0 10px 0;
+      }
+
+      /* Sidebar and navbar text size - match index.html */
+      .nav_title span,
+      .profile_info span,
+      .profile_info h2,
+      .side-menu a,
+      .navbar-right a {
+        font-size: 1rem;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 768px) {
+        .action-buttons {
+          flex-direction: column;
+          justify-content: center;
+          margin-top: 15px;
+          gap: 8px;
+        }
+
+        .btn-template,
+        .btn-export,
+        .btn-import {
+          width: 100%;
+          justify-content: center;
+          padding: 10px 16px;
+          font-size: 14px;
+        }
+
+        .tool-card .row {
+          flex-direction: column;
+        }
+
+        .tool-card .col-md-8,
+        .tool-card .col-md-4 {
+          width: 100%;
+          max-width: 100%;
+        }
+      }
+      /* Removed constraining CSS for sidebar-menu to allow proper submenu expansion */
+      /* Sidebar scrolling - allow scroll when expanded, but not when collapsed */
+      .left_col.scroll-view {
+        overflow-y: auto;
+        max-height: 100vh;
+      }
+
+      /* When sidebar is collapsed, remove height constraints to allow submenu expansion */
+      body.nav-sm .left_col.scroll-view {
+        overflow-y: visible;
+        max-height: none;
+      }
+    </style>
+  </head>
+
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+        <!-- Sidebar -->
+        <div class="col-md-3 left_col menu_fixed">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border: 0">
+              <a
+                href="index.html"
+                class="site_title"
+                style="
+                  display: block;
+                  text-align: center;
+                  font-size: 2rem;
+                  font-weight: bold;
+                  color: #007bff;
+                  text-decoration: none;
+                "
+              >
+                <span style="font-size: 1.5rem">VeraThailandia!</span>
+              </a>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- Profile info -->
+            <div class="profile clearfix">
+              <div class="profile_pic">
+                <img
+                  src="images/verathailandlogo.png"
+                  alt="..."
+                  class="img-circle profile_img"
+                />
+              </div>
+              <div class="profile_info">
+                <span>Welcome,</span>
+                <h2 id="profileName"></h2>
+              </div>
+            </div>
+            <!-- /Profile info -->
+
+            <br />
+
+            <!-- Sidebar menu -->
+            <div
+              id="sidebar-menu"
+              class="main_menu_side hidden-print main_menu"
+            >
+              <div class="menu_section">
+                <h3>General</h3>
+                <ul class="nav side-menu">
+                  <li>
+                    <a href="index.html"
+                      ><i class="fa fa-home"></i> Home
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li id="controlPanelMenu">
+                    <a>
+                      <i class="fa fa-edit"></i> Control-Panel
+                      <span class="fa fa-chevron-down"></span>
+                    </a>
+                    <ul class="nav child_menu">
+                      <li><a href="activities.html">Activities</a></li>
+                      <li><a href="agents.html">Agents</a></li>
+                      <li><a href="booking.html">Bookings</a></li>
+                      <li><a href="excursions.html">Excursions</a></li>
+                      <li><a href="hotels.html">Hotels</a></li>
+                      <li><a href="markup.html">Markups</a></li>
+                      <!-- <li><a href="operations.html">Operations</a></li> -->
+                      <li><a href="othercharges.html">Other Charges</a></li>
+                      <!-- <li><a href="stop_sale.html">Stop Sale</a></li> -->
+                      <li><a href="suppliers.html">Suppliers</a></li>
+                      <li><a href="tools.html" class="active">Tools</a></li>
+                      <li><a href="tours.html">Tours</a></li>
+                      <li><a href="transfers.html">Transfers</a></li>
+                      <li><a href="users.html">Users</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="trip.html"
+                      ><i class="fa fa-book"></i> Quotation
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li>
+                    <a href="payment.html"
+                      ><i class="fa fa-pencil-square-o"></i> Payment
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <!--<li>
+                    <a href="tax_invoices.html"
+                      ><i class="fa fa-file-text-o"></i> Tax Invoices
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li> -->
+                  <!-- <!-- <li>
+                    <a href="invoice_management.html"
+                      ><i class="fa fa-table"></i> Invoice Management
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li> -->
+                  -->
+                  <li>
+                    <a href="itinerary.html"
+                      ><i class="fa fa-ticket"></i> Itinerary
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <!--<li>
+                    <a href="leads.html"
+                      ><i class="fa fa-ticket"></i> Leads
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li> -->
+                  <li>
+                    <a href="analytics.html"
+                      ><i class="fa fa-bar-chart"></i> Analytics
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <!-- <!--<li>
+                    <a href="about.html"
+                      ><i class="fa fa-info-circle"></i> About Us
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li> -->
+                  -->
+                </ul>
+              </div>
+            </div>
+            <!-- /Sidebar menu -->
+
+            <!-- Footer buttons -->
+            <div class="sidebar-footer hidden-small">
+              <a data-toggle="tooltip" data-placement="top" title="Settings">
+                <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="FullScreen">
+                <span
+                  class="glyphicon glyphicon-fullscreen"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="Lock">
+                <span
+                  class="glyphicon glyphicon-eye-close"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a
+                data-toggle="tooltip"
+                data-placement="top"
+                title="Logout"
+                href="logout.html"
+              >
+                <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+              </a>
+            </div>
+            <!-- /Footer buttons -->
+          </div>
+        </div>
+        <!-- /Sidebar -->
+
+        <!-- Top navigation -->
+        <div class="top_nav">
+          <div class="nav_menu">
+            <div class="nav toggle">
+              <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+            </div>
+            <nav class="nav navbar-nav">
+              <ul class="navbar-right">
+                <li class="nav-item dropdown open" style="padding-left: 15px">
+                  <a
+                    href="javascript:;"
+                    class="user-profile dropdown-toggle"
+                    aria-haspopup="true"
+                    id="navbarDropdown"
+                    data-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    <img
+                      id="navProfileImage"
+                      src="images/verathailandlogo.png"
+                      alt=""
+                    />
+                    <span id="navProfileName"></span>
+                  </a>
+                  <div
+                    class="dropdown-menu dropdown-usermenu pull-right"
+                    aria-labelledby="navbarDropdown"
+                  >
+                    <a class="dropdown-item" href="javascript:;"> Profile</a>
+                    <a class="dropdown-item" href="logout.html"
+                      ><i class="fa fa-sign-out pull-right"></i> Log Out</a
+                    >
+                  </div>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+        <!-- /Top navigation -->
+
+        <!-- Page content -->
+        <div class="right_col" role="main">
+          <!-- Section Header -->
+          <div class="section-header">
+            <h2>Import/Export Tools</h2>
+            <p>
+              Download templates to import your data or export existing data for
+              backup and migration
+            </p>
+          </div>
+
+          <!-- Currency Selection -->
+          <div class="container">
+            <div class="row">
+              <div class="col-md-4 col-md-offset-4">
+                <div class="currency-select">
+                  <label for="defaultCurrency"
+                    >Default Currency for Export:</label
+                  >
+                  <select id="defaultCurrency" class="form-control">
+                    <option value="THB">THB - Thai Baht</option>
+                    <option value="USD">USD - US Dollar</option>
+                    <option value="EUR">EUR - Euro</option>
+                    <option value="GBP">GBP - British Pound</option>
+                    <option value="JPY">JPY - Japanese Yen</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Service List -->
+          <div class="container">
+            <!-- Hotels -->
+            <div class="row" style="margin-bottom: 25px">
+              <div class="col-md-12">
+                <div class="tool-card">
+                  <div class="row">
+                    <div class="col-md-8">
+                      <h5>Hotels</h5>
+                      <p>
+                        Manage hotel data with room types, pricing, and
+                        promotions
+                      </p>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="action-buttons">
+                        <button
+                          class="btn-template"
+                          onclick="downloadTemplate('hotels')"
+                          id="hotels-template-btn"
+                        >
+                          <i class="fa fa-download"></i> Download Template
+                        </button>
+                        <button
+                          class="btn-export"
+                          onclick="exportData('hotels')"
+                          id="hotels-export-btn"
+                        >
+                          <i class="fa fa-upload"></i> Export Data
+                        </button>
+                        <button
+                          class="btn-import"
+                          onclick="triggerFileUpload('hotels')"
+                          id="hotels-import-btn"
+                        >
+                          <i class="fa fa-file-excel-o"></i> Import Data
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    class="file-input"
+                    id="hotels-file-input"
+                    accept=".xlsx,.xls"
+                    onchange="handleFileUpload('hotels', this)"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Transfers -->
+            <div class="row" style="margin-bottom: 25px">
+              <div class="col-md-12">
+                <div class="tool-card">
+                  <div class="row">
+                    <div class="col-md-8">
+                      <h5>Transfers</h5>
+                      <p>
+                        Handle transportation services with pricing and route
+                        information
+                      </p>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="action-buttons">
+                        <button
+                          class="btn-template"
+                          onclick="downloadTemplate('transfers')"
+                          id="transfers-template-btn"
+                        >
+                          <i class="fa fa-download"></i> Download Template
+                        </button>
+                        <button
+                          class="btn-export"
+                          onclick="exportData('transfers')"
+                          id="transfers-export-btn"
+                        >
+                          <i class="fa fa-upload"></i> Export Data
+                        </button>
+                        <button
+                          class="btn-import"
+                          onclick="triggerFileUpload('transfers')"
+                          id="transfers-import-btn"
+                        >
+                          <i class="fa fa-file-excel-o"></i> Import Data
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    class="file-input"
+                    id="transfers-file-input"
+                    accept=".xlsx,.xls"
+                    onchange="handleFileUpload('transfers', this)"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Excursions -->
+            <div class="row" style="margin-bottom: 25px">
+              <div class="col-md-12">
+                <div class="tool-card">
+                  <div class="row">
+                    <div class="col-md-8">
+                      <h5>Excursions</h5>
+                      <p>
+                        Manage day trips and excursions with detailed pricing
+                        structures
+                      </p>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="action-buttons">
+                        <button
+                          class="btn-template"
+                          onclick="downloadTemplate('excursions')"
+                          id="excursions-template-btn"
+                        >
+                          <i class="fa fa-download"></i> Download Template
+                        </button>
+                        <button
+                          class="btn-export"
+                          onclick="exportData('excursions')"
+                          id="excursions-export-btn"
+                        >
+                          <i class="fa fa-upload"></i> Export Data
+                        </button>
+                        <button
+                          class="btn-import"
+                          onclick="triggerFileUpload('excursions')"
+                          id="excursions-import-btn"
+                        >
+                          <i class="fa fa-file-excel-o"></i> Import Data
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    class="file-input"
+                    id="excursions-file-input"
+                    accept=".xlsx,.xls"
+                    onchange="handleFileUpload('excursions', this)"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Tours -->
+            <div class="row" style="margin-bottom: 25px">
+              <div class="col-md-12">
+                <div class="tool-card">
+                  <div class="row">
+                    <div class="col-md-8">
+                      <h5>Tours</h5>
+                      <p>
+                        Multi-day tour packages with itineraries, pricing, and
+                        tour days
+                      </p>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="action-buttons">
+                        <button
+                          class="btn-template"
+                          onclick="downloadTemplate('tours')"
+                          id="tours-template-btn"
+                        >
+                          <i class="fa fa-download"></i> Download Template
+                        </button>
+                        <button
+                          class="btn-export"
+                          onclick="exportData('tours')"
+                          id="tours-export-btn"
+                        >
+                          <i class="fa fa-upload"></i> Export Data
+                        </button>
+                        <button
+                          class="btn-import"
+                          onclick="triggerFileUpload('tours')"
+                          id="tours-import-btn"
+                        >
+                          <i class="fa fa-file-excel-o"></i> Import Data
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <input
+                    type="file"
+                    class="file-input"
+                    id="tours-file-input"
+                    accept=".xlsx,.xls"
+                    onchange="handleFileUpload('tours', this)"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Help Section -->
+          <div class="container">
+            <div class="help-section">
+              <h4
+                style="text-align: center; margin-bottom: 25px; color: #007bff"
+              >
+                <i class="fa fa-lightbulb-o" style="margin-right: 10px"></i>
+                How to Use Import/Export Tools
+              </h4>
+
+              <!-- Quick Start Guide -->
+              <div class="row" style="margin-bottom: 30px">
+                <div class="col-md-12">
+                  <h5 style="color: #2c3e50; margin-bottom: 20px">
+                    <i
+                      class="fa fa-rocket"
+                      style="margin-right: 8px; color: #007bff"
+                    ></i>
+                    Quick Start Guide
+                  </h5>
+                  <div class="row">
+                    <div
+                      class="col-md-4"
+                      style="text-align: center; margin-bottom: 20px"
+                    >
+                      <div
+                        style="
+                          background: #f8f9fa;
+                          padding: 20px;
+                          border-radius: 10px;
+                          height: 100%;
+                          border: 2px solid #007bff;
+                        "
+                      >
+                        <div
+                          style="
+                            font-size: 3rem;
+                            color: #007bff;
+                            margin-bottom: 15px;
+                          "
+                        >
+                          <i class="fa fa-download"></i>
+                        </div>
+                        <h6 style="color: #2c3e50; font-weight: bold">
+                          Step 1: Download Template
+                        </h6>
+                        <p style="color: #666; font-size: 14px">
+                          Get the Excel template with proper format, sample
+                          data, and instructions included.
+                        </p>
+                      </div>
+                    </div>
+                    <div
+                      class="col-md-4"
+                      style="text-align: center; margin-bottom: 20px"
+                    >
+                      <div
+                        style="
+                          background: #f8f9fa;
+                          padding: 20px;
+                          border-radius: 10px;
+                          height: 100%;
+                          border: 2px solid #28a745;
+                        "
+                      >
+                        <div
+                          style="
+                            font-size: 3rem;
+                            color: #28a745;
+                            margin-bottom: 15px;
+                          "
+                        >
+                          <i class="fa fa-edit"></i>
+                        </div>
+                        <h6 style="color: #2c3e50; font-weight: bold">
+                          Step 2: Fill Your Data
+                        </h6>
+                        <p style="color: #666; font-size: 14px">
+                          Add your data following the sample format. Use
+                          instructions sheet for guidance.
+                        </p>
+                      </div>
+                    </div>
+                    <div
+                      class="col-md-4"
+                      style="text-align: center; margin-bottom: 20px"
+                    >
+                      <div
+                        style="
+                          background: #f8f9fa;
+                          padding: 20px;
+                          border-radius: 10px;
+                          height: 100%;
+                          border: 2px solid #fd7e14;
+                        "
+                      >
+                        <div
+                          style="
+                            font-size: 3rem;
+                            color: #fd7e14;
+                            margin-bottom: 15px;
+                          "
+                        >
+                          <i class="fa fa-upload"></i>
+                        </div>
+                        <h6 style="color: #2c3e50; font-weight: bold">
+                          Step 3: Import Data
+                        </h6>
+                        <p style="color: #666; font-size: 14px">
+                          Upload your filled template. Get instant validation
+                          feedback and results.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Features Overview -->
+              <div class="row" style="margin-bottom: 30px">
+                <div class="col-md-12">
+                  <h5 style="color: #2c3e50; margin-bottom: 20px">
+                    <i
+                      class="fa fa-star"
+                      style="margin-right: 8px; color: #ffc107"
+                    ></i>
+                    Key Features
+                  </h5>
+                  <div class="row">
+                    <div class="col-md-6" style="margin-bottom: 15px">
+                      <div
+                        style="
+                          display: flex;
+                          align-items: center;
+                          padding: 15px;
+                          background: #e8f5e8;
+                          border-radius: 8px;
+                        "
+                      >
+                        <i
+                          class="fa fa-check-circle"
+                          style="
+                            font-size: 24px;
+                            color: #28a745;
+                            margin-right: 15px;
+                          "
+                        ></i>
+                        <div>
+                          <strong style="color: #2c3e50"
+                            >Smart Validation</strong
+                          >
+                          <p style="margin: 0; color: #666; font-size: 14px">
+                            Instant feedback with specific error locations
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-6" style="margin-bottom: 15px">
+                      <div
+                        style="
+                          display: flex;
+                          align-items: center;
+                          padding: 15px;
+                          background: #e3f2fd;
+                          border-radius: 8px;
+                        "
+                      >
+                        <i
+                          class="fa fa-shield"
+                          style="
+                            font-size: 24px;
+                            color: #007bff;
+                            margin-right: 15px;
+                          "
+                        ></i>
+                        <div>
+                          <strong style="color: #2c3e50">Data Safety</strong>
+                          <p style="margin: 0; color: #666; font-size: 14px">
+                            All-or-nothing imports ensure data integrity
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-6" style="margin-bottom: 15px">
+                      <div
+                        style="
+                          display: flex;
+                          align-items: center;
+                          padding: 15px;
+                          background: #fff3cd;
+                          border-radius: 8px;
+                        "
+                      >
+                        <i
+                          class="fa fa-copy"
+                          style="
+                            font-size: 24px;
+                            color: #ffc107;
+                            margin-right: 15px;
+                          "
+                        ></i>
+                        <div>
+                          <strong style="color: #2c3e50"
+                            >Duplicate Prevention</strong
+                          >
+                          <p style="margin: 0; color: #666; font-size: 14px">
+                            Automatic detection and prevention of duplicate
+                            entries
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-6" style="margin-bottom: 15px">
+                      <div
+                        style="
+                          display: flex;
+                          align-items: center;
+                          padding: 15px;
+                          background: #f8d7da;
+                          border-radius: 8px;
+                        "
+                      >
+                        <i
+                          class="fa fa-file-excel-o"
+                          style="
+                            font-size: 24px;
+                            color: #dc3545;
+                            margin-right: 15px;
+                          "
+                        ></i>
+                        <div>
+                          <strong style="color: #2c3e50"
+                            >Excel Compatible</strong
+                          >
+                          <p style="margin: 0; color: #666; font-size: 14px">
+                            Works with Microsoft Excel and Google Sheets
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tips and Best Practices -->
+              <div class="row">
+                <div class="col-md-12">
+                  <h5 style="color: #2c3e50; margin-bottom: 20px">
+                    <i
+                      class="fa fa-lightbulb-o"
+                      style="margin-right: 8px; color: #ffc107"
+                    ></i>
+                    Tips for Success
+                  </h5>
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div
+                        style="
+                          background: #e8f5e8;
+                          padding: 15px;
+                          border-radius: 8px;
+                          margin-bottom: 15px;
+                        "
+                      >
+                        <h6 style="color: #155724; margin-bottom: 10px">
+                          <i class="fa fa-check" style="margin-right: 8px"></i>
+                          Do's
+                        </h6>
+                        <ul
+                          style="color: #155724; margin: 0; padding-left: 20px"
+                        >
+                          <li style="margin-bottom: 5px">
+                            Follow the exact format shown in sample data
+                          </li>
+                          <li style="margin-bottom: 5px">
+                            Read the instructions sheet carefully
+                          </li>
+                          <li style="margin-bottom: 5px">
+                            Use the currency selector for consistent exports
+                          </li>
+                          <li style="margin-bottom: 5px">
+                            Test with a few rows first before bulk import
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div
+                        style="
+                          background: #f8d7da;
+                          padding: 15px;
+                          border-radius: 8px;
+                          margin-bottom: 15px;
+                        "
+                      >
+                        <h6 style="color: #721c24; margin-bottom: 10px">
+                          <i class="fa fa-times" style="margin-right: 8px"></i>
+                          Don'ts
+                        </h6>
+                        <ul
+                          style="color: #721c24; margin: 0; padding-left: 20px"
+                        >
+                          <li style="margin-bottom: 5px">
+                            Don't modify the template headers
+                          </li>
+                          <li style="margin-bottom: 5px">
+                            Don't leave required fields empty
+                          </li>
+                          <li style="margin-bottom: 5px">
+                            Don't import files larger than 10MB
+                          </li>
+                          <li style="margin-bottom: 5px">
+                            Don't ignore validation error messages
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- File Size and Format Info -->
+              <div class="row" style="margin-top: 20px">
+                <div class="col-md-12">
+                  <div
+                    style="
+                      background: #d4edda;
+                      border: 1px solid #c3e6cb;
+                      padding: 15px;
+                      border-radius: 8px;
+                    "
+                  >
+                    <div style="text-align: center">
+                      <i
+                        class="fa fa-info-circle"
+                        style="
+                          font-size: 24px;
+                          color: #155724;
+                          margin-bottom: 10px;
+                        "
+                      ></i>
+                      <h6 style="color: #155724; margin-bottom: 10px">
+                        File Requirements
+                      </h6>
+                      <p style="color: #155724; margin: 0">
+                        <strong>Formats:</strong> Excel (.xlsx, .xls)
+                        &nbsp;|&nbsp; <strong>Max Size:</strong> 10MB
+                        &nbsp;|&nbsp; <strong>Supported:</strong> Microsoft
+                        Excel, Google Sheets, LibreOffice
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /Page content -->
+
+        <!-- Footer content -->
+        <footer>
+          <!-- Footer content here -->
+        </footer>
+        <!-- /Footer content -->
+      </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p id="loadingText">Processing...</p>
+      </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Validation Errors Modal -->
+    <div class="validation-errors-modal" id="validationErrorsModal">
+      <div class="validation-errors-content">
+        <div class="validation-errors-header">
+          <h3>Import Validation Errors</h3>
+          <button class="close-errors-btn" onclick="closeValidationErrors()">
+            ×
+          </button>
+        </div>
+        <div class="error-summary" id="errorSummary">
+          <h4>Please fix the following errors and try importing again</h4>
+          <p id="errorSummaryText"></p>
+        </div>
+        <div id="errorsList"></div>
+        <div style="text-align: center; margin-top: 20px">
+          <button class="btn btn-secondary" onclick="closeValidationErrors()">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const token = localStorage.getItem("token");
+        const role = localStorage.getItem("role");
+
+        // Authentication check
+        if (!token) {
+          alert("You are not authorized. Please log in first.");
+          window.location.href = "login.html";
+          return;
+        }
+
+        // Admin check for tools access
+        if (role !== "admin" && role !== "superadmin") {
+          alert("Access denied. Admin privileges required for tools.");
+          window.location.href = "index.html";
+          return;
+        }
+
+        // Set username
+        const username = localStorage.getItem("username") || "Guest";
+        document.getElementById("profileName").innerText = username;
+        document.getElementById("navProfileName").innerText = username;
+
+        // Hide Control Panel menu for non-admin users
+        if (role !== "admin" && role !== "superadmin") {
+          const controlPanelMenu = document.getElementById("controlPanelMenu");
+          if (controlPanelMenu) {
+            controlPanelMenu.style.display = "none";
+          }
+        }
+      });
+
+      // Toast notification system
+      function showToast(message, type = "success") {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.className = `toast ${type}`;
+        toast.classList.add("show");
+
+        setTimeout(() => {
+          toast.classList.remove("show");
+        }, 4000);
+      }
+
+      // Loading overlay control
+      function showLoading(text = "Processing...") {
+        const overlay = document.getElementById("loadingOverlay");
+        const loadingText = document.getElementById("loadingText");
+        loadingText.textContent = text;
+        overlay.style.display = "flex";
+      }
+
+      function hideLoading() {
+        const overlay = document.getElementById("loadingOverlay");
+        overlay.style.display = "none";
+      }
+
+      // Button state management
+      function setButtonLoading(serviceType, action, isLoading) {
+        const button = document.getElementById(`${serviceType}-${action}-btn`);
+        if (button) {
+          button.disabled = isLoading;
+          if (isLoading) {
+            let loadingText = "";
+            switch (action) {
+              case "template":
+                loadingText = "Downloading...";
+                break;
+              case "export":
+                loadingText = "Exporting...";
+                break;
+              case "import":
+                loadingText = "Importing...";
+                break;
+            }
+            button.innerHTML = `<i class="fa fa-spinner fa-spin"></i> ${loadingText}`;
+          } else {
+            let icon = "",
+              text = "";
+            switch (action) {
+              case "template":
+                icon = "fa-download";
+                text = "Download Template";
+                break;
+              case "export":
+                icon = "fa-upload";
+                text = "Export Data";
+                break;
+              case "import":
+                icon = "fa-file-excel-o";
+                text = "Import Data";
+                break;
+            }
+            button.innerHTML = `<i class="fa ${icon}"></i> ${text}`;
+          }
+        }
+      }
+
+      // File download utility
+      function downloadFile(blob, filename) {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.style.display = "none";
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
+
+      // Download template function
+      async function downloadTemplate(serviceType) {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          showToast("Please log in to download templates", "error");
+          return;
+        }
+
+        try {
+          setButtonLoading(serviceType, "template", true);
+          showLoading(`Downloading ${serviceType} template...`);
+
+          const response = await fetch(
+            `${Endpoint}/api/v1/${serviceType}/import/template`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                Accept:
+                  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              },
+            }
+          );
+
+          if (!response.ok) {
+            let errorMessage = `Failed to download template: ${response.statusText}`;
+
+            if (response.status === 401) {
+              errorMessage = "Please log in to download templates";
+            } else if (response.status === 403) {
+              errorMessage = "You need admin permissions to download templates";
+            } else if (response.status === 500) {
+              errorMessage = "Server error. Please try again later";
+            }
+
+            throw new Error(errorMessage);
+          }
+
+          const blob = await response.blob();
+          const filename = `${serviceType}_import_template.xlsx`;
+
+          downloadFile(blob, filename);
+          showToast(
+            `${serviceType} template downloaded successfully! Check your Downloads folder.`,
+            "success"
+          );
+        } catch (error) {
+          console.error("Template download failed:", error);
+          showToast(
+            error.message || `Failed to download ${serviceType} template`,
+            "error"
+          );
+        } finally {
+          setButtonLoading(serviceType, "template", false);
+          hideLoading();
+        }
+      }
+
+      // Export data function
+      async function exportData(serviceType) {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          showToast("Please log in to export data", "error");
+          return;
+        }
+
+        try {
+          setButtonLoading(serviceType, "export", true);
+          showLoading(`Exporting ${serviceType} data...`);
+
+          const currency = document.getElementById("defaultCurrency").value;
+          const url = `${Endpoint}/api/v1/${serviceType}/export?default_currency=${currency}`;
+
+          const response = await fetch(url, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept:
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            },
+          });
+
+          if (!response.ok) {
+            let errorMessage = `Failed to export data: ${response.statusText}`;
+
+            if (response.status === 401) {
+              errorMessage = "Please log in to export data";
+            } else if (response.status === 403) {
+              errorMessage = "You need admin permissions to export data";
+            } else if (response.status === 400) {
+              errorMessage = "Invalid currency code or export parameters";
+            } else if (response.status === 500) {
+              errorMessage = "Server error. Please try again later";
+            }
+
+            throw new Error(errorMessage);
+          }
+
+          const blob = await response.blob();
+          const filename = `${serviceType}_export_${
+            new Date().toISOString().split("T")[0]
+          }.xlsx`;
+
+          downloadFile(blob, filename);
+          showToast(
+            `${serviceType} data exported successfully! Check your Downloads folder.`,
+            "success"
+          );
+        } catch (error) {
+          console.error("Data export failed:", error);
+          showToast(
+            error.message || `Failed to export ${serviceType} data`,
+            "error"
+          );
+        } finally {
+          setButtonLoading(serviceType, "export", false);
+          hideLoading();
+        }
+      }
+
+      // Trigger file upload dialog
+      function triggerFileUpload(serviceType) {
+        const fileInput = document.getElementById(`${serviceType}-file-input`);
+        if (fileInput) {
+          fileInput.click();
+        }
+      }
+
+      // Handle file upload
+      async function handleFileUpload(serviceType, fileInput) {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          showToast("Please log in to import data", "error");
+          return;
+        }
+
+        const file = fileInput.files[0];
+        if (!file) {
+          return;
+        }
+
+        // Validate file type
+        const allowedTypes = [
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "application/vnd.ms-excel",
+        ];
+        if (
+          !allowedTypes.includes(file.type) &&
+          !file.name.match(/\.(xlsx|xls)$/i)
+        ) {
+          showToast(
+            "Please select a valid Excel file (.xlsx or .xls)",
+            "error"
+          );
+          fileInput.value = "";
+          return;
+        }
+
+        // Validate file size (max 10MB)
+        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        if (file.size > maxSize) {
+          showToast("File size too large. Maximum size is 10MB", "error");
+          fileInput.value = "";
+          return;
+        }
+
+        try {
+          setButtonLoading(serviceType, "import", true);
+          showLoading(`Importing ${serviceType} data...`);
+
+          const formData = new FormData();
+          formData.append("file", file);
+
+          const response = await fetch(
+            `${Endpoint}/api/v1/${serviceType}/import`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                // Don't set Content-Type for FormData, let the browser set it
+              },
+              body: formData,
+            }
+          );
+
+          // Handle non-200 status codes (server/network errors)
+          if (!response.ok) {
+            let errorMessage = `Failed to import data: ${response.statusText}`;
+
+            if (response.status === 401) {
+              errorMessage = "Please log in to import data";
+            } else if (response.status === 403) {
+              errorMessage = "You need admin permissions to import data";
+            } else if (response.status === 413) {
+              errorMessage =
+                "File too large. Maximum file size is 10MB. Please reduce your file size.";
+            } else if (response.status === 422) {
+              errorMessage =
+                "Invalid file format. Please use only .xlsx or .xls Excel files.";
+            } else if (response.status === 500) {
+              errorMessage =
+                "Server error occurred. Please try again later or contact support.";
+            }
+
+            throw new Error(errorMessage);
+          }
+
+          const result = await response.json();
+
+          if (result.success) {
+            // Import successful
+            let successMessage = `${serviceType} data imported successfully!`;
+            if (result.processed_rows !== undefined) {
+              successMessage += ` ${result.processed_rows} items processed.`;
+            }
+
+            showToast(successMessage, "success");
+            console.log("Import successful:", result);
+          } else {
+            // Validation failed - show detailed errors
+            const errorMessage = result.message || "Import validation failed";
+            showToast(errorMessage, "error");
+
+            // Show detailed validation errors if available
+            if (result.errors && result.errors.length > 0) {
+              showValidationErrors(result.errors, serviceType);
+            }
+
+            console.log("Import validation failed:", result);
+          }
+        } catch (error) {
+          console.error("Import failed:", error);
+          showToast(
+            error.message || `Failed to import ${serviceType} data`,
+            "error"
+          );
+        } finally {
+          setButtonLoading(serviceType, "import", false);
+          hideLoading();
+          // Clear the file input
+          fileInput.value = "";
+        }
+      }
+
+      // Show validation errors in a detailed modal
+      function showValidationErrors(errors, serviceType) {
+        const modal = document.getElementById("validationErrorsModal");
+        const summaryText = document.getElementById("errorSummaryText");
+        const errorsList = document.getElementById("errorsList");
+
+        // Update summary
+        summaryText.textContent = `Found ${errors.length} error${
+          errors.length > 1 ? "s" : ""
+        } in your ${serviceType} file. Please fix these issues and try importing again.`;
+
+        // Clear previous errors
+        errorsList.innerHTML = "";
+
+        // Add each error
+        errors.forEach((error, index) => {
+          const errorDiv = document.createElement("div");
+          errorDiv.className = "error-item";
+
+          errorDiv.innerHTML = `
+            <div class="error-location">
+              <strong>Error ${index + 1}:</strong> 
+              ${error.sheet ? `Sheet "${error.sheet}", ` : ""}
+              Row ${error.row}, Column ${error.column}
+            </div>
+            <div class="error-field">
+              <strong>Field:</strong> ${error.field}
+            </div>
+            <div class="error-message">
+              <strong>Issue:</strong> ${error.error}
+            </div>
+            ${
+              error.value
+                ? `<div class="error-value">Current value: "${error.value}"</div>`
+                : ""
+            }
+          `;
+
+          errorsList.appendChild(errorDiv);
+        });
+
+        // Show modal
+        modal.style.display = "flex";
+
+        // Add click outside to close
+        modal.onclick = function (event) {
+          if (event.target === modal) {
+            closeValidationErrors();
+          }
+        };
+      }
+
+      // Close validation errors modal
+      function closeValidationErrors() {
+        const modal = document.getElementById("validationErrorsModal");
+        modal.style.display = "none";
+      }
+
+      // Error handling for network issues
+      window.addEventListener("online", function () {
+        showToast("Connection restored", "success");
+      });
+
+      window.addEventListener("offline", function () {
+        showToast(
+          "Connection lost. Please check your internet connection.",
+          "error"
+        );
+      });
+
+      // Keyboard shortcuts
+      document.addEventListener("keydown", function (e) {
+        // Ctrl+D for download templates
+        if (e.ctrlKey && e.key === "d") {
+          e.preventDefault();
+          showToast(
+            "Use the download buttons to get templates for specific services",
+            "info"
+          );
+        }
+
+        // Ctrl+E for export
+        if (e.ctrlKey && e.key === "e") {
+          e.preventDefault();
+          showToast(
+            "Use the export buttons to download data for specific services",
+            "info"
+          );
+        }
+
+        // Ctrl+I for import
+        if (e.ctrlKey && e.key === "i") {
+          e.preventDefault();
+          showToast(
+            "Use the import buttons to upload data for specific services",
+            "info"
+          );
+        }
+
+        // Escape to close validation errors modal
+        if (e.key === "Escape") {
+          const modal = document.getElementById("validationErrorsModal");
+          if (modal && modal.style.display === "flex") {
+            closeValidationErrors();
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

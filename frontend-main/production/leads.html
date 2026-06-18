@@ -1,0 +1,2196 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leads</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- Custom Theme Style -->
+    <link rel="stylesheet" href="../build/css/custom.min.css" />
+
+    <style>
+      /* Sidebar and navbar text size */
+      .nav_title span,
+      .profile_info span,
+      .profile_info h2,
+      .side-menu a,
+      .navbar-right a {
+        font-size: 1rem;
+      }
+
+      /* Clean button styles */
+      .edit-btn,
+      .delete-btn,
+      .view-btn,
+      .preview-btn,
+      .send-btn,
+      .convert-btn {
+        cursor: pointer;
+        margin: 2px;
+      }
+
+      /* Removed constraining CSS for sidebar-menu to allow proper submenu expansion */
+
+      /* Sidebar scrolling - allow scroll when expanded, but not when collapsed */
+      .left_col.scroll-view {
+        overflow-y: auto;
+        max-height: 100vh;
+      }
+
+      /* When sidebar is collapsed, remove height constraints to allow submenu expansion */
+      body.nav-sm .left_col.scroll-view {
+        overflow-y: visible;
+        max-height: none;
+      }
+
+      /* Status badges */
+      .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+        padding: 4px 10px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        display: inline-block;
+        transition: all 0.2s ease;
+      }
+
+      .status-pending:hover {
+        background-color: #ffeaa7;
+        transform: scale(1.05);
+      }
+
+      .status-cancel {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 4px 10px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        display: inline-block;
+        transition: all 0.2s ease;
+      }
+
+      .status-cancel:hover {
+        background-color: #f5c6cb;
+        transform: scale(1.05);
+      }
+
+      .status-ignore {
+        background-color: #e2e3e5;
+        color: #383d41;
+        padding: 4px 10px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        display: inline-block;
+        transition: all 0.2s ease;
+      }
+
+      .status-ignore:hover {
+        background-color: #d6d8db;
+        transform: scale(1.05);
+      }
+
+      .status-approved {
+        background-color: #28a745;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        display: inline-block;
+        transition: all 0.2s ease;
+      }
+
+      .status-approved:hover {
+        background-color: #218838;
+        transform: scale(1.05);
+      }
+
+      /* Locked status badges (approved/converted) - no hover effects */
+      .status-approved:not(.lead-status-badge):not(.group-status-badge),
+      .status-converted:not(.lead-status-badge):not(.group-status-badge) {
+        cursor: default !important;
+        opacity: 0.8;
+      }
+
+      .status-approved:not(.lead-status-badge):not(.group-status-badge):hover,
+      .status-converted:not(.lead-status-badge):not(.group-status-badge):hover {
+        background-color: #28a745 !important;
+        transform: none !important;
+      }
+
+      .status-converted:not(.lead-status-badge):not(.group-status-badge):hover {
+        background-color: #d4edda !important;
+      }
+
+      /* Legacy status badges for backward compatibility */
+      .status-draft {
+        background-color: #f8f9fa;
+        color: #6c757d;
+        padding: 4px 10px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        display: inline-block;
+        transition: all 0.2s ease;
+      }
+
+      .status-sent {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        padding: 4px 10px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        display: inline-block;
+        transition: all 0.2s ease;
+      }
+
+      .status-viewed {
+        background-color: #fff3cd;
+        color: #856404;
+        padding: 4px 10px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        display: inline-block;
+        transition: all 0.2s ease;
+      }
+
+      .status-converted {
+        background-color: #d4edda;
+        color: #155724;
+        padding: 4px 10px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        display: inline-block;
+        transition: all 0.2s ease;
+      }
+
+      .status-expired {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 4px 10px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        display: inline-block;
+        transition: all 0.2s ease;
+      }
+
+      /* Inline status dropdown styles */
+      .status-dropdown-container {
+        display: inline-block;
+        position: relative;
+      }
+
+      .status-dropdown-select {
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: bold;
+        border-radius: 3px;
+        cursor: pointer;
+        border: 1px solid #ced4da;
+        background-color: #fff;
+        min-width: 90px;
+        max-width: 120px;
+        height: 26px;
+        line-height: 1;
+      }
+
+      .status-dropdown-select:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        border-color: #80bdff;
+      }
+
+      /* Add visual indicator for clickable status */
+      .lead-status-badge:hover::after,
+      .group-status-badge:hover::after {
+        content: " ▼";
+        font-size: 10px;
+        margin-left: 3px;
+      }
+
+      /* Ensure status badges have consistent sizing */
+      .lead-status-badge,
+      .group-status-badge {
+        min-width: 80px;
+        text-align: center;
+        position: relative;
+        user-select: none;
+      }
+
+      /* Clean table styling */
+      .table-responsive {
+        margin-top: 20px;
+      }
+
+      /* Search and filter styling */
+      .search-filters {
+        margin-bottom: 20px;
+      }
+
+      /* Stats cards - simplified */
+      .stats-card {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 20px;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .stats-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #007bff;
+        margin-bottom: 5px;
+      }
+
+      .stats-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        text-transform: uppercase;
+      }
+
+      /* Auto-proposal specific styles */
+      .form-section {
+        border: 2px solid #e5e7eb !important;
+        border-radius: 8px !important;
+        padding: 1.5rem !important;
+        margin-bottom: 1.5rem !important;
+      }
+
+      .form-section legend {
+        font-weight: 600 !important;
+        color: #374151 !important;
+        padding: 0 0.5rem !important;
+        border: none !important;
+        margin-bottom: 0 !important;
+        width: auto !important;
+      }
+
+      .proposal-card-hover {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .proposal-card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      }
+    </style>
+  </head>
+
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+        <div class="col-md-3 left_col menu_fixed">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border: 0">
+              <a
+                href="index.html"
+                class="site_title"
+                style="
+                  display: block;
+                  text-align: center;
+                  font-size: 2rem;
+                  font-weight: bold;
+                  color: #007bff;
+                  text-decoration: none;
+                "
+              >
+                <span style="font-size: 1.5rem">VeraThailandia!</span>
+              </a>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- menu profile quick info -->
+            <div class="profile clearfix">
+              <div class="profile_pic">
+                <img
+                  src="images/verathailandlogo.png"
+                  alt="..."
+                  class="img-circle profile_img"
+                />
+              </div>
+              <div class="profile_info">
+                <span>Welcome,</span>
+                <h2 id="profileName"></h2>
+              </div>
+            </div>
+            <!-- /menu profile quick info -->
+
+            <br />
+
+            <!-- sidebar menu -->
+            <div
+              id="sidebar-menu"
+              class="main_menu_side hidden-print main_menu"
+            >
+              <div class="menu_section">
+                <h3>General</h3>
+                <ul class="nav side-menu">
+                  <li>
+                    <a href="index.html"><i class="fa fa-home"></i> Home</a>
+                  </li>
+                  <li id="controlPanelMenu">
+                    <a>
+                      <i class="fa fa-edit"></i> Control-Panel
+                      <span class="fa fa-chevron-down"></span>
+                    </a>
+                    <ul class="nav child_menu">
+                      <li><a href="activities.html">Activities</a></li>
+                      <li><a href="agents.html">Agents</a></li>
+                      <li><a href="booking.html">Bookings</a></li>
+                      <li><a href="excursions.html">Excursions</a></li>
+                      <li><a href="hotels.html">Hotels</a></li>
+                      <li><a href="markup.html">Markups</a></li>
+                      <!-- <li><a href="operations.html">Operations</a></li> -->
+                      <li><a href="othercharges.html">Other Charges</a></li>
+                      <!-- <li><a href="stop_sale.html">Stop Sale</a></li> -->
+                      <li><a href="suppliers.html">Suppliers</a></li>
+                      <li><a href="tools.html">Tools</a></li>
+                      <li><a href="tours.html">Tours</a></li>
+                      <li><a href="transfers.html">Transfers</a></li>
+                      <li><a href="users.html">Users</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="trip.html"><i class="fa fa-book"></i> Quotation</a>
+                  </li>
+                  <li>
+                    <a href="leads.html"
+                      ><i class="fa fa-rocket"></i> Leads
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li>
+                    <a href="payment.html"
+                      ><i class="fa fa-pencil-square-o"></i> Payment</a
+                    >
+                  </li>
+                  <!-- <li>
+                    <a href="tax_invoices.html"
+                      ><i class="fa fa-file-text-o"></i> Tax Invoices</a
+                    >
+                  </li> -->
+                  <li>
+                    <a href="itinerary.html"
+                      ><i class="fa fa-ticket"></i> Itinerary</a
+                    >
+                  </li>
+                  <li>
+                    <a href="analytics.html"
+                      ><i class="fa fa-bar-chart"></i> Analytics</a
+                    >
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- /sidebar menu -->
+
+            <!-- /menu footer buttons -->
+            <div class="sidebar-footer hidden-small">
+              <a data-toggle="tooltip" data-placement="top" title="Settings">
+                <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="FullScreen">
+                <span
+                  class="glyphicon glyphicon-fullscreen"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="Lock">
+                <span
+                  class="glyphicon glyphicon-eye-close"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a
+                data-toggle="tooltip"
+                data-placement="top"
+                title="Logout"
+                href="logout.html"
+              >
+                <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+              </a>
+            </div>
+            <!-- /menu footer buttons -->
+          </div>
+        </div>
+
+        <!-- top navigation -->
+        <div class="top_nav">
+          <div class="nav_menu">
+            <div class="nav toggle">
+              <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+            </div>
+            <nav class="nav navbar-nav">
+              <ul class="navbar-right">
+                <li class="nav-item dropdown open" style="padding-left: 15px">
+                  <a
+                    href="javascript:;"
+                    class="user-profile dropdown-toggle"
+                    aria-haspopup="true"
+                    id="navbarDropdown"
+                    data-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    <img
+                      id="navProfileImage"
+                      src="images/verathailandlogo.png"
+                      alt=""
+                    />
+                    <span id="navProfileName"></span>
+                  </a>
+                  <div
+                    class="dropdown-menu dropdown-usermenu pull-right"
+                    aria-labelledby="navbarDropdown"
+                  >
+                    <a class="dropdown-item" href="javascript:;"> Profile</a>
+                    <a class="dropdown-item" href="logout.html"
+                      ><i class="fa fa-sign-out pull-right"></i> Log Out</a
+                    >
+                  </div>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+        <!-- /top navigation -->
+
+        <!-- Page content -->
+        <div class="right_col" role="main">
+          <div class="">
+            <div class="page-title">
+              <div class="title_left">
+                <h3>Leads</h3>
+                <p class="text-muted">
+                  Create and manage travel proposals for your clients
+                </p>
+              </div>
+              <div class="title_right">
+                <div class="pull-right">
+                  <button class="btn btn-primary mr-2" id="createLeadBtn">
+                    <i class="fa fa-plus mr-2"></i>Create Lead
+                  </button>
+                  <button class="btn btn-primary" id="createLeadGroupBtn">
+                    <i class="fa fa-layer-group mr-2"></i>Create Lead Group
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- Tab Navigation -->
+            <div class="row" style="margin-top: 30px">
+              <div class="col-md-12">
+                <ul
+                  class="nav nav-tabs"
+                  id="leadsTab"
+                  role="tablist"
+                  style="padding-top: 20px"
+                >
+                  <li class="nav-item" role="presentation">
+                    <a
+                      class="nav-link active"
+                      id="individual-leads-tab"
+                      data-toggle="tab"
+                      href="#individual-leads"
+                      role="tab"
+                      aria-controls="individual-leads"
+                      aria-selected="true"
+                      style="padding: 12px 20px"
+                    >
+                      <i class="fa fa-user mr-2"></i>Individual Leads
+                    </a>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <a
+                      class="nav-link"
+                      id="lead-groups-tab"
+                      data-toggle="tab"
+                      href="#lead-groups"
+                      role="tab"
+                      aria-controls="lead-groups"
+                      aria-selected="false"
+                      style="padding: 12px 20px"
+                    >
+                      <i class="fa fa-layer-group mr-2"></i>Lead Groups
+                    </a>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <a
+                      class="nav-link"
+                      id="analytics-tab"
+                      data-toggle="tab"
+                      href="#analytics"
+                      role="tab"
+                      aria-controls="analytics"
+                      aria-selected="false"
+                      style="padding: 12px 20px"
+                    >
+                      <i class="fa fa-chart-line mr-2"></i>Analytics
+                    </a>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <a
+                      class="nav-link"
+                      id="auto-build-tab"
+                      data-toggle="tab"
+                      href="#auto-build"
+                      role="tab"
+                      aria-controls="auto-build"
+                      aria-selected="false"
+                      style="padding: 12px 20px"
+                    >
+                      <i class="fa fa-magic mr-2"></i>Auto-Build Proposal
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="leadsTabContent">
+              <!-- Individual Leads Tab -->
+              <div
+                class="tab-pane fade show active"
+                id="individual-leads"
+                role="tabpanel"
+                aria-labelledby="individual-leads-tab"
+              >
+                <!-- Search Box and Filters -->
+                <div class="row search-filters">
+                  <div class="col-md-4">
+                    <input
+                      type="text"
+                      id="leadsSearchInput"
+                      class="form-control"
+                      placeholder="Search leads by reference, client, or option name..."
+                    />
+                  </div>
+                  <div class="col-md-2">
+                    <select class="form-control" id="statusFilter">
+                      <option value="">All Status</option>
+                      <option value="pending">Pending</option>
+                      <option value="cancel">Cancel</option>
+                      <option value="ignore">Ignore</option>
+                      <option value="approved">Approved</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2">
+                    <button
+                      id="filterLeadsBtn"
+                      class="btn btn-primary btn-block"
+                    >
+                      <i class="fa fa-filter"></i> Filter
+                    </button>
+                  </div>
+                  <div class="col-md-2"></div>
+                  <div class="col-md-2 text-right">
+                    <label for="leadsRowsSelect">Show: </label>
+                    <select
+                      id="leadsRowsSelect"
+                      class="form-control"
+                      style="width: 70px; display: inline-block"
+                    >
+                      <option value="25" selected>25</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                      <option value="All">All</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-12 col-sm-12">
+                    <div class="x_panel">
+                      <div class="x_title">
+                        <h2>List of Leads</h2>
+                        <ul class="nav navbar-right panel_toolbox">
+                          <li>
+                            <a class="collapse-link"
+                              ><i class="fa fa-chevron-up"></i
+                            ></a>
+                          </li>
+                        </ul>
+                        <div class="clearfix"></div>
+                      </div>
+                      <div class="x_content">
+                        <div class="row">
+                          <div class="col-sm-12">
+                            <div class="card-box table-responsive">
+                              <table
+                                id="leadsTable"
+                                class="table table-striped table-bordered"
+                                style="width: 100%"
+                              >
+                                <thead>
+                                  <tr>
+                                    <th>Reference</th>
+                                    <th>Option Name</th>
+                                    <th>Client</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                    <th>Template</th>
+                                    <th>Markup</th>
+                                    <th>Created Date</th>
+                                    <th>Actions</th>
+                                  </tr>
+                                </thead>
+                                <tbody id="leadsTableBody">
+                                  <!-- Table rows will be dynamically inserted here -->
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Lead Groups Tab -->
+              <div
+                class="tab-pane fade"
+                id="lead-groups"
+                role="tabpanel"
+                aria-labelledby="lead-groups-tab"
+              >
+                <!-- Search Box and Filters -->
+                <div class="row search-filters">
+                  <div class="col-md-4">
+                    <input
+                      type="text"
+                      id="leadGroupsSearchInput"
+                      class="form-control"
+                      placeholder="Search lead groups by name, reference, or client..."
+                    />
+                  </div>
+                  <div class="col-md-2">
+                    <select class="form-control" id="groupStatusFilter">
+                      <option value="">All Status</option>
+                      <option value="pending">Pending</option>
+                      <option value="cancel">Cancel</option>
+                      <option value="ignore">Ignore</option>
+                      <option value="approved">Approved</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2">
+                    <button
+                      id="filterLeadGroupsBtn"
+                      class="btn btn-primary btn-block"
+                    >
+                      <i class="fa fa-filter"></i> Filter
+                    </button>
+                  </div>
+                  <div class="col-md-2"></div>
+                  <div class="col-md-2 text-right">
+                    <label for="leadGroupsRowsSelect">Show: </label>
+                    <select
+                      id="leadGroupsRowsSelect"
+                      class="form-control"
+                      style="width: 70px; display: inline-block"
+                    >
+                      <option value="25" selected>25</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                      <option value="All">All</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-12 col-sm-12">
+                    <div class="x_panel">
+                      <div class="x_title">
+                        <h2>List of Lead Groups</h2>
+                        <ul class="nav navbar-right panel_toolbox">
+                          <li>
+                            <a class="collapse-link"
+                              ><i class="fa fa-chevron-up"></i
+                            ></a>
+                          </li>
+                        </ul>
+                        <div class="clearfix"></div>
+                      </div>
+                      <div class="x_content">
+                        <div class="row">
+                          <div class="col-sm-12">
+                            <div class="card-box table-responsive">
+                              <table
+                                id="leadGroupsTable"
+                                class="table table-striped table-bordered"
+                                style="width: 100%"
+                              >
+                                <thead>
+                                  <tr>
+                                    <th>Group Name</th>
+                                    <th>Client Name</th>
+                                    <th>Client Email</th>
+                                    <th>Status</th>
+                                    <th>Options Count</th>
+                                    <th>Created Date</th>
+                                    <th>Actions</th>
+                                  </tr>
+                                </thead>
+                                <tbody id="leadGroupsTableBody">
+                                  <!-- Table rows will be dynamically inserted here -->
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Analytics Tab -->
+              <div
+                class="tab-pane fade"
+                id="analytics"
+                role="tabpanel"
+                aria-labelledby="analytics-tab"
+              >
+                <div class="row">
+                  <!-- Stats Cards -->
+                  <div class="col-md-3">
+                    <div class="stats-card">
+                      <div class="stats-number" id="totalLeadsCount">0</div>
+                      <div class="stats-label">Total Leads</div>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="stats-card">
+                      <div class="stats-number" id="convertedLeadsCount">0</div>
+                      <div class="stats-label">Converted</div>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="stats-card">
+                      <div class="stats-number" id="conversionRate">0%</div>
+                      <div class="stats-label">Conversion Rate</div>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="stats-card">
+                      <div class="stats-number" id="averageMarkup">0%</div>
+                      <div class="stats-label">Avg Markup</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row mt-4">
+                  <!-- Conversion by Template -->
+                  <div class="col-md-6">
+                    <div class="x_panel">
+                      <div class="x_title">
+                        <h2>
+                          <i class="fa fa-chart-bar mr-2"></i>Conversion by
+                          Template
+                        </h2>
+                        <div class="clearfix"></div>
+                      </div>
+                      <div class="x_content">
+                        <div id="templateConversionChart">
+                          <p class="text-center text-muted">
+                            No conversion data available
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Monthly Trends -->
+                  <div class="col-md-6">
+                    <div class="x_panel">
+                      <div class="x_title">
+                        <h2>
+                          <i class="fa fa-chart-line mr-2"></i>Monthly Trends
+                        </h2>
+                        <div class="clearfix"></div>
+                      </div>
+                      <div class="x_content">
+                        <div id="monthlyTrendsChart">
+                          <p class="text-center text-muted">
+                            No trend data available
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Status Distribution -->
+                <div class="row mt-4">
+                  <div class="col-md-12">
+                    <div class="x_panel">
+                      <div class="x_title">
+                        <h2>
+                          <i class="fa fa-pie-chart mr-2"></i>Leads by Status
+                        </h2>
+                        <div class="clearfix"></div>
+                      </div>
+                      <div class="x_content">
+                        <div id="statusDistributionChart">
+                          <p class="text-center text-muted">
+                            No status data available
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Auto-Build Proposal Tab -->
+              <div
+                class="tab-pane fade"
+                id="auto-build"
+                role="tabpanel"
+                aria-labelledby="auto-build-tab"
+              >
+                <div class="row">
+                  <div class="col-md-12">
+                    <div class="x_panel">
+                      <div class="x_title">
+                        <h2>
+                          <i class="fa fa-magic mr-2"></i>AI Auto-Proposal
+                          Builder
+                        </h2>
+                        <p class="text-muted">
+                          Generate intelligent travel proposals in seconds!
+                        </p>
+                        <div class="clearfix"></div>
+                      </div>
+                      <div class="x_content">
+                        <form id="autoProposalForm">
+                          <!-- Client Information Section -->
+                          <fieldset
+                            class="form-section"
+                            style="
+                              border: 2px solid #e5e7eb;
+                              border-radius: 8px;
+                              padding: 1.5rem;
+                              margin-bottom: 1.5rem;
+                            "
+                          >
+                            <legend
+                              style="
+                                font-weight: 600;
+                                color: #374151;
+                                padding: 0 0.5rem;
+                              "
+                            >
+                              <i class="fa fa-user mr-2"></i>Client Information
+                            </legend>
+
+                            <div class="row">
+                              <div class="col-md-4">
+                                <div class="form-group">
+                                  <label for="autoClientName"
+                                    >Client Name *</label
+                                  >
+                                  <input
+                                    type="text"
+                                    class="form-control"
+                                    id="autoClientName"
+                                    placeholder="John & Jane Doe"
+                                    required
+                                  />
+                                </div>
+                              </div>
+                              <div class="col-md-4">
+                                <div class="form-group">
+                                  <label for="autoClientEmail"
+                                    >Email Address *</label
+                                  >
+                                  <input
+                                    type="email"
+                                    class="form-control"
+                                    id="autoClientEmail"
+                                    placeholder="john@example.com"
+                                    required
+                                  />
+                                </div>
+                              </div>
+                              <div class="col-md-4">
+                                <div class="form-group">
+                                  <label for="autoClientPhone"
+                                    >Phone Number</label
+                                  >
+                                  <input
+                                    type="tel"
+                                    class="form-control"
+                                    id="autoClientPhone"
+                                    placeholder="+66987654321"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </fieldset>
+
+                          <!-- Trip Details Section -->
+                          <fieldset
+                            class="form-section"
+                            style="
+                              border: 2px solid #e5e7eb;
+                              border-radius: 8px;
+                              padding: 1.5rem;
+                              margin-bottom: 1.5rem;
+                            "
+                          >
+                            <legend
+                              style="
+                                font-weight: 600;
+                                color: #374151;
+                                padding: 0 0.5rem;
+                              "
+                            >
+                              <i class="fa fa-map-marker mr-2"></i>Trip Details
+                            </legend>
+
+                            <div class="row">
+                              <div class="col-md-3">
+                                <div class="form-group">
+                                  <label for="autoCountry"
+                                    >Destination Country *</label
+                                  >
+                                  <select
+                                    class="form-control"
+                                    id="autoCountry"
+                                    required
+                                  >
+                                    <option value="">Select Country</option>
+                                    <option value="Thailand">Thailand</option>
+                                    <option value="Vietnam">Vietnam</option>
+                                    <option value="Cambodia">Cambodia</option>
+                                    <option value="Laos">Laos</option>
+                                  </select>
+                                </div>
+                              </div>
+                              <div class="col-md-3">
+                                <div class="form-group">
+                                  <label for="autoStartDate"
+                                    >Start Date *</label
+                                  >
+                                  <input
+                                    type="date"
+                                    class="form-control"
+                                    id="autoStartDate"
+                                    required
+                                  />
+                                </div>
+                              </div>
+                              <div class="col-md-3">
+                                <div class="form-group">
+                                  <label for="autoNumberOfDays"
+                                    >Number of Days *</label
+                                  >
+                                  <input
+                                    type="number"
+                                    class="form-control"
+                                    id="autoNumberOfDays"
+                                    min="1"
+                                    max="30"
+                                    value="7"
+                                    required
+                                  />
+                                </div>
+                              </div>
+                              <div class="col-md-3">
+                                <div class="form-group">
+                                  <label for="autoExpiry">Expiry Days</label>
+                                  <input
+                                    type="number"
+                                    class="form-control"
+                                    id="autoExpiry"
+                                    min="1"
+                                    max="365"
+                                    value="3"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            <div class="row">
+                              <div class="col-md-4">
+                                <div class="form-group">
+                                  <label for="autoNumberOfAdults"
+                                    >Adults *</label
+                                  >
+                                  <input
+                                    type="number"
+                                    class="form-control"
+                                    id="autoNumberOfAdults"
+                                    min="1"
+                                    max="20"
+                                    value="2"
+                                    required
+                                  />
+                                </div>
+                              </div>
+                              <div class="col-md-4">
+                                <div class="form-group">
+                                  <label for="autoNumberOfKids">Children</label>
+                                  <input
+                                    type="number"
+                                    class="form-control"
+                                    id="autoNumberOfKids"
+                                    min="0"
+                                    max="10"
+                                    value="0"
+                                  />
+                                </div>
+                              </div>
+                              <div class="col-md-4">
+                                <div class="form-group">
+                                  <label for="autoPreferredCities"
+                                    >Preferred Cities (Optional)</label
+                                  >
+                                  <input
+                                    type="text"
+                                    class="form-control"
+                                    id="autoPreferredCities"
+                                    placeholder="Bangkok, Phuket, Chiang Mai"
+                                  />
+                                  <small class="form-text text-muted"
+                                    >Comma-separated, leave blank for AI
+                                    suggestions</small
+                                  >
+                                </div>
+                              </div>
+                            </div>
+                          </fieldset>
+
+                          <!-- Budget & Preferences Section -->
+                          <fieldset
+                            class="form-section"
+                            style="
+                              border: 2px solid #e5e7eb;
+                              border-radius: 8px;
+                              padding: 1.5rem;
+                              margin-bottom: 1.5rem;
+                            "
+                          >
+                            <legend
+                              style="
+                                font-weight: 600;
+                                color: #374151;
+                                padding: 0 0.5rem;
+                              "
+                            >
+                              <i class="fa fa-money mr-2"></i>Budget &
+                              Preferences
+                            </legend>
+
+                            <div class="row">
+                              <div class="col-md-4">
+                                <div class="form-group">
+                                  <label for="autoBudget">Total Budget *</label>
+                                  <input
+                                    type="number"
+                                    class="form-control"
+                                    id="autoBudget"
+                                    min="100"
+                                    step="100"
+                                    value="50000"
+                                    required
+                                  />
+                                </div>
+                              </div>
+                              <div class="col-md-4">
+                                <div class="form-group">
+                                  <label for="autoCurrency">Currency</label>
+                                  <select
+                                    class="form-control"
+                                    id="autoCurrency"
+                                  >
+                                    <option value="THB">THB (Thai Baht)</option>
+                                    <option value="USD">USD (US Dollar)</option>
+                                    <option value="EUR">EUR (Euro)</option>
+                                  </select>
+                                </div>
+                              </div>
+                              <div class="col-md-4">
+                                <div class="form-group">
+                                  <label for="autoAccommodationType"
+                                    >Accommodation Level</label
+                                  >
+                                  <select
+                                    class="form-control"
+                                    id="autoAccommodationType"
+                                  >
+                                    <option value="budget">Budget</option>
+                                    <option value="standard" selected>
+                                      Standard
+                                    </option>
+                                    <option value="luxury">Luxury</option>
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div class="row">
+                              <div class="col-md-6">
+                                <div class="form-group">
+                                  <label for="autoMarkupPercentage"
+                                    >Markup Percentage</label
+                                  >
+                                  <input
+                                    type="number"
+                                    class="form-control"
+                                    id="autoMarkupPercentage"
+                                    min="0"
+                                    max="100"
+                                    step="0.1"
+                                    value="15.0"
+                                  />
+                                </div>
+                              </div>
+                              <div class="col-md-6">
+                                <div style="margin-top: 25px">
+                                  <div class="checkbox">
+                                    <label>
+                                      <input
+                                        type="checkbox"
+                                        id="autoIncludeTransfers"
+                                        checked
+                                      />
+                                      Include Airport & Intercity Transfers
+                                    </label>
+                                  </div>
+                                  <div class="checkbox">
+                                    <label>
+                                      <input
+                                        type="checkbox"
+                                        id="autoIncludeExcursions"
+                                        checked
+                                      />
+                                      Include Local Excursions & Activities
+                                    </label>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div class="row">
+                              <div class="col-md-12">
+                                <div class="form-group">
+                                  <label for="autoSpecialRequests"
+                                    >Special Requests</label
+                                  >
+                                  <textarea
+                                    class="form-control"
+                                    id="autoSpecialRequests"
+                                    rows="3"
+                                    placeholder="Honeymoon package, family-friendly activities, vegetarian meals, accessibility needs..."
+                                  ></textarea>
+                                </div>
+                              </div>
+                            </div>
+                          </fieldset>
+
+                          <!-- Error Display -->
+                          <div
+                            id="autoProposalError"
+                            class="alert alert-danger"
+                            style="display: none"
+                          >
+                            <strong>Error:</strong>
+                            <span id="autoProposalErrorText"></span>
+                          </div>
+
+                          <!-- Submit Button -->
+                          <div class="form-actions text-center">
+                            <button
+                              type="submit"
+                              id="generateProposalsBtn"
+                              class="btn btn-primary btn-lg"
+                              style="padding: 15px 40px; font-size: 18px"
+                            >
+                              <i class="fa fa-magic mr-2"></i>Generate AI
+                              Proposals
+                            </button>
+                          </div>
+                        </form>
+
+                        <!-- Results Section -->
+                        <div
+                          id="proposalResults"
+                          style="display: none; margin-top: 40px"
+                        >
+                          <div class="x_panel">
+                            <div class="x_title">
+                              <h2>
+                                <i
+                                  class="fa fa-check-circle mr-2 text-success"
+                                ></i
+                                >Proposals Generated Successfully!
+                              </h2>
+                              <div class="clearfix"></div>
+                            </div>
+                            <div class="x_content">
+                              <!-- Results Summary -->
+                              <div class="row" style="margin-bottom: 30px">
+                                <div class="col-md-3">
+                                  <div class="stats-card">
+                                    <div
+                                      class="stats-number"
+                                      id="resultGroupRef"
+                                    >
+                                      -
+                                    </div>
+                                    <div class="stats-label">
+                                      Group Reference
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="col-md-3">
+                                  <div class="stats-card">
+                                    <div
+                                      class="stats-number"
+                                      id="resultTotalOptions"
+                                    >
+                                      0
+                                    </div>
+                                    <div class="stats-label">Total Options</div>
+                                  </div>
+                                </div>
+                                <div class="col-md-3">
+                                  <div class="stats-card">
+                                    <div
+                                      class="stats-number"
+                                      id="resultCitiesIncluded"
+                                    >
+                                      -
+                                    </div>
+                                    <div class="stats-label">
+                                      Cities Included
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="col-md-3">
+                                  <div class="stats-card">
+                                    <div
+                                      class="stats-number"
+                                      id="resultBudgetUsed"
+                                    >
+                                      0
+                                    </div>
+                                    <div class="stats-label">Budget Used</div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <!-- Proposal Options -->
+                              <div id="proposalOptions" class="row">
+                                <!-- Proposal cards will be inserted here -->
+                              </div>
+
+                              <!-- Action Buttons -->
+                              <div class="text-center" style="margin-top: 30px">
+                                <button
+                                  id="sendAllProposalsBtn"
+                                  class="btn btn-success btn-lg mr-3"
+                                  style="padding: 12px 30px"
+                                >
+                                  <i class="fa fa-envelope mr-2"></i>Send All
+                                  Proposals to Client
+                                </button>
+                                <button
+                                  id="editProposalsBtn"
+                                  class="btn btn-info btn-lg"
+                                  style="padding: 12px 30px"
+                                >
+                                  <i class="fa fa-edit mr-2"></i>Edit Proposals
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /Page content -->
+
+        <!-- Footer -->
+        <footer></footer>
+        <!-- /Footer -->
+      </div>
+    </div>
+
+    <!-- Create Lead Modal -->
+    <div class="modal fade" id="createLeadModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fa fa-rocket mr-2"></i>Create New Lead
+            </h5>
+            <button type="button" class="close" data-dismiss="modal">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="createLeadForm">
+              <!-- Client Information -->
+              <h6 class="mb-3">
+                <i class="fa fa-user mr-2"></i>Client Information
+              </h6>
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="leadClientName">Client Name *</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="leadClientName"
+                      placeholder="John Doe"
+                      required
+                    />
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="leadClientEmail">Client Email *</label>
+                    <input
+                      type="email"
+                      class="form-control"
+                      id="leadClientEmail"
+                      placeholder="client@example.com"
+                      required
+                    />
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="leadClientPhone">Client Phone</label>
+                    <input
+                      type="tel"
+                      class="form-control"
+                      id="leadClientPhone"
+                      placeholder="+1234567890"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Trip Details -->
+              <h6 class="mb-3 mt-4">
+                <i class="fa fa-calendar mr-2"></i>Trip Details
+              </h6>
+              <div class="row">
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label for="leadNumberOfAdults">Adults</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="leadNumberOfAdults"
+                      min="1"
+                      max="20"
+                      value="2"
+                    />
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label for="leadNumberOfKids">Children</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="leadNumberOfKids"
+                      min="0"
+                      max="10"
+                      value="0"
+                    />
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label for="leadStartDate">Start Date *</label>
+                    <input
+                      type="date"
+                      class="form-control"
+                      id="leadStartDate"
+                      required
+                    />
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label for="leadBookingDate">Booking Date</label>
+                    <input
+                      type="date"
+                      class="form-control"
+                      id="leadBookingDate"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label for="leadClientBookingReference"
+                      >Client Booking Reference</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="leadClientBookingReference"
+                      placeholder="CLIENT-REF-123"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Lead Configuration -->
+              <h6 class="mb-3 mt-4">
+                <i class="fa fa-cog mr-2"></i>Lead Configuration
+              </h6>
+              <div class="row">
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label for="leadOptionName">Option Name *</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="leadOptionName"
+                      placeholder="e.g., Budget Package"
+                      required
+                    />
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label for="leadMarkupPercentage">Markup %</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="leadMarkupPercentage"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value="15"
+                    />
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label for="leadTemplateType">Template Type</label>
+                    <select class="form-control" id="leadTemplateType">
+                      <option value="standard">Standard</option>
+                      <option value="premium">Premium</option>
+                      <option value="modern">Modern</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label for="leadPriority">Priority</label>
+                    <select class="form-control" id="leadPriority">
+                      <option value="low">Low Priority</option>
+                      <option value="medium" selected>Medium Priority</option>
+                      <option value="high">High Priority</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Notes -->
+              <h6 class="mb-3 mt-4">
+                <i class="fa fa-sticky-note mr-2"></i>Notes
+              </h6>
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="leadInternalNotes">Internal Notes</label>
+                    <textarea
+                      class="form-control"
+                      id="leadInternalNotes"
+                      rows="3"
+                      placeholder="Notes for internal use..."
+                    ></textarea>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="leadClientNotes">Client Notes</label>
+                    <textarea
+                      class="form-control"
+                      id="leadClientNotes"
+                      rows="3"
+                      placeholder="Notes visible to client..."
+                    ></textarea>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="leadRemarks">Remarks</label>
+                    <textarea
+                      class="form-control"
+                      id="leadRemarks"
+                      rows="3"
+                      placeholder="Additional remarks..."
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Service Selection Placeholder -->
+              <div class="alert alert-info mt-4">
+                <i class="fa fa-info-circle mr-2"></i>
+                <strong>Service Selection:</strong> Hotels, transfers,
+                excursions, tours, and flights can be added after creating the
+                lead. The lead will be created with empty service arrays and can
+                be edited to add services.
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="button" class="btn btn-primary" id="saveLeadBtn">
+              <i class="fa fa-save mr-2"></i>Create Lead
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Lead Group Modal -->
+    <div
+      class="modal fade"
+      id="createLeadGroupModal"
+      tabindex="-1"
+      role="dialog"
+    >
+      <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fa fa-layer-group mr-2"></i>Create New Lead Group
+            </h5>
+            <button type="button" class="close" data-dismiss="modal">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="createLeadGroupForm">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="groupName">Group Name</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="groupName"
+                      placeholder="e.g., Bangkok Package Options"
+                      required
+                    />
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="groupDescription">Description</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="groupDescription"
+                      placeholder="Brief description of the group"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="groupClientName">Client Name</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="groupClientName"
+                      placeholder="John Doe"
+                      required
+                    />
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="groupClientEmail">Client Email</label>
+                    <input
+                      type="email"
+                      class="form-control"
+                      id="groupClientEmail"
+                      placeholder="john@example.com"
+                      required
+                    />
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="groupClientPhone">Client Phone</label>
+                    <input
+                      type="tel"
+                      class="form-control"
+                      id="groupClientPhone"
+                      placeholder="+1234567890"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="groupExpiryDays">Expiry Days</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="groupExpiryDays"
+                      min="1"
+                      max="365"
+                      value="30"
+                      required
+                    />
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="alert alert-info">
+                    <i class="fa fa-info-circle mr-2"></i>
+                    <strong>Lead Management:</strong> After creating this group,
+                    you can add individual leads to it.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Dynamic Trip Options -->
+              <div id="tripOptionsContainer" style="display: none">
+                <h6 class="mt-4 mb-3">Configure Options for Selected Trips</h6>
+                <div id="tripOptionsList"></div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="groupInternalNotes">Internal Notes</label>
+                    <textarea
+                      class="form-control"
+                      id="groupInternalNotes"
+                      rows="3"
+                      placeholder="Notes for internal use..."
+                    ></textarea>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="groupClientNotes">Client Notes</label>
+                    <textarea
+                      class="form-control"
+                      id="groupClientNotes"
+                      rows="3"
+                      placeholder="Notes visible to client..."
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="button" class="btn btn-primary" id="saveLeadGroupBtn">
+              <i class="fa fa-save mr-2"></i>Create Lead Group
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/leads/leads.js"></script>
+
+    <!-- Auto-Proposal JavaScript -->
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Set minimum start date to today
+        const today = new Date().toISOString().split("T")[0];
+        document.getElementById("autoStartDate").min = today;
+
+        // Auto-proposal form submission
+        document
+          .getElementById("autoProposalForm")
+          .addEventListener("submit", function (e) {
+            e.preventDefault();
+            generateAutoProposals();
+          });
+
+        // Action button handlers
+        document
+          .getElementById("sendAllProposalsBtn")
+          .addEventListener("click", function () {
+            sendAllProposalsToClient();
+          });
+
+        document
+          .getElementById("editProposalsBtn")
+          .addEventListener("click", function () {
+            editProposals();
+          });
+      });
+
+      let currentLeadGroupId = null;
+
+      function generateAutoProposals() {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          showError("Please log in to generate proposals");
+          return;
+        }
+
+        // Collect form data
+        const formData = {
+          client_name: document.getElementById("autoClientName").value.trim(),
+          client_email: document.getElementById("autoClientEmail").value.trim(),
+          client_phone: document.getElementById("autoClientPhone").value.trim(),
+          country: document.getElementById("autoCountry").value,
+          start_date: document.getElementById("autoStartDate").value,
+          number_of_days: parseInt(
+            document.getElementById("autoNumberOfDays").value
+          ),
+          number_of_adults: parseInt(
+            document.getElementById("autoNumberOfAdults").value
+          ),
+          number_of_kids: parseInt(
+            document.getElementById("autoNumberOfKids").value
+          ),
+          budget: parseFloat(document.getElementById("autoBudget").value),
+          currency: document.getElementById("autoCurrency").value,
+          accommodation_type: document.getElementById("autoAccommodationType")
+            .value,
+          markup_percentage: parseFloat(
+            document.getElementById("autoMarkupPercentage").value
+          ),
+          expiry_days: parseInt(document.getElementById("autoExpiry").value),
+          include_transfers: document.getElementById("autoIncludeTransfers")
+            .checked,
+          include_excursions: document.getElementById("autoIncludeExcursions")
+            .checked,
+          special_requests: document
+            .getElementById("autoSpecialRequests")
+            .value.trim(),
+        };
+
+        // Add preferred cities if provided
+        const preferredCitiesInput = document
+          .getElementById("autoPreferredCities")
+          .value.trim();
+        if (preferredCitiesInput) {
+          formData.preferred_cities = preferredCitiesInput
+            .split(",")
+            .map((city) => city.trim())
+            .filter((city) => city);
+        }
+
+        // Validate required fields
+        const validationErrors = validateAutoProposalForm(formData);
+        if (validationErrors.length > 0) {
+          showError(validationErrors.join(", "));
+          return;
+        }
+
+        // Show loading state
+        const submitBtn = document.getElementById("generateProposalsBtn");
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML =
+          '<i class="fa fa-spinner fa-spin mr-2"></i>Generating Proposals...';
+        hideError();
+
+        // Make API call
+        fetch(`${Endpoint}/api/v1/proposals/auto-build`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(formData),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              return response.json().then((errorData) => {
+                throw new Error(
+                  errorData.error ||
+                    errorData.details ||
+                    `HTTP ${response.status}: ${response.statusText}`
+                );
+              });
+            }
+            return response.json();
+          })
+          .then((data) => {
+            console.log("✅ Auto-proposals generated:", data);
+            currentLeadGroupId = data.lead_group.id;
+            displayProposalResults(data);
+            showSuccess("Proposals generated successfully!");
+          })
+          .catch((error) => {
+            console.error("❌ Auto-proposal generation failed:", error);
+            showError(
+              error.message || "Failed to generate proposals. Please try again."
+            );
+          })
+          .finally(() => {
+            // Restore button state
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+          });
+      }
+
+      function validateAutoProposalForm(formData) {
+        const errors = [];
+
+        if (!formData.client_name) errors.push("Client name is required");
+        if (!formData.client_email) errors.push("Email address is required");
+        if (!isValidEmail(formData.client_email))
+          errors.push("Invalid email format");
+        if (!formData.country) errors.push("Destination country is required");
+        if (!formData.start_date) errors.push("Start date is required");
+        if (formData.number_of_days < 1 || formData.number_of_days > 30)
+          errors.push("Number of days must be between 1 and 30");
+        if (formData.number_of_adults < 1)
+          errors.push("At least 1 adult is required");
+        if (formData.budget < 100) errors.push("Budget must be at least 100");
+
+        // Date validation
+        const startDate = new Date(formData.start_date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (startDate < today) errors.push("Start date cannot be in the past");
+
+        return errors;
+      }
+
+      function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+      }
+
+      function displayProposalResults(data) {
+        const { lead_group, generated_info } = data;
+
+        // Update summary stats
+        document.getElementById("resultGroupRef").textContent =
+          lead_group.group_reference;
+        document.getElementById("resultTotalOptions").textContent =
+          generated_info.total_options;
+        document.getElementById("resultCitiesIncluded").textContent =
+          generated_info.cities_included &&
+          generated_info.cities_included.length > 0
+            ? generated_info.cities_included.join(", ")
+            : "To be determined";
+        document.getElementById(
+          "resultBudgetUsed"
+        ).textContent = `${generated_info.budget_used.toLocaleString()} ${
+          lead_group.leads[0]?.currency || "THB"
+        }`;
+
+        // Display proposal options
+        const proposalOptionsContainer =
+          document.getElementById("proposalOptions");
+        proposalOptionsContainer.innerHTML = "";
+
+        lead_group.leads.forEach((lead, index) => {
+          const proposalCard = createProposalCard(lead, index);
+          proposalOptionsContainer.appendChild(proposalCard);
+        });
+
+        // Show results section
+        document.getElementById("proposalResults").style.display = "block";
+
+        // Scroll to results
+        document.getElementById("proposalResults").scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+
+      function createProposalCard(lead, index) {
+        const cardDiv = document.createElement("div");
+        cardDiv.className = "col-md-4 mb-4";
+
+        const tierColors = ["#17a2b8", "#28a745", "#ffc107"]; // Info, Success, Warning
+        const tierIcons = ["fa-dollar", "fa-star", "fa-crown"];
+
+        cardDiv.innerHTML = `
+          <div class="card" style="border: 2px solid ${
+            tierColors[index]
+          }; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s;">
+            <div class="card-header text-white" style="background: ${
+              tierColors[index]
+            }; border-radius: 10px 10px 0 0;">
+              <h5 class="mb-0">
+                <i class="fa ${tierIcons[index]} mr-2"></i>
+                ${lead.option_name}
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="text-center mb-3">
+                <h3 class="text-primary mb-0">฿${lead.final_cost.toLocaleString()}</h3>
+                <small class="text-muted">Total Cost</small>
+              </div>
+              
+              <div class="row text-center">
+                <div class="col-6">
+                  <div class="mb-2">
+                    <i class="fa fa-hotel text-info"></i>
+                    <span class="ml-1">${lead.hotels.length} Hotels</span>
+                  </div>
+                  <div class="mb-2">
+                    <i class="fa fa-car text-warning"></i>
+                    <span class="ml-1">${lead.transfers.length} Transfers</span>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="mb-2">
+                    <i class="fa fa-binoculars text-success"></i>
+                    <span class="ml-1">${
+                      lead.excursions.length
+                    } Excursions</span>
+                  </div>
+                  <div class="mb-2">
+                    <i class="fa fa-map-signs text-primary"></i>
+                    <span class="ml-1">${lead.tours.length} Tours</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="mt-3">
+                <button class="btn btn-outline-primary btn-sm btn-block mb-2" onclick="viewProposalDetails(${
+                  lead.id
+                })">
+                  <i class="fa fa-eye mr-1"></i> View Details
+                </button>
+                <button class="btn btn-primary btn-sm btn-block" onclick="sendProposalToClient(${
+                  lead.id
+                })">
+                  <i class="fa fa-envelope mr-1"></i> Send to Client
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Add hover effects
+        const card = cardDiv.querySelector(".card");
+        card.addEventListener("mouseenter", function () {
+          this.style.transform = "translateY(-5px)";
+          this.style.boxShadow = "0 8px 25px rgba(0,0,0,0.15)";
+        });
+
+        card.addEventListener("mouseleave", function () {
+          this.style.transform = "translateY(0)";
+          this.style.boxShadow = "0 2px 5px rgba(0,0,0,0.1)";
+        });
+
+        return cardDiv;
+      }
+
+      function viewProposalDetails(leadId) {
+        // Navigate to proposal details page
+        window.open(`edit_lead.html?id=${leadId}`, "_blank");
+      }
+
+      function sendProposalToClient(leadId) {
+        const token = localStorage.getItem("token");
+
+        if (!confirm("Send this proposal to the client via email?")) {
+          return;
+        }
+
+        // Show loading state
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i> Sending...';
+
+        fetch(`${Endpoint}/api/v1/proposals/${leadId}/send-email`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ template_type: "standard" }),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Failed to send proposal");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            showSuccess("Proposal sent successfully!");
+            console.log("Email sent:", data);
+          })
+          .catch((error) => {
+            console.error("Email send failed:", error);
+            showError("Failed to send proposal. Please try again.");
+          })
+          .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+          });
+      }
+
+      function sendAllProposalsToClient() {
+        if (!currentLeadGroupId) {
+          showError("No proposals to send");
+          return;
+        }
+
+        const token = localStorage.getItem("token");
+
+        if (!confirm("Send all proposals to the client via email?")) {
+          return;
+        }
+
+        const btn = document.getElementById("sendAllProposalsBtn");
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML =
+          '<i class="fa fa-spinner fa-spin mr-2"></i>Sending All...';
+
+        fetch(
+          `${Endpoint}/api/v1/group-proposals/${currentLeadGroupId}/send-email`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ template_type: "group" }),
+          }
+        )
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Failed to send proposals");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            showSuccess("All proposals sent successfully!");
+            console.log("Group email sent:", data);
+          })
+          .catch((error) => {
+            console.error("Group email send failed:", error);
+            showError("Failed to send proposals. Please try again.");
+          })
+          .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+          });
+      }
+
+      function editProposals() {
+        if (!currentLeadGroupId) {
+          showError("No proposals to edit");
+          return;
+        }
+
+        // Navigate to lead group editing page
+        window.location.href = `edit_lead_group.html?id=${currentLeadGroupId}`;
+      }
+
+      function showError(message) {
+        const errorDiv = document.getElementById("autoProposalError");
+        const errorText = document.getElementById("autoProposalErrorText");
+        errorText.textContent = message;
+        errorDiv.style.display = "block";
+        errorDiv.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+
+      function hideError() {
+        document.getElementById("autoProposalError").style.display = "none";
+      }
+
+      function showSuccess(message) {
+        // Create a temporary success alert
+        const alertDiv = document.createElement("div");
+        alertDiv.className = "alert alert-success alert-dismissible fade show";
+        alertDiv.style.position = "fixed";
+        alertDiv.style.top = "20px";
+        alertDiv.style.right = "20px";
+        alertDiv.style.zIndex = "9999";
+        alertDiv.style.minWidth = "300px";
+        alertDiv.innerHTML = `
+          <strong>Success!</strong> ${message}
+          <button type="button" class="close" data-dismiss="alert">
+            <span>&times;</span>
+          </button>
+        `;
+
+        document.body.appendChild(alertDiv);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+          if (alertDiv.parentNode) {
+            alertDiv.parentNode.removeChild(alertDiv);
+          }
+        }, 5000);
+      }
+    </script>
+  </body>
+</html>

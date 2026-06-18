@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>List of Agents</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- Custom Theme Style -->
+    <link rel="stylesheet" href="../build/css/custom.min.css" />
+
+    <style>
+      /* Sidebar and navbar text size */
+      .nav_title span,
+      .profile_info span,
+      .profile_info h2,
+      .side-menu a,
+      .navbar-right a {
+        font-size: 1rem; /* Slightly increased for better readability */
+      }
+    </style>
+
+    <style>
+      .edit-btn,
+      .delete-btn {
+        cursor: pointer;
+      }
+      /* Removed constraining CSS for sidebar-menu to allow proper submenu expansion */
+
+      /* Sidebar scrolling - allow scroll when expanded, but not when collapsed */
+      .left_col.scroll-view {
+        overflow-y: auto;
+        max-height: 100vh;
+      }
+
+      /* When sidebar is collapsed, remove height constraints to allow submenu expansion */
+      body.nav-sm .left_col.scroll-view {
+        overflow-y: visible;
+        max-height: none;
+      }
+
+      .badge-secondary {
+        background-color: #6c757d;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.85em;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+        <div class="col-md-3 left_col menu_fixed">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border: 0">
+              <a
+                href="index.html"
+                class="site_title"
+                style="
+                  display: block;
+                  text-align: center;
+                  font-size: 2rem;
+                  font-weight: bold;
+                  color: #007bff;
+                  text-decoration: none;
+                "
+              >
+                <span style="font-size: 1.5rem">VeraThailandia!</span>
+              </a>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- menu profile quick info -->
+            <div class="profile clearfix">
+              <div class="profile_pic">
+                <img
+                  src="images/verathailandlogo.png"
+                  alt="..."
+                  class="img-circle profile_img"
+                />
+              </div>
+              <div class="profile_info">
+                <span>Welcome,</span>
+                <h2 id="profileName"></h2>
+              </div>
+            </div>
+            <!-- /menu profile quick info -->
+
+            <br />
+
+            <!-- sidebar menu -->
+            <div
+              id="sidebar-menu"
+              class="main_menu_side hidden-print main_menu"
+            >
+              <div class="menu_section">
+                <h3>General</h3>
+                <ul class="nav side-menu">
+                  <li>
+                    <a href="index.html"><i class="fa fa-home"></i> Home</a>
+                  </li>
+                  <li id="controlPanelMenu">
+                    <a
+                      ><i class="fa fa-edit"></i> Control-Panel
+                      <span class="fa fa-chevron-down"></span
+                    ></a>
+                    <ul class="nav child_menu">
+                      <li><a href="activities.html">Activities</a></li>
+                      <li><a href="agents.html">Agents</a></li>
+                      <li><a href="booking.html">Bookings</a></li>
+                      <li><a href="excursions.html">Excursions</a></li>
+                      <li><a href="hotels.html">Hotels</a></li>
+                      <li><a href="markup.html">Markups</a></li>
+                      <!-- <li><a href="operations.html">Operations</a></li> -->
+                      <li><a href="othercharges.html">Other Charges</a></li>
+                      <!-- <li><a href="stop_sale.html">Stop Sale</a></li> -->
+                      <li><a href="suppliers.html">Suppliers</a></li>
+                      <li><a href="tools.html">Tools</a></li>
+                      <li><a href="tours.html">Tours</a></li>
+                      <li><a href="transfers.html">Transfers</a></li>
+                      <li><a href="users.html">Users</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="trip.html"
+                      ><i class="fa fa-book"></i> Quotation
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li>
+                    <a href="payment.html"
+                      ><i class="fa fa-pencil-square-o"></i> Payment
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <!--<li>
+                    <a href="tax_invoices.html"
+                      ><i class="fa fa-file-text-o"></i> Tax Invoices
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li> -->
+                  <li>
+                    <a href="itinerary.html"
+                      ><i class="fa fa-ticket"></i> Itinerary
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li>
+                    <a href="analytics.html"
+                      ><i class="fa fa-bar-chart"></i> Analytics
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- /sidebar menu -->
+
+            <!-- /menu footer buttons -->
+            <div class="sidebar-footer hidden-small">
+              <a data-toggle="tooltip" data-placement="top" title="Settings">
+                <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="FullScreen">
+                <span
+                  class="glyphicon glyphicon-fullscreen"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="Lock">
+                <span
+                  class="glyphicon glyphicon-eye-close"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a
+                data-toggle="tooltip"
+                data-placement="top"
+                title="Logout"
+                href="logout.html"
+              >
+                <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+              </a>
+            </div>
+            <!-- /menu footer buttons -->
+          </div>
+        </div>
+
+        <!-- top navigation -->
+        <div class="top_nav">
+          <div class="nav_menu">
+            <div class="nav toggle">
+              <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+            </div>
+            <nav class="nav navbar-nav">
+              <ul class="navbar-right">
+                <li class="nav-item dropdown open" style="padding-left: 15px">
+                  <a
+                    href="javascript:;"
+                    class="user-profile dropdown-toggle"
+                    aria-haspopup="true"
+                    id="navbarDropdown"
+                    data-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    <img
+                      id="navProfileImage"
+                      src="images/verathailandlogo.png"
+                      alt=""
+                    />
+                    <span id="navProfileName"></span>
+                  </a>
+                  <div
+                    class="dropdown-menu dropdown-usermenu pull-right"
+                    aria-labelledby="navbarDropdown"
+                  >
+                    <a class="dropdown-item" href="profile.html"
+                      ><i class="fa fa-user pull-right"></i> Profile</a
+                    >
+                    <a class="dropdown-item" href="logout.html"
+                      ><i class="fa fa-sign-out pull-right"></i> Log Out</a
+                    >
+                  </div>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+        <!-- /top navigation -->
+
+        <!-- Page content -->
+        <div class="right_col" role="main">
+          <div class="">
+            <div class="page-title">
+              <div class="title_left">
+                <h3>Agents</h3>
+              </div>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- Search Box and Rows Display Dropdown -->
+            <div class="row" style="margin-bottom: 30px">
+              <div class="col-md-6">
+                <input
+                  type="text"
+                  id="searchBox"
+                  class="form-control"
+                  placeholder="Search for agents..."
+                />
+              </div>
+              <div class="col-md-6 text-right">
+                <label for="rowsSelect">Show: </label>
+                <select
+                  id="rowsSelect"
+                  class="form-control"
+                  style="width: 100px; display: inline-block"
+                >
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                  <option value="All">All</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-12 col-sm-12">
+                <div class="x_panel">
+                  <div
+                    class="x_title"
+                    style="
+                      display: flex;
+                      align-items: center;
+                      justify-content: space-between;
+                    "
+                  >
+                    <h2 style="margin: 0">List of Agents</h2>
+                    <div style="display: flex; align-items: center; gap: 10px">
+                      <span
+                        id="agentsCount"
+                        style="
+                          background: linear-gradient(
+                            135deg,
+                            #f8f9fa 0%,
+                            #e9ecef 100%
+                          );
+                          border: 1px solid #dee2e6;
+                          border-radius: 20px;
+                          padding: 6px 12px;
+                          font-size: 0.875rem;
+                          font-weight: 500;
+                          color: #495057;
+                          display: inline-flex;
+                          align-items: center;
+                          gap: 5px;
+                          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                          transition: all 0.2s ease;
+                        "
+                        onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.15)';"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';"
+                      >
+                        <i class="fa fa-briefcase" style="color: #28a745"></i>
+                        Total:
+                        <span
+                          id="agentsCountNumber"
+                          style="color: #28a745; font-weight: 600"
+                          >0</span
+                        >
+                      </span>
+                      <button
+                        id="addAgentButtonTop"
+                        class="btn btn-success btn-sm"
+                        style="
+                          background: linear-gradient(
+                            135deg,
+                            #28a745 0%,
+                            #20c997 100%
+                          );
+                          border: none;
+                          border-radius: 6px;
+                          padding: 8px 16px;
+                          font-weight: 500;
+                          box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+                          transition: all 0.2s ease;
+                        "
+                        onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(40, 167, 69, 0.3)';"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(40, 167, 69, 0.2)';"
+                      >
+                        <i class="fa fa-plus"></i> Add Agent
+                      </button>
+                    </div>
+                  </div>
+                  <div class="x_content">
+                    <div class="row">
+                      <div class="col-sm-12">
+                        <div class="card-box table-responsive">
+                          <table
+                            id="contenttable"
+                            class="table table-striped table-bordered"
+                            style="width: 100%"
+                          >
+                            <thead>
+                              <tr>
+                                <th>Name</th>
+                                <th>Markup Group</th>
+                                <th>Email</th>
+                                <th>Telephone</th>
+                                <th>Address</th>
+                                <th>Assistance Fee</th>
+                                <th>Edit</th>
+                                <th>Delete</th>
+                              </tr>
+                            </thead>
+                            <tbody id="agentTableBody">
+                              <!-- Table rows will be dynamically inserted here -->
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-end">
+                  <div class="pagination">
+                    <button
+                      id="prevPage"
+                      class="btn btn-secondary btn-sm"
+                      disabled
+                    >
+                      Previous
+                    </button>
+                    <button id="nextPage" class="btn btn-secondary btn-sm">
+                      Next
+                    </button>
+                  </div>
+                </div>
+                <div class="text-center">
+                  <button id="addAgentButton" class="btn btn-round btn-success">
+                    Add Agent
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /Page content -->
+
+        <!-- Footer content -->
+        <footer></footer>
+        <!-- /Footer content -->
+      </div>
+    </div>
+
+    <!-- Assistance Fee Modal -->
+    <div class="modal fade" id="editAssistanceFeeModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fa fa-dollar"></i> Assistance Fee Settings
+            </h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="enableAssistanceFee">
+                <strong>Enable assistance fees for this agent</strong>
+              </label>
+            </div>
+            <div class="form-group" id="feeAmountGroup">
+              <label for="defaultAssistanceFee">Default Amount (THB) *</label>
+              <input type="number" class="form-control" id="defaultAssistanceFee" 
+                     min="0" step="100" placeholder="1000" required>
+              <small class="form-text text-muted">
+                This amount will be applied to new quotations by default.
+              </small>
+            </div>
+            <div class="alert alert-info" style="margin-top: 15px;">
+              <i class="fa fa-info-circle"></i>
+              <strong>Note:</strong> These settings apply only to NEW quotations.
+              Existing quotations will not be affected.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="saveAssistanceFeeBtn">
+              <i class="fa fa-save"></i> Save Settings
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+    <!-- Tour Hotels API (includes AssistanceFeeAPI) -->
+    <script src="js/tour-hotels-api.js"></script>
+
+    <script>
+      document
+        .getElementById("addAgentButton")
+        .addEventListener("click", function () {
+          window.location.href = "addagent.html";
+        });
+
+      document.addEventListener("DOMContentLoaded", function () {
+        // Add event listener for the top Add Agent button
+        const addAgentButtonTop = document.getElementById("addAgentButtonTop");
+        if (addAgentButtonTop) {
+          addAgentButtonTop.addEventListener("click", function () {
+            window.location.href = "addagent.html";
+          });
+        }
+
+        loadAgents();
+
+        // Add event listener for the search box
+        document
+          .getElementById("searchBox")
+          .addEventListener("keyup", filterTable);
+
+        // Add event listener for changing the number of rows shown
+        document
+          .getElementById("rowsSelect")
+          .addEventListener("change", function () {
+            currentRowsPerPage =
+              this.value === "All"
+                ? filteredTableData.length
+                : parseInt(this.value);
+            totalPages = Math.ceil(
+              filteredTableData.length / currentRowsPerPage
+            );
+            currentPage = 1; // Reset to the first page
+            renderTable(filteredTableData);
+            updatePaginationButtons();
+          });
+
+        // Add event listeners for Next and Previous buttons
+        document.getElementById("nextPage").addEventListener("click", nextPage);
+        document.getElementById("prevPage").addEventListener("click", prevPage);
+      });
+
+      let originalTableData = [];
+      let filteredTableData = [];
+      let currentRowsPerPage = 25;
+      let currentPage = 1;
+      let totalPages = 1;
+
+      // Function to load agents
+      function loadAgents() {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          alert("You are not authorized. Please log in first.");
+          window.location.href = "login.html";
+          return;
+        }
+
+        fetch(`${Endpoint}/api/v1/agents/`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.status === 401) {
+              // Handle 401 Unauthorized
+              alert("Unauthorized. Please log in again.");
+              window.location.href = "login.html"; // Redirect to login page
+              return; // Exit the function
+            } else if (response.status === 403) {
+              // Handle 403 Forbidden
+              alert(
+                "You don't have sufficient permissions to access this resource."
+              );
+              return; // Exit the function
+            } else {
+              return response.json();
+            }
+          })
+          .then((agents) => {
+            // Store original table data and filtered data
+            originalTableData = agents;
+            filteredTableData = agents;
+            totalPages = Math.ceil(
+              filteredTableData.length / currentRowsPerPage
+            );
+            renderTable(filteredTableData);
+            updatePaginationButtons();
+            updateAgentsCount();
+          })
+          .catch((error) => {
+            console.error("Error loading agents:", error);
+          });
+      }
+
+      // Function to render the table
+      function renderTable(data) {
+        const agentTableBody = document.getElementById("agentTableBody");
+        agentTableBody.innerHTML = "";
+
+        const start = (currentPage - 1) * currentRowsPerPage;
+        const end = Math.min(start + currentRowsPerPage, data.length);
+        const rowsToShow = data.slice(start, end);
+
+        rowsToShow.forEach((agent) => {
+          const markupGroup = agent.markupgroup || "N/A";
+          const email = agent.email || "N/A";
+          const telephone = agent.telephone || "N/A";
+          const address = agent.address || "N/A";
+          
+          // Assistance fee display
+          const assistanceFeeEnabled = agent.enable_assistance_fee !== undefined ? agent.enable_assistance_fee : true;
+          const assistanceFeeAmount = agent.default_assistance_fee || 1000;
+          
+          // Format description with caps: ENABLED, DISABLED, DEFAULT, SYSTEM
+          let assistanceFeeDescription;
+          if (agent.assistance_fee_description) {
+            // If backend provides description, capitalize key words
+            assistanceFeeDescription = agent.assistance_fee_description
+              .replace(/enabled/gi, 'ENABLED')
+              .replace(/disabled/gi, 'DISABLED')
+              .replace(/default/gi, 'DEFAULT')
+              .replace(/system/gi, 'SYSTEM');
+          } else {
+            assistanceFeeDescription = assistanceFeeEnabled 
+              ? `ENABLED (${assistanceFeeAmount.toFixed(2)})` 
+              : "DISABLED";
+          }
+          
+          const assistanceFeeBadgeClass = assistanceFeeEnabled ? "badge-success" : "badge-secondary";
+
+          const row = `<tr>
+            <td>${agent.name}</td>
+            <td><span class="badge badge-secondary">${markupGroup}</span></td>
+            <td>${email}</td>
+            <td>${telephone}</td>
+            <td>${address}</td>
+            <td>
+              <span class="badge ${assistanceFeeBadgeClass}" style="font-size: 0.95em; padding: 6px 10px;">
+                ${assistanceFeeDescription}
+              </span>
+              <button class="btn btn-info btn-xs" onclick="editAssistanceFee(${agent.id})" 
+                      style="margin-left: 5px;" title="Edit Assistance Fee Settings">
+                <i class="fa fa-edit"></i>
+              </button>
+            </td>
+            <td><button class="btn btn-primary btn-sm edit-btn" data-id="${agent.id}"><i class="fa fa-edit"></i> Edit</button></td>
+            <td><button class="btn btn-danger btn-sm delete-btn" data-id="${agent.id}"><i class="fa fa-trash"></i> Delete</button></td>
+          </tr>`;
+          agentTableBody.innerHTML += row;
+        });
+
+        addEditDeleteListeners();
+      }
+
+      // Function to handle the search filter
+      function filterTable() {
+        const searchValue = document
+          .getElementById("searchBox")
+          .value.toLowerCase();
+        filteredTableData = originalTableData.filter((agent) => {
+          const markupGroup = agent.markupgroup || "";
+          const email = agent.email || "";
+          const telephone = agent.telephone || "";
+          const address = agent.address || "";
+
+          return (
+            agent.name.toLowerCase().includes(searchValue) ||
+            markupGroup.toLowerCase().includes(searchValue) ||
+            email.toLowerCase().includes(searchValue) ||
+            telephone.toLowerCase().includes(searchValue) ||
+            address.toLowerCase().includes(searchValue)
+          );
+        });
+        currentPage = 1; // Reset to the first page on search
+        totalPages = Math.ceil(filteredTableData.length / currentRowsPerPage);
+        renderTable(filteredTableData);
+        updatePaginationButtons();
+        updateAgentsCount();
+      }
+
+      // Function to delete an agent
+      function deleteAgent(agentId) {
+        const token = localStorage.getItem("token");
+
+        fetch(`${Endpoint}/api/v1/agents/${agentId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              if (response.status === 401) {
+                // Handle 401 Unauthorized
+                alert("Unauthorized. Please log in again.");
+                window.location.href = "login.html"; // Redirect to login page
+              } else if (response.status === 403) {
+                // Handle 403 Forbidden
+                alert(
+                  "You don't have sufficient permissions to perform this action."
+                );
+              }
+              throw new Error("Failed to delete agent");
+            }
+            // Reload the agents list after deletion
+            loadAgents();
+          })
+          .catch((error) => {
+            console.error("Error deleting agent:", error);
+            alert("Failed to delete agent. Please try again later.");
+          });
+      }
+
+      // Move to the next page
+      function nextPage() {
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderTable(filteredTableData);
+          updatePaginationButtons();
+        }
+      }
+
+      // Move to the previous page
+      function prevPage() {
+        if (currentPage > 1) {
+          currentPage--;
+          renderTable(filteredTableData);
+          updatePaginationButtons();
+        }
+      }
+
+      // Update pagination buttons based on the current page
+      function updatePaginationButtons() {
+        document.getElementById("prevPage").disabled = currentPage === 1;
+        document.getElementById("nextPage").disabled =
+          currentPage === totalPages;
+      }
+
+      // Add event listeners to the edit and delete buttons
+      function addEditDeleteListeners() {
+        document.querySelectorAll(".edit-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const agentId = this.getAttribute("data-id");
+            window.location.href = `editagent.html?id=${agentId}`;
+          });
+        });
+
+        document.querySelectorAll(".delete-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            if (confirm("Are you sure you want to delete this agent?")) {
+              const agentId = this.getAttribute("data-id");
+              deleteAgent(agentId);
+            }
+          });
+        });
+      }
+
+      // Function to update agents count display
+      function updateAgentsCount() {
+        const countElement = document.getElementById("agentsCountNumber");
+        if (countElement) {
+          const searchValue = document
+            .getElementById("searchBox")
+            .value.toLowerCase();
+          if (searchValue) {
+            // Show "filtered of total" when searching
+            countElement.textContent = `${filteredTableData.length} of ${originalTableData.length}`;
+          } else {
+            // Show total count when not searching
+            countElement.textContent = originalTableData.length;
+          }
+        }
+      }
+
+      // Function to edit assistance fee settings
+      async function editAssistanceFee(agentId) {
+        try {
+          // Fetch current agent settings
+          const agent = await AssistanceFeeAPI.getAgentConfig(agentId);
+          
+          // Populate modal
+          document.getElementById("enableAssistanceFee").checked = 
+            agent.enable_assistance_fee !== undefined ? agent.enable_assistance_fee : true;
+          document.getElementById("defaultAssistanceFee").value = 
+            agent.default_assistance_fee || 1000;
+          
+          // Show/hide amount field based on checkbox
+          const toggleFeeAmountField = function() {
+            const feeAmountGroup = document.getElementById("feeAmountGroup");
+            const enableCheckbox = document.getElementById("enableAssistanceFee");
+            feeAmountGroup.style.display = enableCheckbox.checked ? "block" : "none";
+          };
+          
+          document.getElementById("enableAssistanceFee").onchange = toggleFeeAmountField;
+          toggleFeeAmountField();
+          
+          // Setup save button
+          document.getElementById("saveAssistanceFeeBtn").onclick = async function() {
+            const enableCheckbox = document.getElementById("enableAssistanceFee");
+            const feeAmountInput = document.getElementById("defaultAssistanceFee");
+            
+            // Validate
+            if (enableCheckbox.checked && (!feeAmountInput.value || parseFloat(feeAmountInput.value) < 0)) {
+              alert("Please enter a valid assistance fee amount.");
+              return;
+            }
+            
+            const config = {
+              enable_assistance_fee: enableCheckbox.checked,
+              default_assistance_fee: enableCheckbox.checked ? parseFloat(feeAmountInput.value) : 0
+            };
+            
+            try {
+              // Show loading state
+              const saveBtn = document.getElementById("saveAssistanceFeeBtn");
+              const originalText = saveBtn.innerHTML;
+              saveBtn.disabled = true;
+              saveBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving...';
+              
+              await AssistanceFeeAPI.updateAssistanceFeeConfig(agentId, config);
+              
+              // Success
+              APIUtils.showSuccess("Assistance fee settings updated successfully");
+              $("#editAssistanceFeeModal").modal("hide");
+              
+              // Refresh agents list
+              loadAgents();
+              
+              // Restore button
+              saveBtn.disabled = false;
+              saveBtn.innerHTML = originalText;
+            } catch (error) {
+              console.error("Error updating assistance fee settings:", error);
+              APIUtils.showError("Failed to update assistance fee settings");
+              
+              // Restore button
+              const saveBtn = document.getElementById("saveAssistanceFeeBtn");
+              saveBtn.disabled = false;
+              saveBtn.innerHTML = '<i class="fa fa-save"></i> Save Settings';
+            }
+          };
+          
+          // Show modal
+          $("#editAssistanceFeeModal").modal("show");
+          
+        } catch (error) {
+          console.error("Error loading agent config:", error);
+          APIUtils.showError("Failed to load agent configuration");
+        }
+      }
+
+      // Retrieve the username from localStorage
+      const username = localStorage.getItem("username");
+
+      // Set the username in the profile info
+      document.getElementById("profileName").innerText = username;
+      document.getElementById("navProfileName").innerText = username;
+    </script>
+  </body>
+</html>

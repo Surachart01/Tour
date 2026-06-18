@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Logging Out...</title>
+  </head>
+  <body>
+    <h1>Logging Out...</h1>
+    <p>Clearing your session. Please wait...</p>
+
+    <script>
+      console.log("Initiating logout process...");
+
+      // Check if the token exists before clearing
+      const token = localStorage.getItem("token");
+      if (token) {
+        console.log("Token found. Clearing token now.");
+      } else {
+        console.warn("No token found in localStorage.");
+      }
+
+      // Clear the token and all stored data
+      localStorage.clear();
+      console.log("Local storage cleared successfully.");
+
+      window.location.href = "login.html";
+    </script>
+  </body>
+</html>

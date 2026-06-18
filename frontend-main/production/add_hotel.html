@@ -1,0 +1,2325 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Hotel</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- FontAwesome 5 for modern icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <!-- Font Awesome 4 (fallback for existing icons) -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
+    <style>
+      /* Modern form enhancements */
+      .form-control:focus {
+        border-color: #1abb9c !important;
+        box-shadow: 0 0 0 0.2rem rgba(26, 187, 156, 0.25) !important;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #1abb9c 0%, #16a085 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary:hover {
+        background: linear-gradient(135deg, #16a085 0%, #138d75 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-secondary:hover {
+        background: linear-gradient(135deg, #7f8c8d 0%, #6c7b7d 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-success {
+        background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-success:hover {
+        background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-warning {
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-warning:hover {
+        background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-danger {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-danger:hover {
+        background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+        transform: translateY(-1px);
+      }
+
+      .form-control {
+        height: 45px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        background-color: #fafbfc;
+        transition: all 0.3s ease;
+      }
+
+      .form-control:hover {
+        border-color: #1abb9c;
+      }
+
+      textarea.form-control {
+        height: auto;
+        min-height: 100px;
+      }
+
+      .form-group label {
+        font-weight: 600;
+        color: #34495e;
+        margin-bottom: 8px;
+      }
+
+      .table {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .table thead th {
+        background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+        color: white;
+        font-weight: 600;
+        border: none;
+        padding: 15px;
+      }
+
+      .table tbody td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        border-color: #ecf0f1;
+      }
+
+      .table tbody tr:hover {
+        background-color: #f8f9fa;
+      }
+
+      .modal-content {
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      .modal-header {
+        background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+        color: white;
+        border-radius: 10px 10px 0 0;
+        border-bottom: none;
+      }
+
+      .modal-title {
+        font-weight: 600;
+      }
+
+      .close {
+        color: white;
+        opacity: 0.8;
+        text-shadow: none;
+      }
+
+      .close:hover {
+        color: white;
+        opacity: 1;
+      }
+
+      .input-group-append .btn {
+        height: 45px;
+        border-radius: 0 6px 6px 0;
+      }
+
+      .modal-lg {
+        max-width: 90%;
+      }
+
+      .d-flex .form-control {
+        flex: 1;
+      }
+
+      /* Custom tooltip styles */
+      .tooltip-btn {
+        position: relative;
+        display: inline-block;
+      }
+
+      .tooltip-btn .tooltip-text {
+        visibility: hidden;
+        width: 80px;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 4px;
+        padding: 5px 8px;
+        position: absolute;
+        z-index: 1000;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -40px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 12px;
+        font-weight: normal;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+
+      .tooltip-btn .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #333 transparent transparent transparent;
+      }
+
+      .tooltip-btn:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+      }
+
+      .tooltip-btn .btn {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+
+      .tooltip-btn .btn i {
+        pointer-events: none;
+      }
+
+      /* FontAwesome icon fixes */
+      .fas,
+      .fa {
+        font-family: "Font Awesome 5 Free", "FontAwesome" !important;
+        font-weight: 900 !important;
+        font-style: normal !important;
+        display: inline-block !important;
+      }
+
+      /* Ensure icons render properly in buttons */
+      .btn .fas,
+      .btn .fa {
+        font-size: 14px;
+        line-height: 1;
+      }
+
+      /* Fix icon spacing in buttons */
+      .btn i {
+        margin-right: 0;
+      }
+
+      /* Responsive design */
+      @media (max-width: 768px) {
+        .tooltip-btn .btn {
+          padding: 4px 6px;
+          font-size: 12px;
+        }
+
+        .btn .fas,
+        .btn .fa {
+          font-size: 12px;
+        }
+      }
+    </style>
+  </head>
+
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background: #ecf0f1;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    "
+  >
+    <div
+      class="container-fluid"
+      style="
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+      "
+    >
+      <!-- Full-width header -->
+      <div
+        style="
+          background: linear-gradient(135deg, #2a3f54 0%, #34495e 100%);
+          color: white;
+          padding: 30px 60px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        "
+      >
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          "
+        >
+          <div style="display: flex; align-items: center">
+            <i
+              class="fas fa-hotel"
+              style="font-size: 28px; margin-right: 15px; color: #1abb9c"
+            ></i>
+            <h1 style="margin: 0; font-size: 28px; font-weight: 700">
+              Add Hotel
+            </h1>
+          </div>
+          <div style="display: flex; gap: 15px">
+            <button
+              type="button"
+              class="btn btn-outline-light"
+              onclick="window.location.href='hotels.html'"
+              style="
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                padding: 8px 20px;
+                border-radius: 6px;
+                transition: all 0.3s ease;
+              "
+            >
+              <i class="fas fa-arrow-left" style="margin-right: 8px"></i>
+              Back to Hotels
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main content area -->
+      <div style="flex: 1; padding: 40px 60px; background: #ecf0f1">
+        <div
+          style="
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+          "
+        >
+          <div style="padding: 40px">
+            <form id="editHotelForm" class="form-label-left input_mask">
+              <div class="row">
+                <div class="col-md-6 form-group">
+                  <label for="country">
+                    <i
+                      class="fas fa-globe"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Country *
+                  </label>
+                  <select class="form-control" id="country" required>
+                    <option value="" disabled selected>
+                      Loading countries...
+                    </option>
+                  </select>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label for="hotelLocation">
+                    <i
+                      class="fas fa-map-marker-alt"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    City *
+                  </label>
+                  <div class="input-group">
+                    <select class="form-control" id="hotelLocation" required>
+                      <option value="" disabled selected>
+                        Select country first
+                      </option>
+                    </select>
+                    <div class="input-group-append">
+                      <button
+                        class="btn btn-outline-secondary"
+                        type="button"
+                        id="addNewCityBtn"
+                        title="Add new city"
+                        disabled
+                      >
+                        <i class="fa fa-plus"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6 form-group">
+                  <label for="hotelName">
+                    <i
+                      class="fas fa-hotel"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Hotel Name *
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="hotelName"
+                    placeholder="Enter hotel name"
+                    maxlength="200"
+                    required
+                  />
+                </div>
+                <div class="col-md-12 form-group">
+                  <label for="hotelAddress">
+                    <i
+                      class="fas fa-map-marker-alt"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Hotel Address *
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="hotelAddress"
+                    placeholder="Enter hotel address"
+                    maxlength="300"
+                    required
+                  />
+                </div>
+                <div class="col-md-6 form-group">
+                  <label for="earlycheckinadd">
+                    <i
+                      class="fas fa-clock"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Early Check-in Add (%)
+                  </label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="earlycheckinadd"
+                    placeholder="Enter early check-in percentage"
+                    min="0"
+                    max="100"
+                    step="1"
+                    oninput="validatePercentageInput(this)"
+                  />
+                </div>
+                <div class="col-md-6 form-group">
+                  <label for="latecheckoutadd">
+                    <i
+                      class="fas fa-clock"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Late Check-out Add (%)
+                  </label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="latecheckoutadd"
+                    placeholder="Enter late check-out percentage"
+                    min="0"
+                    max="100"
+                    step="1"
+                    oninput="validatePercentageInput(this)"
+                  />
+                </div>
+                <div class="col-md-6 form-group">
+                  <label for="christmasdinner">
+                    <i
+                      class="fas fa-gift"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Christmas Dinner
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="christmasdinner"
+                    placeholder="Enter Christmas dinner details"
+                  />
+                </div>
+                <div class="col-md-6 form-group">
+                  <label for="newyear">
+                    <i
+                      class="fas fa-calendar-alt"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    New Year Dinner
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="newyear"
+                    placeholder="Enter New Year dinner details"
+                  />
+                </div>
+                <div class="col-md-12 form-group">
+                  <label for="hotelnotesforagent">
+                    <i
+                      class="fas fa-sticky-note"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Hotel Notes for Agent
+                  </label>
+                  <textarea
+                    class="form-control"
+                    id="hotelnotesforagent"
+                    placeholder="Enter notes for agent"
+                    rows="3"
+                    maxlength="5000"
+                  ></textarea>
+                </div>
+              </div>
+            </form>
+
+            <hr style="margin: 40px 0; border-color: #ecf0f1" />
+
+            <!-- Contact Section -->
+            <div style="margin-bottom: 30px">
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 20px;
+                "
+              >
+                <h4
+                  style="
+                    margin: 0;
+                    color: #34495e;
+                    font-weight: 700;
+                    font-size: 18px;
+                  "
+                >
+                  <i
+                    class="fas fa-address-book"
+                    style="margin-right: 10px; color: #1abb9c"
+                  ></i>
+                  Contact
+                </h4>
+                <button
+                  type="button"
+                  class="btn btn-success"
+                  data-toggle="modal"
+                  data-target="#contactModal"
+                  style="
+                    padding: 10px 20px;
+                    border-radius: 6px;
+                    font-weight: 600;
+                  "
+                >
+                  <i class="fas fa-plus" style="margin-right: 8px"></i>
+                  Add Contact
+                </button>
+              </div>
+
+              <table class="table table-striped" id="contactsTable">
+                <thead>
+                  <tr>
+                    <th>
+                      <i class="fas fa-user" style="margin-right: 5px"></i>
+                      Name
+                    </th>
+                    <th>
+                      <i class="fas fa-envelope" style="margin-right: 5px"></i>
+                      Email
+                    </th>
+                    <th>
+                      <i class="fas fa-phone" style="margin-right: 5px"></i>
+                      Telephone
+                    </th>
+                    <th>
+                      <i class="fas fa-cog" style="margin-right: 5px"></i>
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Contact rows will be added here -->
+                </tbody>
+              </table>
+            </div>
+
+            <hr style="margin: 40px 0; border-color: #ecf0f1" />
+
+            <!-- Room Types Section -->
+            <div style="margin-bottom: 30px">
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 20px;
+                "
+              >
+                <h4
+                  style="
+                    margin: 0;
+                    color: #34495e;
+                    font-weight: 700;
+                    font-size: 18px;
+                  "
+                >
+                  <i
+                    class="fas fa-bed"
+                    style="margin-right: 10px; color: #1abb9c"
+                  ></i>
+                  Room Types
+                </h4>
+                <div style="display: flex; gap: 10px">
+                  <button
+                    class="btn btn-warning"
+                    onclick="loadSelectedRowsIntoModal()"
+                    id="massEditButton"
+                    style="
+                      display: none;
+                      padding: 10px 20px;
+                      border-radius: 6px;
+                      font-weight: 600;
+                    "
+                  >
+                    <i class="fas fa-edit" style="margin-right: 8px"></i>
+                    Mass Edit
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-success"
+                    data-toggle="modal"
+                    data-target="#roomTypeModal"
+                    style="
+                      padding: 10px 20px;
+                      border-radius: 6px;
+                      font-weight: 600;
+                    "
+                  >
+                    <i class="fas fa-plus" style="margin-right: 8px"></i>
+                    Add Room Type
+                  </button>
+                </div>
+              </div>
+
+              <table class="table table-striped" id="roomTypesTable">
+                <thead>
+                  <tr>
+                    <th>
+                      <input
+                        type="checkbox"
+                        style="display: none"
+                        id="selectAllRoomTypes"
+                      />
+                    </th>
+                    <th>
+                      <i
+                        class="fas fa-calendar-alt"
+                        style="margin-right: 5px"
+                      ></i>
+                      From
+                    </th>
+                    <th>
+                      <i
+                        class="fas fa-calendar-alt"
+                        style="margin-right: 5px"
+                      ></i>
+                      To
+                    </th>
+                    <th>
+                      <i class="fas fa-bed" style="margin-right: 5px"></i>
+                      Room Type
+                    </th>
+                    <th>
+                      <i
+                        class="fas fa-dollar-sign"
+                        style="margin-right: 5px"
+                      ></i>
+                      Room Price
+                    </th>
+                    <th>
+                      <i
+                        class="fas fa-plus-square"
+                        style="margin-right: 5px"
+                      ></i>
+                      Extra Bed
+                    </th>
+                    <th>
+                      <i class="fas fa-utensils" style="margin-right: 5px"></i>
+                      Food Cost [Adult]
+                    </th>
+                    <th>
+                      <i class="fas fa-child" style="margin-right: 5px"></i>
+                      Food Cost [Child]
+                    </th>
+                    <th>
+                      <i class="fas fa-cog" style="margin-right: 5px"></i>
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Room type rows will be added here -->
+                </tbody>
+              </table>
+            </div>
+
+            <hr style="margin: 40px 0; border-color: #ecf0f1" />
+
+            <!-- Promotion Section -->
+            <div style="margin-bottom: 30px">
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 20px;
+                "
+              >
+                <h4
+                  style="
+                    margin: 0;
+                    color: #34495e;
+                    font-weight: 700;
+                    font-size: 18px;
+                  "
+                >
+                  <i
+                    class="fas fa-tags"
+                    style="margin-right: 10px; color: #1abb9c"
+                  ></i>
+                  Promotion
+                </h4>
+                <button
+                  type="button"
+                  class="btn btn-success"
+                  data-toggle="modal"
+                  data-target="#promotionModal"
+                  style="
+                    padding: 10px 20px;
+                    border-radius: 6px;
+                    font-weight: 600;
+                  "
+                >
+                  <i class="fas fa-plus" style="margin-right: 8px"></i>
+                  Add Promotion
+                </button>
+              </div>
+
+              <table class="table table-striped" id="promotionsTable">
+                <thead>
+                  <tr>
+                    <th>
+                      <i class="fas fa-code" style="margin-right: 5px"></i>
+                      Code
+                    </th>
+                    <th>
+                      <i class="fas fa-tag" style="margin-right: 5px"></i>
+                      Name
+                    </th>
+                    <th>
+                      <i
+                        class="fas fa-calendar-alt"
+                        style="margin-right: 5px"
+                      ></i>
+                      Booking Date From
+                    </th>
+                    <th>
+                      <i
+                        class="fas fa-calendar-alt"
+                        style="margin-right: 5px"
+                      ></i>
+                      Booking Date To
+                    </th>
+                    <th>
+                      <i class="fas fa-clock" style="margin-right: 5px"></i>
+                      Early Bird
+                    </th>
+                    <th>
+                      <i class="fas fa-moon" style="margin-right: 5px"></i>
+                      Min-Nights
+                    </th>
+                    <th>
+                      <i class="fas fa-utensils" style="margin-right: 5px"></i>
+                      Free Meals
+                    </th>
+                    <th>
+                      <i class="fas fa-percent" style="margin-right: 5px"></i>
+                      Discount
+                    </th>
+                    <th>
+                      <i class="fas fa-toggle-on" style="margin-right: 5px"></i>
+                      Enabled
+                    </th>
+                    <th>
+                      <i class="fas fa-cog" style="margin-right: 5px"></i>
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Promotion rows will be added here -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Action Buttons -->
+            <div
+              style="
+                display: flex;
+                gap: 15px;
+                justify-content: center;
+                padding-top: 30px;
+                border-top: 2px solid #ecf0f1;
+              "
+            >
+              <button
+                type="button"
+                class="btn btn-secondary"
+                onclick="window.location.href='hotels.html'"
+                style="padding: 12px 30px; border-radius: 6px; font-weight: 600"
+              >
+                <i class="fas fa-times" style="margin-right: 8px"></i>
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="editHotelForm"
+                class="btn btn-primary"
+                style="padding: 12px 30px; border-radius: 6px; font-weight: 600"
+              >
+                <i class="fas fa-save" style="margin-right: 8px"></i>
+                Save Hotel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Room Type Modal -->
+    <div
+      class="modal fade"
+      id="roomTypeModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="roomTypeModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="roomTypeModalLabel">
+              Add Room Type Details
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="roomTypeForm">
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="fromDate" style="font-weight: bold">From</label>
+                  <input type="date" class="form-control" id="fromDate" />
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="toDate" style="font-weight: bold">To</label>
+                  <input type="date" class="form-control" id="toDate" />
+                </div>
+              </div>
+              <hr />
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="roomType" style="font-weight: bold"
+                    >Room Type(Name,Allotment,Cut-Off,Max Capacity)</label
+                  >
+                  <div class="d-flex">
+                    <input
+                      type="text"
+                      class="form-control mr-1"
+                      id="roomType"
+                      placeholder="*Name"
+                      required
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-1"
+                      id="allotment"
+                      placeholder="Allotment"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-1"
+                      id="cutoff"
+                      placeholder="Cut-Off"
+                    />
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="maxCapacity"
+                      placeholder="Max Capacity"
+                      min="0"
+                    />
+                  </div>
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="singlePrice" style="font-weight: bold"
+                    >Room Price(Single, Double)</label
+                  >
+                  <div class="d-flex">
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="singlePrice"
+                      placeholder="Single Price"
+                    />
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="doublePrice"
+                      placeholder="Double Price"
+                    />
+                  </div>
+                </div>
+              </div>
+              <hr />
+              <!-- Dynamic Room Name Container -->
+              <div id="roomNameContainer" class="mb-3"></div>
+              <button
+                type="button"
+                class="btn btn-primary btn-large"
+                id="addRoomNameRowBtn"
+              >
+                Add
+              </button>
+              <p></p>
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="foodCostAdult" style="font-weight: bold"
+                    >Food Cost [Adult] (ABF, Lunch, Dinner, All
+                    Inclusive)</label
+                  >
+                  <div class="d-flex">
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="foodCostAdultABF"
+                      placeholder="ABF"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="foodCostAdultLunch"
+                      placeholder="Lunch"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="foodCostAdultDinner"
+                      placeholder="Dinner"
+                    />
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="foodCostAdultAllinclusive"
+                      placeholder="All Inclusive"
+                    />
+                  </div>
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="foodCostChild" style="font-weight: bold"
+                    >Food Cost [Child] (ABF, Lunch, Dinner, All
+                    Inclusive)</label
+                  >
+                  <div class="d-flex">
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="foodCostChildABF"
+                      placeholder="ABF"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="foodCostChildLunch"
+                      placeholder="Lunch"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="foodCostChildDinner"
+                      placeholder="Dinner"
+                    />
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="foodCostChildAllinclusive"
+                      placeholder="All Inclusive"
+                    />
+                  </div>
+                </div>
+              </div>
+              <hr />
+              <div class="form-row">
+                <div class="form-group col-md-12">
+                  <label for="extraBed" style="font-weight: bold"
+                    >Extra Bed (Adult, Child, Shared)</label
+                  >
+                  <div class="d-flex">
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="extraBedAdult"
+                      placeholder="Adult"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="extraBedChild"
+                      placeholder="Child"
+                    />
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="extraBedShared"
+                      placeholder="Shared"
+                    />
+                  </div>
+                </div>
+              </div>
+              <hr />
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+            <button type="button" class="btn btn-success" id="saveRoomTypeBtn">
+              Save Room
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Duplicate Room Type Modal -->
+    <div
+      class="modal fade"
+      id="duplicateRoomTypeModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="duplicateRoomTypeModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="duplicateRoomTypeModalLabel">
+              Duplicate Room Type Details
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="duplicateRoomTypeForm">
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="duplicateFromDate" style="font-weight: bold"
+                    >From</label
+                  >
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="duplicateFromDate"
+                  />
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="duplicateToDate" style="font-weight: bold"
+                    >To</label
+                  >
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="duplicateToDate"
+                  />
+                </div>
+              </div>
+              <hr />
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="duplicateRoomType" style="font-weight: bold"
+                    >Room Type(Name,Allotment,Cut-Off,Max Capacity)</label
+                  >
+                  <div class="d-flex">
+                    <input
+                      type="text"
+                      class="form-control mr-1"
+                      id="duplicateRoomType"
+                      placeholder="*Name"
+                      required
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-1"
+                      id="duplicateAllotment"
+                      placeholder="Allotment"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-1"
+                      id="duplicateCutoff"
+                      placeholder="Cut-Off"
+                    />
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="duplicateMaxCapacity"
+                      placeholder="Max Capacity"
+                      min="0"
+                    />
+                  </div>
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="duplicateSinglePrice" style="font-weight: bold"
+                    >Room Price (Single, Double)</label
+                  >
+                  <div class="d-flex">
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="duplicateSinglePrice"
+                      placeholder="Single Price"
+                    />
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="duplicateDoublePrice"
+                      placeholder="Double Price"
+                    />
+                  </div>
+                </div>
+              </div>
+              <hr />
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label
+                    for="duplicateFoodCostAdultABF"
+                    style="font-weight: bold"
+                    >Food Cost [Adult] (ABF, Lunch, Dinner, All
+                    Inclusive)</label
+                  >
+                  <div class="d-flex">
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="duplicateFoodCostChildABF"
+                      placeholder="ABF"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="duplicateFoodCostChildLunch"
+                      placeholder="Lunch"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="duplicateFoodCostChildDinner"
+                      placeholder="Dinner"
+                    />
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="duplicateFoodCostChildAllinclusive"
+                      placeholder="All Inclusive"
+                    />
+                  </div>
+                </div>
+                <div class="form-group col-md-6">
+                  <label
+                    for="duplicateFoodCostChildABF"
+                    style="font-weight: bold"
+                    >Food Cost [Child] (ABF, Lunch, Dinner, All
+                    Inclusive)</label
+                  >
+                  <div class="d-flex">
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="duplicateFoodCostAdultABF"
+                      placeholder="ABF"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="duplicateFoodCostAdultLunch"
+                      placeholder="Lunch"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="duplicateFoodCostAdultDinner"
+                      placeholder="Dinner"
+                    />
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="duplicateFoodCostAdultAllinclusive"
+                      placeholder="All Inclusive"
+                    />
+                  </div>
+                </div>
+              </div>
+              <hr />
+              <div class="form-row">
+                <div class="form-group col-md-12">
+                  <label for="duplicateExtraBed" style="font-weight: bold"
+                    >Extra Bed (Adult, Child, Shared)</label
+                  >
+                  <div class="d-flex">
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="duplicateExtraBedAdult"
+                      placeholder="Adult"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="duplicateExtraBedChild"
+                      placeholder="Child"
+                    />
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="duplicateExtraBedShared"
+                      placeholder="Shared"
+                    />
+                  </div>
+                </div>
+              </div>
+              <hr />
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              class="btn btn-success"
+              id="saveDuplicateRoomTypeBtn"
+            >
+              Save Room
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact Modal -->
+    <div
+      class="modal fade"
+      id="contactModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="contactModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="contactModalLabel">
+              Add Contact Details
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="contactForm" novalidate>
+              <div class="form-group">
+                <label for="contactName" style="font-weight: bold">Name</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="contactName"
+                  placeholder="Name"
+                  required
+                />
+                <div class="invalid-feedback">Please enter a name.</div>
+              </div>
+              <div class="form-group">
+                <label for="contactEmail" style="font-weight: bold"
+                  >Email</label
+                >
+                <input
+                  type="email"
+                  class="form-control"
+                  id="contactEmail"
+                  placeholder="Email"
+                  required
+                />
+                <div class="invalid-feedback">
+                  Please enter a valid email address.
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="contactTelephone" style="font-weight: bold"
+                  >Telephone</label
+                >
+                <input
+                  type="tel"
+                  class="form-control"
+                  id="contactTelephone"
+                  placeholder="Telephone"
+                  pattern="^\+?[0-9]{7,13}$"
+                  required
+                />
+                <div class="invalid-feedback">
+                  Please enter a valid telephone number (7-13 digits).
+                </div>
+              </div>
+              <input type="hidden" id="contactIndex" />
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+            <button type="button" class="btn btn-success" id="saveContactBtn">
+              Save Contact
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Contact Modal -->
+    <div
+      class="modal fade"
+      id="editContactModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="editContactModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editContactModalLabel">
+              Edit Contact Details
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="editContactForm" novalidate>
+              <div class="form-group">
+                <label for="editContactName" style="font-weight: bold"
+                  >Name</label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="editContactName"
+                  placeholder="Name"
+                  required
+                />
+                <div class="invalid-feedback">Please enter a name.</div>
+              </div>
+              <div class="form-group">
+                <label for="editContactEmail" style="font-weight: bold"
+                  >Email</label
+                >
+                <input
+                  type="email"
+                  class="form-control"
+                  id="editContactEmail"
+                  placeholder="Email"
+                  required
+                />
+                <div class="invalid-feedback">
+                  Please enter a valid email address.
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="editContactTelephone" style="font-weight: bold"
+                  >Telephone</label
+                >
+                <input
+                  type="tel"
+                  class="form-control"
+                  id="editContactTelephone"
+                  placeholder="Telephone"
+                  pattern="^\+?[0-9]{7,13}$"
+                  required
+                />
+                <div class="invalid-feedback">
+                  Please enter a valid telephone number (7-13 digits).
+                </div>
+              </div>
+              <input type="hidden" id="editContactIndex" />
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              class="btn btn-success"
+              id="saveEditedContactBtn"
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Promotion Modal -->
+    <div
+      class="modal fade"
+      id="promotionModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="promotionModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="promotionModalLabel">
+              Add Promotion Details
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="promotionForm">
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="promotionCode" style="font-weight: bold"
+                    >Code</label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="promotionCode"
+                    placeholder="*Code"
+                    required
+                  />
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="promotionName" style="font-weight: bold"
+                    >Name</label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="promotionName"
+                    placeholder="*Name"
+                    required
+                  />
+                </div>
+              </div>
+              <hr />
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="bookingDateFrom" style="font-weight: bold"
+                    >Booking Date From</label
+                  >
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="bookingDateFrom"
+                  />
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="bookingDateTo" style="font-weight: bold"
+                    >Booking Date To</label
+                  >
+                  <input type="date" class="form-control" id="bookingDateTo" />
+                </div>
+              </div>
+              <hr />
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="earlyBird" style="font-weight: bold"
+                    >Early Bird</label
+                  >
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="earlyBird"
+                    placeholder="Early Bird"
+                  />
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="minNights" style="font-weight: bold"
+                    >Min-Nights</label
+                  >
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="minNights"
+                    placeholder="Minimum Nights"
+                  />
+                </div>
+              </div>
+              <hr />
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="discount" style="font-weight: bold"
+                    >Discount Amount</label
+                  >
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="discount"
+                    placeholder="Discount"
+                  />
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="discounttype" style="font-weight: bold"
+                    >Discount Type</label
+                  >
+                  <select id="discounttype" class="form-control">
+                    <option value="%">%</option>
+                    <option value="THB">THB</option>
+                  </select>
+                </div>
+              </div>
+              <hr />
+              <div class="form-row">
+                <!-- Checkbox for Valid For Extra Bed -->
+                <div class="col-md-6 col-sm-6 form-group">
+                  <label for="validforextrabeds" style="font-weight: bold"
+                    >Valid For Extra Bed</label
+                  >
+                  <input type="checkbox" id="validforextrabeds" />
+                </div>
+                <!-- Checkbox for Combinable -->
+                <div class="col-md-6 col-sm-6 form-group">
+                  <label for="enabled" style="font-weight: bold">Enabled</label>
+                  <input type="checkbox" id="enabled" />
+                </div>
+              </div>
+              <hr />
+              <label for="freeMeals" style="font-weight: bold"
+                >Free Meals</label
+              >
+              <div class="form-row">
+                <div class="form-group col-md-4">
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="free_meals_abf"
+                    placeholder="ABF"
+                  />
+                </div>
+                <div class="form-group col-md-4">
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="free_meals_lunch"
+                    placeholder="Lunch"
+                  />
+                </div>
+                <div class="form-group col-md-4">
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="free_meals_dinner"
+                    placeholder="Dinner"
+                  />
+                </div>
+              </div>
+              <hr />
+              <div class="form-group has-feedback">
+                <textarea
+                  class="form-control"
+                  id="promotiondescription"
+                  placeholder="Description"
+                  rows="3"
+                  maxlength="1000"
+                ></textarea>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+            <button type="button" class="btn btn-success" id="savePromotionBtn">
+              Save Promotion
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Room Type Modal -->
+    <div
+      class="modal fade"
+      id="editRoomTypeModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="editRoomTypeModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editRoomTypeModalLabel">
+              Edit Room Type Details
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="editRoomTypeForm">
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="editFromDate" style="font-weight: bold"
+                    >From</label
+                  >
+                  <input type="date" class="form-control" id="editFromDate" />
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="editToDate" style="font-weight: bold">To</label>
+                  <input type="date" class="form-control" id="editToDate" />
+                </div>
+              </div>
+              <hr />
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="editRoomType" style="font-weight: bold"
+                    >Room Type(Name,Allotment,Cut-Off,Max Capacity)</label
+                  >
+                  <div class="d-flex">
+                    <input
+                      type="text"
+                      class="form-control mr-1"
+                      id="editRoomType"
+                      placeholder="*Name"
+                      required
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-1"
+                      id="editAllotment"
+                      placeholder="Allotment"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-1"
+                      id="editCutoff"
+                      placeholder="Cut-Off"
+                    />
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="editMaxCapacity"
+                      placeholder="Max Capacity"
+                      min="0"
+                    />
+                  </div>
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="editSinglePrice" style="font-weight: bold"
+                    >Room Price (Single, Double)</label
+                  >
+                  <div class="d-flex">
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="editSinglePrice"
+                      placeholder="Single Price"
+                    />
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="editDoublePrice"
+                      placeholder="Double Price"
+                    />
+                  </div>
+                </div>
+              </div>
+              <hr />
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="editFoodCostAdult" style="font-weight: bold"
+                    >Food Cost [Adult] (ABF, Lunch, Dinner, All
+                    Inclusive)</label
+                  >
+                  <div class="d-flex">
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="editFoodCostAdultABF"
+                      placeholder="ABF"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="editFoodCostAdultLunch"
+                      placeholder="Lunch"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="editFoodCostAdultDinner"
+                      placeholder="Dinner"
+                    />
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="editFoodCostAdultAllinclusive"
+                      placeholder="All Inclusive"
+                    />
+                  </div>
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="editFoodCostChild" style="font-weight: bold"
+                    >Food Cost [Child] (ABF, Lunch, Dinner, All
+                    Inclusive)</label
+                  >
+                  <div class="d-flex">
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="editFoodCostChildABF"
+                      placeholder="ABF"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="editFoodCostChildLunch"
+                      placeholder="Lunch"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="editFoodCostChildDinner"
+                      placeholder="Dinner"
+                    />
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="editFoodCostChildAllinclusive"
+                      placeholder="All Inclusive"
+                    />
+                  </div>
+                </div>
+              </div>
+              <hr />
+              <div class="form-row">
+                <div class="form-group col-md-12">
+                  <label for="editExtraBed" style="font-weight: bold"
+                    >Extra Bed (Adult, Child, Shared)</label
+                  >
+                  <div class="d-flex">
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="editExtraBedAdult"
+                      placeholder="Adult"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="editExtraBedChild"
+                      placeholder="Child"
+                    />
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="editExtraBedShared"
+                      placeholder="Shared"
+                    />
+                  </div>
+                </div>
+              </div>
+              <hr />
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              class="btn btn-success"
+              id="saveEditedRoomTypeBtn"
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Promotion Modal -->
+    <div
+      class="modal fade"
+      id="editPromotionModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="editPromotionModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editPromotionModalLabel">
+              Edit Promotion Details
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="editPromotionForm">
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="editPromotionCode" style="font-weight: bold"
+                    >Code</label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="editPromotionCode"
+                    placeholder="*Code"
+                    required
+                  />
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="editPromotionName" style="font-weight: bold"
+                    >Name</label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="editPromotionName"
+                    placeholder="*Name"
+                    required
+                  />
+                </div>
+              </div>
+              <hr />
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="editBookingDateFrom" style="font-weight: bold"
+                    >Booking Date From</label
+                  >
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="editBookingDateFrom"
+                  />
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="editBookingDateTo" style="font-weight: bold"
+                    >Booking Date To</label
+                  >
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="editBookingDateTo"
+                  />
+                </div>
+              </div>
+              <hr />
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="editEarlyBird" style="font-weight: bold"
+                    >Early Bird</label
+                  >
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="editEarlyBird"
+                    placeholder="Early Bird"
+                  />
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="editMinNights" style="font-weight: bold"
+                    >Min-Nights</label
+                  >
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="editMinNights"
+                    placeholder="Minimum Nights"
+                  />
+                </div>
+              </div>
+              <hr />
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="editDiscount" style="font-weight: bold"
+                    >Discount Amount</label
+                  >
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="editDiscount"
+                    placeholder="Discount"
+                  />
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="editDiscountType" style="font-weight: bold"
+                    >Discount Type</label
+                  >
+                  <select id="editDiscountType" class="form-control">
+                    <option value="%">%</option>
+                    <option value="THB">THB</option>
+                  </select>
+                </div>
+              </div>
+              <hr />
+              <div class="form-row">
+                <!-- Checkbox for Valid For Extra Bed -->
+                <div class="col-md-6 col-sm-6 form-group">
+                  <label for="editValidForExtraBeds" style="font-weight: bold"
+                    >Valid For Extra Bed</label
+                  >
+                  <input type="checkbox" id="editValidForExtraBeds" />
+                </div>
+
+                <!-- Checkbox for Enabled -->
+                <div class="col-md-6 col-sm-6 form-group">
+                  <label for="editEnabled" style="font-weight: bold"
+                    >Enabled</label
+                  >
+                  <input type="checkbox" id="editEnabled" />
+                </div>
+              </div>
+              <hr />
+              <label for="editFreeMeals" style="font-weight: bold"
+                >Free Meals</label
+              >
+              <div class="form-row">
+                <div class="form-group col-md-4">
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="editfree_meals_abf"
+                    placeholder="ABF"
+                    value="0"
+                  />
+                </div>
+                <div class="form-group col-md-4">
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="edit_free_meals_lunch"
+                    placeholder="Lunch"
+                    value="0"
+                  />
+                </div>
+                <div class="form-group col-md-4">
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="edit_free_meals_dinner"
+                    placeholder="Dinner"
+                    value="0"
+                  />
+                </div>
+              </div>
+              <hr />
+              <div class="form-group has-feedback">
+                <textarea
+                  class="form-control"
+                  id="editpromotiondescription"
+                  placeholder="Description"
+                  rows="3"
+                  maxlength="1000"
+                ></textarea>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              class="btn btn-success"
+              id="saveEditedPromotionBtn"
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Room Type Modal for Mass Edit -->
+    <div
+      class="modal fade"
+      id="massEditRoomTypeModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="massEditRoomTypeModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="massEditRoomTypeModalLabel">
+              Mass Edit Room Types
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <form id="roomTypeForm">
+              <!-- Date Range Section (Common for all) -->
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="massEditFromDate" style="font-weight: bold"
+                    >From</label
+                  >
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="massEditFromDate"
+                    required
+                  />
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="massEditToDate" style="font-weight: bold"
+                    >To Date</label
+                  >
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="massEditToDate"
+                    required
+                  />
+                </div>
+              </div>
+              <hr />
+
+              <!-- Dynamic Section for Multiple Entries -->
+              <div class="form-row" id="dynamicRoomEntriesContainer">
+                <!-- Dynamic rows will be appended here via JavaScript -->
+              </div>
+              <hr />
+
+              <!-- Food Cost Section (Common for all) -->
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label style="font-weight: bold"
+                    >Food Cost [Adult] (ABF, Lunch, Dinner, All
+                    Inclusive)</label
+                  >
+                  <div class="d-flex">
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="massEditFoodCostAdultABF"
+                      placeholder="ABF"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="massEditFoodCostAdultLunch"
+                      placeholder="Lunch"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="massEditFoodCostAdultDinner"
+                      placeholder="Dinner"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="massEditFoodCostAdultAllinclusive"
+                      placeholder="All Inclusive"
+                    />
+                  </div>
+                </div>
+                <div class="form-group col-md-6">
+                  <label style="font-weight: bold"
+                    >Food Cost [Child] (ABF, Lunch, Dinner, All
+                    Inclusive)</label
+                  >
+                  <div class="d-flex">
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="massEditFoodCostChildABF"
+                      placeholder="ABF"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="massEditFoodCostChildLunch"
+                      placeholder="Lunch"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="massEditFoodCostChildDinner"
+                      placeholder="Dinner"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="massEditFoodCostChildAllinclusive"
+                      placeholder="All Inclusive"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <hr />
+
+              <!-- Extra Bed Section (Common for all) -->
+              <div class="form-row">
+                <div class="form-group col-md-12">
+                  <label for="massEditExtraBed" style="font-weight: bold"
+                    >Extra Bed (Adult, Child, Shared)</label
+                  >
+                  <div class="d-flex">
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="massEditExtraBedAdult"
+                      placeholder="Adult"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="massEditExtraBedChild"
+                      placeholder="Child"
+                    />
+                    <input
+                      type="number"
+                      class="form-control mr-2"
+                      id="massEditExtraBedShared"
+                      placeholder="Shared"
+                    />
+                  </div>
+                </div>
+              </div>
+              <hr />
+            </form>
+          </div>
+
+          <div class="modal-footer d-flex justify-content-between">
+            <!-- New Button for Adding Room Type -->
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="addNewRoomType()"
+            >
+              Add Room
+            </button>
+
+            <!-- Existing Apply Changes Button -->
+            <div>
+              <button
+                type="button"
+                class="btn btn-success"
+                onclick="applyMassEdit()"
+              >
+                Apply
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-dismiss="modal"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for adding new city -->
+    <div
+      class="modal fade"
+      id="addNewCityModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="addNewCityModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addNewCityModalLabel">Add New City</h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="addNewCityForm">
+              <div class="form-group">
+                <label for="newCityName">City Name *</label>
+                <input
+                  type="text"
+                  id="newCityName"
+                  class="form-control"
+                  placeholder="Enter city name"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="newCityCountry">Country</label>
+                <input
+                  type="text"
+                  id="newCityCountry"
+                  class="form-control"
+                  readonly
+                />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="button" id="saveNewCity" class="btn btn-primary">
+              <i class="fa fa-spinner fa-spin" style="display: none"></i>
+              Add City
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- FastClick -->
+    <script src="../vendors/fastclick/lib/fastclick.js"></script>
+    <!-- NProgress -->
+    <script src="../vendors/nprogress/nprogress.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/locationCache.js"></script>
+    <script src="js/Hotels/add_hotel.js"></script>
+  </body>
+</html>

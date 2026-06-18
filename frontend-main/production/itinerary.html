@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>List of Bookingss</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- Custom Theme Style -->
+    <link rel="stylesheet" href="../build/css/custom.min.css" />
+
+    <style>
+      /* Sidebar and navbar text size */
+      .nav_title span,
+      .profile_info span,
+      .profile_info h2,
+      .side-menu a,
+      .navbar-right a {
+        font-size: 1rem; /* Slightly increased for better readability */
+      }
+    </style>
+
+    <style>
+      .edit-btn,
+      .delete-btn,
+      .print-btn {
+        cursor: pointer;
+      }
+      /* Removed constraining CSS for sidebar-menu to allow proper submenu expansion */
+
+      /* Sidebar scrolling - allow scroll when expanded, but not when collapsed */
+      .left_col.scroll-view {
+        overflow-y: auto;
+        max-height: 100vh;
+      }
+
+      /* When sidebar is collapsed, remove height constraints to allow submenu expansion */
+      body.nav-sm .left_col.scroll-view {
+        overflow-y: visible;
+        max-height: none;
+      }
+    </style>
+  </head>
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+        <div class="col-md-3 left_col menu_fixed">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border: 0">
+              <a
+                href="index.html"
+                class="site_title"
+                style="
+                  display: block;
+                  text-align: center;
+                  font-size: 2rem;
+                  font-weight: bold;
+                  color: #007bff;
+                  text-decoration: none;
+                "
+              >
+                <span style="font-size: 1.5rem">VeraThailandia!</span>
+              </a>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- menu profile quick info -->
+            <div class="profile clearfix">
+              <div class="profile_pic">
+                <img
+                  src="images/verathailandlogo.png"
+                  alt="..."
+                  class="img-circle profile_img"
+                />
+              </div>
+              <div class="profile_info">
+                <span>Welcome,</span>
+                <h2 id="profileName"></h2>
+              </div>
+            </div>
+            <!-- /menu profile quick info -->
+
+            <br />
+
+            <!-- sidebar menu -->
+            <div
+              id="sidebar-menu"
+              class="main_menu_side hidden-print main_menu"
+            >
+              <div class="menu_section">
+                <h3>General</h3>
+                <ul class="nav side-menu">
+                  <li>
+                    <a href="index.html"><i class="fa fa-home"></i> Home</a>
+                  </li>
+                  <li id="controlPanelMenu">
+                    <a>
+                      <i class="fa fa-edit"></i> Control-Panel
+                      <span class="fa fa-chevron-down"></span>
+                    </a>
+                    <ul class="nav child_menu">
+                      <li><a href="activities.html">Activities</a></li>
+                      <li><a href="agents.html">Agents</a></li>
+                      <li><a href="booking.html">Bookings</a></li>
+                      <li><a href="excursions.html">Excursions</a></li>
+                      <li><a href="hotels.html">Hotels</a></li>
+                      <li><a href="markup.html">Markups</a></li>
+                      <!-- <li><a href="operations.html">Operations</a></li> -->
+                      <li><a href="othercharges.html">Other Charges</a></li>
+                      <!-- <li><a href="stop_sale.html">Stop Sale</a></li> -->
+                      <li><a href="suppliers.html">Suppliers</a></li>
+                      <li><a href="tools.html">Tools</a></li>
+                      <li><a href="tours.html">Tours</a></li>
+                      <li><a href="transfers.html">Transfers</a></li>
+                      <li><a href="users.html">Users</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="trip.html"><i class="fa fa-book"></i> Quotation</a>
+                  </li>
+                  <li>
+                    <a href="payment.html"
+                      ><i class="fa fa-pencil-square-o"></i> Payment
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <!--<li>
+                    <a href="tax_invoices.html"
+                      ><i class="fa fa-file-text-o"></i> Tax Invoices
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li> -->
+                  <li>
+                    <a href="itinerary.html"
+                      ><i class="fa fa-ticket"></i> Itinerary
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li>
+                    <a href="analytics.html"
+                      ><i class="fa fa-bar-chart"></i> Analytics
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- /sidebar menu -->
+
+            <!-- /menu footer buttons -->
+            <div class="sidebar-footer hidden-small">
+              <a data-toggle="tooltip" data-placement="top" title="Settings">
+                <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="FullScreen">
+                <span
+                  class="glyphicon glyphicon-fullscreen"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="Lock">
+                <span
+                  class="glyphicon glyphicon-eye-close"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a
+                data-toggle="tooltip"
+                data-placement="top"
+                title="Logout"
+                href="logout.html"
+              >
+                <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+              </a>
+            </div>
+            <!-- /menu footer buttons -->
+          </div>
+        </div>
+
+        <!-- top navigation -->
+        <div class="top_nav">
+          <div class="nav_menu">
+            <div class="nav toggle">
+              <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+            </div>
+            <nav class="nav navbar-nav">
+              <ul class="navbar-right">
+                <li class="nav-item dropdown open" style="padding-left: 15px">
+                  <a
+                    href="javascript:;"
+                    class="user-profile dropdown-toggle"
+                    aria-haspopup="true"
+                    id="navbarDropdown"
+                    data-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    <img
+                      id="navProfileImage"
+                      src="images/verathailandlogo.png"
+                      alt=""
+                    />
+                    <span id="navProfileName"></span>
+                  </a>
+                  <div
+                    class="dropdown-menu dropdown-usermenu pull-right"
+                    aria-labelledby="navbarDropdown"
+                  >
+                    <a class="dropdown-item" href="profile.html"
+                      ><i class="fa fa-user pull-right"></i> Profile</a
+                    >
+                    <a class="dropdown-item" href="logout.html"
+                      ><i class="fa fa-sign-out pull-right"></i> Log Out</a
+                    >
+                  </div>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+        <!-- /top navigation -->
+
+        <!-- Page content -->
+        <div class="right_col" role="main">
+          <div class="page-title">
+            <div class="title_left">
+              <h3>Itinerary</h3>
+            </div>
+          </div>
+
+          <div class="clearfix"></div>
+
+          <!-- Search Box and Date Range Filters -->
+          <div class="row" style="margin-bottom: 20px">
+            <div class="col-md-4">
+              <input
+                type="text"
+                id="searchBox"
+                class="form-control"
+                placeholder="Search for Itinerary..."
+              />
+            </div>
+            <div class="col-md-2">
+              <input
+                type="date"
+                id="fromDate"
+                class="form-control"
+                title="Start Date"
+              />
+            </div>
+            <div class="col-md-2">
+              <input
+                type="date"
+                id="toDate"
+                class="form-control"
+                title="End Date"
+              />
+            </div>
+            <div class="col-md-2">
+              <button
+                id="filterByDateBtn"
+                class="btn btn-primary btn-block"
+                title="Filter by date range"
+              >
+                <i class="fa fa-calendar"></i> Filter
+              </button>
+            </div>
+            <div class="col-md-2 text-right">
+              <label for="rowsSelect">Show: </label>
+              <select
+                id="rowsSelect"
+                class="form-control"
+                style="width: 70px; display: inline-block"
+              >
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="All">All</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Filter Status Display -->
+          <div class="row" style="margin-bottom: 15px">
+            <div class="col-md-12">
+              <div
+                id="filterStatus"
+                class="alert alert-info"
+                style="display: none; margin-bottom: 10px"
+              >
+                <!-- Filter status will be shown here -->
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12 col-sm-12">
+              <div class="x_panel">
+                <div class="x_title">
+                  <h2>List of Itinerary</h2>
+                  <ul class="nav navbar-right panel_toolbox">
+                    <li>
+                      <a class="collapse-link"
+                        ><i class="fa fa-chevron-up"></i
+                      ></a>
+                    </li>
+                  </ul>
+                  <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+                  <div class="row">
+                    <div class="col-sm-12">
+                      <div class="card-box table-responsive">
+                        <table
+                          id="datatable-buttons"
+                          class="table table-striped table-bordered"
+                          style="width: 100%"
+                        >
+                          <thead>
+                            <tr>
+                              <th>Agent</th>
+                              <th>Quotations Ref</th>
+                              <th>Client Name</th>
+                              <th>Trip Start Date</th>
+                              <th>Pax</th>
+                              <th>Telephone</th>
+                              <th>Booking Ref</th>
+                              <th>Status</th>
+                              <th>Final Cost</th>
+                              <th>View</th>
+                              <th>Print</th>
+                            </tr>
+                          </thead>
+                          <tbody id="tripTableBody">
+                            <!-- Table rows will be dynamically added here -->
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="d-flex justify-content-end">
+                    <div class="pagination">
+                      <button
+                        id="prevPage"
+                        class="btn btn-secondary btn-sm"
+                        disabled
+                      >
+                        Previous
+                      </button>
+                      <button id="nextPage" class="btn btn-secondary btn-sm">
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /Page content -->
+
+        <!-- Footer -->
+        <footer></footer>
+        <!-- /Footer -->
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const token = localStorage.getItem("token");
+        const role = localStorage.getItem("role"); // Get the user's role
+
+        if (!token) {
+          alert("You are not authorized. Please log in first.");
+          window.location.href = "login.html";
+          return;
+        }
+
+        const username = localStorage.getItem("username") || "Guest";
+        document.getElementById("profileName").innerText = username;
+        document.getElementById("navProfileName").innerText = username;
+
+        // Hide Control Panel for non-admin users
+        if (role !== "admin" && role !== "superadmin") {
+          const controlPanelMenu = document.getElementById("controlPanelMenu");
+          if (controlPanelMenu) {
+            controlPanelMenu.style.display = "none";
+          }
+        }
+
+        const tripTableBody = document.getElementById("tripTableBody");
+        const searchBox = document.getElementById("searchBox");
+        const rowsSelect = document.getElementById("rowsSelect");
+        const prevPageButton = document.getElementById("prevPage");
+        const nextPageButton = document.getElementById("nextPage");
+
+        let trips = [];
+        let filteredTrips = [];
+        let currentPage = 1;
+        let rowsPerPage = 25;
+        let totalPages = 1;
+        let currentFilterMode = "all"; // 'all' or 'date_range'
+        let currentDateRange = { start: null, end: null };
+
+        // Initialize page
+        function initializePage() {
+          // Try to restore saved date filters for itinerary page
+          const savedFromDate = localStorage.getItem("itinerary_fromDate");
+          const savedToDate = localStorage.getItem("itinerary_toDate");
+          const savedFilterMode = localStorage.getItem("itinerary_filterMode");
+
+          if (savedFromDate && savedToDate && savedFilterMode) {
+            // Restore saved dates
+            document.getElementById("fromDate").value = savedFromDate;
+            document.getElementById("toDate").value = savedToDate;
+            console.log(
+              "Restored saved itinerary date filters:",
+              savedFromDate,
+              "to",
+              savedToDate
+            );
+          } else {
+            // Set default dates (current month)
+            const today = new Date();
+            const endDate = today.toISOString().split("T")[0];
+            const startDate = new Date(today.getFullYear(), today.getMonth(), 1)
+              .toISOString()
+              .split("T")[0];
+
+            document.getElementById("fromDate").value = startDate;
+            document.getElementById("toDate").value = endDate;
+          }
+        }
+
+        // Save date filters to localStorage
+        function saveDateFilters() {
+          const fromDate = document.getElementById("fromDate").value;
+          const toDate = document.getElementById("toDate").value;
+
+          if (fromDate && toDate) {
+            localStorage.setItem("itinerary_fromDate", fromDate);
+            localStorage.setItem("itinerary_toDate", toDate);
+            localStorage.setItem("itinerary_filterMode", currentFilterMode);
+            console.log(
+              "Saved itinerary date filters:",
+              fromDate,
+              "to",
+              toDate
+            );
+          }
+        }
+
+        // Add event listener for filter button
+        document
+          .getElementById("filterByDateBtn")
+          .addEventListener("click", filterByDateRange);
+
+        // Filter by date range
+        function filterByDateRange() {
+          const fromDate = document.getElementById("fromDate").value;
+          const toDate = document.getElementById("toDate").value;
+
+          // Save the date filters
+          saveDateFilters();
+
+          // If both dates are not selected, fall back to all data
+          if (!fromDate || !toDate) {
+            showInfoMessage(
+              "No date range selected. Loading all itineraries..."
+            );
+            setTimeout(() => {
+              loadTripsFromAPI(true); // Load all data
+            }, 1000);
+            return;
+          }
+
+          // If dates are selected, use date range filtering
+          loadTripsFromAPI(false); // false means use date range filtering
+        }
+
+        // Show loading state
+        function showLoadingState() {
+          const tableBody = document.getElementById("tripTableBody");
+          tableBody.innerHTML = `
+            <tr>
+              <td colspan="11" class="text-center">
+                <i class="fa fa-spinner fa-spin fa-2x"></i>
+                <p>Loading itineraries...</p>
+              </td>
+            </tr>
+          `;
+        }
+
+        // Show info message
+        function showInfoMessage(message) {
+          const statusDiv = document.getElementById("filterStatus");
+          statusDiv.innerHTML = `<i class="fa fa-info-circle"></i> ${message}`;
+          statusDiv.className = "alert alert-info";
+          statusDiv.style.display = "block";
+        }
+
+        // Show error message
+        function showErrorMessage(message) {
+          const statusDiv = document.getElementById("filterStatus");
+          statusDiv.innerHTML = `<i class="fa fa-exclamation-triangle"></i> ${message}`;
+          statusDiv.className = "alert alert-danger";
+          statusDiv.style.display = "block";
+        }
+
+        // Update filter status display
+        function updateFilterStatus(count) {
+          const statusDiv = document.getElementById("filterStatus");
+
+          if (currentFilterMode === "all") {
+            // For all data, show current month information
+            const today = new Date();
+            const monthNames = [
+              "January",
+              "February",
+              "March",
+              "April",
+              "May",
+              "June",
+              "July",
+              "August",
+              "September",
+              "October",
+              "November",
+              "December",
+            ];
+            const currentMonth = monthNames[today.getMonth()];
+            const currentYear = today.getFullYear();
+
+            statusDiv.innerHTML = `<i class="fa fa-info-circle"></i> Showing all ${count} approved itineraries (Current month: ${currentMonth} ${currentYear})`;
+            statusDiv.className = "alert alert-info";
+            statusDiv.style.display = "block";
+          } else if (
+            currentFilterMode === "date_range" &&
+            currentDateRange.start &&
+            currentDateRange.end
+          ) {
+            // Check if the date range spans a single month
+            const startDate = new Date(currentDateRange.start);
+            const endDate = new Date(currentDateRange.end);
+            const monthNames = [
+              "January",
+              "February",
+              "March",
+              "April",
+              "May",
+              "June",
+              "July",
+              "August",
+              "September",
+              "October",
+              "November",
+              "December",
+            ];
+
+            if (
+              startDate.getMonth() === endDate.getMonth() &&
+              startDate.getFullYear() === endDate.getFullYear()
+            ) {
+              // Same month
+              const monthName = monthNames[startDate.getMonth()];
+              const year = startDate.getFullYear();
+              statusDiv.innerHTML = `<i class="fa fa-calendar"></i> Showing ${count} approved itineraries for ${monthName} ${year}`;
+            } else {
+              // Different months
+              statusDiv.innerHTML = `<i class="fa fa-calendar"></i> Showing ${count} approved itineraries from ${formatDateForDisplay(
+                currentDateRange.start
+              )} to ${formatDateForDisplay(currentDateRange.end)}`;
+            }
+            statusDiv.className = "alert alert-info";
+            statusDiv.style.display = "block";
+          } else {
+            statusDiv.style.display = "none";
+          }
+        }
+
+        // Format date for display
+        function formatDateForDisplay(dateString) {
+          const date = new Date(dateString);
+          return date.toLocaleDateString("en-GB");
+        }
+
+        tripTableBody.addEventListener("click", function (event) {
+          if (event.target.classList.contains("edit-btn")) {
+            const tripId = event.target.getAttribute("data-id");
+            window.location.href = `edit_itinerary.html?id=${tripId}`;
+          }
+          if (event.target.classList.contains("print-btn")) {
+            const tripId = event.target.getAttribute("data-id");
+
+            if (!tripId) {
+              alert("Invalid quotation ID.");
+              return;
+            }
+
+            if (
+              !confirm("Are you sure you want to save this itinerary to pdf?")
+            ) {
+              return;
+            }
+
+            fetch(`${Endpoint}/api/v1/itinerary/${tripId}/generate-pdf`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`, // ✅ Ensure Authorization header is sent
+                "Content-Type": "application/pdf", // ✅ Ensures correct response type
+              },
+            })
+              .then((response) => {
+                if (!response.ok) {
+                  return response.text().then((errorText) => {
+                    throw new Error(`Failed to print itinerary: ${errorText}`);
+                  });
+                }
+                return response.blob(); // ✅ Convert response to a Blob (binary file)
+              })
+              .then((blob) => {
+                const blobUrl = window.URL.createObjectURL(blob); // ✅ Create a URL for the Blob
+                window.open(blobUrl, "_blank"); // ✅ Open the PDF in a new tab
+              })
+              .catch((error) => {
+                console.error("Error printing itinerary:", error);
+                alert(`Error: ${error.message}`);
+              });
+          }
+        });
+
+        // Fetch trips from backend API
+        function loadTripsFromAPI(useAllData = true) {
+          showLoadingState();
+
+          const token = localStorage.getItem("token");
+
+          // Debug: Check if token exists
+          if (!token) {
+            console.error("No authentication token found");
+            alert("No authentication token found. Please log in again.");
+            window.location.href = "login.html";
+            return;
+          }
+
+          let url;
+
+          if (useAllData) {
+            // Use the default endpoint for all quotations
+            url = `${Endpoint}/api/v1/quotations`;
+            currentFilterMode = "all";
+          } else {
+            // Use date range endpoint
+            const fromDate = document.getElementById("fromDate").value;
+            const toDate = document.getElementById("toDate").value;
+
+            if (!fromDate || !toDate) {
+              showErrorMessage("Please select both start and end dates");
+              return;
+            }
+
+            url = `${Endpoint}/api/v1/quotations/date-range?start_date=${fromDate}&end_date=${toDate}`;
+            currentFilterMode = "date_range";
+            currentDateRange = { start: fromDate, end: toDate };
+          }
+
+          console.log("Loading itineraries from:", url);
+
+          fetch(url, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          })
+            .then((response) => {
+              console.log("Response status:", response.status);
+              console.log("Response ok:", response.ok);
+
+              if (!response.ok) {
+                if (response.status === 401) {
+                  console.error("Authentication failed - 401 Unauthorized");
+                  alert("Unauthorized. Please log in again.");
+                  localStorage.removeItem("token");
+                  localStorage.removeItem("role");
+                  localStorage.removeItem("username");
+                  window.location.href = "login.html";
+                  return;
+                } else if (response.status === 403) {
+                  console.error("Access forbidden - 403 Forbidden");
+                  showErrorMessage(
+                    "You don't have permission to access itineraries."
+                  );
+                  return;
+                } else {
+                  return response.text().then((errorData) => {
+                    console.error("Raw response data:", errorData);
+                    throw new Error("Failed to fetch quotations.");
+                  });
+                }
+              }
+              return response.json();
+            })
+            .then((data) => {
+              console.log("Itinerary data received:", data);
+
+              // Handle response - could be array or object with quotations array
+              let quotationsArray = [];
+              if (Array.isArray(data)) {
+                quotationsArray = data;
+              } else if (data && data.quotations) {
+                quotationsArray = data.quotations;
+              } else if (data && data.data) {
+                quotationsArray = data.data;
+              }
+
+              trips = quotationsArray;
+              filteredTrips = [...trips];
+              totalPages = Math.ceil(filteredTrips.length / rowsPerPage);
+              currentPage = 1;
+
+              // Filter only approved trips for itinerary
+              const approvedTrips = filteredTrips.filter(
+                (trip) => trip.status === "Approved"
+              );
+              updateFilterStatus(approvedTrips.length);
+              renderTrips();
+              updatePaginationButtons();
+            })
+            .catch((error) => {
+              console.error("Error fetching quotations:", error);
+              showErrorMessage(`Error loading itineraries: ${error.message}`);
+
+              // Reset data on error
+              trips = [];
+              filteredTrips = [];
+              totalPages = 1;
+              currentPage = 1;
+              renderTrips();
+              updatePaginationButtons();
+            });
+        }
+
+        // Render trips into the table
+        function renderTrips() {
+          tripTableBody.innerHTML = "";
+
+          // ✅ Filter trips where status is "Approved"
+          const approvedTrips = filteredTrips.filter(
+            (trip) => trip.status === "Approved"
+          );
+
+          const start = (currentPage - 1) * rowsPerPage;
+          const end = Math.min(start + rowsPerPage, approvedTrips.length);
+
+          approvedTrips.slice(start, end).forEach((trip) => {
+            const row = document.createElement("tr");
+
+            // ✅ Apply background color based on approval status
+            row.style.backgroundColor = "#A2D9A5"; // Green for approved trips
+
+            row.innerHTML = `
+                <td>${trip.agent.name}</td>
+                <td>${trip.quotation_reference}</td>
+                <td>${trip.client_name}</td>
+                <td>${new Date(trip.start_date).toLocaleDateString()}</td>
+                <td>${trip.number_of_adults + trip.number_of_kids}</td>
+                <td>${trip.client_phone}</td>
+                <td>${trip.client_booking}</td>
+                <td>${trip.status}</td>
+                <td>${trip.final_cost || "N/A"}</td>
+                <td><button class="btn btn-primary btn-sm edit-btn" data-id="${
+                  trip.id
+                }">View</button></td>
+                <td><button class="btn btn-success btn-sm print-btn" data-id="${
+                  trip.id
+                }">Print</button></td>
+                `;
+
+            tripTableBody.appendChild(row);
+          });
+
+          updatePaginationButtons();
+        }
+
+        function updatePaginationButtons() {
+          prevPageButton.disabled = currentPage === 1;
+          nextPageButton.disabled =
+            currentPage === totalPages || totalPages === 0;
+        }
+
+        function filterTrips() {
+          const searchValue = searchBox.value.trim().toLowerCase();
+
+          // Filter only relevant fields (client-side search on already loaded data)
+          filteredTrips = trips.filter((trip) => {
+            return (
+              (trip.client_name &&
+                trip.client_name.toLowerCase().includes(searchValue)) ||
+              (trip.quotation_reference &&
+                trip.quotation_reference.toLowerCase().includes(searchValue)) ||
+              (trip.status &&
+                trip.status.toLowerCase().includes(searchValue)) ||
+              (trip.client_phone && trip.client_phone.includes(searchValue)) ||
+              (trip.booking_reference &&
+                trip.booking_reference.toLowerCase().includes(searchValue)) ||
+              (trip.agent &&
+                trip.agent.name &&
+                trip.agent.name.toLowerCase().includes(searchValue))
+            );
+          });
+
+          currentPage = 1;
+          totalPages = Math.ceil(filteredTrips.length / rowsPerPage);
+          renderTrips();
+          updatePaginationButtons();
+        }
+
+        // Attach event listener for search input (client-side search)
+        searchBox.addEventListener("input", filterTrips);
+
+        rowsSelect.addEventListener("change", function () {
+          rowsPerPage =
+            this.value === "All"
+              ? filteredTrips.length
+              : parseInt(this.value, 10);
+          currentPage = 1;
+          totalPages = Math.ceil(filteredTrips.length / rowsPerPage);
+          renderTrips();
+          updatePaginationButtons();
+        });
+
+        prevPageButton.addEventListener("click", function () {
+          if (currentPage > 1) {
+            currentPage--;
+            renderTrips();
+            updatePaginationButtons();
+          }
+        });
+
+        nextPageButton.addEventListener("click", function () {
+          if (currentPage < totalPages) {
+            currentPage++;
+            renderTrips();
+            updatePaginationButtons();
+          }
+        });
+
+        // Initialize the page
+        initializePage();
+
+        // Load trips from API when the page is ready
+        // Check if we have saved filters and should use them
+        const savedFilterMode = localStorage.getItem("itinerary_filterMode");
+        if (savedFilterMode === "date_range") {
+          // Use saved date range filters
+          loadTripsFromAPI(false);
+        } else {
+          // Load all data by default
+          loadTripsFromAPI();
+        }
+      });
+    </script>
+  </body>
+</html>

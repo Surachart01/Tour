@@ -1,0 +1,2911 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Tour</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- FontAwesome 5 for modern icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
+    <style>
+      /* Modern form enhancements */
+      .form-control:focus {
+        border-color: #1abb9c !important;
+        box-shadow: 0 0 0 0.2rem rgba(26, 187, 156, 0.25) !important;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #1abb9c 0%, #16a085 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary:hover {
+        background: linear-gradient(135deg, #16a085 0%, #138d75 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-secondary:hover {
+        background: linear-gradient(135deg, #7f8c8d 0%, #6c7b7d 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-success {
+        background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-success:hover {
+        background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-warning {
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-warning:hover {
+        background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-danger {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-danger:hover {
+        background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+        transform: translateY(-1px);
+      }
+
+      .form-control {
+        height: 45px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        background-color: #fafbfc;
+        transition: all 0.3s ease;
+      }
+
+      .form-control:hover {
+        border-color: #1abb9c;
+      }
+
+      textarea.form-control {
+        height: auto;
+        min-height: 100px;
+      }
+
+      .form-group label {
+        font-weight: 600;
+        color: #34495e;
+        margin-bottom: 8px;
+      }
+
+      .table {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .table thead th {
+        background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+        color: white;
+        font-weight: 600;
+        border: none;
+        padding: 15px;
+      }
+
+      .table tbody td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        border-color: #ecf0f1;
+      }
+
+      .table tbody tr:hover {
+        background-color: #f8f9fa;
+      }
+
+      .modal-content {
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      .modal-header {
+        background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+        color: white;
+        border-radius: 10px 10px 0 0;
+        border-bottom: none;
+      }
+
+      .modal-title {
+        font-weight: 600;
+      }
+
+      .close {
+        color: white;
+        opacity: 0.8;
+        text-shadow: none;
+      }
+
+      .close:hover {
+        color: white;
+        opacity: 1;
+      }
+
+      .input-group-append .btn {
+        height: 45px;
+        border-radius: 0 6px 6px 0;
+      }
+
+      /* Custom tooltip styles */
+      .tooltip-btn {
+        position: relative;
+        display: inline-block;
+      }
+
+      /* Add spacing between action buttons */
+      .btn-group {
+        display: flex;
+        gap: 8px;
+      }
+
+      .tooltip-btn .tooltip-text {
+        visibility: hidden;
+        width: 80px;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 4px;
+        padding: 5px 8px;
+        position: absolute;
+        z-index: 1000;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -40px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 12px;
+        font-weight: normal;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+
+      .tooltip-btn .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #333 transparent transparent transparent;
+      }
+
+      .tooltip-btn:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+      }
+
+      .tooltip-btn .btn {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+
+      .tooltip-btn .btn i {
+        pointer-events: none;
+      }
+
+      /* Validity Period Styling */
+      .validity-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .days-selector {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .day-pill {
+        position: relative;
+        display: inline-block;
+      }
+
+      .day-pill input[type="checkbox"] {
+        display: none;
+      }
+
+      .day-pill label {
+        display: inline-block;
+        padding: 8px 16px;
+        background-color: #6c757d;
+        color: white;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 14px;
+        font-weight: 500;
+        min-width: 50px;
+        text-align: center;
+        user-select: none;
+      }
+
+      .day-pill label:hover {
+        background-color: #5a6268;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      .day-pill input[type="checkbox"]:checked + label {
+        background-color: #1abb9c;
+        color: white;
+        box-shadow: 0 2px 8px rgba(26, 187, 156, 0.3);
+      }
+
+      /* Activity Container Styling */
+      .activity-container {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        background-color: #f8f9fa;
+      }
+
+      .activity-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .activity-header h6 {
+        margin: 0;
+        color: #495057;
+        font-weight: 600;
+      }
+
+      .activity-item {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 10px;
+        position: relative;
+      }
+
+      /* Day Management Styling */
+      .day-section {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background-color: #ffffff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .day-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+      }
+
+      .day-header h5 {
+        margin: 0;
+        color: #495057;
+        font-weight: 600;
+      }
+
+      .remove-day-btn {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        border: none;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .remove-day-btn:hover {
+        background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+        transform: translateY(-1px);
+      }
+
+      .day-toggle-btn {
+        background: linear-gradient(135deg, #1abb9c 0%, #16a085 100%);
+        border: none;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-right: 10px;
+      }
+
+      .day-toggle-btn:hover {
+        background: linear-gradient(135deg, #16a085 0%, #138d75 100%);
+      }
+
+      .day-content {
+        transition: all 0.3s ease;
+        overflow: hidden;
+      }
+
+      .day-content.collapsed {
+        display: none;
+      }
+
+      .day-content.expanded {
+        display: block;
+      }
+
+      .toggle-icon {
+        transition: transform 0.3s ease;
+      }
+
+      .toggle-icon.rotated {
+        transform: rotate(180deg);
+      }
+
+      /* Responsive design */
+      @media (max-width: 768px) {
+        .days-selector {
+          justify-content: center;
+        }
+
+        .day-pill label {
+          padding: 6px 12px;
+          font-size: 12px;
+          min-width: 40px;
+        }
+
+        .activity-header {
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .tooltip-btn .btn {
+          padding: 4px 6px;
+          font-size: 12px;
+        }
+      }
+
+      /* Full-width header styling - matching edit_tours.html */
+      .full-width-header {
+        background: linear-gradient(135deg, #2a3f54 0%, #34495e 100%);
+        color: white;
+        padding: 30px 60px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .header-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .header-left {
+        display: flex;
+        align-items: center;
+      }
+
+      .page-title {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+      }
+
+      .page-title i {
+        font-size: 28px;
+        margin-right: 15px;
+        color: #1abb9c;
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 15px;
+      }
+
+      .header-actions .btn {
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        padding: 8px 20px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+      }
+
+      /* Main content styling - matching edit_tours.html */
+      .main-content {
+        flex: 1;
+        padding: 40px 60px;
+        background: #ecf0f1;
+      }
+
+      .content-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        padding: 40px;
+      }
+
+      /* Form enhancements with icons */
+      .form-group label {
+        display: flex;
+        align-items: center;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 8px;
+        font-size: 14px;
+      }
+
+      .form-group label i {
+        margin-right: 8px;
+        color: #1abb9c;
+        width: 16px;
+        text-align: center;
+      }
+
+      /* Enhanced section headers */
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e9ecef;
+      }
+
+      .section-header h4 {
+        margin: 0;
+        color: #2c3e50;
+        font-weight: 700;
+        font-size: 1.4rem;
+        display: flex;
+        align-items: center;
+      }
+
+      .section-header i {
+        margin-right: 12px;
+        color: #1abb9c;
+        font-size: 1.2rem;
+      }
+
+      .section-header .section-actions {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      /* Responsive design */
+      @media (max-width: 768px) {
+        .header-content {
+          flex-direction: column;
+          text-align: center;
+          gap: 20px;
+        }
+
+        .page-title {
+          font-size: 2rem;
+        }
+
+        .header-actions {
+          justify-content: center;
+          flex-wrap: wrap;
+        }
+
+        .content-card {
+          padding: 20px;
+          margin: 0 15px 30px 15px;
+        }
+
+        .full-width-header {
+          padding: 30px 0;
+        }
+      }
+
+      @media (max-width: 576px) {
+        .page-title {
+          font-size: 1.8rem;
+        }
+
+        .header-actions .btn {
+          padding: 10px 20px;
+          font-size: 14px;
+        }
+      }
+
+      /* Enhanced time field validation styles */
+      .form-control.is-valid {
+        border-color: #28a745;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='m2.3 6.73.94-.94 1.88 1.88 3.06-3.06.94.94-4 4z'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+      }
+
+      .form-control.is-valid:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+      }
+
+      .form-control.is-invalid {
+        border-color: #dc3545;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23dc3545' viewBox='0 0 12 12'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 4.6 1.4 1.4M7.2 4.6l-1.4 1.4'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+      }
+
+      .form-control.is-invalid:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+      }
+
+      .invalid-feedback {
+        display: block;
+        width: 100%;
+        margin-top: 0.25rem;
+        font-size: 0.875rem;
+        color: #dc3545;
+        font-weight: 500;
+      }
+
+      .valid-feedback {
+        display: block;
+        width: 100%;
+        margin-top: 0.25rem;
+        font-size: 0.875rem;
+        color: #28a745;
+        font-weight: 500;
+      }
+
+      /* Time field specific styling */
+      .from-time, .to-time {
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+        text-align: center;
+        letter-spacing: 1px;
+      }
+
+      .from-time:focus, .to-time:focus {
+        background-color: #f8f9fa;
+      }
+
+      /* Time validation animation */
+      .form-control.is-invalid {
+        animation: shake 0.5s ease-in-out;
+      }
+
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+      }
+
+      /* Time field container styling */
+      .time-field-container {
+        position: relative;
+      }
+
+      .time-field-container .form-control {
+        padding-right: 2.5rem;
+      }
+
+      .time-field-container .time-icon {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        pointer-events: none;
+        z-index: 5;
+      }
+
+      /* Multiple excursions/transfers styling */
+      .activity-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .add-excursion-btn, .add-transfer-btn {
+        background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        border: none;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .add-excursion-btn:hover, .add-transfer-btn:hover {
+        background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+        transform: translateY(-1px);
+      }
+
+      .remove-excursion-btn, .remove-transfer-btn {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        border: none;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+      }
+
+      .remove-excursion-btn:hover, .remove-transfer-btn:hover {
+        background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+        transform: translateY(-1px);
+      }
+
+      .excursions-list .activity-item:not(:last-child),
+      .transfers-list .activity-item:not(:last-child) {
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e9ecef;
+      }
+    </style>
+  </head>
+
+  <body class="nav-md" style="display: flex; flex-direction: column; min-height: 100vh; margin: 0; padding: 0;">
+    <!-- Full-width header -->
+    <div class="full-width-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <i class="fas fa-plus-circle"></i>
+            Add New Tour
+          </h1>
+        </div>
+        <div class="header-actions">
+          <button
+            type="button"
+            class="btn btn-outline-light"
+            onclick="window.location.href='tours.html'"
+            style="
+              border: 2px solid rgba(255, 255, 255, 0.3);
+              padding: 8px 20px;
+              border-radius: 6px;
+              transition: all 0.3s ease;
+            "
+          >
+            <i class="fas fa-arrow-left" style="margin-right: 8px"></i>
+            Back to Tours
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main content area -->
+    <div class="main-content">
+      <div class="content-card">
+          <form id="tourForm">
+            <div class="row">
+              <div class="col-md-6 col-sm-6 form-group">
+                <label for="tourName">
+                  <i class="fas fa-tag"></i>Name *
+                </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="tourName"
+                  placeholder="Enter tour name"
+                  required
+                />
+              </div>
+              
+              <div class="col-md-3 col-sm-3 form-group">
+                <label for="country">
+                  <i class="fas fa-globe"></i>Country *
+                </label>
+                <select class="form-control" id="country" required>
+                  <option value="" disabled selected>Loading countries...</option>
+                </select>
+              </div>
+
+              <div class="col-md-3 col-sm-3 form-group">
+                <label for="tourCode">
+                  <i class="fas fa-map-marker-alt"></i>Start City *
+                </label>
+                <div class="input-group">
+                  <select class="form-control" id="tourCode" required>
+                    <option value="" disabled selected>Select country first</option>
+                  </select>
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="button" id="addNewCityBtn" title="Add new city" disabled>
+                      <i class="fas fa-plus"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-4 col-sm-4 form-group">
+                <label for="tourCategory">
+                  <i class="fas fa-star"></i>Category *
+                </label>
+                <select class="form-control" id="tourCategory" required>
+                  <option value="">Select Category</option>
+                  <option value="Standard">Standard</option>
+                  <option value="Superior">Superior</option>
+                  <option value="Deluxe">Deluxe</option>
+                </select>
+              </div>
+              <div class="col-md-4 col-sm-4 form-group">
+                <label for="tourDuration">
+                  <i class="fas fa-calendar-day"></i>Duration (Days) *
+                </label>
+                <div class="d-flex">
+                  <input
+                    type="number"
+                    class="form-control mr-2"
+                    id="tourDuration"
+                    placeholder="Enter number of days"
+                    min="1"
+                    required
+                    readonly
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-success"
+                    id="addDayBtn"
+                    title="Add Day"
+                  >
+                    <i class="fas fa-plus"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="col-md-4 col-sm-4 form-group">
+                <label for="tourDeparture">
+                  <i class="fas fa-plane-departure"></i>Departure Type *
+                </label>
+                <select class="form-control" id="tourDeparture" required>
+                  <option value="">Select Departure Type</option>
+                  <option value="SIC">SIC</option>
+                  <option value="PVT">PVT</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-12 form-group">
+                <label for="tourDescription">
+                  <i class="fas fa-align-left"></i>Description *
+                </label>
+                <textarea
+                  class="form-control"
+                  id="tourDescription"
+                  rows="3"
+                  placeholder="Enter description"
+                  required
+                ></textarea>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-12 form-group">
+                <label for="tourRoute">
+                  <i class="fas fa-route"></i>Route *
+                </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="tourRoute"
+                  placeholder="Enter route"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Tour Validity Period Section -->
+            <div class="form-group mt-4">
+              <div class="section-header">
+                <h4>
+                  <i class="fas fa-calendar-alt"></i>Tour Validity Period
+                </h4>
+              </div>
+              <div class="validity-section">
+                <div>
+                  <label>
+                    <i class="fas fa-calendar-week"></i>Valid Days of Week *
+                  </label>
+                  <div class="days-selector mt-2">
+                    <div class="day-pill" data-day="1">
+                      <input type="checkbox" id="tourDay1" value="1" />
+                      <label for="tourDay1">Mon</label>
+                    </div>
+                    <div class="day-pill" data-day="2">
+                      <input type="checkbox" id="tourDay2" value="2" />
+                      <label for="tourDay2">Tue</label>
+                    </div>
+                    <div class="day-pill" data-day="3">
+                      <input type="checkbox" id="tourDay3" value="3" />
+                      <label for="tourDay3">Wed</label>
+                    </div>
+                    <div class="day-pill" data-day="4">
+                      <input type="checkbox" id="tourDay4" value="4" />
+                      <label for="tourDay4">Thu</label>
+                    </div>
+                    <div class="day-pill" data-day="5">
+                      <input type="checkbox" id="tourDay5" value="5" />
+                      <label for="tourDay5">Fri</label>
+                    </div>
+                    <div class="day-pill" data-day="6">
+                      <input type="checkbox" id="tourDay6" value="6" />
+                      <label for="tourDay6">Sat</label>
+                    </div>
+                    <div class="day-pill" data-day="0">
+                      <input type="checkbox" id="tourDay0" value="0" />
+                      <label for="tourDay0">Sun</label>
+                    </div>
+                  </div>
+                  <small class="form-text text-muted mt-2">
+                    Select the days of the week when this tour is available
+                    during the validity period.
+                  </small>
+                </div>
+              </div>
+              
+              <!-- Save and Cancel buttons after Tour Validity Period -->
+              <div class="text-center mt-4 mb-4">
+                <button type="submit" class="btn btn-primary btn-lg mr-3">
+                  <i class="fas fa-save mr-2"></i>Save Tour
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-lg"
+                  onclick="window.location.href='tours.html'"
+                >
+                  <i class="fas fa-times mr-2"></i>Cancel
+                </button>
+              </div>
+            </div>
+
+            <!-- Itinerary Section -->
+            <div class="form-group mt-4">
+              <div class="section-header">
+                <h4>
+                  <i class="fas fa-list-ol"></i>Itinerary Details
+                </h4>
+                <div class="section-actions">
+                  <span class="badge badge-info"
+                    >Total Days: <span id="totalDaysCount">0</span></span
+                  >
+                  <button
+                    type="button"
+                    class="btn btn-success btn-sm"
+                    id="addDayBtn2"
+                    onclick="addNewDay()"
+                  >
+                    <i class="fas fa-plus mr-1"></i>Add Day
+                  </button>
+                </div>
+              </div>
+              <div id="itineraryDetails"></div>
+            </div>
+
+            <!-- Prices Section -->
+            <div class="form-group mt-4">
+              <div class="section-header">
+                <h4>
+                  <i class="fas fa-dollar-sign"></i>Tour Prices
+                </h4>
+                <div class="section-actions">
+                  <button
+                    type="button"
+                    class="btn btn-success"
+                    data-toggle="modal"
+                    data-target="#addTourPriceModal"
+                  >
+                    <i class="fas fa-plus mr-1"></i>Add Price
+                  </button>
+                </div>
+              </div>
+
+              <table class="table table-striped mt-3" id="tourPriceTable">
+                <thead>
+                  <tr>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Pax</th>
+                    <th>Single Price</th>
+                    <th>Double Price</th>
+                    <th>Triple Price</th>
+                    <th width="120">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="tourPriceTableBody"></tbody>
+              </table>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- Modal for Adding/Editing Tour Prices -->
+    <div
+      class="modal fade"
+      id="addTourPriceModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="addTourPriceModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addTourPriceModalLabel">
+              Add Tour Price
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="tourPriceForm">
+              <div class="form-group">
+                <label for="modalStartDate">Start Date *</label>
+                <input
+                  type="date"
+                  id="modalStartDate"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="modalEndDate">End Date *</label>
+                <input
+                  type="date"
+                  id="modalEndDate"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="modalPax">Pax</label>
+                <input
+                  type="number"
+                  id="modalPax"
+                  class="form-control"
+                  placeholder="Enter Number of Passenegers"
+                />
+              </div>
+              <div class="form-group">
+                <label for="modalSinglePrice">Single Price</label>
+                <input
+                  type="number"
+                  id="modalSinglePrice"
+                  class="form-control"
+                  placeholder="Enter Single Price"
+                />
+              </div>
+              <div class="form-group">
+                <label for="modalDoublePrice">Double Price</label>
+                <input
+                  type="number"
+                  id="modalDoublePrice"
+                  class="form-control"
+                  placeholder="Enter Double Price"
+                />
+              </div>
+              <div class="form-group">
+                <label for="modalTriplePrice">Triple Price</label>
+                <input
+                  type="number"
+                  id="modalTriplePrice"
+                  class="form-control"
+                  placeholder="Enter Triple Price"
+                />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="button" class="btn btn-primary" id="saveTourPriceBtn">
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for adding new city -->
+    <div
+      class="modal fade"
+      id="addNewCityModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="addNewCityModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addNewCityModalLabel">
+              Add New City
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="addNewCityForm">
+              <div class="form-group">
+                <label for="newCityName">City Name *</label>
+                <input
+                  type="text"
+                  id="newCityName"
+                  class="form-control"
+                  placeholder="Enter city name"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="newCityCountry">Country</label>
+                <input
+                  type="text"
+                  id="newCityCountry"
+                  class="form-control"
+                  readonly
+                />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              id="saveNewCity"
+              class="btn btn-primary"
+            >
+              <i class="fa fa-spinner fa-spin" style="display: none;"></i>
+              Add City
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <script>
+      // Cache for location data with localStorage persistence
+      let locationCache = {
+        countries: null,
+        profileCountry: null,
+        citiesByCountry: {}
+      };
+
+      // Cache expiration times (in milliseconds)
+      const CACHE_EXPIRY = {
+        countries: 24 * 60 * 60 * 1000, // 24 hours
+        profileCountry: 60 * 60 * 1000, // 1 hour
+        cities: 12 * 60 * 60 * 1000 // 12 hours
+      };
+
+      // Load cache from localStorage
+      function loadCacheFromStorage() {
+        try {
+          const stored = localStorage.getItem('locationCache');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            const now = Date.now();
+            
+            // Check if countries cache is still valid
+            if (parsed.countries && parsed.countriesTimestamp && 
+                (now - parsed.countriesTimestamp) < CACHE_EXPIRY.countries) {
+              locationCache.countries = parsed.countries;
+              console.log("Loaded countries from localStorage cache");
+            }
+            
+            // Check if profile country cache is still valid
+            if (parsed.profileCountry && parsed.profileCountryTimestamp && 
+                (now - parsed.profileCountryTimestamp) < CACHE_EXPIRY.profileCountry) {
+              locationCache.profileCountry = parsed.profileCountry;
+              console.log("Loaded profile country from localStorage cache");
+            }
+            
+            // Check cities cache
+            if (parsed.citiesByCountry) {
+              Object.keys(parsed.citiesByCountry).forEach(countryCode => {
+                const cityData = parsed.citiesByCountry[countryCode];
+                if (cityData && cityData.timestamp && 
+                    (now - cityData.timestamp) < CACHE_EXPIRY.cities) {
+                  locationCache.citiesByCountry[countryCode] = cityData.cities;
+                  console.log(`Loaded cities for ${countryCode} from localStorage cache`);
+                }
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Error loading cache from localStorage:", error);
+          // Clear corrupted cache
+          localStorage.removeItem('locationCache');
+        }
+      }
+
+      // Save cache to localStorage
+      function saveCacheToStorage() {
+        try {
+          const now = Date.now();
+          const cacheData = {
+            countries: locationCache.countries,
+            countriesTimestamp: locationCache.countries ? now : null,
+            profileCountry: locationCache.profileCountry,
+            profileCountryTimestamp: locationCache.profileCountry ? now : null,
+            citiesByCountry: {}
+          };
+          
+          // Save cities with timestamps
+          Object.keys(locationCache.citiesByCountry).forEach(countryCode => {
+            cacheData.citiesByCountry[countryCode] = {
+              cities: locationCache.citiesByCountry[countryCode],
+              timestamp: now
+            };
+          });
+          
+          localStorage.setItem('locationCache', JSON.stringify(cacheData));
+          console.log("Saved location cache to localStorage");
+        } catch (error) {
+          console.error("Error saving cache to localStorage:", error);
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          alert("You are not authorized. Please log in first.");
+          window.location.href = "login.html";
+          return;
+        }
+
+        // Load cache from localStorage first
+        loadCacheFromStorage();
+
+        // Get authentication token
+        function getAuthToken() {
+          const token = localStorage.getItem("token");
+          if (!token) {
+            alert("You are not authorized. Please log in first.");
+            window.location.href = "login.html";
+            return null;
+          }
+          return token;
+        }
+
+        // Handle API errors
+        function handleApiError(response, defaultMessage) {
+          if (response.status === 401) {
+            alert("Unauthorized. Please log in again.");
+            window.location.href = "login.html";
+            return true;
+          } else if (response.status === 403) {
+            alert("You don't have sufficient permissions to perform this action.");
+            return true;
+          }
+          return false;
+        }
+
+        // Load countries from API with caching
+        async function loadCountries() {
+          const token = getAuthToken();
+          if (!token) return;
+
+          // Return cached data if available
+          if (locationCache.countries) {
+            console.log("Using cached countries data");
+            return locationCache.countries;
+          }
+
+          try {
+            console.log("Fetching countries from API...");
+            const response = await fetch(`${Endpoint}/api/v1/locations/countries`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (!response.ok) {
+              if (handleApiError(response, "Failed to load countries")) return;
+              throw new Error("Failed to load countries");
+            }
+
+            const data = await response.json();
+            locationCache.countries = data.countries || data; // Handle different response formats
+            console.log("Countries loaded from API and cached:", locationCache.countries);
+            
+            // Save to localStorage
+            saveCacheToStorage();
+            
+            return locationCache.countries;
+          } catch (error) {
+            console.error("Error loading countries:", error);
+            alert("Failed to load countries. Please try again.");
+            return [];
+          }
+        }
+
+        // Detect country from profile with caching
+        async function detectCountryFromProfile() {
+          const token = getAuthToken();
+          if (!token) return null;
+
+          // Return cached data if available
+          if (locationCache.profileCountry) {
+            console.log("Using cached profile country:", locationCache.profileCountry);
+            return locationCache.profileCountry;
+          }
+
+          try {
+            console.log("Detecting country from profile...");
+            // Get profile data from localStorage or make API call
+            const profileData = {
+              // Add any profile data needed for detection
+              // This could be from localStorage or a separate API call
+            };
+
+            const response = await fetch(`${Endpoint}/api/v1/locations/detect-country`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(profileData),
+            });
+
+            if (!response.ok) {
+              if (handleApiError(response, "Failed to detect country")) return null;
+              console.log("Country detection not available, using default");
+              return null;
+            }
+
+            const data = await response.json();
+            // Handle the correct response format: {"detected_country":"TH","country_info":{"code":"TH","name":"Thailand",...}}
+            locationCache.profileCountry = data.detected_country || data.country_info?.code;
+            console.log("Profile country detected from API and cached:", locationCache.profileCountry);
+            
+            // Save to localStorage
+            saveCacheToStorage();
+            
+            return locationCache.profileCountry;
+          } catch (error) {
+            console.error("Error detecting country from profile:", error);
+            return null;
+          }
+        }
+
+        // Load cities by country with caching
+        async function loadCitiesByCountry(countryCode) {
+          const token = getAuthToken();
+          if (!token) return [];
+
+          // Return cached data if available
+          if (locationCache.citiesByCountry[countryCode]) {
+            console.log(`Using cached cities for ${countryCode}:`, locationCache.citiesByCountry[countryCode]);
+            return locationCache.citiesByCountry[countryCode];
+          }
+
+          try {
+            console.log(`Fetching cities for ${countryCode} from API...`);
+            const response = await fetch(`${Endpoint}/api/v1/locations/countries/${countryCode}/cities`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (!response.ok) {
+              if (handleApiError(response, "Failed to load cities")) return [];
+              throw new Error("Failed to load cities");
+            }
+
+            const data = await response.json();
+            // Handle the correct response format: {"cities":[{"city":"Bangkok",...},{"city":"Phuket",...}]}
+            const cities = data.cities || [];
+            locationCache.citiesByCountry[countryCode] = cities;
+            console.log(`Cities loaded from API and cached for ${countryCode}:`, cities);
+            
+            // Save to localStorage
+            saveCacheToStorage();
+            
+            return cities;
+          } catch (error) {
+            console.error("Error loading cities:", error);
+            alert("Failed to load cities. Please try again.");
+            return [];
+          }
+        }
+
+        // Add new city to backend
+        async function addNewCity(cityName, countryCode) {
+          const token = getAuthToken();
+          if (!token) return false;
+
+          try {
+            const response = await fetch(`${Endpoint}/api/v1/locations/cities`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                city: cityName,
+                country_code: countryCode,
+              }),
+            });
+
+            if (!response.ok) {
+              if (handleApiError(response, "Failed to add city")) return false;
+              const errorData = await response.json();
+              throw new Error(errorData.message || "Failed to add city");
+            }
+
+            const result = await response.json();
+            
+            // Add the new city to cache immediately instead of clearing
+            if (!locationCache.citiesByCountry[countryCode]) {
+              locationCache.citiesByCountry[countryCode] = [];
+            }
+            
+            // Add the new city to the cache (assuming the API returns the city data)
+            const newCityData = result.city || { city: cityName, name: cityName };
+            locationCache.citiesByCountry[countryCode].push(newCityData);
+            
+            // Update localStorage
+            saveCacheToStorage();
+            
+            console.log(`New city "${cityName}" added successfully to ${countryCode} and cached`);
+            return true;
+          } catch (error) {
+            console.error("Error adding city:", error);
+            alert("Failed to add city: " + error.message);
+            return false;
+          }
+        }
+
+        // Populate countries dropdown
+        async function populateCountriesDropdown() {
+          const countryDropdown = document.getElementById("country");
+          const countries = await loadCountries();
+          
+          if (!countries || countries.length === 0) {
+            countryDropdown.innerHTML = '<option value="" disabled>Failed to load countries</option>';
+            return;
+          }
+
+          // Clear existing options
+          countryDropdown.innerHTML = '<option value="" disabled>Select country</option>';
+
+          // Add country options
+          countries.forEach((country) => {
+            const option = document.createElement("option");
+            option.value = country.code || country.country_code;
+            option.textContent = country.name || country.country_name;
+            countryDropdown.appendChild(option);
+          });
+
+          // Try to detect and select profile country
+          const profileCountry = await detectCountryFromProfile();
+          if (profileCountry) {
+            countryDropdown.value = profileCountry;
+            // Trigger change event to load cities
+            countryDropdown.dispatchEvent(new Event('change'));
+          } else {
+            countryDropdown.selectedIndex = 0;
+          }
+        }
+
+        // Populate cities dropdown (for main Start City field) - now country-aware
+        async function populateMainCitiesDropdown(countryCode = null) {
+          const token = localStorage.getItem("token");
+          const cityDropdown = document.getElementById("tourCode");
+
+          if (!token) {
+            alert("You are not authorized. Please log in first.");
+            window.location.href = "login.html";
+            return;
+          }
+
+          // If no country selected, show placeholder
+          if (!countryCode) {
+            cityDropdown.innerHTML = '<option value="">Select country first</option>';
+            return;
+          }
+
+          // Show loading state
+          cityDropdown.innerHTML = '<option value="">Loading cities...</option>';
+
+          try {
+            // Use country-specific endpoint
+            const response = await fetch(`${Endpoint}/api/v1/locations/countries/${countryCode}/cities`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (!response.ok) {
+              if (response.status === 401) {
+                alert("Unauthorized. Please log in again.");
+                window.location.href = "login.html";
+                return;
+              } else if (response.status === 403) {
+                alert("You don't have sufficient permissions to perform this action.");
+                return;
+              } else {
+                const errorData = await response.text();
+                console.error("Raw response data:", errorData);
+                throw new Error("Failed to fetch cities: " + errorData);
+              }
+            }
+
+            const data = await response.json();
+            
+            // Reset dropdown
+            cityDropdown.innerHTML = '<option value="">Select a city</option>';
+            
+            // Handle different response formats
+            const cities = data.cities || data;
+            if (Array.isArray(cities)) {
+              cities.forEach((cityData) => {
+                const option = document.createElement("option");
+                // Handle both string cities and city objects
+                const cityName = typeof cityData === 'string' ? cityData : (cityData.city || cityData.name || cityData);
+                option.value = cityName;
+                option.textContent = cityName;
+                cityDropdown.appendChild(option);
+              });
+            } else {
+              console.error("Cities data is not an array:", cities);
+              cityDropdown.innerHTML = '<option value="">No cities found</option>';
+            }
+          } catch (error) {
+            console.error("Error fetching cities:", error);
+            cityDropdown.innerHTML = '<option value="">Failed to load cities</option>';
+            alert("Failed to load cities: " + error.message);
+          }
+        }
+
+        // Don't populate cities on page load - wait for country selection
+        // populateMainCitiesDropdown();
+
+        // Removed populateCitiesDropdown() - replaced with populateItineraryCitiesDropdown() for better country-aware city loading
+
+
+        // Initialize page
+        populateCountriesDropdown();
+
+        // Country change handler
+        document.getElementById("country").addEventListener("change", function() {
+          const selectedCountry = this.value;
+          const addNewCityBtn = document.getElementById("addNewCityBtn");
+          
+          populateMainCitiesDropdown(selectedCountry);
+          
+          // Enable/disable add new city button based on country selection
+          if (selectedCountry) {
+            addNewCityBtn.disabled = false;
+            addNewCityBtn.title = "Add new city";
+          } else {
+            addNewCityBtn.disabled = true;
+            addNewCityBtn.title = "Select country first";
+          }
+        });
+
+        // Add new city button handler
+        document.getElementById("addNewCityBtn").addEventListener("click", function() {
+          const selectedCountry = document.getElementById("country").value;
+          const selectedCountryText = document.getElementById("country").selectedOptions[0]?.textContent;
+          
+          if (!selectedCountry) {
+            alert("Please select a country first");
+            return;
+          }
+
+          document.getElementById("newCityCountry").value = selectedCountryText;
+          document.getElementById("newCityName").value = "";
+          $("#addNewCityModal").modal("show");
+        });
+
+        // Save new city handler
+        document.getElementById("saveNewCity").addEventListener("click", async function() {
+          const cityName = document.getElementById("newCityName").value.trim();
+          const countryCode = document.getElementById("country").value;
+          
+          if (!cityName) {
+            alert("Please enter a city name");
+            return;
+          }
+
+          // Show loading state
+          const spinner = this.querySelector(".fa-spinner");
+          const buttonText = this.childNodes[this.childNodes.length - 1];
+          spinner.style.display = "inline-block";
+          this.disabled = true;
+
+          try {
+            const success = await addNewCity(cityName, countryCode);
+            if (success) {
+              // Reload cities for the current country
+              await populateMainCitiesDropdown(countryCode);
+              
+              // Select the newly added city
+              const cityDropdown = document.getElementById("tourCode");
+              cityDropdown.value = cityName;
+              
+              // Close modal
+              $("#addNewCityModal").modal("hide");
+              alert("City added successfully!");
+            }
+          } finally {
+            // Hide loading state
+            spinner.style.display = "none";
+            this.disabled = false;
+          }
+        });
+
+        const itineraryTableBody = document.querySelector(
+          "#itineraryTable tbody"
+        );
+        let itineraryData = [];
+
+        // Note: Event listeners for dynamically created dropdowns are handled
+        // in the document-level change event listener below
+      });
+
+      function formatToDDMMYYYY(dateString) {
+        const ddmmyyyyRegex = /^\d{2}-\d{2}-\d{4}$/;
+        if (ddmmyyyyRegex.test(dateString)) {
+          return dateString; // Return as-is if already in dd-mm-yyyy format
+        }
+
+        const dateParts = dateString.split("-");
+        if (dateParts.length === 3) {
+          const [year, month, day] = dateParts;
+          return `${day}-${month}-${year}`;
+        }
+        return null;
+      }
+
+      function formatToYYYYMMDD(dateString) {
+        // Check if the date is in dd-mm-yyyy format
+        const ddmmyyyyRegex = /^\d{2}-\d{2}-\d{4}$/;
+        if (ddmmyyyyRegex.test(dateString)) {
+          const [day, month, year] = dateString.split("-");
+          return `${year}-${month}-${day}`; // Convert to yyyy-mm-dd
+        }
+
+        // Assume the date is already in yyyy-mm-dd format
+        const yyyymmddRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (yyyymmddRegex.test(dateString)) {
+          return dateString;
+        }
+
+        // Return null for invalid formats
+        return null;
+      }
+
+      let tourPricings = [];
+      let currentEditIndex = -1;
+
+      const tourPriceTableBody = document.getElementById("tourPriceTableBody");
+      const modalStartDate = document.getElementById("modalStartDate");
+      const modalEndDate = document.getElementById("modalEndDate");
+      const modalPax = document.getElementById("modalPax");
+      const modalSinglePrice = document.getElementById("modalSinglePrice");
+      const modalDoublePrice = document.getElementById("modalDoublePrice");
+      const modalTriplePrice = document.getElementById("modalTriplePrice");
+
+      let currentEditRow = null;
+
+      function editRow(row) {
+        currentEditRow = row; // Store reference to the row being edited
+
+        // Update the data object with the latest values from the table
+        const data = {
+          startDate: formatToYYYYMMDD(row.cells[0].textContent.trim()),
+          endDate: formatToYYYYMMDD(row.cells[1].textContent.trim()),
+          pax: parseInt(row.cells[2].textContent.trim()) || 0,
+          singlePrice: parseFloat(row.cells[3].textContent.trim()) || 0,
+          doublePrice: parseFloat(row.cells[4].textContent.trim()) || 0,
+          triplePrice: parseFloat(row.cells[5].textContent.trim()) || 0,
+        };
+
+        // Set values in the modal with the latest table data
+        modalStartDate.value = data.startDate;
+        modalEndDate.value = data.endDate;
+        modalPax.value = data.pax;
+        modalSinglePrice.value = data.singlePrice;
+        modalDoublePrice.value = data.doublePrice;
+        modalTriplePrice.value = data.triplePrice;
+
+        $("#addTourPriceModal").modal("show"); // Show the modal
+      }
+
+      function deleteRow(row) {
+        if (confirm("Are you sure you want to delete this row?")) {
+          const index = Array.from(
+            document.getElementById("tourPriceTableBody").children
+          ).indexOf(row);
+          tourPricings.splice(index, 1);
+          row.remove();
+        }
+      }
+
+      // Function to add a new row to the table
+      function addTourPriceRow(data) {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+      <td>${data.startDate}</td>
+      <td>${data.endDate}</td>
+      <td>${data.pax}</td>
+      <td>${data.singlePrice}</td>
+      <td>${data.doublePrice}</td>
+      <td>${data.triplePrice}</td>
+      <td>
+        <div class="btn-group" role="group" style="gap: 8px;">
+          <div class="tooltip-btn">
+            <button type="button" class="btn btn-sm btn-primary edit-btn">
+              <i class="fas fa-edit"></i>
+            </button>
+            <span class="tooltip-text">Edit</span>
+          </div>
+          <div class="tooltip-btn">
+            <button type="button" class="btn btn-sm btn-danger delete-btn">
+              <i class="fas fa-trash"></i>
+            </button>
+            <span class="tooltip-text">Delete</span>
+          </div>
+        </div>
+      </td>
+    `;
+        document.getElementById("tourPriceTableBody").appendChild(row);
+
+        tourPricings.push(data);
+
+        row
+          .querySelector(".edit-btn")
+          .addEventListener("click", () => editRow(row, data));
+        row
+          .querySelector(".delete-btn")
+          .addEventListener("click", () => deleteRow(row));
+      }
+
+      function searchTransfersByCity(cityDropdown, transferDropdown) {
+        const selectedCity = cityDropdown.value; // Get selected city
+        const token = localStorage.getItem("token");
+
+        if (!selectedCity) {
+          alert("Please select a city.");
+          return;
+        }
+
+        const url = new URL(`${Endpoint}/api/v1/transfers`);
+        url.searchParams.append("city", selectedCity); // Append city as query parameter
+
+        fetch(url, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Failed to fetch transfers.");
+            }
+            return response.json();
+          })
+          .then((transfers) => {
+            // Clear and populate transfer dropdown
+            transferDropdown.innerHTML =
+              '<option value="">Select Transfer</option>';
+            transfers.forEach((transfer) => {
+              const option = document.createElement("option");
+              option.value = transfer.id; // Transfer ID from API
+              option.textContent = transfer.description; // Transfer Name from API
+              transferDropdown.appendChild(option);
+            });
+          })
+          .catch((error) => {
+            console.error("Error fetching transfers:", error);
+            alert("Failed to load transfers. Please try again later.");
+          });
+      }
+
+      function searchExcursionsByCity(cityDropdown, excursionDropdown) {
+        const selectedCity = cityDropdown.value; // Get the selected city
+        const token = localStorage.getItem("token"); // Retrieve the token from local storage
+
+        if (!selectedCity) {
+          alert("Please select a city.");
+          return;
+        }
+
+        // Construct the URL with the city parameter
+        const url = new URL(`${Endpoint}/api/v1/excursions`);
+        url.searchParams.append("city", selectedCity);
+
+        console.log("Fetching excursions for city:", selectedCity);
+
+        fetch(url, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              console.error(
+                "API response status:",
+                response.status,
+                response.statusText
+              );
+              throw new Error(
+                `API error: ${response.status} ${response.statusText}`
+              );
+            }
+            return response.json();
+          })
+          .then((excursions) => {
+            console.log("Excursions API response:", excursions);
+
+            // Clear and populate the excursion dropdown
+            excursionDropdown.innerHTML =
+              '<option value="">Select Excursion</option>'; // Clear existing options
+            excursions.forEach((excursion) => {
+              const option = document.createElement("option");
+              option.value = excursion.id; // Excursion ID from API
+              option.textContent = excursion.name; // Excursion Name from API
+              excursionDropdown.appendChild(option);
+            });
+          })
+          .catch((error) => {
+            console.error("Error fetching excursions:", error);
+            alert(
+              "Failed to load excursions. Please check the city selection or API configuration."
+            );
+          });
+      }
+
+      // Populate hotels dropdown based on city selection
+      function searchHotelsByCity(cityDropdown, hotelDropdown) {
+        const selectedCity = cityDropdown.value;
+        const token = localStorage.getItem("token");
+
+        if (!selectedCity) {
+          alert("Please select a city.");
+          return;
+        }
+
+        const url = new URL(`${Endpoint}/api/v1/hotels`);
+        url.searchParams.append("city", selectedCity);
+
+        fetch(url, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Failed to fetch hotels.");
+            }
+            return response.json();
+          })
+          .then((hotels) => {
+            hotelDropdown.innerHTML = '<option value="">Select Hotel</option>';
+
+            const seenNames = new Set(); // track hotel names
+
+            hotels.forEach((hotel) => {
+              const hotelName = hotel.name.trim().toLowerCase();
+
+              if (!seenNames.has(hotelName)) {
+                seenNames.add(hotelName); // mark name as seen
+
+                const option = document.createElement("option");
+                option.value = hotel.id;
+                option.textContent = hotel.name;
+                option.setAttribute(
+                  "data-roomtypes",
+                  JSON.stringify(hotel.room_types || [])
+                );
+                hotelDropdown.appendChild(option);
+              }
+            });
+          })
+          .catch((error) => {
+            console.error("Error fetching hotels:", error);
+            alert("Failed to load hotels. Please try again later.");
+          });
+      }
+
+      function populateRoomTypeDropdown(hotelDropdown) {
+        const selectedOption =
+          hotelDropdown.options[hotelDropdown.selectedIndex];
+        const roomTypeDropdown = hotelDropdown
+          .closest(".day-section")
+          .querySelector(".roomtype-dropdown");
+
+        if (!roomTypeDropdown || !selectedOption) return;
+
+        const roomTypes = JSON.parse(
+          selectedOption.getAttribute("data-roomtypes") || "[]"
+        );
+
+        // Use Set to track unique room type names
+        const seenRoomNames = new Set();
+
+        // Clear existing options
+        roomTypeDropdown.innerHTML =
+          '<option value="">Select Room Type</option>';
+
+        roomTypes.forEach((roomType) => {
+          const name = roomType.name.trim().toLowerCase();
+          if (!seenRoomNames.has(name)) {
+            seenRoomNames.add(name);
+
+            const option = document.createElement("option");
+            option.value = roomType.id;
+            option.textContent = roomType.name;
+            roomTypeDropdown.appendChild(option);
+          }
+        });
+      }
+
+      // Function to fetch and populate cities dropdown using new location APIs
+      async function populateItineraryCitiesDropdown(selector) {
+        // Get all countries first to populate all city dropdowns
+        const countries = await loadCountries();
+        if (!countries || countries.length === 0) {
+          console.error("No countries available for city population");
+          return;
+        }
+
+        // Get all cities from all countries for the itinerary dropdowns
+        const allCities = [];
+        for (const country of countries) {
+          const countryCode = country.code || country.country_code;
+          const cities = await loadCitiesByCountry(countryCode);
+          cities.forEach((cityObj) => {
+            const cityName = cityObj.city || cityObj.name || cityObj;
+            if (!allCities.includes(cityName)) {
+              allCities.push(cityName);
+            }
+          });
+        }
+
+        const cityDropdowns = document.querySelectorAll(selector);
+
+        if (cityDropdowns.length === 0) {
+          console.warn("No dropdowns found with the selector:", selector);
+          return;
+        }
+
+        cityDropdowns.forEach((dropdown) => {
+          // Clear existing options
+          dropdown.innerHTML = '<option value="">Select City</option>';
+
+          // Add city options
+          allCities.forEach((city) => {
+            const option = document.createElement("option");
+            option.value = city;
+            option.textContent = city;
+            dropdown.appendChild(option);
+          });
+        });
+      }
+
+      // Removed second populateCitiesDropdown() - replaced with populateItineraryCitiesDropdown() for better city loading
+
+        function initializeFlatpickr() {
+          flatpickr(".from-time, .to-time", {
+            enableTime: true, // Enable time picker
+            noCalendar: true, // Disable the calendar
+            dateFormat: "H:i", // 24-hour format (e.g., 20:00)
+            time_24hr: true, // Use 24-hour time format
+            minuteIncrement: 15, // 15-minute intervals
+            defaultHour: 9, // Default to 9 AM
+            defaultMinute: 0, // Default to :00
+            allowInput: true, // Allow manual input
+            onClose: function(selectedDates, dateStr, instance) {
+              validateTimeField(instance.element);
+            },
+            onChange: function(selectedDates, dateStr, instance) {
+              validateTimeField(instance.element);
+            }
+          });
+        }
+
+        // Enhanced time field validation
+        function validateTimeField(timeInput) {
+          const timeValue = timeInput.value.trim();
+          const activityItem = timeInput.closest('.activity-item');
+          
+          // Clear previous validation states
+          timeInput.classList.remove('is-invalid', 'is-valid');
+          
+          // Remove existing error messages
+          const existingError = timeInput.parentNode.querySelector('.invalid-feedback');
+          if (existingError) {
+            existingError.remove();
+          }
+          
+          if (!timeValue) {
+            return; // Empty is allowed, not required
+          }
+          
+          // Validate time format (HH:MM)
+          const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+          if (!timeRegex.test(timeValue)) {
+            showTimeValidationError(timeInput, 'Please enter a valid time format (HH:MM)');
+            return false;
+          }
+          
+          // Validate time range (00:00 to 23:59)
+          const [hours, minutes] = timeValue.split(':').map(Number);
+          if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+            showTimeValidationError(timeInput, 'Time must be between 00:00 and 23:59');
+            return false;
+          }
+          
+          // Cross-validate FROM and TO times within the same activity
+          if (activityItem) {
+            validateTimeSequence(activityItem);
+          }
+          
+          // Show success state
+          timeInput.classList.add('is-valid');
+          return true;
+        }
+        
+        // Validate that FROM time is before TO time
+        function validateTimeSequence(activityItem) {
+          const fromTimeInput = activityItem.querySelector('.from-time');
+          const toTimeInput = activityItem.querySelector('.to-time');
+          
+          if (!fromTimeInput || !toTimeInput) return;
+          
+          const fromTime = fromTimeInput.value.trim();
+          const toTime = toTimeInput.value.trim();
+          
+          // Both times must be present for comparison
+          if (!fromTime || !toTime) return;
+          
+          // Convert times to minutes for comparison
+          const fromMinutes = timeToMinutes(fromTime);
+          const toMinutes = timeToMinutes(toTime);
+          
+          if (fromMinutes >= toMinutes) {
+            showTimeValidationError(toTimeInput, 'To Time must be after From Time');
+            showTimeValidationError(fromTimeInput, 'From Time must be before To Time');
+            return false;
+          }
+          
+          // Clear any existing errors if validation passes
+          clearTimeValidationError(fromTimeInput);
+          clearTimeValidationError(toTimeInput);
+          fromTimeInput.classList.remove('is-invalid');
+          toTimeInput.classList.remove('is-invalid');
+          fromTimeInput.classList.add('is-valid');
+          toTimeInput.classList.add('is-valid');
+          
+          return true;
+        }
+        
+        // Convert time string to minutes for comparison
+        function timeToMinutes(timeStr) {
+          const [hours, minutes] = timeStr.split(':').map(Number);
+          return hours * 60 + minutes;
+        }
+        
+        // Show time validation error
+        function showTimeValidationError(input, message) {
+          input.classList.remove('is-valid');
+          input.classList.add('is-invalid');
+          
+          // Remove existing error message
+          const existingError = input.parentNode.querySelector('.invalid-feedback');
+          if (existingError) {
+            existingError.remove();
+          }
+          
+          // Add new error message
+          const errorDiv = document.createElement('div');
+          errorDiv.className = 'invalid-feedback';
+          errorDiv.textContent = message;
+          input.parentNode.appendChild(errorDiv);
+        }
+        
+        // Clear time validation error
+        function clearTimeValidationError(input) {
+          input.classList.remove('is-invalid');
+          const errorDiv = input.parentNode.querySelector('.invalid-feedback');
+          if (errorDiv) {
+            errorDiv.remove();
+          }
+        }
+        
+        // Format time input on blur
+        function formatTimeInput(input) {
+          let value = input.value.trim();
+          if (!value) return;
+          
+          // Handle various input formats
+          value = value.replace(/[^\d:]/g, ''); // Remove non-digits and non-colons
+          
+          // Handle formats like "9" -> "09:00", "930" -> "09:30", "9:3" -> "09:30"
+          if (value.length === 1 || value.length === 2) {
+            const hour = parseInt(value);
+            if (hour >= 0 && hour <= 23) {
+              value = hour.toString().padStart(2, '0') + ':00';
+            }
+          } else if (value.length === 3 && !value.includes(':')) {
+            const hour = parseInt(value.substring(0, 1));
+            const minute = parseInt(value.substring(1, 3));
+            if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+              value = hour.toString().padStart(2, '0') + ':' + minute.toString().padStart(2, '0');
+            }
+          } else if (value.length === 4 && !value.includes(':')) {
+            const hour = parseInt(value.substring(0, 2));
+            const minute = parseInt(value.substring(2, 4));
+            if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+              value = hour.toString().padStart(2, '0') + ':' + minute.toString().padStart(2, '0');
+            }
+          } else if (value.includes(':')) {
+            const parts = value.split(':');
+            if (parts.length === 2) {
+              const hour = parseInt(parts[0]) || 0;
+              const minute = parseInt(parts[1]) || 0;
+              if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+                value = hour.toString().padStart(2, '0') + ':' + minute.toString().padStart(2, '0');
+              }
+            }
+          }
+          
+          input.value = value;
+          validateTimeField(input);
+        }
+
+        // Function to add a new day
+        function addNewDay() {
+          console.log("addNewDay function called"); // Debug log
+          const itineraryDetails = document.getElementById("itineraryDetails");
+          const currentDays = itineraryDetails.children.length;
+          const newDayNumber = currentDays + 1;
+          console.log("Current days:", currentDays, "New day number:", newDayNumber); // Debug log
+
+          const daySection = document.createElement("div");
+          daySection.classList.add("day-section", "mb-4");
+          daySection.dataset.day = newDayNumber;
+
+          daySection.innerHTML = `
+            <div class="day-header">
+              <div class="d-flex align-items-center">
+                <button type="button" class="day-toggle-btn" onclick="toggleDayContent(this)" title="Toggle Day Details">
+                  <i class="fas fa-chevron-down toggle-icon"></i>
+                </button>
+                <h5 class="mb-0">Day ${newDayNumber}</h5>
+              </div>
+              <button type="button" class="remove-day-btn" onclick="removeDay(this)" title="Remove Day">
+                <i class="fas fa-trash mr-1"></i>Remove Day
+              </button>
+            </div>
+            <div class="day-content expanded">
+              <div class="form-group">
+                <label>Itinerary Description</label>
+                <textarea class="form-control" rows="3" placeholder="Enter itinerary details"></textarea>
+              </div>
+
+              <div class="activity-container">
+                <div class="activity-header">
+                  <h6><i class="fas fa-bed mr-2"></i>Hotels</h6>
+                </div>
+                <div class="activity-item">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <label>City</label>
+                      <select class="form-control city-dropdown-hotel">
+                        <option value="">Select City</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <label>From Time</label>
+                      <input type="text" class="form-control from-time" placeholder="Select Time" />
+                    </div>
+                    <div class="col-md-3">
+                      <label>To Time</label>
+                      <input type="text" class="form-control to-time" placeholder="To Time" />
+                    </div>
+                  </div>
+                  <div class="row mt-2">
+                    <div class="col-md-6">
+                      <label>Hotel</label>
+                      <select class="form-control hotel-dropdown">
+                        <option value="">Select Hotel</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label>Room Type</label>
+                      <select class="form-control roomtype-dropdown">
+                        <option value="">Select Room Type</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="activity-container">
+                <div class="activity-header">
+                  <h6><i class="fas fa-map-marked-alt mr-2"></i>Excursions</h6>
+                  <button type="button" class="btn btn-sm btn-success add-excursion-btn" title="Add Another Excursion">
+                    <i class="fas fa-plus mr-1"></i>Add More
+                  </button>
+                </div>
+                <div class="excursions-list">
+                  <div class="activity-item">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <label>City</label>
+                        <select class="form-control city-dropdown-excursion">
+                          <option value="">Select City</option>
+                        </select>
+                      </div>
+                      <div class="col-md-3">
+                        <label>From Time</label>
+                        <input type="text" class="form-control from-time" placeholder="Select Time" />
+                      </div>
+                      <div class="col-md-3">
+                        <label>To Time</label>
+                        <input type="text" class="form-control to-time" placeholder="To Time" />
+                      </div>
+                    </div>
+                    <div class="row mt-2">
+                      <div class="col-md-10">
+                        <label>Excursion</label>
+                        <select class="form-control excursion-dropdown">
+                          <option value="">Select Excursion</option>
+                        </select>
+                      </div>
+                      <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-sm btn-danger remove-excursion-btn" title="Remove Excursion" style="display: none;">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="activity-container">
+                <div class="activity-header">
+                  <h6><i class="fas fa-shuttle-van mr-2"></i>Transfers</h6>
+                  <button type="button" class="btn btn-sm btn-success add-transfer-btn" title="Add Another Transfer">
+                    <i class="fas fa-plus mr-1"></i>Add More
+                  </button>
+                </div>
+                <div class="transfers-list">
+                  <div class="activity-item">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <label>City</label>
+                        <select class="form-control city-dropdown-transfer">
+                          <option value="">Select City</option>
+                        </select>
+                      </div>
+                      <div class="col-md-3">
+                        <label>From Time</label>
+                        <input type="text" class="form-control from-time" placeholder="From Time" />
+                      </div>
+                      <div class="col-md-3">
+                        <label>To Time</label>
+                        <input type="text" class="form-control to-time" placeholder="To Time" />
+                      </div>
+                    </div>
+                    <div class="row mt-2">
+                      <div class="col-md-10">
+                        <label>Transfer</label>
+                        <select class="form-control transfer-dropdown">
+                          <option value="">Select Transfer</option>
+                        </select>
+                      </div>
+                      <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-sm btn-danger remove-transfer-btn" title="Remove Transfer" style="display: none;">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          itineraryDetails.appendChild(daySection);
+
+          // Initialize components for the new day
+          initializeFlatpickr();
+          
+          // Populate city dropdowns for the new day using a simpler approach
+          // Get all cities from the main city dropdown that's already populated
+          const mainCityDropdown = document.getElementById('tourCode');
+          const cityOptions = Array.from(mainCityDropdown.options).slice(1); // Skip the first "Select city" option
+          
+          // Populate city dropdowns in the new day section
+          const cityDropdownsHotel = daySection.querySelectorAll('.city-dropdown-hotel');
+          const cityDropdownsExcursion = daySection.querySelectorAll('.city-dropdown-excursion');
+          const cityDropdownsTransfer = daySection.querySelectorAll('.city-dropdown-transfer');
+          
+          // Populate each type of city dropdown
+          [cityDropdownsHotel, cityDropdownsExcursion, cityDropdownsTransfer].forEach(dropdowns => {
+            dropdowns.forEach(dropdown => {
+              dropdown.innerHTML = '<option value="">Select City</option>';
+              cityOptions.forEach(option => {
+                const newOption = document.createElement('option');
+                newOption.value = option.value;
+                newOption.textContent = option.textContent;
+                dropdown.appendChild(newOption);
+              });
+            });
+          });
+
+          // Force immediate update of counters and duration
+          updateTotalDaysCount();
+          updateDurationInput();
+          
+          // Also trigger a delayed update to ensure it works
+          setTimeout(() => {
+            updateTotalDaysCount();
+            updateDurationInput();
+          }, 100);
+        }
+
+        // Function to remove a day
+        function removeDay(button) {
+          const daySection = button.closest(".day-section");
+          const dayNumber = daySection.querySelector("h5").textContent;
+
+          if (
+            confirm(
+              `Are you sure you want to remove ${dayNumber}? This action cannot be undone.`
+            )
+          ) {
+            daySection.remove();
+            updateDayNumbers();
+            updateTotalDaysCount();
+            updateDurationInput();
+          }
+        }
+
+        // Function to update day numbers after deletion
+        function updateDayNumbers() {
+          const daySections = document.querySelectorAll(".day-section");
+          daySections.forEach((section, index) => {
+            const newDayNumber = index + 1;
+            section.dataset.day = newDayNumber;
+
+            // Update day header
+            const dayHeader = section.querySelector("h5");
+            dayHeader.textContent = `Day ${newDayNumber}`;
+          });
+        }
+
+        // Function to update total days count
+        function updateTotalDaysCount() {
+          const totalDays = document.querySelectorAll(".day-section").length;
+          const totalDaysElement = document.getElementById("totalDaysCount");
+          console.log("updateTotalDaysCount called - Total days:", totalDays, "Element found:", !!totalDaysElement); // Debug log
+          if (totalDaysElement) {
+            totalDaysElement.textContent = totalDays;
+            console.log("Updated totalDaysCount to:", totalDays); // Debug log
+          }
+        }
+
+        // Function to update duration input
+        function updateDurationInput() {
+          const totalDays = document.querySelectorAll(".day-section").length;
+          const durationInput = document.getElementById("tourDuration");
+          console.log("updateDurationInput called - Total days:", totalDays, "Duration input found:", !!durationInput); // Debug log
+          if (durationInput) {
+            durationInput.value = totalDays;
+            console.log("Updated duration input to:", totalDays); // Debug log
+          }
+        }
+
+        // Function to toggle day content visibility
+        function toggleDayContent(button) {
+          const daySection = button.closest(".day-section");
+          const dayContent = daySection.querySelector(".day-content");
+          const toggleIcon = button.querySelector(".toggle-icon");
+
+          if (dayContent.classList.contains("expanded")) {
+            // Collapse the content
+            dayContent.classList.remove("expanded");
+            dayContent.classList.add("collapsed");
+            toggleIcon.classList.add("rotated");
+          } else {
+            // Expand the content
+            dayContent.classList.remove("collapsed");
+            dayContent.classList.add("expanded");
+            toggleIcon.classList.remove("rotated");
+          }
+        }
+
+        // Make functions globally accessible for onclick handlers
+        window.addNewDay = addNewDay;
+        window.removeDay = removeDay;
+        window.toggleDayContent = toggleDayContent;
+
+        // Add event listener for the plus button to add days
+        document
+          .getElementById("addDayBtn")
+          .addEventListener("click", function (event) {
+            event.preventDefault();
+            console.log("Add Day button clicked"); // Debug log
+            addNewDay();
+          });
+
+      // Functions to add and remove excursions and transfers
+      function addExcursion(button) {
+        const activityContainer = button.closest('.activity-container');
+        const excursionsList = activityContainer.querySelector('.excursions-list');
+        const firstExcursion = excursionsList.querySelector('.activity-item');
+        
+        // Clone the first excursion item
+        const newExcursion = firstExcursion.cloneNode(true);
+        
+        // Clear the values in the cloned item
+        newExcursion.querySelectorAll('select').forEach(select => {
+          select.selectedIndex = 0;
+        });
+        newExcursion.querySelectorAll('input').forEach(input => {
+          input.value = '';
+          input.classList.remove('is-valid', 'is-invalid');
+        });
+        
+        // Remove any validation feedback
+        newExcursion.querySelectorAll('.invalid-feedback').forEach(feedback => {
+          feedback.remove();
+        });
+        
+        // Show the remove button for the new item
+        const removeBtn = newExcursion.querySelector('.remove-excursion-btn');
+        removeBtn.style.display = 'block';
+        
+        // Add the new excursion to the list
+        excursionsList.appendChild(newExcursion);
+        
+        // Populate city dropdown for the new excursion
+        populateCityDropdownForNewItem(newExcursion.querySelector('.city-dropdown-excursion'));
+        
+        // Initialize flatpickr for the new time inputs
+        initializeFlatpickr();
+        
+        // Update remove button visibility
+        updateRemoveButtonsVisibility(excursionsList, '.remove-excursion-btn');
+      }
+      
+      function addTransfer(button) {
+        const activityContainer = button.closest('.activity-container');
+        const transfersList = activityContainer.querySelector('.transfers-list');
+        const firstTransfer = transfersList.querySelector('.activity-item');
+        
+        // Clone the first transfer item
+        const newTransfer = firstTransfer.cloneNode(true);
+        
+        // Clear the values in the cloned item
+        newTransfer.querySelectorAll('select').forEach(select => {
+          select.selectedIndex = 0;
+        });
+        newTransfer.querySelectorAll('input').forEach(input => {
+          input.value = '';
+          input.classList.remove('is-valid', 'is-invalid');
+        });
+        
+        // Remove any validation feedback
+        newTransfer.querySelectorAll('.invalid-feedback').forEach(feedback => {
+          feedback.remove();
+        });
+        
+        // Show the remove button for the new item
+        const removeBtn = newTransfer.querySelector('.remove-transfer-btn');
+        removeBtn.style.display = 'block';
+        
+        // Add the new transfer to the list
+        transfersList.appendChild(newTransfer);
+        
+        // Populate city dropdown for the new transfer
+        populateCityDropdownForNewItem(newTransfer.querySelector('.city-dropdown-transfer'));
+        
+        // Initialize flatpickr for the new time inputs
+        initializeFlatpickr();
+        
+        // Update remove button visibility
+        updateRemoveButtonsVisibility(transfersList, '.remove-transfer-btn');
+      }
+      
+      function removeExcursion(button) {
+        const activityItem = button.closest('.activity-item');
+        const excursionsList = activityItem.closest('.excursions-list');
+        
+        if (excursionsList.querySelectorAll('.activity-item').length > 1) {
+          activityItem.remove();
+          updateRemoveButtonsVisibility(excursionsList, '.remove-excursion-btn');
+        }
+      }
+      
+      function removeTransfer(button) {
+        const activityItem = button.closest('.activity-item');
+        const transfersList = activityItem.closest('.transfers-list');
+        
+        if (transfersList.querySelectorAll('.activity-item').length > 1) {
+          activityItem.remove();
+          updateRemoveButtonsVisibility(transfersList, '.remove-transfer-btn');
+        }
+      }
+      
+      function updateRemoveButtonsVisibility(container, buttonSelector) {
+        const items = container.querySelectorAll('.activity-item');
+        items.forEach((item, index) => {
+          const removeBtn = item.querySelector(buttonSelector);
+          if (removeBtn) {
+            removeBtn.style.display = items.length > 1 ? 'block' : 'none';
+          }
+        });
+      }
+      
+      function populateCityDropdownForNewItem(cityDropdown) {
+        // Get cities from the main city dropdown that's already populated
+        const mainCityDropdown = document.getElementById('tourCode');
+        const cityOptions = Array.from(mainCityDropdown.options).slice(1); // Skip the first "Select city" option
+        
+        // Clear and populate the new dropdown
+        cityDropdown.innerHTML = '<option value="">Select City</option>';
+        cityOptions.forEach(option => {
+          const newOption = document.createElement('option');
+          newOption.value = option.value;
+          newOption.textContent = option.textContent;
+          cityDropdown.appendChild(newOption);
+        });
+      }
+
+      // Event listener for dynamically loaded elements
+      document.addEventListener("change", (event) => {
+        if (event.target.classList.contains("city-dropdown-hotel")) {
+          const hotelDropdown = event.target
+            .closest(".form-group, .activity-item")
+            .querySelector(".hotel-dropdown");
+          searchHotelsByCity(event.target, hotelDropdown);
+        } else if (event.target.classList.contains("city-dropdown-excursion")) {
+          const excursionDropdown = event.target
+            .closest(".form-group, .activity-item")
+            .querySelector(".excursion-dropdown");
+          searchExcursionsByCity(event.target, excursionDropdown);
+        } else if (event.target.classList.contains("city-dropdown-transfer")) {
+          const transferDropdown = event.target
+            .closest(".form-group, .activity-item")
+            .querySelector(".transfer-dropdown");
+          searchTransfersByCity(event.target, transferDropdown);
+        }
+
+        if (event.target.classList.contains("hotel-dropdown")) {
+          const hotelDropdown = event.target;
+          populateRoomTypeDropdown(hotelDropdown);
+        }
+      });
+
+      // Event listener for add/remove buttons
+      document.addEventListener("click", (event) => {
+        if (event.target.closest('.add-excursion-btn')) {
+          event.preventDefault();
+          addExcursion(event.target.closest('.add-excursion-btn'));
+        } else if (event.target.closest('.add-transfer-btn')) {
+          event.preventDefault();
+          addTransfer(event.target.closest('.add-transfer-btn'));
+        } else if (event.target.closest('.remove-excursion-btn')) {
+          event.preventDefault();
+          removeExcursion(event.target.closest('.remove-excursion-btn'));
+        } else if (event.target.closest('.remove-transfer-btn')) {
+          event.preventDefault();
+          removeTransfer(event.target.closest('.remove-transfer-btn'));
+        }
+      });
+
+      // Enhanced event listeners for time fields
+      document.addEventListener("blur", (event) => {
+        if (event.target && event.target.classList && (event.target.classList.contains("from-time") || event.target.classList.contains("to-time"))) {
+          formatTimeInput(event.target);
+        }
+      }, true);
+
+      document.addEventListener("input", (event) => {
+        if (event.target && event.target.classList && (event.target.classList.contains("from-time") || event.target.classList.contains("to-time"))) {
+          // Clear validation state while typing
+          event.target.classList.remove('is-valid', 'is-invalid');
+          const errorDiv = event.target.parentNode.querySelector('.invalid-feedback');
+          if (errorDiv) {
+            errorDiv.remove();
+          }
+        }
+      });
+
+      // Validate all time fields before form submission
+      function validateAllTimeFields() {
+        const timeInputs = document.querySelectorAll('.from-time, .to-time');
+        let allValid = true;
+        
+        timeInputs.forEach(input => {
+          if (input.value.trim() && !validateTimeField(input)) {
+            allValid = false;
+          }
+        });
+        
+        // Validate time sequences in each activity
+        const activityItems = document.querySelectorAll('.activity-item');
+        activityItems.forEach(item => {
+          const fromTime = item.querySelector('.from-time');
+          const toTime = item.querySelector('.to-time');
+          
+          if (fromTime && toTime && fromTime.value.trim() && toTime.value.trim()) {
+            if (!validateTimeSequence(item)) {
+              allValid = false;
+            }
+          }
+        });
+        
+        return allValid;
+      }
+
+      // Function to handle the Save button in the modal
+      document
+        .getElementById("saveTourPriceBtn")
+        .addEventListener("click", function () {
+          if (currentEditRow) {
+            // Update the row with the new values
+            currentEditRow.cells[0].textContent = formatToDDMMYYYY(
+              modalStartDate.value.trim()
+            );
+            currentEditRow.cells[1].textContent = formatToDDMMYYYY(
+              modalEndDate.value.trim()
+            );
+            currentEditRow.cells[2].textContent = parseInt(modalPax.value) || 0;
+            currentEditRow.cells[3].textContent =
+              parseFloat(modalSinglePrice.value) || 0;
+            currentEditRow.cells[4].textContent =
+              parseFloat(modalDoublePrice.value) || 0;
+            currentEditRow.cells[5].textContent =
+              parseFloat(modalTriplePrice.value) || 0;
+
+            currentEditRow = null; // Reset reference
+          } else {
+            // If adding a new row
+            addTourPriceRow({
+              startDate: formatToDDMMYYYY(modalStartDate.value.trim()),
+              endDate: formatToDDMMYYYY(modalEndDate.value.trim()),
+              pax: parseFloat(modalPax.value) || 0,
+              singlePrice: parseFloat(modalSinglePrice.value) || 0,
+              doublePrice: parseFloat(modalDoublePrice.value) || 0,
+              triplePrice: parseFloat(modalTriplePrice.value) || 0,
+            });
+          }
+
+          document.getElementById("tourPriceForm").reset(); // Reset form fields
+          $("#addTourPriceModal").modal("hide"); // Close modal
+        });
+
+      // Form validation function
+      function validateTourValidity() {
+        const selectedDays = document.querySelectorAll(
+          'input[id^="tourDay"]:checked'
+        );
+
+        if (selectedDays.length === 0) {
+          alert(
+            "Please select at least one day of the week for tour validity."
+          );
+          return false;
+        }
+
+        return true;
+      }
+
+      document
+        .getElementById("tourForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+
+          // Validate tour validity first
+          if (!validateTourValidity()) {
+            return;
+          }
+
+          // Validate all time fields before submission
+          if (!validateAllTimeFields()) {
+            alert("Please fix the time field errors before submitting the form.");
+            return;
+          }
+
+          const itinerarySections = document.querySelectorAll(
+            "#itineraryDetails .day-section"
+          );
+
+          const tourDays = Array.from(itinerarySections).map(
+            (section, index) => {
+              const day = index + 1; // Day number
+              const itinerary = section.querySelector("textarea").value.trim(); // Itinerary details
+
+              // Find all activity rows within the current section
+              const activityRows = section.querySelectorAll(
+                ".activity-row, .activity-item"
+              );
+
+              const details = Array.from(activityRows).flatMap((row) => {
+                const hotelDropdown = row.querySelector(".hotel-dropdown");
+                const roomTypeDropdown =
+                  row.querySelector(".roomtype-dropdown");
+                const excursionDropdown = row.querySelector(
+                  ".excursion-dropdown"
+                );
+                const transferDropdown =
+                  row.querySelector(".transfer-dropdown");
+
+                const hotelId = parseInt(hotelDropdown?.value, 10) || null;
+                const hotelName =
+                  hotelDropdown?.options[hotelDropdown.selectedIndex]?.text ||
+                  "";
+                const roomTypeId =
+                  parseInt(roomTypeDropdown?.value, 10) || null;
+                const roomTypeName =
+                  roomTypeDropdown?.options[roomTypeDropdown.selectedIndex]
+                    ?.text || "";
+                const excursionId =
+                  parseInt(excursionDropdown?.value, 10) || null;
+                const excursionName =
+                  excursionDropdown?.options[excursionDropdown.selectedIndex]
+                    ?.text || "";
+                const transferId =
+                  parseInt(transferDropdown?.value, 10) || null;
+                const transferName =
+                  transferDropdown?.options[transferDropdown.selectedIndex]
+                    ?.text || "";
+
+                const cityHotel =
+                  row.querySelector(".city-dropdown-hotel")?.value || "";
+                const cityExcursion =
+                  row.querySelector(".city-dropdown-excursion")?.value || "";
+                const cityTransfer =
+                  row.querySelector(".city-dropdown-transfer")?.value || "";
+                const fromTime = row.querySelector(".from-time")?.value || null;
+                const toTime = row.querySelector(".to-time")?.value || null;
+
+                const details = [];
+
+                if (hotelId) {
+                  details.push({
+                    from_time: fromTime,
+                    to_time: toTime,
+                    city: cityHotel,
+                    type_of_tour: "hotels",
+                    hotel_id: hotelId,
+                    hotel_name: hotelName,
+                    room_type_id: roomTypeId,
+                    room_type: roomTypeName,
+                  });
+                }
+                if (excursionId) {
+                  details.push({
+                    from_time: fromTime,
+                    to_time: toTime,
+                    city: cityExcursion,
+                    type_of_tour: "excursions",
+                    excursion_id: excursionId,
+                    excursion_name: excursionName,
+                  });
+                }
+                if (transferId) {
+                  details.push({
+                    from_time: fromTime,
+                    to_time: toTime,
+                    city: cityTransfer,
+                    type_of_tour: "transfers",
+                    transfer_id: transferId,
+                    transfer_name: transferName,
+                  });
+                }
+
+                return details;
+              });
+
+              return {
+                day,
+                itinerary,
+                details, // Attach the array of details
+              };
+            }
+          );
+
+          // Log the constructed tourDays array
+          console.log("Constructed tourDays:", tourDays);
+
+          // Collect Pricing Details
+          const pricingRows = document.querySelectorAll(
+            "#tourPriceTableBody tr"
+          );
+          const tourPricings = Array.from(pricingRows).map((row) => ({
+            start_date: row.cells[0].textContent.trim(),
+            end_date: row.cells[1].textContent.trim(),
+            pax: parseInt(row.cells[2].textContent.trim()),
+            single_price: parseFloat(row.cells[3].textContent.trim()),
+            double_price: parseFloat(row.cells[4].textContent.trim()),
+            triple_price: parseFloat(row.cells[5].textContent.trim()),
+            currency_id: 1, // Assuming default currency
+          }));
+
+          // Collect tour validity data and convert to available_days format
+          const tourValidDays = Array.from(
+            document.querySelectorAll('input[id^="tourDay"]:checked')
+          ).map((cb) => parseInt(cb.value));
+
+          // Convert to available_days format for backend
+          const availableDays = tourValidDays.map((dayOfWeek) => ({
+            day_of_week: dayOfWeek,
+          }));
+
+          // Construct the full tour data
+          const tourData = {
+            name: document.getElementById("tourName").value,
+            country: document.getElementById("country").value,
+            city: document.getElementById("tourCode").value,
+            category: document.getElementById("tourCategory").value,
+            description: document.getElementById("tourDescription").value,
+            duration: tourDays.length,
+            route: document.getElementById("tourRoute").value,
+            tot: document.getElementById("tourDeparture").value,
+            date: new Date().toISOString(), // Use a specific date if required
+            available_days: availableDays,
+            tour_days: tourDays,
+            tour_pricings: tourPricings,
+          };
+
+          const token = localStorage.getItem("token");
+
+          if (!token) {
+            alert("You are not authorized. Please log in first.");
+            window.location.href = "login.html";
+            return;
+          }
+
+          // Log the final payload
+          console.log(
+            "Final tourData payload:",
+            JSON.stringify(tourData, null, 2)
+          );
+
+          // Send POST request
+          fetch(`${Endpoint}/api/v1/tours`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(tourData),
+          })
+            .then((response) => {
+              if (response.ok) {
+                alert("Tour saved successfully!");
+                window.location.href = "tours.html";
+              } else {
+                return response.json().then((errorData) => {
+                  console.error("Failed to save tour:", errorData);
+                  alert(
+                    `Error: ${errorData.message || "Failed to save tour."}`
+                  );
+                });
+              }
+            })
+            .catch((error) => {
+              console.error("Error saving tour:", error);
+              alert("Failed to save tour. Please try again later.");
+            });
+        });
+
+        // Clear location cache (for debugging or manual refresh)
+        window.clearLocationCache = function() {
+          localStorage.removeItem('locationCache');
+          locationCache = {
+            countries: null,
+            profileCountry: null,
+            citiesByCountry: {}
+          };
+          console.log("Location cache cleared");
+          alert("Location cache cleared. Please refresh the page.");
+        };
+    </script>
+  </body>
+</html>

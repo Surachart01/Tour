@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Test results
+test-results/
+playwright-report/
+test-results.xml
+results.json
+
+# Screenshots and videos
+screenshots/
+videos/
+downloads/
+
+# Coverage reports
+coverage/
+
+# Playwright
+.env
+auth-state.json
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
+
+

@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Transfer</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- FontAwesome 5 for modern icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
+
+    <style>
+      /* Modern form enhancements */
+      .form-control:focus {
+        border-color: #1abb9c !important;
+        box-shadow: 0 0 0 0.2rem rgba(26, 187, 156, 0.25) !important;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #1abb9c 0%, #16a085 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary:hover {
+        background: linear-gradient(135deg, #16a085 0%, #138d75 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-secondary:hover {
+        background: linear-gradient(135deg, #7f8c8d 0%, #6c7b7d 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-success {
+        background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-success:hover {
+        background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-warning {
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-warning:hover {
+        background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+        transform: translateY(-1px);
+      }
+
+      .btn-danger {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .btn-danger:hover {
+        background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+        transform: translateY(-1px);
+      }
+
+      .form-control {
+        height: 45px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        background-color: #fafbfc;
+        transition: all 0.3s ease;
+      }
+
+      .form-control:hover {
+        border-color: #1abb9c;
+      }
+
+      textarea.form-control {
+        height: auto;
+        min-height: 100px;
+      }
+
+      .form-group label {
+        font-weight: 600;
+        color: #34495e;
+        margin-bottom: 8px;
+      }
+
+      .table {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .table thead th {
+        background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+        color: white;
+        font-weight: 600;
+        border: none;
+        padding: 15px;
+      }
+
+      .table tbody td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        border-color: #ecf0f1;
+      }
+
+      .table tbody tr:hover {
+        background-color: #f8f9fa;
+      }
+
+      .modal-content {
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      .modal-header {
+        background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+        color: white;
+        border-radius: 10px 10px 0 0;
+        border-bottom: none;
+      }
+
+      .modal-title {
+        font-weight: 600;
+      }
+
+      .close {
+        color: white;
+        opacity: 0.8;
+        text-shadow: none;
+      }
+
+      .close:hover {
+        color: white;
+        opacity: 1;
+      }
+
+      .input-group-append .btn {
+        height: 45px;
+        border-radius: 0 6px 6px 0;
+      }
+
+      /* Custom tooltip styles */
+      .tooltip-btn {
+        position: relative;
+        display: inline-block;
+      }
+
+      .tooltip-btn .tooltip-text {
+        visibility: hidden;
+        width: 80px;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 4px;
+        padding: 5px 8px;
+        position: absolute;
+        z-index: 1000;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -40px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 12px;
+        font-weight: normal;
+        white-space: nowrap;
+        pointer-events: none; /* Prevent tooltip from blocking clicks */
+      }
+
+      .tooltip-btn .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #333 transparent transparent transparent;
+      }
+
+      .tooltip-btn:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+      }
+
+      /* Ensure button takes full width of container */
+      .tooltip-btn .btn {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+
+      /* Make icons non-interactive to prevent click blocking */
+      .tooltip-btn .btn i {
+        pointer-events: none;
+      }
+    </style>
+  </head>
+
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background: #ecf0f1;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    "
+  >
+    <div
+      class="container-fluid"
+      style="
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+      "
+    >
+      <!-- Full-width header -->
+      <div
+        style="
+          background: linear-gradient(135deg, #2a3f54 0%, #34495e 100%);
+          color: white;
+          padding: 30px 60px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        "
+      >
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          "
+        >
+          <div style="display: flex; align-items: center">
+            <i
+              class="fas fa-edit"
+              style="font-size: 28px; margin-right: 15px; color: #1abb9c"
+            ></i>
+            <h1 style="margin: 0; font-size: 28px; font-weight: 700">
+              Edit Transfer
+            </h1>
+          </div>
+          <div style="display: flex; gap: 15px">
+            <button
+              type="button"
+              class="btn btn-outline-light"
+              onclick="window.location.href='transfers.html'"
+              style="
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                padding: 8px 20px;
+                border-radius: 6px;
+                transition: all 0.3s ease;
+              "
+            >
+              <i class="fas fa-arrow-left" style="margin-right: 8px"></i>
+              Back to Transfers
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main content area -->
+      <div style="flex: 1; padding: 40px 60px; background: #ecf0f1">
+        <div
+          style="
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+          "
+        >
+          <div style="padding: 40px">
+            <form id="editTransferForm" class="form-label-left input_mask">
+              <div class="row">
+                <div class="col-md-6 form-group">
+                  <label for="transferType">
+                    <i
+                      class="fas fa-exchange-alt"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Transfer Type *
+                  </label>
+                  <select id="transferType" class="form-control" required>
+                    <option value="TIN">TIN (Transfer In)</option>
+                    <option value="TOUT">TOUT (Transfer Out)</option>
+                  </select>
+                </div>
+
+                <div class="col-md-6 form-group">
+                  <label for="city">
+                    <i
+                      class="fas fa-city"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    City *
+                  </label>
+                  <select class="form-control" id="city" required>
+                    <option value="" disabled selected>
+                      Loading cities...
+                    </option>
+                  </select>
+                </div>
+
+                <div class="col-md-6 form-group">
+                  <label for="supplier">
+                    <i
+                      class="fas fa-truck"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Supplier *
+                  </label>
+                  <select class="form-control" id="supplier" required>
+                    <option value="" disabled selected>Select supplier</option>
+                    <!-- supplier options will be dynamically loaded here -->
+                  </select>
+                </div>
+
+                <div class="col-md-12 form-group">
+                  <label for="description">
+                    <i
+                      class="fas fa-align-left"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Description *
+                  </label>
+                  <textarea
+                    id="description"
+                    class="form-control"
+                    placeholder="Enter transfer description"
+                    required
+                  ></textarea>
+                </div>
+
+                <div class="col-md-6 form-group">
+                  <label for="departure">
+                    <i
+                      class="fas fa-plane-departure"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Departure Location *
+                  </label>
+                  <input
+                    type="text"
+                    id="departure"
+                    class="form-control"
+                    placeholder="Enter departure location"
+                    required
+                  />
+                </div>
+
+                <div class="col-md-6 form-group">
+                  <label for="arrival">
+                    <i
+                      class="fas fa-plane-arrival"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Arrival Location *
+                  </label>
+                  <input
+                    type="text"
+                    id="arrival"
+                    class="form-control"
+                    placeholder="Enter arrival location"
+                    required
+                  />
+                </div>
+
+                <div class="col-md-6 form-group">
+                  <label for="SICPriceAdult">
+                    <i
+                      class="fas fa-user"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    SIC Price for Adult *
+                  </label>
+                  <input
+                    type="number"
+                    id="SICPriceAdult"
+                    class="form-control"
+                    placeholder="Enter SIC price for adult"
+                    step="0.01"
+                    min="0"
+                    required
+                  />
+                </div>
+
+                <div class="col-md-6 form-group">
+                  <label for="SICPriceChild">
+                    <i
+                      class="fas fa-child"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    SIC Price for Child *
+                  </label>
+                  <input
+                    type="number"
+                    id="SICPriceChild"
+                    class="form-control"
+                    placeholder="Enter SIC price for child"
+                    step="0.01"
+                    min="0"
+                    required
+                  />
+                </div>
+
+                <div class="col-md-6 form-group">
+                  <label for="orderTransfer">
+                    <i
+                      class="fas fa-sort-numeric-up"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Display Order
+                  </label>
+                  <input
+                    type="number"
+                    id="orderTransfer"
+                    class="form-control"
+                    placeholder="Enter display order (optional)"
+                    min="0"
+                  />
+                </div>
+              </div>
+            </form>
+
+            <hr style="margin: 40px 0; border-color: #ecf0f1" />
+
+            <!-- Transfer Prices Section -->
+            <div style="margin-bottom: 30px">
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 20px;
+                "
+              >
+                <h3 style="margin: 0; color: #34495e; font-weight: 700">
+                  <i
+                    class="fas fa-table"
+                    style="margin-right: 10px; color: #1abb9c"
+                  ></i>
+                  Transfer Prices
+                </h3>
+                <button
+                  type="button"
+                  class="btn btn-success"
+                  data-toggle="modal"
+                  data-target="#addTransferPriceModal"
+                  style="
+                    padding: 10px 20px;
+                    border-radius: 6px;
+                    font-weight: 600;
+                  "
+                >
+                  <i class="fas fa-plus" style="margin-right: 8px"></i>
+                  Add Price
+                </button>
+              </div>
+
+              <table class="table table-striped" id="transferPriceTable">
+                <thead>
+                  <tr>
+                    <th>
+                      <i
+                        class="fas fa-calendar-alt"
+                        style="margin-right: 5px"
+                      ></i
+                      >Date From
+                    </th>
+                    <th>
+                      <i
+                        class="fas fa-calendar-alt"
+                        style="margin-right: 5px"
+                      ></i
+                      >Date To
+                    </th>
+                    <th>
+                      <i class="fas fa-users" style="margin-right: 5px"></i>Pax
+                    </th>
+                    <th>
+                      <i
+                        class="fas fa-dollar-sign"
+                        style="margin-right: 5px"
+                      ></i
+                      >Price
+                    </th>
+                    <th>
+                      <i class="fas fa-cog" style="margin-right: 5px"></i
+                      >Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="transferPriceTableBody"></tbody>
+              </table>
+            </div>
+
+            <!-- Action Buttons -->
+            <div
+              style="
+                display: flex;
+                gap: 15px;
+                justify-content: center;
+                padding-top: 30px;
+                border-top: 2px solid #ecf0f1;
+              "
+            >
+              <button
+                type="button"
+                class="btn btn-secondary"
+                onclick="window.location.href='transfers.html'"
+                style="padding: 12px 30px; border-radius: 6px; font-weight: 600"
+              >
+                <i class="fas fa-times" style="margin-right: 8px"></i>
+                Cancel
+              </button>
+              <button
+                id="submitTransfer"
+                class="btn btn-primary"
+                style="padding: 12px 30px; border-radius: 6px; font-weight: 600"
+              >
+                <i class="fas fa-save" style="margin-right: 8px"></i>
+                Update Transfer
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for adding Transfer Price -->
+    <div
+      class="modal fade"
+      id="addTransferPriceModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="addTransferPriceModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addTransferPriceModalLabel">
+              Add Transfer Price
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="transferPriceForm">
+              <div class="form-group">
+                <label for="dateFrom">Date From *</label>
+                <input
+                  type="date"
+                  id="dateFrom"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="dateTo">Date To *</label>
+                <input type="date" id="dateTo" class="form-control" required />
+              </div>
+              <div class="form-group">
+                <label for="pax">Pax *</label>
+                <input type="number" id="pax" class="form-control" required />
+              </div>
+              <div class="form-group">
+                <label for="price">Price *</label>
+                <input type="number" id="price" class="form-control" required />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              id="saveTransferPrice"
+              class="btn btn-primary"
+              data-dismiss="modal"
+            >
+              Save Price
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for editing Transfer Price -->
+    <div
+      class="modal fade"
+      id="editTransferPriceModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="editTransferPriceModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editTransferPriceModalLabel">
+              Edit Transfer Price
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="editTransferPriceForm">
+              <div class="form-group">
+                <label for="editDateFrom">Date From *</label>
+                <input
+                  type="date"
+                  id="editDateFrom"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="editDateTo">Date To *</label>
+                <input
+                  type="date"
+                  id="editDateTo"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="editPax">Pax *</label>
+                <input
+                  type="number"
+                  id="editPax"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="editPrice">Price *</label>
+                <input
+                  type="number"
+                  id="editPrice"
+                  class="form-control"
+                  required
+                />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              id="saveEditedTransferPrice"
+              class="btn btn-primary"
+              data-dismiss="modal"
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for duplicating Transfer Price -->
+    <div
+      class="modal fade"
+      id="duplicateTransferPriceModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="duplicateTransferPriceModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="duplicateTransferPriceModalLabel">
+              Duplicate Transfer Price
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="duplicateTransferPriceForm">
+              <div class="form-group">
+                <label for="duplicateDateFrom">Date From *</label>
+                <input
+                  type="date"
+                  id="duplicateDateFrom"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="duplicateDateTo">Date To *</label>
+                <input
+                  type="date"
+                  id="duplicateDateTo"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="duplicatePax">Pax *</label>
+                <input
+                  type="number"
+                  id="duplicatePax"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="duplicatePrice">Price *</label>
+                <input
+                  type="number"
+                  id="duplicatePrice"
+                  class="form-control"
+                  required
+                />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              id="saveDuplicatedTransferPrice"
+              class="btn btn-primary"
+            >
+              Save Duplicate
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script src="js/config.js"></script>
+    <!-- Custom Scripts -->
+    <script>
+      // Function to get user's profile country
+      async function getProfileCountry() {
+        try {
+          const token = localStorage.getItem("token");
+          const response = await fetch(`${Endpoint}/api/v1/profile`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+          
+          if (response.ok) {
+            const profile = await response.json();
+            console.log("Profile data:", profile);
+            const countryCode = profile.country_code || 'TH';
+            console.log("Using country code:", countryCode);
+            return countryCode;
+          } else {
+            console.warn("Profile API failed with status:", response.status);
+          }
+        } catch (error) {
+          console.warn("Could not fetch profile country:", error);
+        }
+        return 'TH'; // Default fallback country
+      }
+
+      // Function to populate cities dropdown with country filtering
+      async function populateCitiesDropdown(selector) {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          alert("You are not authorized. Please log in first.");
+          window.location.href = "login.html";
+          return;
+        }
+
+        try {
+          // Get user's profile country
+          const countryCode = await getProfileCountry();
+          console.log(`Loading cities for country: ${countryCode}`);
+
+          // Try country-filtered API first
+          const response = await fetch(`${Endpoint}/api/v1/locations/countries/${countryCode}/cities`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log("Country-filtered cities response for", selector, ":", data);
+            
+            if (!data || (!Array.isArray(data) && !data.cities)) {
+              console.warn("No cities data received, falling back to global cities");
+              return populateGlobalCities(selector);
+            }
+            
+            populateCityDropdowns(selector, data);
+          } else {
+            console.warn("Country-filtered API failed, falling back to global cities");
+            return populateGlobalCities(selector);
+          }
+        } catch (error) {
+          console.error("Error in populateCitiesDropdown:", error);
+          return populateGlobalCities(selector);
+        }
+      }
+
+      // Fallback function for global cities
+      async function populateGlobalCities(selector) {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${Endpoint}/api/v1/cities`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (!response.ok) {
+          throw new Error(`Global cities API failed: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log("Global cities fallback response for", selector, ":", data);
+        populateCityDropdowns(selector, data);
+      }
+
+      // Helper function to populate city dropdowns from API data
+      function populateCityDropdowns(selector, data) {
+        // Handle different response formats
+        let cities;
+        if (Array.isArray(data)) {
+          cities = data;
+        } else if (data && Array.isArray(data.cities)) {
+          cities = data.cities.map((cityObj) => {
+            if (typeof cityObj === "string") {
+              return cityObj;
+            } else if (cityObj && cityObj.city) {
+              return cityObj.city;
+            }
+            return cityObj;
+          });
+        } else if (data && typeof data === "object") {
+          cities = Object.values(data)
+            .filter((item) => typeof item === "string" || (item && item.city))
+            .map((item) => (typeof item === "string" ? item : item.city));
+        } else {
+          console.error("Unexpected cities data format:", data);
+          cities = [];
+        }
+
+        console.log("Processed city names for", selector, ":", cities.length, "cities");
+
+        // Handle different selector formats
+        let cityDropdowns = [];
+        if (selector.startsWith('#')) {
+          const dropdown = document.getElementById(selector.substring(1));
+          if (dropdown) cityDropdowns = [dropdown];
+        } else if (selector.startsWith('.')) {
+          cityDropdowns = Array.from(document.querySelectorAll(selector));
+        } else {
+          const byId = document.getElementById(selector);
+          if (byId) {
+            cityDropdowns = [byId];
+          } else {
+            cityDropdowns = Array.from(document.querySelectorAll(selector));
+          }
+        }
+
+        if (cityDropdowns.length === 0) {
+          console.error(`No dropdown elements found with selector "${selector}"`);
+          return;
+        }
+
+        cityDropdowns.forEach((dropdown) => {
+          dropdown.innerHTML = '<option value="">Select City</option>';
+          cities.forEach((city) => {
+            const option = document.createElement("option");
+            option.value = city;
+            option.textContent = city;
+            dropdown.appendChild(option);
+          });
+        });
+
+        console.log(`Successfully loaded ${cities.length} cities into ${cityDropdowns.length} dropdown(s)`);
+      }
+
+      // Initialize cities dropdown on page load
+      document.addEventListener("DOMContentLoaded", function() {
+        populateCitiesDropdown("city");
+      });
+
+      function formatToDDMMYYYY(dateString) {
+        const ddmmyyyyRegex = /^\d{2}-\d{2}-\d{4}$/;
+        if (ddmmyyyyRegex.test(dateString)) {
+          return dateString; // Return as-is if already in dd-mm-yyyy format
+        }
+
+        const dateParts = dateString.split("-");
+        if (dateParts.length === 3) {
+          const [year, month, day] = dateParts;
+          return `${day}-${month}-${year}`;
+        }
+        return null;
+      }
+
+      function formatToYYYYMMDD(dateString) {
+        // Check if the date is in dd-mm-yyyy format
+        const ddmmyyyyRegex = /^\d{2}-\d{2}-\d{4}$/;
+        if (ddmmyyyyRegex.test(dateString)) {
+          const [day, month, year] = dateString.split("-");
+          return `${year}-${month}-${day}`; // Convert to yyyy-mm-dd
+        }
+
+        // Assume the date is already in yyyy-mm-dd format
+        const yyyymmddRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (yyyymmddRegex.test(dateString)) {
+          return dateString;
+        }
+
+        // Return null for invalid formats
+        return null;
+      }
+
+      // Location initialization is now handled by LocationCache above
+
+      let currentRow = null; // Track the currently edited row
+      const transferId = new URLSearchParams(window.location.search).get("id"); // Get the transfer ID from the URL
+
+      // Load transfer data for editing from the backend
+      document.addEventListener("DOMContentLoaded", async function () {
+        const token = localStorage.getItem("token");
+        const supplierDropdown = document.getElementById("supplier");
+        if (!token) {
+          alert("You are not authorized. Please log in first.");
+          window.location.href = "login.html";
+          return;
+        }
+
+        // Function for supplier dropdown (improved implementation)
+        async function populateSuppliersDropdown() {
+          const supplierDropdown = document.getElementById("supplier");
+
+          // Show loading state
+          supplierDropdown.innerHTML =
+            '<option value="" disabled selected>Loading suppliers...</option>';
+
+          try {
+            // Fetch supplier options specifically for transfers
+            const response = await fetch(
+              `${Endpoint}/api/v1/suppliers/names?service_type=transfers`,
+              {
+                method: "GET",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+
+            // Handle errors
+            if (response.status === 401) {
+              alert("Unauthorized. Please log in again.");
+              window.location.href = "login.html";
+              return;
+            } else if (!response.ok) {
+              throw new Error("Failed to load suppliers");
+            }
+
+            const data = await response.json();
+
+            // Clear existing options and add default option
+            supplierDropdown.innerHTML =
+              '<option value="" disabled selected>Select supplier</option>';
+
+            // Handle different response formats and null/undefined cases
+            let suppliers = [];
+            if (Array.isArray(data)) {
+              suppliers = data;
+            } else if (data && Array.isArray(data.suppliers)) {
+              suppliers = data.suppliers;
+            } else if (data && Array.isArray(data.data)) {
+              suppliers = data.data;
+            }
+
+            // Check if suppliers array is valid and not empty
+            if (!suppliers || suppliers.length === 0) {
+              supplierDropdown.innerHTML =
+                '<option value="" selected>No suppliers available (optional)</option>';
+              console.log("No suppliers found for the selected criteria");
+              // Remove required attribute when no suppliers are available
+              supplierDropdown.removeAttribute("required");
+              return;
+            }
+
+            // Add required attribute back when suppliers are available
+            supplierDropdown.setAttribute("required", "required");
+
+            // Add supplier options
+            suppliers.forEach((supplierData) => {
+              const option = document.createElement("option");
+              option.value = supplierData.id;
+              option.textContent = supplierData.name;
+              supplierDropdown.appendChild(option);
+            });
+
+            console.log(`Loaded ${suppliers.length} suppliers successfully`);
+          } catch (error) {
+            console.error("Error loading suppliers:", error);
+            supplierDropdown.innerHTML =
+              '<option value="" disabled selected>Failed to load suppliers</option>';
+          }
+        }
+
+        // Load suppliers
+        await populateSuppliersDropdown();
+
+        if (transferId) {
+          fetch(`${Endpoint}/api/v1/transfers/${transferId}`, {
+            headers: {
+              method: "GET",
+              Authorization: `Bearer ${token}`,
+            },
+          })
+            .then((response) => {
+              if (!response.ok) {
+                if (response.status === 401) {
+                  // Handle 401 Unauthorized
+                  alert("Unauthorized. Please log in again.");
+                  window.location.href = "login.html"; // Redirect to login page
+                } else if (response.status === 403) {
+                  // Handle 403 Forbidden
+                  alert(
+                    "You don't have sufficient permissions to perform this action."
+                  );
+                  return;
+                } else {
+                  throw new Error("Failed to load transfer details");
+                }
+              }
+              return response.json();
+            })
+            .then(async (transfer) => {
+              console.log("Loading transfer data:", transfer);
+
+              // Populate the form fields with transfer data
+              document.getElementById("transferType").value =
+                transfer.transfer_type || "";
+
+              // Handle city selection
+              if (transfer.city) {
+                console.log("Setting city to:", transfer.city);
+                
+                // Wait for cities to be loaded, then set the city value
+                setTimeout(() => {
+                  const citySelect = document.getElementById("city");
+                  
+                  // Check if the city option exists
+                  const cityOption = Array.from(citySelect.options).find(
+                    (opt) => opt.value === transfer.city
+                  );
+                  if (cityOption) {
+                    citySelect.value = transfer.city;
+                    console.log("✅ City set successfully:", transfer.city);
+                  } else {
+                    // Add the city option if it doesn't exist
+                    const option = document.createElement("option");
+                    option.value = transfer.city;
+                    option.textContent = transfer.city;
+                    option.selected = true;
+                    citySelect.appendChild(option);
+                    console.log("✅ Added missing city option:", transfer.city);
+                  }
+                }, 1500); // Wait for cities to be loaded
+              }
+
+              document.getElementById("description").value =
+                transfer.description || "";
+              document.getElementById("departure").value =
+                transfer.departure || "";
+              document.getElementById("arrival").value = transfer.arrival || "";
+              document.getElementById("SICPriceAdult").value =
+                transfer.sic_price_adult || "";
+              document.getElementById("SICPriceChild").value =
+                transfer.sic_price_child || "";
+              document.getElementById("orderTransfer").value =
+                transfer.order || "";
+
+              // Set the selected supplier
+              if (transfer.supplier_id) {
+                setTimeout(() => {
+                  supplierDropdown.value = transfer.supplier_id;
+                }, 300);
+              }
+
+              if (transfer.prices && transfer.prices.length > 0) {
+                transfer.prices.forEach((price) => {
+                  addTransferPriceRow(price);
+                });
+              }
+            })
+            .catch((error) => {
+              console.error("Error fetching transfer details:", error);
+            });
+        }
+      });
+
+      // Function to add a new transfer price row to the table
+      function addTransferPriceRow(priceData) {
+        const tableBody = document.getElementById("transferPriceTableBody");
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${formatToDDMMYYYY(priceData.start_date)}</td>
+          <td>${formatToDDMMYYYY(priceData.end_date)}</td>
+          <td>${priceData.pax}</td>
+          <td>${priceData.price}</td>
+          <td>
+            <div style="display: flex; gap: 15px; justify-content: center;">
+              <div class="tooltip-btn">
+                <button class="btn btn-primary btn-sm edit-btn" style="padding: 5px 8px;">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <span class="tooltip-text">Edit</span>
+              </div>
+              <div class="tooltip-btn">
+                <button class="btn btn-danger btn-sm delete-btn" style="padding: 5px 8px;">
+                  <i class="fas fa-trash"></i>
+                </button>
+                <span class="tooltip-text">Delete</span>
+              </div>
+              <div class="tooltip-btn">
+                <button class="btn btn-warning btn-sm duplicate-btn" style="padding: 5px 8px;">
+                  <i class="fas fa-copy"></i>
+                </button>
+                <span class="tooltip-text">Duplicate</span>
+              </div>
+            </div>
+          </td>
+      `;
+
+        tableBody.appendChild(row);
+
+        // Re-bind event listeners after adding a new row
+        setupEventListeners();
+      }
+
+      // Function to set up event listeners for edit, delete, and duplicate buttons
+      function setupEventListeners() {
+        const tableBody = document.getElementById("transferPriceTableBody");
+
+        tableBody.removeEventListener("click", handleTableClick);
+        tableBody.addEventListener("click", handleTableClick);
+      }
+
+      document
+        .getElementById("saveEditedTransferPrice")
+        .removeEventListener("click", saveEditedPrice);
+      document
+        .getElementById("saveEditedTransferPrice")
+        .addEventListener("click", saveEditedPrice);
+
+      document
+        .getElementById("saveDuplicatedTransferPrice")
+        .removeEventListener("click", saveDuplicatedPrice);
+      document
+        .getElementById("saveDuplicatedTransferPrice")
+        .addEventListener("click", saveDuplicatedPrice);
+
+      document
+        .getElementById("saveTransferPrice")
+        .removeEventListener("click", addNewTransferPrice);
+      document
+        .getElementById("saveTransferPrice")
+        .addEventListener("click", addNewTransferPrice);
+
+      // Handle clicks on edit, delete, and duplicate buttons
+      function handleTableClick(event) {
+        if (event.target.classList.contains("edit-btn")) {
+          handleEditButtonClick(event.target);
+        }
+
+        if (event.target.classList.contains("delete-btn")) {
+          handleDeleteButtonClick(event.target);
+        }
+
+        if (event.target.classList.contains("duplicate-btn")) {
+          handleDuplicateButtonClick(event.target);
+        }
+      }
+
+      // Function to handle Edit button click
+      function handleEditButtonClick(button) {
+        currentRow = button.closest("tr");
+
+        // Prefill the edit modal with the current row's data
+        document.getElementById("editDateFrom").value = formatToYYYYMMDD(
+          currentRow.cells[0].textContent
+        );
+        document.getElementById("editDateTo").value = formatToYYYYMMDD(
+          currentRow.cells[1].textContent
+        );
+        document.getElementById("editPax").value =
+          currentRow.cells[2].textContent;
+        document.getElementById("editPrice").value =
+          currentRow.cells[3].textContent;
+
+        $("#editTransferPriceModal").modal("show");
+      }
+
+      // Function to save edited transfer price
+      function saveEditedPrice() {
+        if (currentRow) {
+          currentRow.cells[0].textContent = formatToDDMMYYYY(
+            document.getElementById("editDateFrom").value
+          );
+          currentRow.cells[1].textContent = formatToDDMMYYYY(
+            document.getElementById("editDateTo").value
+          );
+          currentRow.cells[2].textContent =
+            document.getElementById("editPax").value;
+          currentRow.cells[3].textContent =
+            document.getElementById("editPrice").value;
+
+          $("#editTransferPriceModal").modal("hide");
+        }
+      }
+
+      // Function to handle Delete button click
+      function handleDeleteButtonClick(button) {
+        const row = button.closest("tr");
+        row.remove(); // Remove the row from the table
+      }
+
+      // Function to handle Duplicate button click
+      function handleDuplicateButtonClick(button) {
+        currentRow = button.closest("tr");
+
+        // Prefill the duplicate modal with the current row's data
+        document.getElementById("duplicateDateFrom").value = formatToYYYYMMDD(
+          currentRow.cells[0].textContent
+        );
+        document.getElementById("duplicateDateTo").value = formatToYYYYMMDD(
+          currentRow.cells[1].textContent
+        );
+        document.getElementById("duplicatePax").value =
+          currentRow.cells[2].textContent;
+        document.getElementById("duplicatePrice").value =
+          currentRow.cells[3].textContent;
+
+        $("#duplicateTransferPriceModal").modal("show");
+      }
+
+      // Function to save the duplicated transfer price
+      function saveDuplicatedPrice() {
+        const dateFrom = formatToDDMMYYYY(
+          document.getElementById("duplicateDateFrom").value
+        );
+        const dateTo = formatToDDMMYYYY(
+          document.getElementById("duplicateDateTo").value
+        );
+        const pax = document.getElementById("duplicatePax").value;
+        const price = document.getElementById("duplicatePrice").value;
+
+        if (dateFrom && dateTo && pax && price) {
+          addTransferPriceRow({
+            start_date: dateFrom,
+            end_date: dateTo,
+            pax: pax,
+            price: price,
+          });
+
+          document.getElementById("duplicateTransferPriceForm").reset();
+          $("#duplicateTransferPriceModal").modal("hide");
+        }
+      }
+
+      // Add a new transfer price row when the "Save Price" button is clicked
+      // Function to add a new transfer price row when the "Save Price" button is clicked
+      function addNewTransferPrice() {
+        const dateFrom = formatToDDMMYYYY(
+          document.getElementById("dateFrom").value
+        );
+        const dateTo = formatToDDMMYYYY(
+          document.getElementById("dateTo").value
+        );
+        const pax = document.getElementById("pax").value;
+        const price = document.getElementById("price").value;
+
+        if (!dateFrom || !dateTo || !pax || !price) {
+          alert("All fields are required!");
+          return;
+        }
+
+        // Add new row to the table
+        addTransferPriceRow({
+          start_date: dateFrom,
+          end_date: dateTo,
+          pax: pax,
+          price: price,
+        });
+
+        // Reset form fields
+        document.getElementById("transferPriceForm").reset();
+
+        // Close the modal
+        $("#addTransferPriceModal").modal("hide");
+      }
+
+      // Save Transfer button
+      document
+        .getElementById("submitTransfer")
+        .addEventListener("click", function (event) {
+          event.preventDefault(); // Prevent default form submission
+
+          console.log("Submit button clicked");
+
+          // Check if the form is valid
+          const form = document.getElementById("editTransferForm");
+
+          // Get all required fields and check their values
+          const requiredFields = form.querySelectorAll(
+            "input[required], select[required], textarea[required]"
+          );
+          const invalidFields = [];
+
+          requiredFields.forEach((field) => {
+            if (!field.value || field.value.trim() === "") {
+              invalidFields.push(field.id || field.name || "unnamed field");
+            }
+          });
+
+          if (invalidFields.length > 0) {
+            console.log(
+              "Form validation failed. Invalid fields:",
+              invalidFields
+            );
+            form.classList.add("was-validated"); // Add Bootstrap validation styles
+
+            // Show specific error message
+            alert(
+              `Please fill in the following required fields: ${invalidFields.join(
+                ", "
+              )}`
+            );
+
+            // Focus on first invalid field
+            const firstInvalidField = form.querySelector(
+              "input[required]:invalid, select[required]:invalid, textarea[required]:invalid"
+            );
+            if (firstInvalidField) {
+              firstInvalidField.focus();
+            }
+
+            return; // Stop the form submission if validation fails
+          }
+
+          console.log("Form validation passed");
+
+          const transferData = {
+            transfer_type: document.getElementById("transferType").value,
+            city: document.getElementById("city").value,
+            description: document.getElementById("description").value,
+            departure: document.getElementById("departure").value,
+            arrival: document.getElementById("arrival").value,
+            sic_price_adult: parseFloat(
+              document.getElementById("SICPriceAdult").value
+            ),
+            sic_price_child: parseFloat(
+              document.getElementById("SICPriceChild").value
+            ),
+            order: parseInt(document.getElementById("orderTransfer").value),
+            supplier_id: parseInt(
+              document.getElementById("supplier").value,
+              10
+            ), // Get the selected supplier's ID
+            prices: Array.from(
+              document.querySelectorAll("#transferPriceTableBody tr")
+            ).map((row) => ({
+              start_date: row.cells[0].textContent,
+              end_date: row.cells[1].textContent,
+              pax: parseInt(row.cells[2].textContent, 10),
+              price: parseFloat(row.cells[3].textContent),
+            })),
+          };
+
+          console.log("Sending transfer data:", transferData);
+
+          fetch(`${Endpoint}/api/v1/transfers/${transferId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify(transferData),
+          })
+            .then((response) => {
+              console.log("API response status:", response.status);
+              if (response.ok) {
+                console.log("Transfer updated successfully");
+                alert("Transfer updated successfully!");
+                window.location.href = "transfers.html";
+              } else {
+                if (response.status === 401) {
+                  // Handle 401 Unauthorized
+                  console.log("Unauthorized error");
+                  alert("Unauthorized. Please log in again.");
+                  window.location.href = "login.html"; // Redirect to login page
+                } else if (response.status === 403) {
+                  // Handle 403 Forbidden
+                  console.log("Forbidden error");
+                  alert(
+                    "You don't have sufficient permissions to perform this action."
+                  );
+                  return;
+                } else {
+                  console.log("API error, parsing response...");
+                  response
+                    .json()
+                    .then((data) => {
+                      console.log("Error response data:", data);
+                      alert(
+                        "Error updating transfer: " +
+                          (data.message || "Unknown error")
+                      );
+                    })
+                    .catch((parseError) => {
+                      console.log(
+                        "Failed to parse error response:",
+                        parseError
+                      );
+                      alert("Error updating transfer: HTTP " + response.status);
+                    });
+                }
+              }
+            })
+            .catch((error) => {
+              console.error("Network error updating transfer:", error);
+              alert("Network error: " + error.message);
+            });
+        });
+    </script>
+
+
+
+  </body>
+</html>

@@ -1,0 +1,120 @@
+{
+  "hotels": {
+    "preferred": [
+      {
+        "country": "Thailand",
+        "city": "Bangkok", 
+        "hotelName": "Amari Bangkok",
+        "roomType": "Superior With ABF",
+        "adults": 2,
+        "children": 1,
+        "singleRooms": 0,
+        "doubleRooms": 1,
+        "extraChildBed": true,
+        "notes": "Preferred hotel for testing with good room availability"
+      },
+      {
+        "country": "Thailand",
+        "city": "Phuket",
+        "hotelName": "Patong Beach Hotel",
+        "roomType": "Deluxe Room",
+        "adults": 2,
+        "children": 0,
+        "singleRooms": 0,
+        "doubleRooms": 1,
+        "extraChildBed": false,
+        "notes": "Alternative hotel option"
+      }
+    ]
+  },
+  "tours": {
+    "preferred": [
+      {
+        "country": "Thailand",
+        "city": "Bangkok",
+        "tourName": "tour1234",
+        "totType": "SIC",
+        "pax": 3,
+        "roomConfiguration": {
+          "tripleRoom": 1,
+          "doubleRoom": 0,
+          "singleRoom": 0
+        },
+        "alternativeRoomConfiguration": {
+          "tripleRoom": 0,
+          "doubleRoom": 1,
+          "singleRoom": 1
+        },
+        "notes": "User recommended tour with SIC configuration"
+      },
+      {
+        "country": "Thailand",
+        "city": "Bangkok",
+        "tourName": "Beauty Of Siam",
+        "totType": "PVT",
+        "pax": 2,
+        "roomConfiguration": {
+          "tripleRoom": 0,
+          "doubleRoom": 1,
+          "singleRoom": 0
+        },
+        "notes": "Fallback tour option"
+      }
+    ]
+  },
+  "excursions": {
+    "preferred": [
+      {
+        "country": "Thailand",
+        "city": "Bangkok",
+        "excursionName": "Bangkok City Tour",
+        "typeOfExcursion": "SIC",
+        "hotel": "Test Hotel Bangkok",
+        "notes": "Standard city tour excursion"
+      },
+      {
+        "country": "Thailand", 
+        "city": "Phuket",
+        "excursionName": "Phi Phi Island Tour",
+        "typeOfExcursion": "PVT",
+        "hotel": "Patong Beach Hotel",
+        "notes": "Popular island tour"
+      }
+    ]
+  },
+  "transfers": {
+    "preferred": [
+      {
+        "country": "Thailand",
+        "city": "Bangkok",
+        "transferType": "Airport Transfer",
+        "from": "Airport",
+        "to": "Hotel", 
+        "totType": "PVT",
+        "notes": "Standard airport transfer"
+      },
+      {
+        "country": "Thailand",
+        "city": "Bangkok", 
+        "transferType": "City Transfer",
+        "from": "Hotel",
+        "to": "Shopping Mall",
+        "totType": "SIC",
+        "notes": "Alternative transfer option"
+      }
+    ]
+  },
+  "quotation": {
+    "defaults": {
+      "country": "Thailand",
+      "city": "Bangkok",
+      "adults": 2,
+      "children": 1,
+      "tripDuration": 7,
+      "clientName": "Test Client",
+      "email": "test@example.com",
+      "mobile": "1234567890",
+      "remarks": "Automated test quotation"
+    }
+  }
+}

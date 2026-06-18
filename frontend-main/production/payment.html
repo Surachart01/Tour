@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>List of Payments</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- Custom Theme Style -->
+    <link rel="stylesheet" href="../build/css/custom.min.css" />
+
+    <style>
+      /* Sidebar and navbar text size */
+      .nav_title span,
+      .profile_info span,
+      .profile_info h2,
+      .side-menu a,
+      .navbar-right a {
+        font-size: 1rem; /* Slightly increased for better readability */
+      }
+    </style>
+
+    <style>
+      .edit-btn,
+      .delete-btn,
+      .print-btn {
+        cursor: pointer;
+      }
+      /* Removed constraining CSS for sidebar-menu to allow proper submenu expansion */
+
+      /* Sidebar scrolling - allow scroll when expanded, but not when collapsed */
+      .left_col.scroll-view {
+        overflow-y: auto;
+        max-height: 100vh;
+      }
+
+      /* When sidebar is collapsed, remove height constraints to allow submenu expansion */
+      body.nav-sm .left_col.scroll-view {
+        overflow-y: visible;
+        max-height: none;
+      }
+    </style>
+  </head>
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+        <div class="col-md-3 left_col menu_fixed">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border: 0">
+              <a
+                href="index.html"
+                class="site_title"
+                style="
+                  display: block;
+                  text-align: center;
+                  font-size: 2rem;
+                  font-weight: bold;
+                  color: #007bff;
+                  text-decoration: none;
+                "
+              >
+                <span style="font-size: 1.5rem">VeraThailandia!</span>
+              </a>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- menu profile quick info -->
+            <div class="profile clearfix">
+              <div class="profile_pic">
+                <img
+                  src="images/verathailandlogo.png"
+                  alt="..."
+                  class="img-circle profile_img"
+                />
+              </div>
+              <div class="profile_info">
+                <span>Welcome,</span>
+                <h2 id="profileName"></h2>
+              </div>
+            </div>
+            <!-- /menu profile quick info -->
+
+            <br />
+
+            <!-- sidebar menu -->
+            <div
+              id="sidebar-menu"
+              class="main_menu_side hidden-print main_menu"
+            >
+              <div class="menu_section">
+                <h3>General</h3>
+                <ul class="nav side-menu">
+                  <li>
+                    <a href="index.html"><i class="fa fa-home"></i> Home</a>
+                  </li>
+                  <li id="controlPanelMenu">
+                    <a>
+                      <i class="fa fa-edit"></i> Control-Panel
+                      <span class="fa fa-chevron-down"></span>
+                    </a>
+                    <ul class="nav child_menu">
+                      <li><a href="activities.html">Activities</a></li>
+                      <li><a href="agents.html">Agents</a></li>
+                      <li><a href="booking.html">Bookings</a></li>
+                      <li><a href="excursions.html">Excursions</a></li>
+                      <li><a href="hotels.html">Hotels</a></li>
+                      <li><a href="markup.html">Markups</a></li>
+                      <!-- <li><a href="operations.html">Operations</a></li> -->
+                      <li><a href="othercharges.html">Other Charges</a></li>
+                      <!-- <li><a href="stop_sale.html">Stop Sale</a></li> -->
+                      <li><a href="suppliers.html">Suppliers</a></li>
+                      <li><a href="tools.html">Tools</a></li>
+                      <li><a href="tours.html">Tours</a></li>
+                      <li><a href="transfers.html">Transfers</a></li>
+                      <li><a href="users.html">Users</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="trip.html"><i class="fa fa-book"></i> Quotation</a>
+                  </li>
+                  <li>
+                    <a href="payment.html"
+                      ><i class="fa fa-pencil-square-o"></i> Payment</a
+                    >
+                  </li>
+                  <!--<li>
+                    <a href="tax_invoices.html"
+                      ><i class="fa fa-file-text-o"></i> Tax Invoices
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li> -->
+                  <li>
+                    <a href="itinerary.html"
+                      ><i class="fa fa-ticket"></i> Itinerary
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li>
+                    <a href="analytics.html"
+                      ><i class="fa fa-bar-chart"></i> Analytics
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- /sidebar menu -->
+
+            <!-- /menu footer buttons -->
+            <div class="sidebar-footer hidden-small">
+              <a data-toggle="tooltip" data-placement="top" title="Settings">
+                <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="FullScreen">
+                <span
+                  class="glyphicon glyphicon-fullscreen"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="Lock">
+                <span
+                  class="glyphicon glyphicon-eye-close"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a
+                data-toggle="tooltip"
+                data-placement="top"
+                title="Logout"
+                href="logout.html"
+              >
+                <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+              </a>
+            </div>
+            <!-- /menu footer buttons -->
+          </div>
+        </div>
+
+        <!-- top navigation -->
+        <div class="top_nav">
+          <div class="nav_menu">
+            <div class="nav toggle">
+              <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+            </div>
+            <nav class="nav navbar-nav">
+              <ul class="navbar-right">
+                <li class="nav-item dropdown open" style="padding-left: 15px">
+                  <a
+                    href="javascript:;"
+                    class="user-profile dropdown-toggle"
+                    aria-haspopup="true"
+                    id="navbarDropdown"
+                    data-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    <img
+                      id="navProfileImage"
+                      src="images/verathailandlogo.png"
+                      alt=""
+                    />
+                    <span id="navProfileName"></span>
+                  </a>
+                  <div
+                    class="dropdown-menu dropdown-usermenu pull-right"
+                    aria-labelledby="navbarDropdown"
+                  >
+                    <a class="dropdown-item" href="profile.html"
+                      ><i class="fa fa-user pull-right"></i> Profile</a
+                    >
+                    <a class="dropdown-item" href="logout.html"
+                      ><i class="fa fa-sign-out pull-right"></i> Log Out</a
+                    >
+                  </div>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+        <!-- /top navigation -->
+
+        <!-- Page content -->
+        <div class="right_col" role="main">
+          <div class="page-title">
+            <div class="title_left">
+              <h3>Payments</h3>
+            </div>
+          </div>
+
+          <div class="clearfix"></div>
+
+          <!-- Search Box and Date Range Filters -->
+          <div class="row" style="margin-bottom: 20px">
+            <div class="col-md-4">
+              <input
+                type="text"
+                id="searchBox"
+                class="form-control"
+                placeholder="Search by Trip ID, Agent, Booking Ref, or Payment Ref..."
+              />
+            </div>
+            <div class="col-md-2">
+              <input
+                type="date"
+                id="fromDate"
+                class="form-control"
+                title="Start Date"
+              />
+            </div>
+            <div class="col-md-2">
+              <input
+                type="date"
+                id="toDate"
+                class="form-control"
+                title="End Date"
+              />
+            </div>
+            <div class="col-md-2">
+              <button
+                id="filterByDateBtn"
+                class="btn btn-primary btn-block"
+                title="Filter by date range"
+              >
+                <i class="fa fa-calendar"></i> Filter
+              </button>
+            </div>
+            <div class="col-md-2 text-right">
+              <label for="rowsSelect">Show: </label>
+              <select
+                id="rowsSelect"
+                class="form-control"
+                style="width: 70px; display: inline-block"
+              >
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="All">All</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Filter Status Display -->
+          <div class="row" style="margin-bottom: 15px">
+            <div class="col-md-12">
+              <div
+                id="filterStatus"
+                class="alert alert-info"
+                style="display: none; margin-bottom: 10px"
+              >
+                <!-- Filter status will be shown here -->
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12 col-sm-12">
+              <div class="x_panel">
+                <div class="x_title">
+                  <h2>List of Payments</h2>
+                  <ul class="nav navbar-right panel_toolbox">
+                    <li>
+                      <a class="collapse-link"
+                        ><i class="fa fa-chevron-up"></i
+                      ></a>
+                    </li>
+                  </ul>
+                  <div class="clearfix"></div>
+                </div>
+                <div class="x_content">
+                  <div class="row">
+                    <div class="col-sm-12">
+                      <div class="card-box table-responsive">
+                        <table
+                          id="datatable-buttons"
+                          class="table table-striped table-bordered"
+                          style="width: 100%"
+                        >
+                          <thead>
+                            <tr>
+                              <th>Trip ID</th>
+                              <th>Agent</th>
+                              <th>Booking Ref</th>
+                              <!-- <th>Total Cost</th>
+                              <th>Discount</th> -->
+                              <th>Start Date</th>
+                              <th>Final Cost</th>
+                              <th>Amt Paid</th>
+                              <th>Balance</th>
+                              <th>Pmt Date</th>
+                              <th>Payment Reference</th>
+                              <th>Penalty</th>
+                              <th>Invoice</th>
+                              <th>Tax Invoice</th>
+                              <th id="adminUpdateHeader" style="display: none">
+                                Update
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody id="paymentTableBody">
+                            <!-- Table rows will be dynamically added here -->
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="d-flex justify-content-end">
+                    <div class="pagination">
+                      <button
+                        id="prevPage"
+                        class="btn btn-secondary btn-sm"
+                        disabled
+                      >
+                        Previous
+                      </button>
+                      <button id="nextPage" class="btn btn-secondary btn-sm">
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /Page content -->
+
+        <!-- Edit Payment Modal -->
+        <div
+          class="modal fade"
+          id="editPaymentModal"
+          tabindex="-1"
+          role="dialog"
+          aria-labelledby="editPaymentModalLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="editPaymentModalLabel">
+                  Edit Payment
+                </h5>
+                <button
+                  type="button"
+                  class="close"
+                  data-dismiss="modal"
+                  aria-label="Close"
+                >
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <form id="editPaymentForm">
+                  <div class="form-group">
+                    <label for="editAgentName">Agent Name</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="editAgentName"
+                      readonly
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="editBookingReference">Booking Reference</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="editBookingReference"
+                      readonly
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="editFinalCost">Final Cost</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="editFinalCost"
+                      readonly
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="editPenaltyCost">Penalty Cost</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="editPenaltyCost"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="editAmountPaid">Amount Paid</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="editAmountPaid"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="editBalance">Balance</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="editBalance"
+                      readonly
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="editPaymentReference">Payment Reference</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="editPaymentReference"
+                    />
+                  </div>
+                  <input type="hidden" id="editPaymentId" />
+                </form>
+              </div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  data-dismiss="modal"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  id="savePaymentChanges"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <footer></footer>
+        <!-- /Footer -->
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const role = localStorage.getItem("role");
+        const token = localStorage.getItem("token");
+        const username = localStorage.getItem("username") || "Guest";
+        document.getElementById("profileName").innerText = username;
+        document.getElementById("navProfileName").innerText = username;
+
+        if (!token) {
+          alert("You are not authorized. Please log in first.");
+          window.location.href = "login.html";
+          return;
+        }
+
+        // Hide the Control Panel menu item if the user is not an admin
+        if (role !== "admin") {
+          const controlPanelMenu = document.getElementById("controlPanelMenu");
+          if (controlPanelMenu) {
+            controlPanelMenu.style.display = "none";
+          }
+        }
+
+        // Show admin Update header if user is admin
+        if (role === "admin") {
+          const adminHeader = document.getElementById("adminUpdateHeader");
+          if (adminHeader) {
+            adminHeader.style.display = "table-cell";
+          }
+        }
+
+        let tableBody = document.querySelector("#paymentTableBody");
+        let searchBox = document.getElementById("searchBox");
+        let rowsSelect = document.getElementById("rowsSelect");
+        let prevPageButton = document.getElementById("prevPage");
+        let nextPageButton = document.getElementById("nextPage");
+
+        let allPayments = [];
+        let filteredPayments = [];
+        let currentPage = 1;
+        let rowsPerPage = 25;
+        let totalPages = 1;
+        let currentFilterMode = "all"; // 'all' or 'date_range'
+        let currentDateRange = { start: null, end: null };
+
+        // Initialize page with current month dates
+        function initializePage() {
+          const today = new Date();
+          const endDate = today.toISOString().split("T")[0];
+          const startDate = new Date(today.getFullYear(), today.getMonth(), 1)
+            .toISOString()
+            .split("T")[0];
+
+          document.getElementById("fromDate").value = startDate;
+          document.getElementById("toDate").value = endDate;
+        }
+
+        // Add event listener for filter button
+        document
+          .getElementById("filterByDateBtn")
+          .addEventListener("click", filterByDateRange);
+
+        // Filter by date range
+        function filterByDateRange() {
+          const fromDate = document.getElementById("fromDate").value;
+          const toDate = document.getElementById("toDate").value;
+
+          // If both dates are not selected, fall back to all data
+          if (!fromDate || !toDate) {
+            showInfoMessage("No date range selected. Loading all payments...");
+            setTimeout(() => {
+              fetchPayments(true); // Load all data
+            }, 1000);
+            return;
+          }
+
+          // If dates are selected, use date range filtering
+          fetchPayments(false); // false means use date range filtering
+        }
+
+        // Show loading state
+        function showLoadingState() {
+          tableBody.innerHTML = `
+            <tr>
+              <td colspan="14" class="text-center">
+                <i class="fa fa-spinner fa-spin fa-2x"></i>
+                <p>Loading payments...</p>
+              </td>
+            </tr>
+          `;
+        }
+
+        // Show info message
+        function showInfoMessage(message) {
+          const statusDiv = document.getElementById("filterStatus");
+          statusDiv.innerHTML = `<i class="fa fa-info-circle"></i> ${message}`;
+          statusDiv.className = "alert alert-info";
+          statusDiv.style.display = "block";
+        }
+
+        // Show error message
+        function showErrorMessage(message) {
+          const statusDiv = document.getElementById("filterStatus");
+          statusDiv.innerHTML = `<i class="fa fa-exclamation-triangle"></i> ${message}`;
+          statusDiv.className = "alert alert-danger";
+          statusDiv.style.display = "block";
+        }
+
+        // Update filter status display
+        function updateFilterStatus(count) {
+          const statusDiv = document.getElementById("filterStatus");
+
+          if (currentFilterMode === "all") {
+            // For all data, show current month information
+            const today = new Date();
+            const monthNames = [
+              "January",
+              "February",
+              "March",
+              "April",
+              "May",
+              "June",
+              "July",
+              "August",
+              "September",
+              "October",
+              "November",
+              "December",
+            ];
+            const currentMonth = monthNames[today.getMonth()];
+            const currentYear = today.getFullYear();
+
+            statusDiv.innerHTML = `<i class="fa fa-info-circle"></i> Showing all ${count} payments from current and previous month (Current month: ${currentMonth} ${currentYear})`;
+            statusDiv.className = "alert alert-info";
+            statusDiv.style.display = "block";
+          } else if (
+            currentFilterMode === "date_range" &&
+            currentDateRange.start &&
+            currentDateRange.end
+          ) {
+            // Check if the date range spans a single month
+            const startDate = new Date(currentDateRange.start);
+            const endDate = new Date(currentDateRange.end);
+            const monthNames = [
+              "January",
+              "February",
+              "March",
+              "April",
+              "May",
+              "June",
+              "July",
+              "August",
+              "September",
+              "October",
+              "November",
+              "December",
+            ];
+
+            if (
+              startDate.getMonth() === endDate.getMonth() &&
+              startDate.getFullYear() === endDate.getFullYear()
+            ) {
+              // Same month
+              const monthName = monthNames[startDate.getMonth()];
+              const year = startDate.getFullYear();
+              statusDiv.innerHTML = `<i class="fa fa-calendar"></i> Showing ${count} payments for ${monthName} ${year}`;
+            } else {
+              // Different months
+              statusDiv.innerHTML = `<i class="fa fa-calendar"></i> Showing ${count} payments from ${formatDateForDisplay(
+                currentDateRange.start
+              )} to ${formatDateForDisplay(currentDateRange.end)}`;
+            }
+            statusDiv.className = "alert alert-info";
+            statusDiv.style.display = "block";
+          } else {
+            statusDiv.style.display = "none";
+          }
+        }
+
+        // Format date for display
+        function formatDateForDisplay(dateString) {
+          const date = new Date(dateString);
+          return date.toLocaleDateString("en-GB");
+        }
+
+        async function fetchPayments(useAllData = true) {
+          showLoadingState();
+
+          // Debug: Check if token exists
+          if (!token) {
+            console.error("No authentication token found");
+            showErrorMessage(
+              "No authentication token found. Please log in again."
+            );
+            window.location.href = "login.html";
+            return;
+          }
+
+          let url;
+
+          if (useAllData) {
+            // Use the default endpoint for all payments
+            url = `${Endpoint}/api/v1/bookings/all/payments`;
+            currentFilterMode = "all";
+          } else {
+            // Use date range endpoint
+            const fromDate = document.getElementById("fromDate").value;
+            const toDate = document.getElementById("toDate").value;
+
+            if (!fromDate || !toDate) {
+              showErrorMessage("Please select both start and end dates");
+              return;
+            }
+
+            url = `${Endpoint}/api/v1/bookings/payments/date-range?start_date=${fromDate}&end_date=${toDate}`;
+            currentFilterMode = "date_range";
+            currentDateRange = { start: fromDate, end: toDate };
+          }
+
+          console.log("Loading payments from:", url);
+
+          try {
+            const response = await fetch(url, {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            console.log("Response status:", response.status);
+            console.log("Response ok:", response.ok);
+
+            if (!response.ok) {
+              if (response.status === 401) {
+                console.error("Authentication failed - 401 Unauthorized");
+                alert("Unauthorized. Please log in again.");
+                localStorage.removeItem("token");
+                localStorage.removeItem("role");
+                localStorage.removeItem("username");
+                window.location.href = "login.html";
+                return;
+              } else if (response.status === 403) {
+                console.error("Access forbidden - 403 Forbidden");
+                showErrorMessage(
+                  "You don't have permission to access payments."
+                );
+                return;
+              } else {
+                const errorText = await response.text();
+                console.error("Raw response data:", errorText);
+                throw new Error(
+                  `Failed to fetch payments. Status: ${response.status}`
+                );
+              }
+            }
+
+            const data = await response.json();
+            console.log("Payment data received:", data);
+
+            // Handle response - could be array or object with payments array
+            let paymentsArray = [];
+            if (Array.isArray(data)) {
+              paymentsArray = data;
+            } else if (data && data.payments) {
+              paymentsArray = data.payments;
+            } else if (data && data.data) {
+              paymentsArray = data.data;
+            }
+
+            allPayments = paymentsArray;
+            filteredPayments = [...allPayments];
+
+            updateFilterStatus(allPayments.length);
+            totalPages = Math.ceil(filteredPayments.length / rowsPerPage);
+            currentPage = 1;
+            renderPayments();
+            updatePaginationButtons();
+          } catch (error) {
+            console.error("Error fetching payments:", error);
+            showErrorMessage(`Error loading payments: ${error.message}`);
+
+            // Reset data on error
+            allPayments = [];
+            filteredPayments = [];
+            totalPages = 1;
+            currentPage = 1;
+            renderPayments();
+            updatePaginationButtons();
+          }
+        }
+
+        function formatToDDMMYYYY(dateString) {
+          const ddmmyyyyRegex = /^\d{2}-\d{2}-\d{4}$/;
+          if (ddmmyyyyRegex.test(dateString)) {
+            return dateString; // Return as-is if already in dd-mm-yyyy format
+          }
+
+          const dateParts = dateString.split("-");
+          if (dateParts.length === 3) {
+            const [year, month, day] = dateParts;
+            return `${day}-${month}-${year}`;
+          }
+          return null;
+        }
+
+        function formatToYYYYMMDD(dateString) {
+          // Check if the date is in dd-mm-yyyy format
+          const ddmmyyyyRegex = /^\d{2}-\d{2}-\d{4}$/;
+          if (ddmmyyyyRegex.test(dateString)) {
+            const [day, month, year] = dateString.split("-");
+            return `${year}-${month}-${day}`; // Convert to yyyy-mm-dd
+          }
+
+          // Assume the date is already in yyyy-mm-dd format
+          const yyyymmddRegex = /^\d{4}-\d{2}-\d{2}$/;
+          if (yyyymmddRegex.test(dateString)) {
+            return dateString;
+          }
+
+          // Return null for invalid formats
+          return null;
+        }
+
+        async function renderPayments() {
+          tableBody.innerHTML = "";
+
+          // Sort payments by start_date in descending order (latest first)
+          filteredPayments.sort((a, b) => {
+            const dateA = new Date(a.start_date);
+            const dateB = new Date(b.start_date);
+            return dateB - dateA; // Descending order
+          });
+
+          const start = (currentPage - 1) * rowsPerPage;
+          const end = Math.min(start + rowsPerPage, filteredPayments.length);
+
+          for (const payment of filteredPayments.slice(start, end)) {
+            let row = document.createElement("tr");
+
+            let formattedDate = payment.payment_date.startsWith("0001-01-01")
+              ? ""
+              : formatToDDMMYYYY(payment.payment_date.split("T")[0]);
+
+            let taxInvoiceDisabled = payment.balance > 0.0 ? "disabled" : "";
+            let taxInvoiceClass =
+              payment.balance > 0 ? "btn-secondary disabled" : "btn-success";
+
+            // Apply row color logic using existing payment data
+            const tripStartDate = new Date(payment.start_date);
+            const today = new Date();
+
+            if (tripStartDate < today && payment.balance > 0) {
+              row.style.backgroundColor = "#E74C3C"; // Red for overdue payments
+              row.style.color = "black";
+            } else if (payment.balance === 0) {
+              row.style.backgroundColor = "#A2D9A5"; // Green for fully paid
+              row.style.color = "black";
+            }
+
+            row.innerHTML = `
+                <td><a href="edit_booking.html?id=${
+                  payment.id
+                }" style="color: #007bff; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${
+              payment.id
+            }</a></td>
+                <td>${payment.agent_name}</td>
+                <td>${payment.booking_reference}</td>
+                <td>${formatToDDMMYYYY(payment.start_date.split("T")[0])}</td>
+                <td>${payment.final_cost.toFixed(2)}</td>
+                <td>${payment.received_amount.toFixed(2)}</td>
+                <td>${payment.balance.toFixed(2)}</td>
+                <td>${formattedDate}</td>
+                <td>${payment.payment_reference}</td>
+                <td>${payment.penalty_cost.toFixed(2)}</td>
+                <td>
+                    <button class="btn btn-outline-primary btn-sm edit-btn">
+                        <i class="fa fa-file-text"></i>
+                    </button>
+                </td>
+                <td>
+                    <button class="btn ${taxInvoiceClass} btn-sm print-btn" ${taxInvoiceDisabled}>
+                        <i class="fa fa-print"></i>
+                    </button>
+                </td>
+            `;
+
+            // Add an extra Update button for admin users
+            if (role === "admin") {
+              let updateTd = document.createElement("td");
+              let updateBtn = document.createElement("button");
+              updateBtn.className = "btn btn-primary btn-sm";
+              updateBtn.innerHTML = "✏️";
+              updateBtn.onclick = function () {
+                openEditModal(payment);
+              };
+              updateTd.appendChild(updateBtn);
+              row.appendChild(updateTd);
+            }
+
+            tableBody.appendChild(row);
+          }
+        }
+
+        function updatePaginationButtons() {
+          prevPageButton.disabled = currentPage === 1;
+          nextPageButton.disabled =
+            currentPage === totalPages || totalPages === 0;
+        }
+
+        function filterPayments() {
+          let searchTerm = searchBox.value.trim().toLowerCase();
+
+          // Apply search filter on already loaded data (client-side search)
+          filteredPayments = allPayments.filter((payment) => {
+            // Apply search filter on agent name, booking reference, payment reference, and trip ID.
+            const matchesSearch =
+              (payment.agent_name &&
+                payment.agent_name.toLowerCase().includes(searchTerm)) ||
+              (payment.booking_reference &&
+                payment.booking_reference.toLowerCase().includes(searchTerm)) ||
+              (payment.payment_reference &&
+                payment.payment_reference.toLowerCase().includes(searchTerm)) ||
+              (payment.id &&
+                payment.id.toString().toLowerCase().includes(searchTerm));
+
+            return matchesSearch;
+          });
+
+          currentPage = 1;
+          totalPages = Math.ceil(filteredPayments.length / rowsPerPage);
+          renderPayments();
+          updatePaginationButtons();
+        }
+
+        // Attach event listener for search input (client-side search)
+        searchBox.addEventListener("input", filterPayments);
+
+        rowsSelect.addEventListener("change", function () {
+          rowsPerPage =
+            this.value === "All"
+              ? filteredPayments.length
+              : parseInt(this.value, 10);
+          currentPage = 1;
+          totalPages = Math.ceil(filteredPayments.length / rowsPerPage);
+          renderPayments();
+          updatePaginationButtons();
+        });
+
+        prevPageButton.addEventListener("click", function () {
+          if (currentPage > 1) {
+            currentPage--;
+            renderPayments();
+            updatePaginationButtons();
+          }
+        });
+
+        nextPageButton.addEventListener("click", function () {
+          if (currentPage < totalPages) {
+            currentPage++;
+            renderPayments();
+            updatePaginationButtons();
+          }
+        });
+
+        async function openEditModal(payment) {
+          document.getElementById("editPaymentId").value = payment.id;
+          document.getElementById("editAgentName").value = payment.agent_name;
+          document.getElementById("editBookingReference").value =
+            payment.booking_reference;
+          document.getElementById("editFinalCost").value = payment.final_cost;
+          document.getElementById("editPenaltyCost").value =
+            payment.penalty_cost;
+          document.getElementById("editAmountPaid").value =
+            payment.received_amount;
+          document.getElementById("editBalance").value = payment.balance;
+          document.getElementById("editPaymentReference").value =
+            payment.payment_reference;
+
+          let penaltyCostInput = document.getElementById("editPenaltyCost");
+
+          try {
+            console.log(`Fetching trip details for payment ID: ${payment.id}`);
+            // Fetch trip details using payment.id to check status for penalty editing
+            const response = await fetch(
+              `${Endpoint}/api/v1/bookings/${payment.id}`,
+              {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error(
+                `Failed to fetch trip details. Status: ${response.status}`
+              );
+            }
+
+            const tripData = await response.json();
+            const tripStatus = (tripData.status || "").toLowerCase();
+
+            // Check trip status - only allow penalty editing for cancelled trips
+            if (tripStatus === "cancelled") {
+              penaltyCostInput.removeAttribute("readonly"); // Enable edit
+            } else {
+              penaltyCostInput.setAttribute("readonly", true); // Disable edit
+            }
+          } catch (error) {
+            console.error("Error fetching trip status:", error);
+            penaltyCostInput.setAttribute("readonly", true); // Default to disabled if API fails
+          }
+
+          $("#editPaymentModal").modal("show");
+        }
+
+        document
+          .getElementById("editAmountPaid")
+          .addEventListener("input", function () {
+            let finalCost = parseFloat(
+              document.getElementById("editFinalCost").value
+            );
+            let amountPaid =
+              parseFloat(document.getElementById("editAmountPaid").value) || 0;
+            let newBalance = finalCost - amountPaid;
+            document.getElementById("editBalance").value =
+              newBalance.toFixed(2);
+          });
+
+        document
+          .getElementById("savePaymentChanges")
+          .addEventListener("click", async function () {
+            let paymentId = document.getElementById("editPaymentId").value;
+            console.log(paymentId);
+            let updatedAmountPaid =
+              parseFloat(document.getElementById("editAmountPaid").value) || 0;
+            let updatedPaymentReference = document.getElementById(
+              "editPaymentReference"
+            ).value;
+            let updatedPenaltyCost = parseFloat(
+              document.getElementById("editPenaltyCost").value
+            );
+            let updatedBalance = parseFloat(
+              document.getElementById("editBalance").value
+            );
+
+            try {
+              const response = await fetch(
+                `${Endpoint}/api/v1/bookings/${paymentId}/payment`,
+                {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({
+                    received_amount: updatedAmountPaid,
+                    balance: updatedBalance,
+                    payment_reference: updatedPaymentReference,
+                  }),
+                }
+              );
+
+              if (!response.ok)
+                throw new Error(`HTTP error! Status: ${response.status}`);
+
+              $("#editPaymentModal").modal("hide");
+              fetchPayments(currentFilterMode === "all"); // Reload with current filter mode
+            } catch (error) {
+              console.error("Error updating payment:", error);
+              alert("Failed to update payment.");
+            }
+          });
+
+        // Initialize the page
+        initializePage();
+
+        // Load payments from API when the page is ready
+        fetchPayments();
+      });
+    </script>
+  </body>
+</html>

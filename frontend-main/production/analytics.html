@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Analytics Dashboard</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- Custom Theme Style -->
+    <link rel="stylesheet" href="../build/css/custom.min.css" />
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+      .analytics-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+
+      .kpi-card {
+        text-align: center;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+
+      .kpi-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      .kpi-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+      }
+
+      .period-selector {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .loading-spinner {
+        text-align: center;
+        padding: 50px;
+      }
+
+      .error-state {
+        text-align: center;
+        padding: 50px;
+        color: #dc3545;
+      }
+
+      /* Sidebar and navbar text size - match index.html */
+      .nav_title span,
+      .profile_info span,
+      .profile_info h2,
+      .side-menu a,
+      .navbar-right a {
+        font-size: 1rem;
+      }
+      /* Removed constraining CSS for sidebar-menu to allow proper submenu expansion */
+      /* Sidebar scrolling - allow scroll when expanded, but not when collapsed */
+      .left_col.scroll-view {
+        overflow-y: auto;
+        max-height: 100vh;
+      }
+
+      /* When sidebar is collapsed, remove height constraints to allow submenu expansion */
+      body.nav-sm .left_col.scroll-view {
+        overflow-y: visible;
+        max-height: none;
+      }
+    </style>
+  </head>
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+        <!-- Sidebar -->
+        <div class="col-md-3 left_col menu_fixed">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border: 0">
+              <a
+                href="index.html"
+                class="site_title"
+                style="
+                  display: block;
+                  text-align: center;
+                  font-size: 2rem;
+                  font-weight: bold;
+                  color: #007bff;
+                  text-decoration: none;
+                "
+              >
+                <span style="font-size: 1.5rem">VeraThailandia!</span>
+              </a>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- menu profile quick info -->
+            <div class="profile clearfix">
+              <div class="profile_pic">
+                <img
+                  src="images/verathailandlogo.png"
+                  alt="..."
+                  class="img-circle profile_img"
+                />
+              </div>
+              <div class="profile_info">
+                <span>Welcome,</span>
+                <h2 id="profileName">Guest</h2>
+              </div>
+            </div>
+            <!-- /menu profile quick info -->
+
+            <br />
+
+            <!-- sidebar menu -->
+            <div
+              id="sidebar-menu"
+              class="main_menu_side hidden-print main_menu"
+            >
+              <div class="menu_section">
+                <h3>General</h3>
+                <ul class="nav side-menu">
+                  <li>
+                    <a href="index.html"><i class="fa fa-home"></i> Home</a>
+                  </li>
+                  <li id="controlPanelMenu">
+                    <a
+                      ><i class="fa fa-edit"></i> Control-Panel
+                      <span class="fa fa-chevron-down"></span
+                    ></a>
+                    <ul class="nav child_menu">
+                      <li><a href="activities.html">Activities</a></li>
+                      <li><a href="agents.html">Agents</a></li>
+                      <li><a href="booking.html">Bookings</a></li>
+                      <li><a href="excursions.html">Excursions</a></li>
+                      <li><a href="hotels.html">Hotels</a></li>
+                      <li><a href="markup.html">Markups</a></li>
+                      <!-- <li><a href="operations.html">Operations</a></li> -->
+                      <li><a href="othercharges.html">Other Charges</a></li>
+                      <!-- <li><a href="stop_sale.html">Stop Sale</a></li> -->
+                      <li><a href="suppliers.html">Suppliers</a></li>
+                      <li><a href="tools.html">Tools</a></li>
+                      <li><a href="tours.html">Tours</a></li>
+                      <li><a href="transfers.html">Transfers</a></li>
+                      <li><a href="users.html">Users</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="trip.html"><i class="fa fa-book"></i> Quotation</a>
+                  </li>
+                  <li>
+                    <a href="payment.html"
+                      ><i class="fa fa-pencil-square-o"></i> Payment</a
+                    >
+                  </li>
+                  <!-- <li>
+                    <a href="tax_invoices.html"
+                      ><i class="fa fa-file-text-o"></i> Tax Invoices</a
+                    >
+                  </li> -->
+                  <li>
+                    <a href="itinerary.html"
+                      ><i class="fa fa-ticket"></i> Itinerary</a
+                    >
+                  </li>
+                  <li>
+                    <a href="analytics.html"
+                      ><i class="fa fa-bar-chart"></i> Analytics</a
+                    >
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- /sidebar menu -->
+
+            <!-- /menu footer buttons -->
+            <div class="sidebar-footer hidden-small">
+              <a data-toggle="tooltip" data-placement="top" title="Settings">
+                <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="FullScreen">
+                <span
+                  class="glyphicon glyphicon-fullscreen"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="Lock">
+                <span
+                  class="glyphicon glyphicon-eye-close"
+                  aria-hidden="true"
+                ></span>
+              </a>
+              <a
+                data-toggle="tooltip"
+                data-placement="top"
+                title="Logout"
+                href="logout.html"
+              >
+                <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+              </a>
+            </div>
+            <!-- /menu footer buttons -->
+          </div>
+        </div>
+
+        <!-- top navigation -->
+        <div class="top_nav">
+          <div class="nav_menu">
+            <div class="nav toggle">
+              <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+            </div>
+            <nav class="nav navbar-nav">
+              <ul class="navbar-right">
+                <li class="nav-item dropdown open" style="padding-left: 15px">
+                  <a
+                    href="javascript:;"
+                    class="user-profile dropdown-toggle"
+                    aria-haspopup="true"
+                    id="navbarDropdown"
+                    data-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    <img
+                      id="navProfileImage"
+                      src="images/verathailandlogo.png"
+                      alt=""
+                    />
+                    <span id="navProfileName">Guest</span>
+                  </a>
+                  <div
+                    class="dropdown-menu dropdown-usermenu pull-right"
+                    aria-labelledby="navbarDropdown"
+                  >
+                    <a class="dropdown-item" href="profile.html"
+                      ><i class="fa fa-user pull-right"></i> Profile</a
+                    >
+                    <a class="dropdown-item" href="logout.html"
+                      ><i class="fa fa-sign-out pull-right"></i> Log Out</a
+                    >
+                  </div>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+        <!-- /top navigation -->
+
+        <!-- Page content -->
+        <div class="right_col" role="main">
+          <!-- Page Header -->
+          <div class="page-title">
+            <div class="title_left">
+              <h3>Analytics Dashboard</h3>
+            </div>
+            <div class="title_right">
+              <div class="form-group pull-right">
+                <button type="button" class="btn btn-primary" id="refreshBtn">
+                  <i class="fa fa-refresh"></i> Refresh Data
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="clearfix"></div>
+
+          <!-- Period Selector -->
+          <div class="period-selector">
+            <div class="row">
+              <div class="col-md-2">
+                <label>Period Type:</label>
+                <select id="periodTypeSelect" class="form-control">
+                  <option value="month">Single Month</option>
+                  <option value="quarter">Quarter</option>
+                  <option value="half">Half Year</option>
+                  <option value="year">Full Year</option>
+                  <option value="custom">Custom Range</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label>Year:</label>
+                <select id="yearSelect" class="form-control">
+                  <option value="2024">2024</option>
+                  <option value="2025">2025</option>
+                  <option value="2026">2026</option>
+                </select>
+              </div>
+              <div class="col-md-2" id="monthSelectorDiv">
+                <label>Month:</label>
+                <select id="monthSelect" class="form-control">
+                  <option value="1">January</option>
+                  <option value="2">February</option>
+                  <option value="3">March</option>
+                  <option value="4">April</option>
+                  <option value="5">May</option>
+                  <option value="6">June</option>
+                  <option value="7">July</option>
+                  <option value="8">August</option>
+                  <option value="9">September</option>
+                  <option value="10">October</option>
+                  <option value="11">November</option>
+                  <option value="12">December</option>
+                </select>
+              </div>
+              <div
+                class="col-md-2"
+                id="quarterSelectorDiv"
+                style="display: none"
+              >
+                <label>Quarter:</label>
+                <select id="quarterSelect" class="form-control">
+                  <option value="q1">Q1 (Jan-Mar)</option>
+                  <option value="q2">Q2 (Apr-Jun)</option>
+                  <option value="q3">Q3 (Jul-Sep)</option>
+                  <option value="q4">Q4 (Oct-Dec)</option>
+                </select>
+              </div>
+              <div class="col-md-2" id="halfSelectorDiv" style="display: none">
+                <label>Half Year:</label>
+                <select id="halfSelect" class="form-control">
+                  <option value="h1">H1 (Jan-Jun)</option>
+                  <option value="h2">H2 (Jul-Dec)</option>
+                </select>
+              </div>
+              <div class="col-md-4" id="customRangeDiv" style="display: none">
+                <div class="row">
+                  <div class="col-md-6">
+                    <label>From Month:</label>
+                    <select id="startMonthSelect" class="form-control">
+                      <option value="1">January</option>
+                      <option value="2">February</option>
+                      <option value="3">March</option>
+                      <option value="4">April</option>
+                      <option value="5">May</option>
+                      <option value="6">June</option>
+                      <option value="7">July</option>
+                      <option value="8">August</option>
+                      <option value="9">September</option>
+                      <option value="10">October</option>
+                      <option value="11">November</option>
+                      <option value="12">December</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label>To Month:</label>
+                    <select id="endMonthSelect" class="form-control">
+                      <option value="1">January</option>
+                      <option value="2">February</option>
+                      <option value="3">March</option>
+                      <option value="4">April</option>
+                      <option value="5">May</option>
+                      <option value="6">June</option>
+                      <option value="7">July</option>
+                      <option value="8">August</option>
+                      <option value="9">September</option>
+                      <option value="10">October</option>
+                      <option value="11">November</option>
+                      <option value="12">December</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-2" id="agentSelectorDiv" style="display: none">
+                <label>Agent:</label>
+                <select id="agentSelect" class="form-control">
+                  <option value="">All Agents</option>
+                </select>
+              </div>
+              <div class="col-md-12" style="margin-top: 10px">
+                <div id="statusDiv"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading State -->
+          <div id="loadingDiv" class="loading-spinner" style="display: none">
+            <i class="fa fa-spinner fa-spin fa-3x"></i>
+            <p>Loading analytics data...</p>
+          </div>
+
+          <!-- Error State -->
+          <div id="errorDiv" class="error-state" style="display: none">
+            <i class="fa fa-exclamation-triangle fa-3x"></i>
+            <h4>Error Loading Analytics</h4>
+            <p id="errorMsg"></p>
+            <button class="btn btn-primary" id="retryBtn">Retry</button>
+          </div>
+
+          <!-- Main Analytics Content -->
+          <div id="analyticsDiv" style="display: none">
+            <!-- Sales Performance KPIs -->
+            <div class="row">
+              <div class="col-md-12">
+                <h4><i class="fa fa-bar-chart"></i> Sales Performance</h4>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-2">
+                <div
+                  class="kpi-card"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      #4f83cc 0%,
+                      #3a6ba5 100%
+                    );
+                  "
+                >
+                  <div class="kpi-value" id="totalQuotations">-</div>
+                  <div class="kpi-label">
+                    Total Quotations
+                    <i
+                      class="fa fa-eye"
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      title="Total number of quotations created in the selected period"
+                      style="margin-left: 5px; cursor: pointer; opacity: 0.7"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div
+                  class="kpi-card"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      #28a745 0%,
+                      #1e7e34 100%
+                    );
+                  "
+                >
+                  <div class="kpi-value" id="convertedBookings">-</div>
+                  <div class="kpi-label">
+                    Confirmed Bookings
+                    <i
+                      class="fa fa-eye"
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      title="Number of quotations that were successfully converted to confirmed bookings"
+                      style="margin-left: 5px; cursor: pointer; opacity: 0.7"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div
+                  class="kpi-card"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      #20c997 0%,
+                      #17a2b8 100%
+                    );
+                  "
+                >
+                  <div class="kpi-value" id="conversionRate">-</div>
+                  <div class="kpi-label">
+                    Conversion Rate
+                    <i
+                      class="fa fa-eye"
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      title="Percentage of quotations that resulted in confirmed bookings (Converted Bookings / Total Quotations)"
+                      style="margin-left: 5px; cursor: pointer; opacity: 0.7"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div
+                  class="kpi-card"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      #ffc107 0%,
+                      #e0a800 100%
+                    );
+                  "
+                >
+                  <div class="kpi-value" id="averageDealSize">-</div>
+                  <div class="kpi-label">
+                    Average Deal Size
+                    <i
+                      class="fa fa-eye"
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      title="Average monetary value of completed bookings (Total Revenue / Number of Bookings)"
+                      style="margin-left: 5px; cursor: pointer; opacity: 0.7"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div
+                  class="kpi-card"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      #17a2b8 0%,
+                      #138496 100%
+                    );
+                  "
+                >
+                  <div class="kpi-value" id="quoteToClose">-</div>
+                  <div class="kpi-label">
+                    Avg Close Time (days)
+                    <i
+                      class="fa fa-eye"
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      title="Average number of days from quotation creation to booking confirmation"
+                      style="margin-left: 5px; cursor: pointer; opacity: 0.7"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div
+                  class="kpi-card"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      #28a745 0%,
+                      #20c997 100%
+                    );
+                  "
+                >
+                  <div class="kpi-value" id="winRate">-</div>
+                  <div class="kpi-label">
+                    Win Rate
+                    <i
+                      class="fa fa-eye"
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      title="Percentage of successful bookings excluding declined or cancelled quotations"
+                      style="margin-left: 5px; cursor: pointer; opacity: 0.7"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Revenue & Efficiency KPIs -->
+            <div class="row">
+              <div class="col-md-12">
+                <h4><i class="fa fa-money"></i> Revenue & Efficiency</h4>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-3">
+                <div
+                  class="kpi-card"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      #28a745 0%,
+                      #155724 100%
+                    );
+                  "
+                >
+                  <div class="kpi-value" id="monthlyRevenue">-</div>
+                  <div class="kpi-label">
+                    Monthly Revenue
+                    <i
+                      class="fa fa-eye"
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      title="Total revenue generated from confirmed bookings in the selected month"
+                      style="margin-left: 5px; cursor: pointer; opacity: 0.7"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div
+                  class="kpi-card"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      #17a2b8 0%,
+                      #11707c 100%
+                    );
+                  "
+                >
+                  <div class="kpi-value" id="collectionRate">-</div>
+                  <div class="kpi-label">
+                    Collection Rate
+                    <i
+                      class="fa fa-eye"
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      title="Percentage of invoiced amount that has been collected (Collected Amount / Total Invoiced)"
+                      style="margin-left: 5px; cursor: pointer; opacity: 0.7"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div
+                  class="kpi-card"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      #4f83cc 0%,
+                      #2c5aa0 100%
+                    );
+                  "
+                >
+                  <div class="kpi-value" id="agentProductivity">-</div>
+                  <div class="kpi-label">
+                    Quotations Per Week
+                    <i
+                      class="fa fa-eye"
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      title="Average number of quotations created per week by the agent"
+                      style="margin-left: 5px; cursor: pointer; opacity: 0.7"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div
+                  class="kpi-card"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      #fd7e14 0%,
+                      #dc5502 100%
+                    );
+                  "
+                >
+                  <div class="kpi-value" id="outstandingAmount">-</div>
+                  <div class="kpi-label">
+                    Outstanding Amount
+                    <i
+                      class="fa fa-eye"
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      title="Total amount that is invoiced but not yet collected from customers"
+                      style="margin-left: 5px; cursor: pointer; opacity: 0.7"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Customer Analytics KPIs -->
+            <div class="row">
+              <div class="col-md-12">
+                <h4><i class="fa fa-users"></i> Customer Analytics</h4>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-3">
+                <div
+                  class="kpi-card"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      #6f42c1 0%,
+                      #5a2d91 100%
+                    );
+                  "
+                >
+                  <div class="kpi-value" id="repeatCustomerRate">-</div>
+                  <div class="kpi-label">
+                    Repeat Customer Rate
+                    <i
+                      class="fa fa-eye"
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      title="Percentage of customers who have made multiple bookings with us"
+                      style="margin-left: 5px; cursor: pointer; opacity: 0.7"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div
+                  class="kpi-card"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      #7b68ee 0%,
+                      #6a5acd 100%
+                    );
+                  "
+                >
+                  <div class="kpi-value" id="uniqueCustomers">-</div>
+                  <div class="kpi-label">
+                    Total Unique Clients
+                    <i
+                      class="fa fa-eye"
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      title="Total number of unique customers who received quotations in this period"
+                      style="margin-left: 5px; cursor: pointer; opacity: 0.7"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div
+                  class="kpi-card"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      #ffc107 0%,
+                      #d39e00 100%
+                    );
+                  "
+                >
+                  <div class="kpi-value" id="highValueBookings">-</div>
+                  <div class="kpi-label">
+                    High Value Bookings
+                    <i
+                      class="fa fa-eye"
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      title="Number of bookings with value above the high-value threshold"
+                      style="margin-left: 5px; cursor: pointer; opacity: 0.7"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div
+                  class="kpi-card"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      #fd7e14 0%,
+                      #e55a00 100%
+                    );
+                  "
+                >
+                  <div class="kpi-value" id="mediumValueBookings">-</div>
+                  <div class="kpi-label">
+                    Medium Value Bookings
+                    <i
+                      class="fa fa-eye"
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      title="Number of bookings with medium value range"
+                      style="margin-left: 5px; cursor: pointer; opacity: 0.7"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Monthly Trends Chart -->
+            <div class="row">
+              <div class="col-md-12">
+                <div class="analytics-card">
+                  <div class="row">
+                    <div class="col-md-8">
+                      <h4><i class="fa fa-line-chart"></i> Monthly Trends</h4>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-group">
+                        <label>Metric:</label>
+                        <select id="trendMetricSelect" class="form-control">
+                          <option value="quotations">Quotations</option>
+                          <option value="revenue">Revenue</option>
+                          <option value="conversions">Bookings</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="height: 400px; position: relative">
+                    <canvas id="trendsChart"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /Page content -->
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+
+    <script>
+      // Global variables
+      var analyticsData = null;
+      var currentAgentId = null;
+      var currentRole = null;
+      var agentsList = [];
+      var trendsChart = null;
+
+      // Initialize page
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("Analytics page loaded");
+
+        // Check authentication
+        var token = localStorage.getItem("token");
+        var role = localStorage.getItem("role");
+        var agentId = localStorage.getItem("agent_id");
+        var username = localStorage.getItem("username") || "Guest";
+
+        console.log("Auth info:", {
+          token: token ? "present" : "missing",
+          role: role,
+          username: username,
+        });
+
+        if (!token) {
+          alert("Please login first");
+          window.location.href = "login.html";
+          return;
+        }
+
+        currentRole = role;
+        currentAgentId = agentId;
+
+        // Set profile
+        document.getElementById("profileName").textContent = username;
+        document.getElementById("navProfileName").textContent = username;
+
+        // Show/hide agent selector based on role
+        if (role === "admin" || role === "superadmin") {
+          document.getElementById("agentSelectorDiv").style.display = "block";
+          loadAgents(); // Load all agents for admin and superadmin
+        } else {
+          // For non-admin/superadmin, set fixed agent
+          currentAgentId = agentId;
+        }
+
+        // Hide control panel for non-admin or superadmin
+        if (role !== "admin" && role !== "superadmin") {
+          var controlPanel = document.getElementById("controlPanelMenu");
+          if (controlPanel) {
+            controlPanel.style.display = "none";
+          }
+        }
+
+        // Set current date
+        var now = new Date();
+        document.getElementById("yearSelect").value = now.getFullYear();
+        document.getElementById("monthSelect").value = now.getMonth() + 1;
+
+        // Add event listeners
+        document
+          .getElementById("refreshBtn")
+          .addEventListener("click", loadData);
+        document.getElementById("retryBtn").addEventListener("click", loadData);
+        document
+          .getElementById("yearSelect")
+          .addEventListener("change", loadData);
+        document
+          .getElementById("monthSelect")
+          .addEventListener("change", loadData);
+        document
+          .getElementById("periodTypeSelect")
+          .addEventListener("change", function () {
+            handlePeriodTypeChange();
+            loadData();
+          });
+        document
+          .getElementById("quarterSelect")
+          .addEventListener("change", loadData);
+        document
+          .getElementById("halfSelect")
+          .addEventListener("change", loadData);
+        document
+          .getElementById("startMonthSelect")
+          .addEventListener("change", loadData);
+        document
+          .getElementById("endMonthSelect")
+          .addEventListener("change", loadData);
+        document
+          .getElementById("agentSelect")
+          .addEventListener("change", function () {
+            currentAgentId = this.value === "0" ? "0" : this.value || null;
+            loadData();
+          });
+        document
+          .getElementById("trendMetricSelect")
+          .addEventListener("change", function () {
+            loadTrendsData();
+          });
+
+        // Initialize tooltips
+        if (typeof $ !== "undefined") {
+          $('[data-toggle="tooltip"]').tooltip();
+        }
+
+        // Initialize period type UI
+        handlePeriodTypeChange();
+
+        // Load initial data
+        loadData();
+        loadTrendsData();
+      });
+
+      // Handle period type changes
+      function handlePeriodTypeChange() {
+        var periodType = document.getElementById("periodTypeSelect").value;
+
+        // Hide all selector divs first
+        document.getElementById("monthSelectorDiv").style.display = "none";
+        document.getElementById("quarterSelectorDiv").style.display = "none";
+        document.getElementById("halfSelectorDiv").style.display = "none";
+        document.getElementById("customRangeDiv").style.display = "none";
+
+        // Show relevant selector based on period type
+        switch (periodType) {
+          case "month":
+            document.getElementById("monthSelectorDiv").style.display = "block";
+            break;
+          case "quarter":
+            document.getElementById("quarterSelectorDiv").style.display =
+              "block";
+            break;
+          case "half":
+            document.getElementById("halfSelectorDiv").style.display = "block";
+            break;
+          case "year":
+            // No additional selector needed for full year
+            break;
+          case "custom":
+            document.getElementById("customRangeDiv").style.display = "block";
+            // Set default range to current quarter
+            var currentMonth = new Date().getMonth() + 1;
+            var startMonth = Math.floor((currentMonth - 1) / 3) * 3 + 1;
+            var endMonth = startMonth + 2;
+            document.getElementById("startMonthSelect").value = startMonth;
+            document.getElementById("endMonthSelect").value = endMonth;
+            break;
+        }
+      }
+
+      // Get period parameters for API call
+      function getPeriodParams() {
+        var periodType = document.getElementById("periodTypeSelect").value;
+        var year = document.getElementById("yearSelect").value;
+        var params = { year: year };
+
+        switch (periodType) {
+          case "month":
+            params.month = document.getElementById("monthSelect").value;
+            break;
+          case "quarter":
+            var quarter = document.getElementById("quarterSelect").value;
+            var quarters = {
+              q1: { startMonth: 1, endMonth: 3 },
+              q2: { startMonth: 4, endMonth: 6 },
+              q3: { startMonth: 7, endMonth: 9 },
+              q4: { startMonth: 10, endMonth: 12 },
+            };
+            params.startMonth = quarters[quarter].startMonth;
+            params.endMonth = quarters[quarter].endMonth;
+            break;
+          case "half":
+            var half = document.getElementById("halfSelect").value;
+            var halves = {
+              h1: { startMonth: 1, endMonth: 6 },
+              h2: { startMonth: 7, endMonth: 12 },
+            };
+            params.startMonth = halves[half].startMonth;
+            params.endMonth = halves[half].endMonth;
+            break;
+          case "year":
+            // No additional params needed for full year
+            break;
+          case "custom":
+            params.startMonth = parseInt(
+              document.getElementById("startMonthSelect").value
+            );
+            params.endMonth = parseInt(
+              document.getElementById("endMonthSelect").value
+            );
+            break;
+        }
+
+        return params;
+      }
+
+      // Build API URL based on period type
+      function buildApiUrl(endpoint, params) {
+        var baseUrl = Endpoint + "/api/v1/analytics/" + endpoint;
+
+        if (params.month) {
+          // Single month
+          var url = baseUrl + "?year=" + params.year + "&month=" + params.month;
+        } else if (params.startMonth && params.endMonth) {
+          // Date range
+          var url =
+            baseUrl +
+            "/range?year=" +
+            params.year +
+            "&start_month=" +
+            params.startMonth +
+            "&end_month=" +
+            params.endMonth;
+        } else {
+          // Full year
+          var url = baseUrl + "/year?year=" + params.year;
+        }
+
+        if (currentAgentId !== null) {
+          url += "&agent_id=" + currentAgentId;
+        }
+
+        return url;
+      }
+
+      // Get period display text
+      function getPeriodDisplayText(data) {
+        if (data.sales && data.sales.period) {
+          return data.sales.period;
+        } else if (data.period) {
+          return data.period;
+        } else if (data.sales && data.sales.month > 0) {
+          var monthNames = [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ];
+          return monthNames[data.sales.month - 1] + " " + data.sales.year;
+        } else {
+          return document.getElementById("yearSelect").value;
+        }
+      }
+
+      // Load agents list for admin
+      function loadAgents() {
+        var token = localStorage.getItem("token");
+
+        fetch(Endpoint + "/api/v1/agents/names", {
+          method: "GET",
+          headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json",
+          },
+        })
+          .then(function (response) {
+            if (!response.ok) {
+              throw new Error("Failed to load agents");
+            }
+            return response.json();
+          })
+          .then(function (data) {
+            agentsList = data.agents || data || [];
+            populateAgentDropdown();
+          })
+          .catch(function (error) {
+            console.error("Error loading agents:", error);
+            // Continue without agent dropdown
+          });
+      }
+
+      // Populate agent dropdown
+      function populateAgentDropdown() {
+        var agentSelect = document.getElementById("agentSelect");
+        agentSelect.innerHTML = '<option value="0">All Agents</option>';
+
+        agentsList.forEach(function (agent) {
+          var option = document.createElement("option");
+          option.value = agent.id;
+          option.textContent = agent.name;
+          agentSelect.appendChild(option);
+        });
+      }
+
+      // Load analytics data
+      function loadData() {
+        console.log("Loading analytics data...");
+        showLoading();
+
+        var periodParams = getPeriodParams();
+        var token = localStorage.getItem("token");
+
+        console.log("Parameters:", periodParams, "Agent ID:", currentAgentId);
+
+        if (!Endpoint) {
+          console.error("Endpoint not defined");
+          showError("Configuration error: Endpoint not defined");
+          return;
+        }
+
+        var url = buildApiUrl("dashboard", periodParams);
+
+        console.log("Making request to:", url);
+
+        fetch(url, {
+          method: "GET",
+          headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json",
+          },
+        })
+          .then(function (response) {
+            console.log("Response status:", response.status);
+            if (!response.ok) {
+              throw new Error(
+                "HTTP " + response.status + ": " + response.statusText
+              );
+            }
+            return response.json();
+          })
+          .then(function (data) {
+            console.log("Analytics data received:", data);
+            analyticsData = data;
+            updateUI();
+            showContent();
+          })
+          .catch(function (error) {
+            console.error("Error loading analytics:", error);
+            showError("Failed to load analytics: " + error.message);
+          });
+      }
+
+      // Update UI with data
+      function updateUI() {
+        if (!analyticsData) return;
+
+        console.log("Updating UI with data:", analyticsData);
+
+        // Get data sections from actual API response structure
+        var responseData = analyticsData.data || analyticsData;
+        var sales = responseData.sales || {};
+        var revenue = responseData.revenue || {};
+        var efficiency = responseData.efficiency || {};
+        var customers = responseData.customers || {};
+
+        // Update Sales Performance
+        setValue("totalQuotations", sales.total_quotations || 0);
+        setValue("convertedBookings", sales.approved_bookings || 0);
+        setValue(
+          "conversionRate",
+          (sales.conversion_rate || 0).toFixed(1) + "%"
+        );
+        setValue(
+          "averageDealSize",
+          formatCurrency(sales.average_deal_size || 0)
+        );
+        setValue(
+          "quoteToClose",
+          (sales.avg_quote_to_close_days || 0).toFixed(1)
+        );
+        setValue(
+          "winRate",
+          (efficiency.win_rate_percent || 0).toFixed(1) + "%"
+        );
+
+        // Update Revenue & Efficiency
+        setValue(
+          "monthlyRevenue",
+          formatCurrency(revenue.monthly_revenue || 0)
+        );
+        setValue(
+          "collectionRate",
+          (revenue.payment_collection_rate || 0).toFixed(1) + "%"
+        );
+        setValue(
+          "agentProductivity",
+          (efficiency.quotations_per_week || 0).toFixed(2)
+        );
+        setValue(
+          "outstandingAmount",
+          formatCurrency(revenue.outstanding_amount || 0)
+        );
+
+        // Update Customer Analytics
+        setValue(
+          "repeatCustomerRate",
+          (customers.repeat_customer_rate || 0).toFixed(1) + "%"
+        );
+        setValue("uniqueCustomers", customers.total_unique_clients || 0);
+        setValue("highValueBookings", customers.high_value_bookings || 0);
+        setValue("mediumValueBookings", customers.medium_value_bookings || 0);
+
+        // Update status
+        var status = "Data loaded successfully";
+
+        // Show period information
+        var periodText = getPeriodDisplayText(analyticsData);
+        if (periodText) {
+          status += " - Period: " + periodText;
+        }
+
+        // Show agent name if available
+        var agentName = responseData.agent_name || analyticsData.agent_name;
+        if (agentName) {
+          status += " - Agent: " + agentName;
+        }
+
+        document.getElementById("statusDiv").innerHTML =
+          '<small class="text-muted">' + status + "</small>";
+      }
+
+      // Utility functions
+      function setValue(elementId, value) {
+        var element = document.getElementById(elementId);
+        if (element) {
+          element.textContent = value;
+        }
+      }
+
+      function formatCurrency(amount) {
+        if (amount >= 1000000) {
+          return "฿" + (amount / 1000000).toFixed(1) + "M";
+        } else if (amount >= 1000) {
+          return "฿" + (amount / 1000).toFixed(1) + "K";
+        }
+        return "฿" + amount.toLocaleString();
+      }
+
+      function showLoading() {
+        document.getElementById("loadingDiv").style.display = "block";
+        document.getElementById("analyticsDiv").style.display = "none";
+        document.getElementById("errorDiv").style.display = "none";
+      }
+
+      function showContent() {
+        document.getElementById("loadingDiv").style.display = "none";
+        document.getElementById("analyticsDiv").style.display = "block";
+        document.getElementById("errorDiv").style.display = "none";
+      }
+
+      function showError(message) {
+        document.getElementById("loadingDiv").style.display = "none";
+        document.getElementById("analyticsDiv").style.display = "none";
+        document.getElementById("errorDiv").style.display = "block";
+        document.getElementById("errorMsg").textContent = message;
+      }
+
+      // Load trends data
+      function loadTrendsData() {
+        var token = localStorage.getItem("token");
+        var metricType = document.getElementById("trendMetricSelect").value;
+
+        if (!Endpoint) {
+          console.error("Endpoint not defined");
+          return;
+        }
+
+        // For trends, we always use 12 months regardless of current period selection
+        var url =
+          Endpoint +
+          "/api/v1/analytics/trends?metric_type=" +
+          metricType +
+          "&months=12";
+        if (currentAgentId !== null) {
+          url += "&agent_id=" + currentAgentId;
+        }
+
+        console.log("Loading trends data:", url);
+
+        fetch(url, {
+          method: "GET",
+          headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json",
+          },
+        })
+          .then(function (response) {
+            if (!response.ok) {
+              throw new Error(
+                "HTTP " + response.status + ": " + response.statusText
+              );
+            }
+            return response.json();
+          })
+          .then(function (data) {
+            console.log("Trends data received:", data);
+            renderTrendsChart(data.data || data, metricType);
+          })
+          .catch(function (error) {
+            console.error("Error loading trends:", error);
+            // Clear chart on error
+            if (trendsChart) {
+              trendsChart.destroy();
+              trendsChart = null;
+            }
+          });
+      }
+
+      // Render trends chart
+      function renderTrendsChart(trendsData, metricType) {
+        var ctx = document.getElementById("trendsChart").getContext("2d");
+
+        // Destroy existing chart
+        if (trendsChart) {
+          trendsChart.destroy();
+        }
+
+        if (!trendsData || trendsData.length === 0) {
+          ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+          ctx.font = "16px Arial";
+          ctx.fillStyle = "#999";
+          ctx.textAlign = "center";
+          ctx.fillText(
+            "No trends data available",
+            ctx.canvas.width / 2,
+            ctx.canvas.height / 2
+          );
+          return;
+        }
+
+        // Process data for chart
+        var labels = [];
+        var values = [];
+        var backgroundColor = [];
+        var borderColor = [];
+
+        trendsData.forEach(function (item) {
+          // Create month-year label
+          var monthNames = [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ];
+          var label = monthNames[item.month - 1] + " " + item.year;
+          labels.push(label);
+          values.push(item.value || 0);
+
+          // Color based on metric type - match KPI card colors exactly
+          if (metricType === "revenue") {
+            // Match Monthly Revenue card: #28a745
+            backgroundColor.push("rgba(40, 167, 69, 0.7)");
+            borderColor.push("rgba(40, 167, 69, 1)");
+          } else if (metricType === "conversions") {
+            // Match Converted Bookings card: #28a745
+            backgroundColor.push("rgba(40, 167, 69, 0.7)");
+            borderColor.push("rgba(40, 167, 69, 1)");
+          } else {
+            // Match Total Quotations card: #4f83cc
+            backgroundColor.push("rgba(79, 131, 204, 0.7)");
+            borderColor.push("rgba(79, 131, 204, 1)");
+          }
+        });
+
+        // Create chart
+        trendsChart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: getMetricLabel(metricType),
+                data: values,
+                backgroundColor: backgroundColor,
+                borderColor: borderColor,
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false,
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function (value) {
+                    if (metricType === "revenue") {
+                      return formatCurrency(value);
+                    }
+                    return value;
+                  },
+                },
+              },
+              x: {
+                ticks: {
+                  maxRotation: 45,
+                  minRotation: 45,
+                },
+              },
+            },
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    var label = getMetricLabel(metricType) + ": ";
+                    if (metricType === "revenue") {
+                      label += formatCurrency(context.parsed.y);
+                    } else {
+                      label += context.parsed.y;
+                    }
+                    return label;
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
+
+      // Get metric label for display
+      function getMetricLabel(metricType) {
+        switch (metricType) {
+          case "revenue":
+            return "Revenue";
+          case "conversions":
+            return "Bookings";
+          case "quotations":
+            return "Quotations";
+          default:
+            return metricType;
+        }
+      }
+    </script>
+  </body>
+</html>
