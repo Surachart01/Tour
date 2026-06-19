@@ -329,11 +329,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Populate supplier form fields
 function populateSupplierForm(supplier) {
-  document.getElementById("supplierName").value = supplier.name;
-  document.getElementById("supplierDescription").value = supplier.description;
-  document.getElementById("supplierEmail").value = supplier.email;
-  document.getElementById("supplierTelephone").value = supplier.telephone;
-  document.getElementById("supplierLocation").value = supplier.location;
+  document.getElementById("supplierName").value = supplier.name || '';
+  document.getElementById("supplierDescription").value = supplier.description || '';
+  document.getElementById("supplierEmail").value = supplier.email || '';
+  document.getElementById("supplierTelephone").value = supplier.telephone || '';
+  document.getElementById("supplierLocation").value = supplier.location || '';
 
   // Set country if available - handle both country name and country code
   if (supplier.country) {
@@ -354,16 +354,16 @@ function populateSupplierForm(supplier) {
   }
 
   document.getElementById("supplierTransfers").checked =
-    supplier.offers_transfers;
+    supplier.offers_transfers || false;
   document.getElementById("supplierExcursions").checked =
-    supplier.offers_excursions;
-  document.getElementById("supplierTours").checked = supplier.offers_tours;
+    supplier.offers_excursions || false;
+  document.getElementById("supplierTours").checked = supplier.offers_tours || false;
 
   // Populate deadline fields
   document.getElementById("cancellationAllowedBeforeDays").value =
-    supplier.cancellation_allowed_before_days !== undefined ? supplier.cancellation_allowed_before_days : 1;
+    supplier.cancellation_allowed_before_days !== undefined && supplier.cancellation_allowed_before_days !== null ? supplier.cancellation_allowed_before_days : 1;
   document.getElementById("paymentDeadlineBeforeDays").value =
-    supplier.payment_deadline_before_days !== undefined ? supplier.payment_deadline_before_days : 1;
+    supplier.payment_deadline_before_days !== undefined && supplier.payment_deadline_before_days !== null ? supplier.payment_deadline_before_days : 1;
 
   // Initialize policy preview
   updatePolicyPreview();
@@ -374,14 +374,19 @@ function populateExcursions(excursions) {
   const excursionsTableBody = document.getElementById("excursionsTableBody");
   excursionsTableBody.innerHTML = "";
 
+  if (!excursions || excursions.length === 0) {
+    excursionsTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#7f8c8d;font-style:italic;padding:30px;"><i class="fas fa-info-circle" style="margin-right:8px;"></i>No excursions found for this supplier.</td></tr>`;
+    return;
+  }
+
   excursions.forEach((excursion) => {
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td>${excursion.name}</td>
-      <td>${excursion.city}</td>
-      <td>${excursion.description}</td>
-      <td>${excursion.sic_price_adult}</td>
-      <td>${excursion.sic_price_child}</td>
+      <td>${excursion.name || ''}</td>
+      <td>${excursion.city || ''}</td>
+      <td>${excursion.description || ''}</td>
+      <td>${excursion.sic_price_adult ?? 0}</td>
+      <td>${excursion.sic_price_child ?? 0}</td>
       <td>
         <button
           class="btn btn-primary btn-sm"
@@ -401,14 +406,19 @@ function populateTransfers(transfers) {
   const transfersTableBody = document.getElementById("transfersTableBody");
   transfersTableBody.innerHTML = "";
 
+  if (!transfers || transfers.length === 0) {
+    transfersTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#7f8c8d;font-style:italic;padding:30px;"><i class="fas fa-info-circle" style="margin-right:8px;"></i>No transfers found for this supplier.</td></tr>`;
+    return;
+  }
+
   transfers.forEach((transfer) => {
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td>${transfer.transfer_type}</td>
-      <td>${transfer.city}</td>
-      <td>${transfer.description}</td>
-      <td>${transfer.departure}</td>
-      <td>${transfer.arrival}</td>
+      <td>${transfer.transfer_type || ''}</td>
+      <td>${transfer.city || ''}</td>
+      <td>${transfer.description || ''}</td>
+      <td>${transfer.departure || ''}</td>
+      <td>${transfer.arrival || ''}</td>
       <td>
         <button
           class="btn btn-primary btn-sm"

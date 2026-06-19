@@ -1,7 +1,7 @@
 import prisma from '../config/db.js';
-import { calculateHotelCostLogic } from '../utils/pricing.js';
+import { calculateHotelCostLogic, calculateMarkupRoomType } from '../utils/pricing.js';
 
-export function formatHotelResponse(hotel) {
+export function formatHotelResponse(hotel, markupGroup = '', markups = []) {
   if (!hotel) return null;
   const fees = hotel.hotel_fees && hotel.hotel_fees[0] ? hotel.hotel_fees[0] : {};
   
@@ -16,33 +16,40 @@ export function formatHotelResponse(hotel) {
     fax: c.fax
   }));
 
-  const roomTypes = (hotel.room_types || []).map(rt => ({
-    key: rt.id,
-    id: rt.id,
-    name: rt.name,
-    roomType: rt.name,
-    fromDate: rt.start_date ? rt.start_date.toISOString().split('T')[0] : '',
-    toDate: rt.end_date ? rt.end_date.toISOString().split('T')[0] : '',
-    start_date: rt.start_date,
-    end_date: rt.end_date,
-    price: rt.single_price ? parseFloat(rt.single_price) : 0,
-    extraBed: rt.extra_bed_adult ? parseFloat(rt.extra_bed_adult) : 0,
-    foodCostAdult: rt.food_adult_abf ? parseFloat(rt.food_adult_abf) : 0,
-    foodCostChild: rt.food_child_abf ? parseFloat(rt.food_child_abf) : 0,
-    single_price: rt.single_price ? parseFloat(rt.single_price) : 0,
-    double_price: rt.double_price ? parseFloat(rt.double_price) : 0,
-    extra_bed_adult: rt.extra_bed_adult ? parseFloat(rt.extra_bed_adult) : 0,
-    extra_bed_child: rt.extra_bed_child ? parseFloat(rt.extra_bed_child) : 0,
-    extra_bed_shared: rt.extra_bed_shared ? parseFloat(rt.extra_bed_shared) : 0,
-    food_adult_abf: rt.food_adult_abf ? parseFloat(rt.food_adult_abf) : 0,
-    food_adult_lunch: rt.food_adult_lunch ? parseFloat(rt.food_adult_lunch) : 0,
-    food_adult_dinner: rt.food_adult_dinner ? parseFloat(rt.food_adult_dinner) : 0,
-    food_child_abf: rt.food_child_abf ? parseFloat(rt.food_child_abf) : 0,
-    food_child_lunch: rt.food_child_lunch ? parseFloat(rt.food_child_lunch) : 0,
-    food_child_dinner: rt.food_child_dinner ? parseFloat(rt.food_child_dinner) : 0,
-    allotment: rt.allotment || 0,
-    currency_id: rt.currency_id
-  }));
+  const roomTypes = (hotel.room_types || []).map(rt => {
+    let finalRt = rt;
+    if (markupGroup && markups && markups.length > 0) {
+      finalRt = calculateMarkupRoomType(rt, markupGroup, markups);
+    }
+
+    return {
+      key: finalRt.id,
+      id: finalRt.id,
+      name: finalRt.name,
+      roomType: finalRt.name,
+      fromDate: finalRt.start_date ? finalRt.start_date.toISOString().split('T')[0] : '',
+      toDate: finalRt.end_date ? finalRt.end_date.toISOString().split('T')[0] : '',
+      start_date: finalRt.start_date,
+      end_date: finalRt.end_date,
+      price: finalRt.single_price ? parseFloat(finalRt.single_price) : 0,
+      extraBed: finalRt.extra_bed_adult ? parseFloat(finalRt.extra_bed_adult) : 0,
+      foodCostAdult: finalRt.food_adult_abf ? parseFloat(finalRt.food_adult_abf) : 0,
+      foodCostChild: finalRt.food_child_abf ? parseFloat(finalRt.food_child_abf) : 0,
+      single_price: finalRt.single_price ? parseFloat(finalRt.single_price) : 0,
+      double_price: finalRt.double_price ? parseFloat(finalRt.double_price) : 0,
+      extra_bed_adult: finalRt.extra_bed_adult ? parseFloat(finalRt.extra_bed_adult) : 0,
+      extra_bed_child: finalRt.extra_bed_child ? parseFloat(finalRt.extra_bed_child) : 0,
+      extra_bed_shared: finalRt.extra_bed_shared ? parseFloat(finalRt.extra_bed_shared) : 0,
+      food_adult_abf: finalRt.food_adult_abf ? parseFloat(finalRt.food_adult_abf) : 0,
+      food_adult_lunch: finalRt.food_adult_lunch ? parseFloat(finalRt.food_adult_lunch) : 0,
+      food_adult_dinner: finalRt.food_adult_dinner ? parseFloat(finalRt.food_adult_dinner) : 0,
+      food_child_abf: finalRt.food_child_abf ? parseFloat(finalRt.food_child_abf) : 0,
+      food_child_lunch: finalRt.food_child_lunch ? parseFloat(finalRt.food_child_lunch) : 0,
+      food_child_dinner: finalRt.food_child_dinner ? parseFloat(finalRt.food_child_dinner) : 0,
+      allotment: finalRt.allotment || 0,
+      currency_id: finalRt.currency_id
+    };
+  });
 
   const promotions = (hotel.hotel_promotions || []).map(p => ({
     key: p.id,
@@ -181,17 +188,36 @@ export async function getHotel(req, res, next) {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid hotel ID');
+
+    let markupGroup = '';
+    const claims = req.user;
+    if (claims && claims.role !== 'admin') {
+      markupGroup = claims.markup_group || '';
+    }
+    const markups = await prisma.markups.findMany({
+      include: { hotel_markup_percentages: true, currencies: true }
+    });
+
     const hotel = await prisma.hotels.findUnique({
       where: { id },
       include: { hotel_contacts: true, room_types: true, hotel_fees: true, hotel_promotions: true, stop_sales: true }
     });
     if (!hotel) return res.status(404).send('Hotel not found');
-    return res.json(formatHotelResponse(hotel));
+    return res.json(formatHotelResponse(hotel, markupGroup, markups));
   } catch (err) { next(err); }
 }
 
 export async function listHotels(req, res, next) {
   try {
+    let markupGroup = '';
+    const claims = req.user;
+    if (claims && claims.role !== 'admin') {
+      markupGroup = claims.markup_group || '';
+    }
+    const markups = await prisma.markups.findMany({
+      include: { hotel_markup_percentages: true, currencies: true }
+    });
+
     const hotels = await prisma.hotels.findMany({
       where: { deleted_at: null },
       include: {
@@ -201,7 +227,7 @@ export async function listHotels(req, res, next) {
         hotel_promotions: true
       }
     });
-    const formatted = hotels.map(formatHotelResponse);
+    const formatted = hotels.map(h => formatHotelResponse(h, markupGroup, markups));
     formatted.sort((a, b) => {
       if (a.order !== b.order) return a.order - b.order;
       return a.name.localeCompare(b.name);
@@ -214,11 +240,21 @@ export async function listHotelsByCity(req, res, next) {
   try {
     const city = req.query.city;
     if (!city) return res.status(400).send('City parameter is required');
+
+    let markupGroup = '';
+    const claims = req.user;
+    if (claims && claims.role !== 'admin') {
+      markupGroup = claims.markup_group || '';
+    }
+    const markups = await prisma.markups.findMany({
+      include: { hotel_markup_percentages: true, currencies: true }
+    });
+
     const hotels = await prisma.hotels.findMany({
       where: { city, deleted_at: null },
       include: { room_types: true, hotel_contacts: true, hotel_fees: true, hotel_promotions: true }
     });
-    const formatted = hotels.map(formatHotelResponse);
+    const formatted = hotels.map(h => formatHotelResponse(h, markupGroup, markups));
     formatted.sort((a, b) => {
       if (a.order !== b.order) return a.order - b.order;
       return a.name.localeCompare(b.name);
@@ -231,6 +267,15 @@ export async function listAvailableHotelsByCity(req, res, next) {
   try {
     const { city, from_date, to_date, keyword } = req.query;
     if (!city) return res.status(400).send('City parameter is required');
+
+    let markupGroup = '';
+    const claims = req.user;
+    if (claims && claims.role !== 'admin') {
+      markupGroup = claims.markup_group || '';
+    }
+    const markups = await prisma.markups.findMany({
+      include: { hotel_markup_percentages: true, currencies: true }
+    });
 
     let where = { city, deleted_at: null };
     if (keyword) {
@@ -259,7 +304,7 @@ export async function listAvailableHotelsByCity(req, res, next) {
         stop_sales: true
       }
     });
-    const formatted = hotels.map(formatHotelResponse);
+    const formatted = hotels.map(h => formatHotelResponse(h, markupGroup, markups));
     formatted.sort((a, b) => {
       if (a.order !== b.order) return a.order - b.order;
       return a.name.localeCompare(b.name);

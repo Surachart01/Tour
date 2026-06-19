@@ -460,7 +460,6 @@
                               <th>Supplier</th>
                               <th>Departure</th>
                               <th>Arrival</th>
-                              <th>Display Order</th>
                               <th>Description</th>
                               <th>Edit</th>
                               <th>Delete</th>
@@ -754,7 +753,6 @@
             const row = document.createElement("tr");
 
             const supplierName = transfer.supplier_name || "N/A";
-            const displayOrder = transfer.display_order !== undefined && transfer.display_order !== null ? transfer.display_order : 0;
             const rowIndex = start + idx + 1;
 
             row.innerHTML = `
@@ -764,7 +762,6 @@
       <td>${supplierName}</td>
       <td>${transfer.departure}</td>
       <td>${transfer.arrival}</td>
-      <td>${displayOrder}</td>
       <td class="description-cell"><div class="description-text">${transfer.description || ''}</div></td>
       <td><button class="btn btn-primary btn-sm edit-btn"><i class="fa fa-edit"></i> Edit</button></td>
       <td><button class="btn btn-danger btn-sm delete-btn"><i class="fa fa-trash"></i> Delete</button></td>

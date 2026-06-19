@@ -41,21 +41,37 @@ export function formatTourResponse(tour) {
 export async function createTour(req, res, next) {
   try {
     const data = req.body;
+
+    // Convert available_days array [{day_of_week: 1}, ...] → "1,2,3" string
+    const valid_days = Array.isArray(data.available_days)
+      ? data.available_days.map(d => d.day_of_week).sort().join(',')
+      : (data.valid_days || null);
+
+    // Accept both 'tour_pricings' (frontend) and 'pricing' (legacy)
+    const pricings = data.tour_pricings || data.pricing || [];
+
     const tour = await prisma.tours.create({
       data: {
-        name: data.name, code: data.code || null,
-        category: data.category, description: data.description || null,
-        duration: data.duration, route: data.route || null,
-        departures: data.departures,
+        name: data.name,
+        code: data.code || null,
+        category: data.category,
+        description: data.description || null,
+        duration: data.duration,
+        route: data.route || null,
+        departures: data.tot || data.departures || 'PVT',
         city: data.city || null,
         country: data.country || null,
-        valid_days: data.valid_days || null,
+        valid_days,
         display_order: data.display_order || 0,
-        tour_pricing: data.pricing ? {
-          create: data.pricing.map(p => ({
-            start_date: new Date(p.start_date), end_date: new Date(p.end_date),
-            single_room_price: p.single_room_price, double_room_price: p.double_room_price,
-            triple_room_price: p.triple_room_price, currency_id: p.currency_id
+        tour_pricing: pricings.length > 0 ? {
+          create: pricings.map(p => ({
+            start_date: new Date(p.start_date),
+            end_date: new Date(p.end_date),
+            pax: parseInt(p.pax) || 1,
+            single_room_price: parseFloat(p.single_price ?? p.single_room_price ?? 0),
+            double_room_price: parseFloat(p.double_price ?? p.double_room_price ?? 0),
+            triple_room_price: parseFloat(p.triple_price ?? p.triple_room_price ?? 0),
+            currency_id: p.currency_id || null
           }))
         } : undefined
       },
@@ -112,7 +128,11 @@ export async function listAvailableToursByCity(req, res, next) {
   try {
     const { city, from_date, to_date, keyword } = req.query;
     let where = {};
+
+    // Filter by city if provided
+    if (city) { where.city = { equals: city, mode: 'insensitive' }; }
     if (keyword) { where.name = { contains: keyword, mode: 'insensitive' }; }
+
     const tours = await prisma.tours.findMany({
       where,
       include: {
@@ -125,7 +145,26 @@ export async function listAvailableToursByCity(req, res, next) {
         } : { include: { currencies: true } }
       }
     });
-    const formatted = tours.map(formatTourResponse);
+
+    // Filter by day of week if from_date provided
+    let filtered = tours;
+    if (from_date) {
+      const requestedDayOfWeek = new Date(from_date).getDay(); // 0=Sun, 1=Mon, ...
+      filtered = tours.filter(tour => {
+        // If valid_days not set, tour is available every day
+        if (!tour.valid_days) return true;
+        const validDays = tour.valid_days.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d));
+        if (validDays.length === 0) return true;
+        return validDays.includes(requestedDayOfWeek);
+      });
+    }
+
+    // Exclude tours that have no pricing for the requested date range (when date filter is applied)
+    if (from_date && to_date) {
+      filtered = filtered.filter(tour => tour.tour_pricing.length > 0);
+    }
+
+    const formatted = filtered.map(formatTourResponse);
     formatted.sort((a, b) => {
       if (a.order !== b.order) return a.order - b.order;
       return a.name.localeCompare(b.name);
@@ -134,26 +173,46 @@ export async function listAvailableToursByCity(req, res, next) {
   } catch (err) { next(err); }
 }
 
+
 export async function updateTour(req, res, next) {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid tour ID');
     const data = req.body;
+
+    // Convert available_days array → valid_days string if provided
+    const valid_days = Array.isArray(data.available_days)
+      ? data.available_days.map(d => d.day_of_week).sort().join(',')
+      : (data.valid_days !== undefined ? data.valid_days : undefined);
+
+    // Accept both 'tour_pricings' (frontend) and 'pricing' (legacy)
+    const pricings = data.tour_pricings || data.pricing || [];
+
     await prisma.$transaction(async (tx) => {
       await tx.tour_pricing.deleteMany({ where: { tour_id: id } });
       await tx.tours.update({
         where: { id },
         data: {
-          name: data.name, code: data.code, category: data.category,
-          description: data.description, duration: data.duration,
-          route: data.route, departures: data.departures,
-          city: data.city, country: data.country,
-          valid_days: data.valid_days, display_order: data.display_order,
-          tour_pricing: data.pricing ? {
-            create: data.pricing.map(p => ({
-              start_date: new Date(p.start_date), end_date: new Date(p.end_date),
-              single_room_price: p.single_room_price, double_room_price: p.double_room_price,
-              triple_room_price: p.triple_room_price, currency_id: p.currency_id
+          name: data.name,
+          code: data.code,
+          category: data.category,
+          description: data.description,
+          duration: data.duration,
+          route: data.route,
+          departures: data.tot || data.departures,
+          city: data.city,
+          country: data.country,
+          valid_days: valid_days !== undefined ? valid_days : undefined,
+          display_order: data.display_order,
+          tour_pricing: pricings.length > 0 ? {
+            create: pricings.map(p => ({
+              start_date: new Date(p.start_date),
+              end_date: new Date(p.end_date),
+              pax: parseInt(p.pax) || 1,
+              single_room_price: parseFloat(p.single_price ?? p.single_room_price ?? 0),
+              double_room_price: parseFloat(p.double_price ?? p.double_room_price ?? 0),
+              triple_room_price: parseFloat(p.triple_price ?? p.triple_room_price ?? 0),
+              currency_id: p.currency_id || null
             }))
           } : undefined
         }

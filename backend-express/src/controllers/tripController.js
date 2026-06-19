@@ -403,8 +403,13 @@ export async function createQuotation(req, res, next) {
 
 export async function listQuotations(req, res, next) {
   try {
+    const claims = req.user;
+    const where = { approved: false, declined: false };
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
+      where.agent_id = claims.agent_id || 0;
+    }
     const trips = await prisma.trips.findMany({
-      where: { approved: false, declined: false },
+      where,
       include: { agents: true },
       orderBy: { created_at: 'desc' }
     });
@@ -415,9 +420,13 @@ export async function listQuotations(req, res, next) {
 export async function listQuotationsByDateRange(req, res, next) {
   try {
     const { from_date, to_date } = req.query;
+    const claims = req.user;
     const where = { approved: false, declined: false };
     if (from_date && to_date) {
       where.created_at = { gte: new Date(from_date), lte: new Date(to_date) };
+    }
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
+      where.agent_id = claims.agent_id || 0;
     }
     const trips = await prisma.trips.findMany({ where, include: { agents: true }, orderBy: { created_at: 'desc' } });
     return res.json(trips);
@@ -428,8 +437,13 @@ export async function getQuotation(req, res, next) {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid quotation ID');
-    const trip = await prisma.trips.findUnique({
-      where: { id },
+    const claims = req.user;
+    const where = { id };
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
+      where.agent_id = claims.agent_id || 0;
+    }
+    const trip = await prisma.trips.findFirst({
+      where,
       include: {
         agents: true,
         hotel_trip_items: {
@@ -471,6 +485,15 @@ export async function updateQuotation(req, res, next) {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid quotation ID');
     const data = req.body;
+    const claims = req.user;
+
+    const existing = await prisma.trips.findUnique({ where: { id } });
+    if (!existing) return res.status(404).send('Quotation not found');
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
+      if (existing.agent_id !== claims.agent_id) {
+        return res.status(403).send('Forbidden: Access denied to this quotation');
+      }
+    }
 
     const hotelItems = data.hotel_items || data.hotels || [];
     const excursionItems = data.excursion_items || data.excursions || [];
@@ -735,6 +758,16 @@ export async function finalizeQuotation(req, res, next) {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid quotation ID');
+    const claims = req.user;
+
+    const existing = await prisma.trips.findUnique({ where: { id } });
+    if (!existing) return res.status(404).send('Quotation not found');
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
+      if (existing.agent_id !== claims.agent_id) {
+        return res.status(403).send('Forbidden: Access denied to this quotation');
+      }
+    }
+
     const trip = await prisma.trips.update({
       where: { id },
       data: { approved: true, declined: false }
@@ -747,6 +780,16 @@ export async function cancelQuotation(req, res, next) {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid quotation ID');
+    const claims = req.user;
+
+    const existing = await prisma.trips.findUnique({ where: { id } });
+    if (!existing) return res.status(404).send('Quotation not found');
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
+      if (existing.agent_id !== claims.agent_id) {
+        return res.status(403).send('Forbidden: Access denied to this quotation');
+      }
+    }
+
     const trip = await prisma.trips.update({
       where: { id },
       data: { declined: true, approved: false }
@@ -759,6 +802,16 @@ export async function deleteQuotation(req, res, next) {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid quotation ID');
+    const claims = req.user;
+
+    const existing = await prisma.trips.findUnique({ where: { id } });
+    if (!existing) return res.status(404).send('Quotation not found');
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
+      if (existing.agent_id !== claims.agent_id) {
+        return res.status(403).send('Forbidden: Access denied to this quotation');
+      }
+    }
+
     await prisma.trips.delete({ where: { id } });
     return res.status(200).send('Quotation deleted');
   } catch (err) { next(err); }
@@ -779,9 +832,13 @@ export async function listBookings(req, res, next) {
 export async function listBookingsByDateRange(req, res, next) {
   try {
     const { from_date, to_date } = req.query;
+    const claims = req.user;
     const where = { approved: true };
     if (from_date && to_date) {
       where.created_at = { gte: new Date(from_date), lte: new Date(to_date) };
+    }
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
+      where.agent_id = claims.agent_id || 0;
     }
     const bookings = await prisma.trips.findMany({ where, include: { agents: true }, orderBy: { created_at: 'desc' } });
     return res.json(bookings);
@@ -872,8 +929,13 @@ export async function getPaymentInfo(req, res, next) {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid booking ID');
-    const trip = await prisma.trips.findUnique({
-      where: { id },
+    const claims = req.user;
+    const where = { id };
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
+      where.agent_id = claims.agent_id || 0;
+    }
+    const trip = await prisma.trips.findFirst({
+      where,
       select: {
         id: true, client_name: true, total_amount: true, discount_amount: true,
         final_amount: true, booking_reference: true, agents: { select: { name: true } }
@@ -902,8 +964,13 @@ export async function updatePaymentInfo(req, res, next) {
 
 export async function listPaymentInfoFromBookings(req, res, next) {
   try {
+    const claims = req.user;
+    const where = { approved: true };
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
+      where.agent_id = claims.agent_id || 0;
+    }
     const bookings = await prisma.trips.findMany({
-      where: { approved: true },
+      where,
       select: {
         id: true, client_name: true, booking_reference: true,
         total_amount: true, discount_amount: true, final_amount: true,
@@ -918,9 +985,13 @@ export async function listPaymentInfoFromBookings(req, res, next) {
 export async function listPaymentInfoByDateRange(req, res, next) {
   try {
     const { from_date, to_date } = req.query;
+    const claims = req.user;
     const where = { approved: true };
     if (from_date && to_date) {
       where.created_at = { gte: new Date(from_date), lte: new Date(to_date) };
+    }
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
+      where.agent_id = claims.agent_id || 0;
     }
     const bookings = await prisma.trips.findMany({
       where,

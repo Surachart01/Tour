@@ -23,9 +23,36 @@ export async function getSupplier(req, res, next) {
     if (isNaN(id)) return res.status(400).send('Invalid supplier ID');
     const supplier = await prisma.suppliers.findUnique({ where: { id } });
     if (!supplier) return res.status(404).send('Supplier not found');
-    return res.json(supplier);
+
+    // Fetch related excursions by supplier_name
+    const excursions = await prisma.excursions.findMany({
+      where: { supplier_name: { equals: supplier.name, mode: 'insensitive' } },
+      select: { id: true, name: true, city: true, description: true, sic_price_adult: true, sic_price_child: true }
+    });
+
+    // Fetch related transfers by supplier_id (FK) or supplier_name fallback
+    const transfers = await prisma.transfers.findMany({
+      where: {
+        OR: [
+          { supplier_id: id },
+          { supplier_name: { equals: supplier.name, mode: 'insensitive' } }
+        ]
+      },
+      select: { id: true, transfer_type: true, city: true, description: true, departure: true, arrival: true }
+    });
+
+    return res.json({
+      ...supplier,
+      excursions: excursions.map(e => ({
+        ...e,
+        sic_price_adult: e.sic_price_adult ? parseFloat(e.sic_price_adult) : 0,
+        sic_price_child: e.sic_price_child ? parseFloat(e.sic_price_child) : 0,
+      })),
+      transfers
+    });
   } catch (err) { next(err); }
 }
+
 
 export async function listSupplierNames(req, res, next) {
   try {

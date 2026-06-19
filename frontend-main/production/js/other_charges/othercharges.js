@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const charges = JSON.parse(localStorage.getItem("charges")) || [];
-    let filteredCharges = [...charges]; // For filtered data
+    let charges = [];
+    let filteredCharges = [];
     let currentPage = 1;
     let rowsPerPage = 25;
     let totalPages = 1;
@@ -11,6 +11,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const prevPageButton = document.getElementById("prevPage");
     const nextPageButton = document.getElementById("nextPage");
 
+    const token = localStorage.getItem("token");
+    if (!token) {
+        alert("You are not authorized. Please log in first.");
+        window.location.href = "login.html";
+        return;
+    }
+
     // Load charges based on pagination
     function loadCharges() {
       chargesTableBody.innerHTML = "";
@@ -19,14 +26,14 @@ document.addEventListener("DOMContentLoaded", function () {
       const end = Math.min(start + rowsPerPage, filteredCharges.length);
       const rowsToShow = filteredCharges.slice(start, end);
 
-      rowsToShow.forEach((charge, index) => {
+      rowsToShow.forEach((charge) => {
         const row = `
             <tr>
               <td>${charge.description}</td>
               <td>${charge.amount}</td>
-              <td>${charge.chargeType}</td>
-              <td><button class="btn btn-primary btn-sm edit-btn" data-index="${index}"><i class="fa fa-edit"></i> Edit</button></td>
-              <td><button class="btn btn-danger btn-sm delete-btn" data-index="${index}"><i class="fa fa-trash"></i> Delete</button></td>
+              <td>${charge.chargetype || charge.chargeType}</td>
+              <td><button class="btn btn-primary btn-sm edit-btn" data-id="${charge.id}"><i class="fa fa-edit"></i> Edit</button></td>
+              <td><button class="btn btn-danger btn-sm delete-btn" data-id="${charge.id}"><i class="fa fa-trash"></i> Delete</button></td>
             </tr>`;
         chargesTableBody.insertAdjacentHTML("beforeend", row);
       });
@@ -34,6 +41,43 @@ document.addEventListener("DOMContentLoaded", function () {
       updatePaginationButtons();
       addEditDeleteListeners();
       updateChargesCount();
+    }
+
+    // Load charges from the backend database API
+    function fetchCharges() {
+      fetch(`${Endpoint}/api/v1/others`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            if (response.status === 401) {
+              alert("Unauthorized. Please log in again.");
+              window.location.href = "login.html";
+              return;
+            }
+            throw new Error("Failed to load other charges data");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          charges = data || [];
+          filteredCharges = [...charges];
+          
+          // Expose globally for HTML count script
+          window.originalChargesData = charges;
+          window.filteredChargesData = filteredCharges;
+
+          totalPages = Math.ceil(filteredCharges.length / rowsPerPage) || 1;
+          loadCharges();
+        })
+        .catch((error) => {
+          console.error("Error fetching other charges:", error);
+          alert(error.message);
+        });
     }
 
     // Update pagination buttons based on current page
@@ -45,35 +89,58 @@ document.addEventListener("DOMContentLoaded", function () {
     // Handle search functionality
     function filterCharges() {
       const searchValue = searchBox.value.toLowerCase();
-      filteredCharges = charges.filter((charge) =>
-        Object.values(charge).join(" ").toLowerCase().includes(searchValue)
-      );
+      filteredCharges = charges.filter((charge) => {
+        const desc = (charge.description || "").toLowerCase();
+        const type = (charge.chargetype || charge.chargeType || "").toLowerCase();
+        const amt = String(charge.amount || "");
+        return desc.includes(searchValue) || type.includes(searchValue) || amt.includes(searchValue);
+      });
+      window.filteredChargesData = filteredCharges;
       currentPage = 1; // Reset to first page on new search
-      totalPages = Math.ceil(filteredCharges.length / rowsPerPage);
+      totalPages = Math.ceil(filteredCharges.length / rowsPerPage) || 1;
       loadCharges();
-      updateChargesCount();
     }
 
     // Add event listeners for edit and delete buttons
     function addEditDeleteListeners() {
       document.querySelectorAll(".edit-btn").forEach((btn) => {
         btn.addEventListener("click", function () {
-          const index = this.getAttribute("data-index");
-          window.location.href = `edit_othercharges.html?index=${index}`;
+          const id = this.getAttribute("data-id");
+          window.location.href = `edit_othercharges.html?id=${id}`;
         });
       });
 
       document.querySelectorAll(".delete-btn").forEach((btn) => {
         btn.addEventListener("click", function () {
           if (confirm("Are you sure you want to delete this charge?")) {
-            const index = this.getAttribute("data-index");
-            charges.splice(index, 1);
-            localStorage.setItem("charges", JSON.stringify(charges));
-            filteredCharges = [...charges]; // Update filtered charges after deletion
-            filterCharges();
+            const id = this.getAttribute("data-id");
+            deleteCharge(id);
           }
         });
       });
+    }
+
+    // Delete other charge via database API
+    function deleteCharge(id) {
+      fetch(`${Endpoint}/api/v1/others/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => {
+          if (response.ok) {
+            alert("Charge deleted successfully!");
+            fetchCharges();
+          } else {
+            throw new Error("Failed to delete other charge");
+          }
+        })
+        .catch((error) => {
+          console.error("Error deleting other charge:", error);
+          alert(error.message);
+        });
     }
 
     // Event listener for search box input
@@ -85,10 +152,9 @@ document.addEventListener("DOMContentLoaded", function () {
         this.value === "All"
           ? filteredCharges.length
           : parseInt(this.value);
-      totalPages = Math.ceil(filteredCharges.length / rowsPerPage);
+      totalPages = Math.ceil(filteredCharges.length / rowsPerPage) || 1;
       currentPage = 1;
       loadCharges();
-      updateChargesCount();
     });
 
     // Event listener for next page button
@@ -116,15 +182,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Function to update charges count display
     function updateChargesCount() {
-      const countElement = document.getElementById("chargesCountNumber");
-      if (countElement) {
-        const searchValue = searchBox ? searchBox.value.toLowerCase() : '';
-        if (searchValue) {
-          // Show "filtered of total" when searching
-          countElement.textContent = `${filteredCharges.length} of ${charges.length}`;
-        } else {
-          // Show total count when not searching
-          countElement.textContent = charges.length;
+      // If the HTML page has its own globally exposed function, trigger that one
+      if (typeof window.updateChargesCount === "function" && window.updateChargesCount !== updateChargesCount) {
+        window.updateChargesCount();
+      } else {
+        const countElement = document.getElementById("chargesCountNumber");
+        if (countElement) {
+          const searchValue = searchBox ? searchBox.value.toLowerCase() : "";
+          if (searchValue) {
+            countElement.textContent = `${filteredCharges.length} of ${charges.length}`;
+          } else {
+            countElement.textContent = charges.length;
+          }
         }
       }
     }
@@ -134,14 +203,15 @@ document.addEventListener("DOMContentLoaded", function () {
     window.filteredChargesData = filteredCharges;
     window.updateChargesCount = updateChargesCount;
 
-    // Initial rendering of charges
-    totalPages = Math.ceil(filteredCharges.length / rowsPerPage);
-    loadCharges();
-  });
+    // Initial loading of other charges
+    fetchCharges();
+});
 
-  // Retrieve the username from localStorage
-  const username = localStorage.getItem("username");
-
-  // Set the username in the profile info
-  document.getElementById("profileName").innerText = username;
-  document.getElementById("navProfileName").innerText = username;
+// Retrieve the username from localStorage
+const username = localStorage.getItem("username");
+if (document.getElementById("profileName")) {
+  document.getElementById("profileName").innerText = username || "Guest";
+}
+if (document.getElementById("navProfileName")) {
+  document.getElementById("navProfileName").innerText = username || "Guest";
+}

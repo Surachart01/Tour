@@ -179,7 +179,7 @@ export function calculateTourCostLogic(tour, request, markupGroup, markups) {
   throw new Error(`invalid TOT value: ${request.tot}, must be 'SIC' or 'PVT'`);
 }
 
-function calculateMarkupRoomType(roomType, markupGroup, markups) {
+export function calculateMarkupRoomType(roomType, markupGroup, markups) {
   const rt = { ...roomType };
   rt.single_price = calculateMarkedUpPrice(parseFloat(rt.single_price || 0), markupGroup, 'hotel', markups);
   rt.double_price = calculateMarkedUpPrice(parseFloat(rt.double_price || 0), markupGroup, 'hotel', markups);
