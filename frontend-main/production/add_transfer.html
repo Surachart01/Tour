@@ -1457,10 +1457,6 @@
         // Load cache from localStorage first
         loadCacheFromStorage();
 
-        // Load initial data
-        populateCountriesDropdown();
-        populateSuppliersDropdown();
-
         // Country change handler
         document
           .getElementById("country")
@@ -1473,6 +1469,10 @@
               '<option value="" disabled selected>Loading suppliers...</option>';
             populateSuppliersDropdown();
           });
+
+        // Load initial data
+        populateCountriesDropdown();
+        populateSuppliersDropdown();
 
         // Add new city button handler
         document
