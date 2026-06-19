@@ -1036,7 +1036,7 @@
 
                 <button
                   id="submitTrip"
-                  type="submit"
+                  type="button"
                   class="btn btn-primary"
                   style="
                     padding: 12px 30px;
@@ -1291,9 +1291,11 @@
                     type="text"
                     class="form-control"
                     id="transferFlight"
+                    list="flightList"
                     placeholder="Flight details"
                     required
                   />
+                  <datalist id="flightList"></datalist>
                 </div>
                 <!-- Flight Time -->
                 <div class="form-group col-md-4">
@@ -3397,8 +3399,6 @@
           });
 
         // Event listener for the "Add Transfer" button
-        // Show the transfer modal when the button is clicked
-        // Event listener for the "Add Transfer" button
         document
           .getElementById("addTransferBtn")
           .addEventListener("click", function () {
@@ -3413,6 +3413,105 @@
 
             $("#addTransferModal").modal("show"); // Show the transfer modal
           });
+
+        // Set up flight autocomplete for transfer modal
+        function setupFlightAutocomplete() {
+          const transferFlightInput = document.getElementById("transferFlight");
+          const flightListDatalist = document.getElementById("flightList");
+          const flightTimeInput = document.getElementById("flightTime");
+
+          if (!transferFlightInput || !flightListDatalist) return;
+
+          function refreshFlightList() {
+            flightListDatalist.innerHTML = "";
+            
+            // Access flightsArray
+            const flights = typeof flightsArray !== "undefined" ? flightsArray : [];
+            console.log("Refreshing flight autocomplete dropdown. Flights found:", flights);
+            
+            flights.forEach((flight) => {
+              const flightNo = flight.flight_number || flight.number || "";
+              const flightName = flight.flight_name || flight.flight || "";
+              const flightInOut = flight.in_or_out || flight.flightInOut || "";
+              const route = flight.route || flight.flightRoute || "";
+              const depTime = flight.departure_time || flight.departureTime || "";
+              const arrTime = flight.arrival_time || flight.arrivalTime || "";
+
+              if (!flightNo) return;
+
+              const option = document.createElement("option");
+              option.value = flightNo;
+              option.textContent = `${flightName} (${flightInOut}) ${route ? '- ' + route : ''}`;
+              option.dataset.flightNo = flightNo;
+              option.dataset.flightName = flightName;
+              option.dataset.inout = flightInOut;
+              option.dataset.departure = depTime;
+              option.dataset.arrival = arrTime;
+              option.dataset.route = route;
+
+              flightListDatalist.appendChild(option);
+            });
+          }
+
+          // Bind shown.bs.modal to refresh options whenever the modal opens
+          $("#addTransferModal").on("shown.bs.modal", function () {
+            refreshFlightList();
+          });
+
+          // Event listener when user types or selects a value from the datalist
+          transferFlightInput.addEventListener("input", function () {
+            const val = this.value;
+            const options = Array.from(flightListDatalist.options);
+            const matchedOption = options.find(opt => opt.value === val);
+
+            if (matchedOption) {
+              const inout = matchedOption.dataset.inout;
+              const departure = matchedOption.dataset.departure;
+              const arrival = matchedOption.dataset.arrival;
+              const route = matchedOption.dataset.route;
+
+              console.log(`Matched flight: ${val}, direction: ${inout}, dep: ${departure}, arr: ${arrival}`);
+
+              // Set the flight time automatically based on direction
+              if (inout === "Flight In") {
+                if (arrival && flightTimeInput) {
+                  flightTimeInput.value = arrival;
+                  console.log("Automatically set Flight Time to Arrival (ETA):", arrival);
+                }
+              } else if (inout === "Flight Out") {
+                if (departure && flightTimeInput) {
+                  flightTimeInput.value = departure;
+                  console.log("Automatically set Flight Time to Departure (ETD):", departure);
+                }
+              }
+
+              // Pre-fill From / To if empty and route has the "FROM-TO" format
+              const transferFromInput = document.getElementById("transferFrom");
+              const transferToInput = document.getElementById("transferTo");
+              
+              if (route && route.includes("-")) {
+                const parts = route.split("-");
+                if (parts.length === 2) {
+                  const depLoc = parts[0].trim();
+                  const arrLoc = parts[1].trim();
+                  
+                  if (inout === "Flight In") {
+                    if (transferFromInput && !transferFromInput.value) {
+                      transferFromInput.value = arrLoc; // Pick up from arrival airport
+                    }
+                  } else if (inout === "Flight Out") {
+                    if (transferToInput && !transferToInput.value) {
+                      transferToInput.value = depLoc; // Drop off at departure airport
+                    }
+                  }
+                }
+              }
+            }
+          });
+        }
+
+        // Initialize on load
+        setupFlightAutocomplete();
 
         // let transfersArray = []; // Array to store transfer data
         // let editingTransferRow = null; // Keep track of the row being edited
@@ -7617,9 +7716,18 @@
         populateCitiesDropdown(".city-dropdown-tour");
 
         function convertToISODate(dateString) {
-          const parts = dateString.split("-"); // Split "31-01-2025" into ["31", "01", "2025"]
-          if (parts.length === 3) {
-            return `${parts[2]}-${parts[1]}-${parts[0]}`; // Convert to "2025-01-31"
+          if (!dateString) return "";
+          // If already YYYY-MM-DD format, return as-is (input[type=date] needs this)
+          if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString;
+          // If DD-MM-YYYY format, convert to YYYY-MM-DD
+          const parts = dateString.split("-");
+          if (parts.length === 3 && parts[0].length === 2) {
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+          }
+          // Fallback: try parsing with Date
+          const dt = new Date(dateString);
+          if (!isNaN(dt.getTime())) {
+            return dt.toISOString().split("T")[0];
           }
           return "";
         }
@@ -7635,31 +7743,30 @@
           .then((response) => response.json())
           .then((data) => {
             document.getElementById("agentName").textContent = data.agent_name;
-            document.getElementById("totalPrice").value = data.total_cost;
-            document.getElementById("finalPrice").value = data.final_cost;
-            document.getElementById("discount").value = data.discount;
+            document.getElementById("totalPrice").value = data.total_cost !== undefined ? data.total_cost : (data.total_amount || '');
+            document.getElementById("finalPrice").value = data.final_cost !== undefined ? data.final_cost : (data.final_amount || '');
+            document.getElementById("discount").value = data.discount !== undefined ? data.discount : (data.discount_amount || '');
             document.getElementById("clientName").value = data.client_name;
             document.getElementById("mobileNumber").value = data.client_phone;
             document.getElementById("clientEmail").value = data.client_email;
             document.getElementById("adult").value = data.number_of_adults;
             document.getElementById("child").value = data.number_of_kids;
-            document.getElementById("bookingDate").value = data.booking_date;
             document.getElementById(
               "includeDescriptionInItinerary"
             ).textContent = data.include_description_in_itinerary;
             document.getElementById("bookingReference").value =
-              data.client_booking;
+              data.client_booking || data.booking_reference || "";
             document.getElementById("invoiceNumber").value =
               data.invoice_number || "";
 
-            if (data.booking_date) {
+            if (data.booking_date || data.created_at) {
               document.getElementById("bookingDate").value = convertToISODate(
-                data.booking_date
+                data.booking_date || data.created_at
               );
             }
-            if (data.start_date) {
+            if (data.start_date || data.trip_start_date) {
               document.getElementById("tripStartDate").value = convertToISODate(
-                data.start_date
+                data.start_date || data.trip_start_date
               );
             }
             document.getElementById("remark").value = data.remarks;
@@ -8502,6 +8609,11 @@
 
             console.log("Submitting Quotation:", quotationRequest); // Debugging Log
 
+            // Prevent double submission
+            const submitBtn = document.getElementById("submitTrip");
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px"></i> Saving...';
+
             // Make the PUT request
             fetch(`${Endpoint}/api/v1/quotations/${quotationId}`, {
               method: "PUT",
@@ -8553,6 +8665,8 @@
                     }
 
                     alert(errorMessage);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-save" style="margin-right:8px"></i> Save Quotation';
                     return; // Exit early for 403 errors
                   }
 
@@ -8585,8 +8699,12 @@
               .catch((error) => {
                 console.error("Error:", error);
                 alert(error.message);
+                // Re-enable button on error
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-save" style="margin-right:8px"></i> Save Quotation';
               });
           });
+
 
         // Add missing event listener for tour button functionality
         document

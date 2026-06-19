@@ -431,20 +431,7 @@
                 </div>
 
                 <div class="col-md-6 form-group">
-                  <label for="orderTransfer">
-                    <i
-                      class="fas fa-sort-numeric-up"
-                      style="margin-right: 8px; color: #1abb9c"
-                    ></i>
-                    Display Order
-                  </label>
-                  <input
-                    type="number"
-                    id="orderTransfer"
-                    class="form-control"
-                    placeholder="Enter display order (optional)"
-                    min="0"
-                  />
+                  <!-- Display Order removed to align with add_transfer.html -->
                 </div>
               </div>
             </form>
@@ -1146,8 +1133,6 @@
                 transfer.sic_price_adult || "";
               document.getElementById("SICPriceChild").value =
                 transfer.sic_price_child || "";
-              document.getElementById("orderTransfer").value =
-                transfer.order || "";
 
               // Set the selected supplier
               if (transfer.supplier_id) {
@@ -1432,7 +1417,7 @@
             sic_price_child: parseFloat(
               document.getElementById("SICPriceChild").value
             ),
-            order: parseInt(document.getElementById("orderTransfer").value),
+            order: null,
             supplier_id: parseInt(
               document.getElementById("supplier").value,
               10

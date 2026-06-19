@@ -1,6 +1,18 @@
 import prisma from '../config/db.js';
 
 // ==================== HELPERS ====================
+function parseRequiredDate(value, fallback) {
+  if (!value) return fallback || new Date();
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? (fallback || new Date()) : d;
+}
+
+function parseOptionalDate(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 function generateQuotationNumber() {
   const now = new Date();
   const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
@@ -148,6 +160,94 @@ async function calculateCancellationDeadlineFromSuppliers(tx, tripStartDate, tra
   return mostRestrictive;
 }
 
+// ==================== RESPONSE MAPPER ====================
+function mapTripResponse(trip) {
+  if (!trip) return null;
+  const toFloat = (v) => (v !== null && v !== undefined ? parseFloat(v) : 0);
+  // Returns YYYY-MM-DD — works for both new Date() in trip.html and input[type=date] in edit_trip.html
+  const fmtDate = (d) => {
+    if (!d) return null;
+    const dt = new Date(d);
+    if (isNaN(dt.getTime())) return null;
+    const yyyy = dt.getFullYear();
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const dd = String(dt.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  return {
+    ...trip,
+    // top-level field aliases
+    quotation_reference: trip.booking_reference || '',
+    client_booking: trip.booking_reference || '',
+    total_cost: toFloat(trip.total_amount),
+    discount: toFloat(trip.discount_amount),
+    final_cost: toFloat(trip.final_amount),
+    start_date: fmtDate(trip.trip_start_date),
+    booking_date: fmtDate(trip.created_at),
+    // child item aliases
+    hotels: (trip.hotel_trip_items || []).map((h) => ({
+      ...h,
+      total_price: toFloat(h.total_price),
+      price: toFloat(h.total_price),
+      single_price: toFloat(h.single_price),
+      double_price: toFloat(h.double_price),
+      extra_bed_price: toFloat(h.extra_bed_price),
+      abf_price: toFloat(h.abf_price),
+      lunch_price: toFloat(h.lunch_price),
+      dinner_price: toFloat(h.dinner_price),
+      discount: toFloat(h.discount),
+      total_cost: toFloat(h.total_price),
+      final_cost: toFloat(h.total_price),
+      from_date: fmtDate(h.from_date),
+      to_date: fmtDate(h.to_date),
+      room_types: h.hotel_room_type_items || [],
+    })),
+    excursions: (trip.excursion_trip_items || []).map((e) => ({
+      ...e,
+      price: toFloat(e.price),
+      total_cost: toFloat(e.price),
+      final_cost: toFloat(e.price),
+      date: fmtDate(e.from_date),
+      from_date: fmtDate(e.from_date),
+    })),
+    tours: (trip.tour_trip_items || []).map((t) => ({
+      ...t,
+      price: toFloat(t.price),
+      total_cost: toFloat(t.price),
+      final_cost: toFloat(t.price),
+      from_date: fmtDate(t.from_date),
+      to_date: fmtDate(t.to_date),
+    })),
+    transfers: (trip.transfer_trip_items || []).map((t) => ({
+      ...t,
+      price: toFloat(t.price),
+      total_cost: toFloat(t.price),
+      final_cost: toFloat(t.price),
+      date: fmtDate(t.from_date),
+      from_date: fmtDate(t.from_date),
+    })),
+    flights: (trip.flight_trip_items || []).map((f) => ({
+      ...f,
+      price: toFloat(f.price),
+      total_cost: toFloat(f.price),
+      final_cost: toFloat(f.price),
+      date: fmtDate(f.from_date),
+      from_date: fmtDate(f.from_date),
+    })),
+    others: (trip.other_trip_items || []).map((o) => ({
+      ...o,
+      price: toFloat(o.price),
+      cost: toFloat(o.price),
+      total_cost: toFloat(o.price),
+      final_cost: toFloat(o.price),
+      total_price: toFloat(o.price),
+      date: fmtDate(o.from_date),
+      from_date: fmtDate(o.from_date),
+    })),
+  };
+}
+
 // ==================== QUOTATIONS ====================
 export async function createQuotation(req, res, next) {
   try {
@@ -166,9 +266,10 @@ export async function createQuotation(req, res, next) {
     const discount_amount = data.discount_amount !== undefined ? parseFloat(data.discount_amount) : (data.discount !== undefined ? parseFloat(data.discount) : calculated.discount_amount);
     const final_amount = data.final_amount !== undefined ? parseFloat(data.final_amount) : (data.final_cost !== undefined ? parseFloat(data.final_cost) : calculated.final_amount);
 
-    const trip_start_date = data.trip_start_date ? new Date(data.trip_start_date) : null;
-    let payment_deadline = data.payment_deadline ? new Date(data.payment_deadline) : null;
-    let cancellation_deadline = data.cancellation_deadline ? new Date(data.cancellation_deadline) : null;
+    const trip_start_date = data.trip_start_date ? parseOptionalDate(data.trip_start_date) : null;
+    const tripFallbackDate = trip_start_date && !isNaN(trip_start_date.getTime()) ? trip_start_date : new Date();
+    let payment_deadline = data.payment_deadline ? parseOptionalDate(data.payment_deadline) : null;
+    let cancellation_deadline = data.cancellation_deadline ? parseOptionalDate(data.cancellation_deadline) : null;
 
     if (trip_start_date) {
       if (!payment_deadline) {
@@ -234,8 +335,8 @@ export async function createQuotation(req, res, next) {
           const rtItems = item.room_type_items || item.room_types || [];
           await tx.hotel_trip_items.create({
             data: {
-              trip_item_id: id, hotel_id: parseInt(item.hotel_id), from_date: new Date(item.from_date),
-              to_date: new Date(item.to_date), city: item.city, hotel_name: item.hotel_name,
+              trip_item_id: id, hotel_id: parseInt(item.hotel_id), from_date: parseRequiredDate(item.from_date, tripFallbackDate),
+              to_date: parseRequiredDate(item.to_date, tripFallbackDate), city: item.city, hotel_name: item.hotel_name,
               nights: parseInt(item.nights) || 1, single_price: parseFloat(item.single_price) || 0, double_price: parseFloat(item.double_price) || 0,
               extra_bed_price: parseFloat(item.extra_bed_price) || 0, room_type: item.room_type,
               abf_price: parseFloat(item.abf_price) || 0, lunch_price: parseFloat(item.lunch_price) || 0, dinner_price: parseFloat(item.dinner_price) || 0,
@@ -257,9 +358,9 @@ export async function createQuotation(req, res, next) {
               display_order: item.display_order !== undefined ? parseInt(item.display_order) : 0,
               extra_adult_bed_count: item.extra_adult_bed_count || 0,
               extra_child_bed_count: item.extra_child_bed_count || 0,
-              rsvn_in: item.rsvn_in ? new Date(item.rsvn_in) : null,
-              rsvn_out: item.rsvn_out ? new Date(item.rsvn_out) : null,
-              payment_date: item.payment_date ? new Date(item.payment_date) : null,
+              rsvn_in: parseOptionalDate(item.rsvn_in),
+              rsvn_out: parseOptionalDate(item.rsvn_out),
+              payment_date: parseOptionalDate(item.payment_date),
               hotel_room_type_items: rtItems.length > 0 ? {
                 create: rtItems.map(rt => ({
                   room_type_id: parseInt(rt.room_type_id), room_type: rt.room_type,
@@ -277,11 +378,12 @@ export async function createQuotation(req, res, next) {
 
       if (excursionItems.length) {
         for (const item of excursionItems) {
+          const excursionDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           await tx.excursion_trip_items.create({
             data: {
               trip_item_id: id, excursion_id: parseInt(item.excursion_id), supplier_id: item.supplier_id ? parseInt(item.supplier_id) : null,
-              city: item.city, toe: item.toe, from_date: new Date(item.from_date),
-              to_date: new Date(item.to_date), hotel: item.hotel,
+              city: item.city, toe: item.toe, from_date: excursionDate,
+              to_date: excursionDate, hotel: item.hotel,
               guide_name: item.guide_name, guide_contact: item.guide_contact,
               price: parseFloat(item.price) || 0, currency_id: item.currency_id ? parseInt(item.currency_id) : null, remarks: item.remarks,
               approved: item.approved || false, declined: item.declined || false,
@@ -298,9 +400,9 @@ export async function createQuotation(req, res, next) {
               trip_item_id: id, tour_id: parseInt(item.tour_id), supplier_id: item.supplier_id ? parseInt(item.supplier_id) : null,
               tot: item.tot, from_location: item.from_location, to_location: item.to_location,
               number_of_adults: parseInt(item.number_of_adults) || 0, number_of_kids: parseInt(item.number_of_kids) || 0,
-              from_date: new Date(item.from_date), to_date: new Date(item.to_date),
-              flight_in: item.flight_in ? new Date(item.flight_in) : null,
-              flight_number: item.flight_number, flight_out: item.flight_out ? new Date(item.flight_out) : null,
+              from_date: parseRequiredDate(item.from_date, tripFallbackDate), to_date: parseRequiredDate(item.to_date, tripFallbackDate),
+              flight_in: parseOptionalDate(item.flight_in),
+              flight_number: item.flight_number, flight_out: parseOptionalDate(item.flight_out),
               guide_name: item.guide_name, guide_contact: item.guide_contact,
               payment_car: item.payment_car, payment_service: item.payment_service,
               price: parseFloat(item.price) || 0, currency_id: item.currency_id ? parseInt(item.currency_id) : null, remarks: item.remarks,
@@ -312,11 +414,12 @@ export async function createQuotation(req, res, next) {
 
       if (transferItems.length) {
         for (const item of transferItems) {
+          const transferDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           await tx.transfer_trip_items.create({
             data: {
               trip_item_id: id, transfer_id: parseInt(item.transfer_id),
               from_location: item.from_location, to_location: item.to_location,
-              from_date: new Date(item.from_date), to_date: new Date(item.to_date),
+              from_date: transferDate, to_date: transferDate,
               flight_number: item.flight_number, tot: item.tot,
               supplier_id: item.supplier_id ? parseInt(item.supplier_id) : null, guide_name: item.guide_name,
               guide_contact: item.guide_contact, price: parseFloat(item.price) || 0,
@@ -329,9 +432,10 @@ export async function createQuotation(req, res, next) {
 
       if (flightItems.length) {
         for (const item of flightItems) {
+          const flightDate = parseRequiredDate(item.from_date || item.flight_date || item.date, tripFallbackDate);
           await tx.flight_trip_items.create({
             data: {
-              trip_item_id: id, from_date: new Date(item.from_date), to_date: new Date(item.to_date),
+              trip_item_id: id, from_date: flightDate, to_date: flightDate,
               flight_number: item.flight_number, in_or_out: item.in_or_out,
               route: item.route, issued_by: item.issued_by, price: parseFloat(item.price) || 0,
               currency_id: item.currency_id ? parseInt(item.currency_id) : null, remarks: item.remarks,
@@ -346,10 +450,11 @@ export async function createQuotation(req, res, next) {
 
       if (otherItems.length) {
         for (const item of otherItems) {
+          const otherDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           await tx.other_trip_items.create({
             data: {
               trip_item_id: id, other_id: parseInt(item.other_id),
-              from_date: new Date(item.from_date), to_date: new Date(item.to_date)
+              from_date: otherDate, to_date: otherDate
             }
           });
         }
@@ -392,8 +497,9 @@ export async function createQuotation(req, res, next) {
       }
     });
 
+    const mapped = mapTripResponse(trip);
     return res.status(201).json({
-      ...trip,
+      ...mapped,
       message: "Quotation created successfully",
       QuotationReference: trip.booking_reference,
       TripID: String(trip.id)
@@ -413,7 +519,7 @@ export async function listQuotations(req, res, next) {
       include: { agents: true },
       orderBy: { created_at: 'desc' }
     });
-    return res.json(trips);
+    return res.json(trips.map(mapTripResponse));
   } catch (err) { next(err); }
 }
 
@@ -429,7 +535,7 @@ export async function listQuotationsByDateRange(req, res, next) {
       where.agent_id = claims.agent_id || 0;
     }
     const trips = await prisma.trips.findMany({ where, include: { agents: true }, orderBy: { created_at: 'desc' } });
-    return res.json(trips);
+    return res.json(trips.map(mapTripResponse));
   } catch (err) { next(err); }
 }
 
@@ -476,7 +582,7 @@ export async function getQuotation(req, res, next) {
       }
     });
     if (!trip) return res.status(404).send('Quotation not found');
-    return res.json(trip);
+    return res.json(mapTripResponse(trip));
   } catch (err) { next(err); }
 }
 
@@ -507,16 +613,16 @@ export async function updateQuotation(req, res, next) {
     const discount_amount = data.discount_amount !== undefined ? parseFloat(data.discount_amount) : (data.discount !== undefined ? parseFloat(data.discount) : calculated.discount_amount);
     const final_amount = data.final_amount !== undefined ? parseFloat(data.final_amount) : (data.final_cost !== undefined ? parseFloat(data.final_cost) : calculated.final_amount);
 
-    const trip_start_date = data.trip_start_date !== undefined ? (data.trip_start_date ? new Date(data.trip_start_date) : null) : undefined;
+    const trip_start_date = data.trip_start_date !== undefined ? parseOptionalDate(data.trip_start_date) : undefined;
     
     let payment_deadline = undefined;
     let cancellation_deadline = undefined;
 
     if (data.payment_deadline !== undefined) {
-      payment_deadline = data.payment_deadline ? new Date(data.payment_deadline) : null;
+      payment_deadline = parseOptionalDate(data.payment_deadline);
     }
     if (data.cancellation_deadline !== undefined) {
-      cancellation_deadline = data.cancellation_deadline ? new Date(data.cancellation_deadline) : null;
+      cancellation_deadline = parseOptionalDate(data.cancellation_deadline);
     }
 
     await prisma.$transaction(async (tx) => {
@@ -539,6 +645,8 @@ export async function updateQuotation(req, res, next) {
           }
         }
       }
+
+      const tripFallbackDate = final_trip_start_date && !isNaN(new Date(final_trip_start_date).getTime()) ? new Date(final_trip_start_date) : new Date();
 
       if (final_trip_start_date) {
         if (!payment_deadline) {
@@ -601,8 +709,8 @@ export async function updateQuotation(req, res, next) {
           const rtItems = item.room_type_items || item.room_types || [];
           await tx.hotel_trip_items.create({
             data: {
-              trip_item_id: id, hotel_id: parseInt(item.hotel_id), from_date: new Date(item.from_date),
-              to_date: new Date(item.to_date), city: item.city, hotel_name: item.hotel_name,
+              trip_item_id: id, hotel_id: parseInt(item.hotel_id), from_date: parseRequiredDate(item.from_date, tripFallbackDate),
+              to_date: parseRequiredDate(item.to_date, tripFallbackDate), city: item.city, hotel_name: item.hotel_name,
               nights: parseInt(item.nights) || 1, single_price: parseFloat(item.single_price) || 0, double_price: parseFloat(item.double_price) || 0,
               extra_bed_price: parseFloat(item.extra_bed_price) || 0, room_type: item.room_type,
               abf_price: parseFloat(item.abf_price) || 0, lunch_price: parseFloat(item.lunch_price) || 0, dinner_price: parseFloat(item.dinner_price) || 0,
@@ -624,9 +732,9 @@ export async function updateQuotation(req, res, next) {
               display_order: item.display_order !== undefined ? parseInt(item.display_order) : 0,
               extra_adult_bed_count: item.extra_adult_bed_count || 0,
               extra_child_bed_count: item.extra_child_bed_count || 0,
-              rsvn_in: item.rsvn_in ? new Date(item.rsvn_in) : null,
-              rsvn_out: item.rsvn_out ? new Date(item.rsvn_out) : null,
-              payment_date: item.payment_date ? new Date(item.payment_date) : null,
+              rsvn_in: parseOptionalDate(item.rsvn_in),
+              rsvn_out: parseOptionalDate(item.rsvn_out),
+              payment_date: parseOptionalDate(item.payment_date),
               hotel_room_type_items: rtItems.length > 0 ? {
                 create: rtItems.map(rt => ({
                   room_type_id: parseInt(rt.room_type_id), room_type: rt.room_type,
@@ -643,11 +751,12 @@ export async function updateQuotation(req, res, next) {
       }
       if (excursionItems.length) {
         for (const item of excursionItems) {
+          const excursionDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           await tx.excursion_trip_items.create({
             data: {
               trip_item_id: id, excursion_id: parseInt(item.excursion_id), supplier_id: item.supplier_id ? parseInt(item.supplier_id) : null,
-              city: item.city, toe: item.toe, from_date: new Date(item.from_date),
-              to_date: new Date(item.to_date), hotel: item.hotel,
+              city: item.city, toe: item.toe, from_date: excursionDate,
+              to_date: excursionDate, hotel: item.hotel,
               guide_name: item.guide_name, guide_contact: item.guide_contact,
               price: parseFloat(item.price) || 0, currency_id: item.currency_id ? parseInt(item.currency_id) : null, remarks: item.remarks,
               approved: item.approved || false, declined: item.declined || false,
@@ -663,9 +772,9 @@ export async function updateQuotation(req, res, next) {
               trip_item_id: id, tour_id: parseInt(item.tour_id), supplier_id: item.supplier_id ? parseInt(item.supplier_id) : null,
               tot: item.tot, from_location: item.from_location, to_location: item.to_location,
               number_of_adults: parseInt(item.number_of_adults) || 0, number_of_kids: parseInt(item.number_of_kids) || 0,
-              from_date: new Date(item.from_date), to_date: new Date(item.to_date),
-              flight_in: item.flight_in ? new Date(item.flight_in) : null,
-              flight_number: item.flight_number, flight_out: item.flight_out ? new Date(item.flight_out) : null,
+              from_date: parseRequiredDate(item.from_date, tripFallbackDate), to_date: parseRequiredDate(item.to_date, tripFallbackDate),
+              flight_in: parseOptionalDate(item.flight_in),
+              flight_number: item.flight_number, flight_out: parseOptionalDate(item.flight_out),
               guide_name: item.guide_name, guide_contact: item.guide_contact,
               payment_car: item.payment_car, payment_service: item.payment_service,
               price: parseFloat(item.price) || 0, currency_id: item.currency_id ? parseInt(item.currency_id) : null, remarks: item.remarks,
@@ -676,11 +785,12 @@ export async function updateQuotation(req, res, next) {
       }
       if (transferItems.length) {
         for (const item of transferItems) {
+          const transferDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           await tx.transfer_trip_items.create({
             data: {
               trip_item_id: id, transfer_id: parseInt(item.transfer_id),
               from_location: item.from_location, to_location: item.to_location,
-              from_date: new Date(item.from_date), to_date: new Date(item.to_date),
+              from_date: transferDate, to_date: transferDate,
               flight_number: item.flight_number, tot: item.tot,
               supplier_id: item.supplier_id ? parseInt(item.supplier_id) : null, guide_name: item.guide_name,
               guide_contact: item.guide_contact, price: parseFloat(item.price) || 0,
@@ -692,9 +802,10 @@ export async function updateQuotation(req, res, next) {
       }
       if (flightItems.length) {
         for (const item of flightItems) {
+          const flightDate = parseRequiredDate(item.from_date || item.flight_date || item.date, tripFallbackDate);
           await tx.flight_trip_items.create({
             data: {
-              trip_item_id: id, from_date: new Date(item.from_date), to_date: new Date(item.to_date),
+              trip_item_id: id, from_date: flightDate, to_date: flightDate,
               flight_number: item.flight_number, in_or_out: item.in_or_out,
               route: item.route, issued_by: item.issued_by, price: parseFloat(item.price) || 0,
               currency_id: item.currency_id ? parseInt(item.currency_id) : null, remarks: item.remarks,
@@ -708,10 +819,11 @@ export async function updateQuotation(req, res, next) {
       }
       if (otherItems.length) {
         for (const item of otherItems) {
+          const otherDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           await tx.other_trip_items.create({
             data: {
               trip_item_id: id, other_id: parseInt(item.other_id),
-              from_date: new Date(item.from_date), to_date: new Date(item.to_date)
+              from_date: otherDate, to_date: otherDate
             }
           });
         }
@@ -750,7 +862,7 @@ export async function updateQuotation(req, res, next) {
         }
       }
     });
-    return res.json(updated);
+    return res.json(mapTripResponse(updated));
   } catch (err) { next(err); }
 }
 

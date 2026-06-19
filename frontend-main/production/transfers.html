@@ -317,6 +317,50 @@
 
           <div class="clearfix"></div>
 
+          <!-- Quick Direction Filter Pills -->
+          <div class="row" style="margin-bottom: 12px;">
+            <div class="col-md-12">
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span style="font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Quick Filter:</span>
+
+                <button
+                  id="btnTrfAll"
+                  type="button"
+                  class="trf-pill trf-pill-active"
+                  style="
+                    padding: 5px 16px; border-radius: 20px; border: 2px solid #6c757d;
+                    background: #6c757d; color: #fff; font-size: 12px; font-weight: 600;
+                    cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px;
+                  "
+                >All</button>
+
+                <button
+                  id="btnTrfIn"
+                  type="button"
+                  class="trf-pill"
+                  style="
+                    padding: 5px 16px; border-radius: 20px; border: 2px solid #28a745;
+                    background: transparent; color: #28a745; font-size: 12px; font-weight: 600;
+                    cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px;
+                  "
+                ><i class="fa fa-plane" style="margin-right:5px; transform:rotate(45deg); display:inline-block;"></i>TRF IN</button>
+
+                <button
+                  id="btnTrfOut"
+                  type="button"
+                  class="trf-pill"
+                  style="
+                    padding: 5px 16px; border-radius: 20px; border: 2px solid #007bff;
+                    background: transparent; color: #007bff; font-size: 12px; font-weight: 600;
+                    cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px;
+                  "
+                ><i class="fa fa-plane" style="margin-right:5px; transform:rotate(-45deg); display:inline-block;"></i>TRF OUT</button>
+
+                <span id="trfPillCount" style="font-size: 12px; color: #888; margin-left: 4px;"></span>
+              </div>
+            </div>
+          </div>
+
           <!-- Search & Filter Box -->
           <div class="row" style="margin-bottom: 25px;">
             <div class="col-md-12">
@@ -369,6 +413,12 @@
                   <div class="filter-group" style="min-width: 100px;">
                     <button type="button" id="btnFilterSearch" class="btn" style="background: #f06225; border: none; border-radius: 6px; color: white; font-weight: bold; height: 38px; padding: 0 20px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; width: 100%; transition: all 0.2s;" onmouseover="this.style.background='#d8551f'" onmouseout="this.style.background='#f06225'">
                       Search <i class="fa fa-search"></i>
+                    </button>
+                  </div>
+
+                  <div class="filter-group" style="min-width: 100px;">
+                    <button type="button" id="btnResetFilters" class="btn" style="background: transparent; border: 1px solid #ccc; border-radius: 6px; color: #888; font-weight: bold; height: 38px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; width: 100%; transition: all 0.2s;" onmouseover="this.style.borderColor='#aaa';this.style.color='#555'" onmouseout="this.style.borderColor='#ccc';this.style.color='#888'">
+                      <i class="fa fa-times"></i> Reset
                     </button>
                   </div>
 
@@ -570,6 +620,83 @@
           });
         });
 
+        // ── TRF IN / TRF OUT quick-filter pills ───────────────────────
+        let activeTrfFilter = "All"; // track active pill
+
+        function setTrfPill(direction) {
+          activeTrfFilter = direction;
+          // Style pills
+          const pills = { All: "#6c757d", "TRF IN": "#28a745", "TRF OUT": "#007bff" };
+          const btnIds = { All: "btnTrfAll", "TRF IN": "btnTrfIn", "TRF OUT": "btnTrfOut" };
+          Object.keys(btnIds).forEach((key) => {
+            const btn = document.getElementById(btnIds[key]);
+            if (key === direction) {
+              btn.style.background = pills[key];
+              btn.style.color = "#fff";
+              btn.style.boxShadow = `0 2px 8px ${pills[key]}66`;
+            } else {
+              btn.style.background = "transparent";
+              btn.style.color = pills[key];
+              btn.style.boxShadow = "none";
+            }
+          });
+          // Update the Type dropdown to reflect the pill
+          const typeDropdown = document.getElementById("filterType");
+          if (direction === "All") {
+            typeDropdown.value = "All";
+          } else {
+            // Try exact match first, then partial
+            const opts = Array.from(typeDropdown.options);
+            const match = opts.find(o => o.value.toUpperCase().includes(direction.replace(" ", "")));
+            if (match) typeDropdown.value = match.value;
+            else typeDropdown.value = "All"; // graceful fallback
+          }
+          saveFilters();
+          filterTransfers();
+        }
+
+        document.getElementById("btnTrfAll").addEventListener("click", () => setTrfPill("All"));
+        document.getElementById("btnTrfIn").addEventListener("click", () => setTrfPill("TRF IN"));
+        document.getElementById("btnTrfOut").addEventListener("click", () => setTrfPill("TRF OUT"));
+
+        // Reset all filters button
+        document.getElementById("btnResetFilters").addEventListener("click", () => {
+          document.getElementById("filterCountry").value = "All";
+          document.getElementById("filterCity").value = "All";
+          document.getElementById("filterType").value = "All";
+          document.getElementById("filterSupplier").value = "All";
+          searchBox.value = "";
+          rowsSelect.value = "25";
+          rowsPerPage = 25;
+          sessionStorage.removeItem("transfers_filters");
+          setTrfPill("All");
+        });
+
+        // Sync pills when Type dropdown is changed manually
+        document.getElementById("filterType").addEventListener("change", function () {
+          const val = this.value.toUpperCase();
+          if (val.includes("TRFIN") || val.includes("TRF IN") || val.includes("TRANSFERIN")) {
+            activeTrfFilter = "TRF IN";
+          } else if (val.includes("TRFOUT") || val.includes("TRF OUT") || val.includes("TRANSFEROUT")) {
+            activeTrfFilter = "TRF OUT";
+          } else if (val === "ALL") {
+            activeTrfFilter = "All";
+          }
+          // Re-style pill without triggering another filter call
+          const pills = { All: "#6c757d", "TRF IN": "#28a745", "TRF OUT": "#007bff" };
+          const btnIds = { All: "btnTrfAll", "TRF IN": "btnTrfIn", "TRF OUT": "btnTrfOut" };
+          Object.keys(btnIds).forEach((key) => {
+            const btn = document.getElementById(btnIds[key]);
+            if (key === activeTrfFilter) {
+              btn.style.background = pills[key]; btn.style.color = "#fff";
+            } else {
+              btn.style.background = "transparent"; btn.style.color = pills[key];
+            }
+          });
+          saveFilters(); filterTransfers();
+        });
+        // ─────────────────────────────────────────────────────────────
+
         // Country → City cascade
         document.getElementById("filterCountry").addEventListener("change", function () {
           populateCityDropdown(this.value);
@@ -722,23 +849,52 @@
 
           filteredTransfers = transfers.filter((transfer) => {
             const supplierName = transfer.supplier_name || "";
+            const typeLower = (transfer.transfer_type || "").toLowerCase();
             const countryMatch = countryVal === "All" || (transfer.country || "") === countryVal;
             const cityMatch = cityVal === "All" || transfer.city === cityVal;
-            const typeMatch = typeVal === "All" || transfer.transfer_type === typeVal;
             const supplierMatch = supplierVal === "All" || supplierName === supplierVal;
+
+            // TRF IN / TRF OUT pill direction filter (smart match)
+            let directionMatch = true;
+            if (activeTrfFilter === "TRF IN") {
+              directionMatch = typeLower.includes("trf in") || typeLower.includes("trfin") ||
+                typeLower.includes("transfer in") || typeLower.includes("transferin") ||
+                typeLower.endsWith(" in");
+            } else if (activeTrfFilter === "TRF OUT") {
+              directionMatch = typeLower.includes("trf out") || typeLower.includes("trfout") ||
+                typeLower.includes("transfer out") || typeLower.includes("transferout") ||
+                typeLower.endsWith(" out");
+            }
+
+            // Type dropdown filter (separate from pill — pill controls its own logic)
+            const typeMatch = activeTrfFilter !== "All"
+              ? directionMatch  // pill overrides dropdown when active
+              : (typeVal === "All" || transfer.transfer_type === typeVal);
+
             const keywordMatch = !searchTerm ||
-              transfer.city.toLowerCase().includes(searchTerm) ||
-              transfer.transfer_type.toLowerCase().includes(searchTerm) ||
+              (transfer.city || "").toLowerCase().includes(searchTerm) ||
+              typeLower.includes(searchTerm) ||
               (transfer.country || "").toLowerCase().includes(searchTerm) ||
               (transfer.description || "").toLowerCase().includes(searchTerm) ||
               (transfer.departure || "").toLowerCase().includes(searchTerm) ||
               (transfer.arrival || "").toLowerCase().includes(searchTerm) ||
               supplierName.toLowerCase().includes(searchTerm);
+
             return countryMatch && cityMatch && typeMatch && supplierMatch && keywordMatch;
           });
+
           currentPage = 1;
           totalPages = Math.ceil(filteredTransfers.length / rowsPerPage) || 1;
           updateTransfersCount();
+
+          // Update pill count badge
+          const pillCount = document.getElementById("trfPillCount");
+          if (activeTrfFilter !== "All") {
+            pillCount.textContent = `(${filteredTransfers.length} found)`;
+          } else {
+            pillCount.textContent = "";
+          }
+
           renderTransfers();
         }
 

@@ -514,3 +514,102 @@ document.getElementById("getTransferPriceBtn").addEventListener("click", functio
 
 // Make isEditingTransfer available globally so add_trip.html can check it
 window.isEditingTransfer = () => isEditingTransfer;
+
+// Set up flight autocomplete when this script is loaded
+function setupFlightAutocomplete() {
+  const transferFlightInput = document.getElementById("transferFlight");
+  const flightListDatalist = document.getElementById("flightList");
+  const flightTimeInput = document.getElementById("flightTime");
+
+  if (!transferFlightInput || !flightListDatalist) return;
+
+  function refreshFlightList() {
+    flightListDatalist.innerHTML = "";
+    
+    // Access flightsArray from add_flight.js
+    const flights = typeof flightsArray !== "undefined" ? flightsArray : [];
+    console.log("Refreshing flight autocomplete dropdown. Flights found:", flights);
+    
+    flights.forEach((flight) => {
+      const flightNo = flight.number || flight.flight_number || "";
+      const flightName = flight.flight || flight.flight_name || "";
+      const flightInOut = flight.flightInOut || flight.in_or_out || "";
+      const route = flight.flightRoute || flight.route || "";
+      const depTime = flight.departureTime || flight.departure_time || "";
+      const arrTime = flight.arrivalTime || flight.arrival_time || "";
+
+      if (!flightNo) return;
+
+      const option = document.createElement("option");
+      option.value = flightNo;
+      option.textContent = `${flightName} (${flightInOut}) ${route ? '- ' + route : ''}`;
+      option.dataset.flightNo = flightNo;
+      option.dataset.flightName = flightName;
+      option.dataset.inout = flightInOut;
+      option.dataset.departure = depTime;
+      option.dataset.arrival = arrTime;
+      option.dataset.route = route;
+
+      flightListDatalist.appendChild(option);
+    });
+  }
+
+  // Bind shown.bs.modal to refresh options whenever the modal opens
+  $("#addTransferModal").on("shown.bs.modal", function () {
+    refreshFlightList();
+  });
+
+  // Event listener when user types or selects a value from the datalist
+  transferFlightInput.addEventListener("input", function () {
+    const val = this.value;
+    const options = Array.from(flightListDatalist.options);
+    const matchedOption = options.find(opt => opt.value === val);
+
+    if (matchedOption) {
+      const inout = matchedOption.dataset.inout;
+      const departure = matchedOption.dataset.departure;
+      const arrival = matchedOption.dataset.arrival;
+      const route = matchedOption.dataset.route;
+
+      console.log(`Matched flight: ${val}, direction: ${inout}, dep: ${departure}, arr: ${arrival}`);
+
+      // Set the flight time automatically based on direction
+      if (inout === "Flight In") {
+        if (arrival && flightTimeInput) {
+          flightTimeInput.value = arrival;
+          console.log("Automatically set Flight Time to Arrival (ETA):", arrival);
+        }
+      } else if (inout === "Flight Out") {
+        if (departure && flightTimeInput) {
+          flightTimeInput.value = departure;
+          console.log("Automatically set Flight Time to Departure (ETD):", departure);
+        }
+      }
+
+      // Pre-fill From / To if empty and route has the "FROM-TO" format
+      const transferFromInput = document.getElementById("transferFrom");
+      const transferToInput = document.getElementById("transferTo");
+      
+      if (route && route.includes("-")) {
+        const parts = route.split("-");
+        if (parts.length === 2) {
+          const depLoc = parts[0].trim();
+          const arrLoc = parts[1].trim();
+          
+          if (inout === "Flight In") {
+            if (transferFromInput && !transferFromInput.value) {
+              transferFromInput.value = arrLoc; // Pick up from arrival airport
+            }
+          } else if (inout === "Flight Out") {
+            if (transferToInput && !transferToInput.value) {
+              transferToInput.value = depLoc; // Drop off at departure airport
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+// Initialize on load
+setupFlightAutocomplete();

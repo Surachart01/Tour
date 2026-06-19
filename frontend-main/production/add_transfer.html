@@ -508,22 +508,7 @@
                   />
                 </div>
 
-                <div class="col-md-6 form-group">
-                  <label for="orderTransfer">
-                    <i
-                      class="fas fa-sort-numeric-up"
-                      style="margin-right: 8px; color: #1abb9c"
-                    ></i>
-                    Display Order
-                  </label>
-                  <input
-                    type="number"
-                    id="orderTransfer"
-                    class="form-control"
-                    placeholder="Enter display order (optional)"
-                    min="0"
-                  />
-                </div>
+
               </div>
             </form>
 
@@ -1321,37 +1306,29 @@
       }
 
       // Populate countries dropdown
-      async function populateCountriesDropdown() {
+      function populateCountriesDropdown() {
         const countryDropdown = document.getElementById("country");
-        const countries = await loadCountries();
 
-        if (!countries || countries.length === 0) {
-          countryDropdown.innerHTML =
-            '<option value="" disabled>Failed to load countries</option>';
-          return;
-        }
+        // Allowed countries only — hardcoded per business requirement
+        const allowedCountries = [
+          { code: "TH", name: "Thailand" },
+          { code: "LA", name: "Laos" },
+          { code: "VN", name: "Vietnam" },
+          { code: "KH", name: "Cambodia" },
+        ];
 
-        // Clear existing options
-        countryDropdown.innerHTML =
-          '<option value="" disabled>Select country</option>';
+        countryDropdown.innerHTML = '<option value="" disabled>Select country</option>';
 
-        // Add country options
-        countries.forEach((country) => {
+        allowedCountries.forEach((country) => {
           const option = document.createElement("option");
-          option.value = country.code || country.country_code;
-          option.textContent = country.name || country.country_name;
+          option.value = country.code;
+          option.textContent = country.name;
           countryDropdown.appendChild(option);
         });
 
-        // Try to detect and select profile country
-        const profileCountry = await detectCountryFromProfile();
-        if (profileCountry) {
-          countryDropdown.value = profileCountry;
-          // Trigger change event to load cities
-          countryDropdown.dispatchEvent(new Event("change"));
-        } else {
-          countryDropdown.selectedIndex = 0;
-        }
+        // Default to Thailand
+        countryDropdown.value = "TH";
+        countryDropdown.dispatchEvent(new Event("change"));
       }
 
       // Populate cities dropdown
@@ -1625,8 +1602,7 @@
               document.getElementById("SICPriceChild").value;
             const supplierValue = document.getElementById("supplier").value;
             const supplier = supplierValue ? parseInt(supplierValue, 10) : null;
-            const orderValue = document.getElementById("orderTransfer").value;
-            const order = orderValue ? parseInt(orderValue, 10) : null;
+            const order = null;
 
             console.log("Form data collected:", {
               transferType,

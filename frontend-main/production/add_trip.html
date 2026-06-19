@@ -887,7 +887,7 @@
               >
                 <button
                   id="submitTrip"
-                  type="submit"
+                  type="button"
                   class="btn btn-primary btn-lg mr-3"
                   style="
                     padding: 12px 30px;
@@ -1282,9 +1282,11 @@
                     type="text"
                     class="form-control"
                     id="transferFlight"
+                    list="flightList"
                     placeholder="Flight details"
                     required
                   />
+                  <datalist id="flightList"></datalist>
                 </div>
                 <!-- Flight Time -->
                 <div class="form-group col-md-4">
@@ -5324,6 +5326,11 @@
 
             console.log("Submitting Quotation:", quotationRequest); // Debugging Log
 
+            // Prevent double submission
+            const submitBtn = document.getElementById("submitTrip");
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+
             // Make the POST request
             fetch(`${Endpoint}/api/v1/quotations`, {
               method: "POST",
@@ -5372,6 +5379,9 @@
               .catch((error) => {
                 console.error("Error:", error);
                 alert(error.message);
+                // Re-enable button on error
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i> Save Quotation';
               });
           });
 
