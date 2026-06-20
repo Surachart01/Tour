@@ -832,7 +832,7 @@
             </div>
 
             <div class="row">
-              <div class="col-md-12 form-group">
+              <div class="col-md-6 form-group">
                 <label for="tourRoute">
                   <i class="fas fa-route"></i>Route *
                 </label>
@@ -842,6 +842,19 @@
                   id="tourRoute"
                   placeholder="Enter route"
                   required
+                />
+              </div>
+              <div class="col-md-6 form-group">
+                <label for="displayOrder">
+                  <i class="fas fa-sort-numeric-down"></i>Display Order
+                </label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="displayOrder"
+                  placeholder="Enter display order"
+                  min="0"
+                  value="0"
                 />
               </div>
             </div>
@@ -2846,6 +2859,7 @@
             description: document.getElementById("tourDescription").value,
             duration: tourDays.length,
             route: document.getElementById("tourRoute").value,
+            display_order: parseInt(document.getElementById("displayOrder").value) || 0,
             tot: document.getElementById("tourDeparture").value,
             date: new Date().toISOString(), // Use a specific date if required
             available_days: availableDays,

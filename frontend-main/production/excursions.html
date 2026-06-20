@@ -446,12 +446,14 @@
                         >
                           <thead>
                             <tr>
+                              <th>#</th>
                               <th>City</th>
                               <th>Name</th>
                               <th>Valid Days</th>
                               <th>Supplier Name</th>
                               <th>Description</th>
                               <th>Edit</th>
+                              <th>Clone</th>
                               <th>Delete</th>
                             </tr>
                           </thead>
@@ -620,12 +622,14 @@
 
             const row = `
           <tr>
+            <td>${excursion.display_order ?? 0}</td>
             <td>${excursion.city}</td>
             <td>${excursion.name}</td>
             <td>${validDays}</td>
             <td>${supplierName}</td>
             <td class="description-cell"><div class="description-text">${excursion.description}</div></td>
             <td><button class="btn btn-primary btn-sm edit-btn" data-id="${excursion.id}"><i class="fa fa-edit"></i> Edit</button></td>
+            <td><button class="btn btn-success btn-sm clone-btn" data-id="${excursion.id}"><i class="fa fa-copy"></i> Clone</button></td>
             <td><button class="btn btn-danger btn-sm delete-btn" data-id="${excursion.id}"><i class="fa fa-trash"></i> Delete</button></td>
           </tr>`;
             excursionTableBody.innerHTML += row;
@@ -636,6 +640,14 @@
             btn.addEventListener("click", function () {
               const excursionId = this.getAttribute("data-id");
               window.location.href = `edit_excursion.html?id=${excursionId}`;
+            });
+          });
+
+          // Attach clone event listeners
+          document.querySelectorAll(".clone-btn").forEach((btn) => {
+            btn.addEventListener("click", function () {
+              const excursionId = this.getAttribute("data-id");
+              window.location.href = `edit_excursion.html?id=${excursionId}&clone=true`;
             });
           });
 

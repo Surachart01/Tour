@@ -590,6 +590,16 @@ document.addEventListener("DOMContentLoaded", function () {
   const urlParams = new URLSearchParams(window.location.search);
   const hotelId = urlParams.get("id");
   const token = localStorage.getItem("token"); // Ensure token is available
+  const isClone = urlParams.get("clone") === "true";
+  if (isClone) {
+    document.title = "Add Hotel (Clone)";
+    const titleH1 = document.querySelector("h1");
+    if (titleH1) titleH1.textContent = "Add Hotel (Clone)";
+    const submitBtn = document.querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.innerHTML = '<i class="fas fa-save" style="margin-right: 8px"></i>Create Hotel';
+    }
+  }
   
   // Store hotel data for later use
   let loadedHotelData = null;
@@ -753,6 +763,7 @@ document.addEventListener("DOMContentLoaded", function () {
       
       // Populate the rest of the form with hotel data
       document.getElementById("hotelName").value = hotel.name;
+      document.getElementById("displayOrder").value = hotel.display_order ?? 0;
       document.getElementById("hotelAddress").value = hotel.address;
       document.getElementById("earlycheckinadd").value =
         hotel.fees.early_checkin_fee || "";
@@ -763,9 +774,10 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("newyear").value =
         hotel.fees.new_year_dinner_fee || "";
       document.getElementById("hotelnotesforagent").value = hotel.notes || "";
+      const isCloneMode = new URLSearchParams(window.location.search).get("clone") === "true";
       populateContactTable(hotel.contacts || []);
       populateRoomTypesTable(hotel.room_types || []);
-      populatePromotionsTable(hotel.promotions || []);
+      populatePromotionsTable(isCloneMode ? [] : (hotel.promotions || []));
     })
     .catch((error) => {
       console.error("Error loading hotel data:", error);
@@ -863,6 +875,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const updatedHotelData = {
         name: document.getElementById("hotelName").value,
+        display_order: parseInt(document.getElementById("displayOrder").value) || 0,
         city: document.getElementById("hotelLocation").value,
         address: document.getElementById("hotelAddress").value,
         fees: {
@@ -882,8 +895,12 @@ document.addEventListener("DOMContentLoaded", function () {
         promotions: getPromotionsFromTable(),
       };
 
-      fetch(`${Endpoint}/api/v1/hotels/${hotelId}`, {
-        method: "PUT",
+      const isCloneMode = new URLSearchParams(window.location.search).get("clone") === "true";
+      const fetchUrl = isCloneMode ? `${Endpoint}/api/v1/hotels` : `${Endpoint}/api/v1/hotels/${hotelId}`;
+      const fetchMethod = isCloneMode ? "POST" : "PUT";
+
+      fetch(fetchUrl, {
+        method: fetchMethod,
         headers: {
           Authorization: `Bearer ${token}`, // Use the token from local storage
           "Content-Type": "application/json",
@@ -912,7 +929,8 @@ document.addEventListener("DOMContentLoaded", function () {
               });
             }
           }
-          alert("Hotel data updated successfully!");
+          const isCloneMode = new URLSearchParams(window.location.search).get("clone") === "true";
+          alert(isCloneMode ? "Hotel data cloned successfully!" : "Hotel data updated successfully!");
           window.location.href = "hotels.html"; // Redirect to hotel list page
         })
         .catch((error) => {
@@ -1256,8 +1274,23 @@ document.addEventListener("DOMContentLoaded", function () {
         new Date(roomType.end_date).toISOString().split("T")[0]
       );
 
+      const isCloneMode = new URLSearchParams(window.location.search).get("clone") === "true";
       const row = document.createElement("tr");
-      row.setAttribute("data-room-type-id", roomType.id);
+      row.setAttribute("data-room-type-id", isCloneMode ? "0" : roomType.id);
+
+      const singlePrice = isCloneMode ? 0 : (roomType.single_price || 0);
+      const doublePrice = isCloneMode ? 0 : (roomType.double_price || 0);
+      const extraBedAdult = isCloneMode ? 0 : (roomType.extra_bed_adult || 0);
+      const extraBedChild = isCloneMode ? 0 : (roomType.extra_bed_child || 0);
+      const extraBedShared = isCloneMode ? 0 : (roomType.extra_bed_shared || 0);
+      const foodAdultAbf = isCloneMode ? 0 : (roomType.food_adult_abf || 0);
+      const foodAdultLunch = isCloneMode ? 0 : (roomType.food_adult_lunch || 0);
+      const foodAdultDinner = isCloneMode ? 0 : (roomType.food_adult_dinner || 0);
+      const foodAdultAllInclusive = isCloneMode ? 0 : (roomType.food_adult_all_inclusive || 0);
+      const foodChildAbf = isCloneMode ? 0 : (roomType.food_child_abf || 0);
+      const foodChildLunch = isCloneMode ? 0 : (roomType.food_child_lunch || 0);
+      const foodChildDinner = isCloneMode ? 0 : (roomType.food_child_dinner || 0);
+      const foodChildAllInclusive = isCloneMode ? 0 : (roomType.food_child_all_inclusive || 0);
 
       row.innerHTML = `
             <td><input type="checkbox" class="rowCheckbox" onchange="toggleEditButtonVisibility()" /></td>
@@ -1266,22 +1299,10 @@ document.addEventListener("DOMContentLoaded", function () {
             <td>${roomType.name}<br>Allotment: ${
         roomType.allotment || 0
       }<br>CutOff Days: ${roomType.cutoff_days || 0}<br>Max Capacity: ${roomType.max_capacity || 0}</td>
-            <td>Single: ${roomType.single_price || 0}<br>Double: ${
-        roomType.double_price || 0
-      }</td>
-            <td>Adult: ${roomType.extra_bed_adult || 0}<br>Child: ${
-        roomType.extra_bed_child || 0
-      }<br>Shared: ${roomType.extra_bed_shared || 0}</td>
-            <td>ABF: ${roomType.food_adult_abf || 0}<br>Lunch: ${
-        roomType.food_adult_lunch || 0
-      }<br>Dinner: ${roomType.food_adult_dinner || 0}<br>All Inclusive: ${
-        roomType.food_adult_all_inclusive || 0
-      }</td>
-            <td>ABF: ${roomType.food_child_abf || 0}<br>Lunch: ${
-        roomType.food_child_lunch || 0
-      }<br>Dinner: ${roomType.food_child_dinner || 0}<br>All Inclusive: ${
-        roomType.food_child_all_inclusive || 0
-      }</td>
+            <td>Single: ${singlePrice}<br>Double: ${doublePrice}</td>
+            <td>Adult: ${extraBedAdult}<br>Child: ${extraBedChild}<br>Shared: ${extraBedShared}</td>
+            <td>ABF: ${foodAdultAbf}<br>Lunch: ${foodAdultLunch}<br>Dinner: ${foodAdultDinner}<br>All Inclusive: ${foodAdultAllInclusive}</td>
+            <td>ABF: ${foodChildAbf}<br>Lunch: ${foodChildLunch}<br>Dinner: ${foodChildDinner}<br>All Inclusive: ${foodChildAllInclusive}</td>
             <td>
                 <div style="display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: nowrap;">
                     <div class="tooltip-btn">

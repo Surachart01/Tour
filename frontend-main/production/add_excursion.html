@@ -1354,9 +1354,9 @@
               document.getElementById("excursionName").value;
             const city = document.getElementById("city").value;
             const code = document.getElementById("code").value;
-            const order = parseInt(
-              document.getElementById("orderExcursion").value
-            );
+            const orderInput = document.getElementById("orderExcursion").value;
+            const order = parseInt(orderInput, 10);
+            const displayOrder = isNaN(order) ? 0 : order;
             const description = document.getElementById("description").value;
             const SICPriceAdult =
               document.getElementById("SICPriceAdult").value;
@@ -1403,7 +1403,7 @@
               country: document.getElementById("country").value,
               city,
               code,
-              order,
+              display_order: displayOrder,
               description,
               sic_price_adult: parseFloat(SICPriceAdult),
               sic_price_child: parseFloat(SICPriceChild),

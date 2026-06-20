@@ -735,7 +735,7 @@
               </div>
 
               <div class="row">
-                <div class="col-md-12 col-sm-12 form-group">
+                <div class="col-md-6 col-sm-6 form-group">
                   <label for="tourRoute">
                     <i class="fas fa-route"></i>Route *
                   </label>
@@ -745,6 +745,19 @@
                     id="tourRoute"
                     placeholder="Enter route"
                     required
+                  />
+                </div>
+                <div class="col-md-6 col-sm-6 form-group">
+                  <label for="displayOrder">
+                    <i class="fas fa-sort-numeric-down"></i>Display Order
+                  </label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="displayOrder"
+                    placeholder="Enter display order"
+                    min="0"
+                    value="0"
                   />
                 </div>
               </div>
@@ -1298,12 +1311,24 @@
         })
           .then((response) => response.json())
           .then((tour) => {
+            const isClone = new URLSearchParams(window.location.search).get("clone") === "true";
+            if (isClone) {
+              document.title = "Add Tour (Clone)";
+              const titleH1 = document.querySelector(".page-title");
+              if (titleH1) titleH1.innerHTML = '<i class="fas fa-route mr-3"></i>Add Tour (Clone)';
+              const submitBtn = document.querySelector('button[type="submit"]');
+              if (submitBtn) {
+                submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Create Tour';
+              }
+            }
+
             document.getElementById("tourName").value = tour.name;
             document.getElementById("tourCategory").value = tour.category;
             document.getElementById("tourDuration").value = tour.duration;
             document.getElementById("tourDeparture").value = tour.tot;
             document.getElementById("tourDescription").value = tour.description;
             document.getElementById("tourRoute").value = tour.route;
+            document.getElementById("displayOrder").value = tour.display_order ?? 0;
 
             populateMainCitiesDropdown().then(() => {
               const tourCodeSelect = document.getElementById("tourCode");
@@ -1359,7 +1384,9 @@
               populateItinerary(uniqueDays);
             });
             
-            populatePrices(tour.tour_pricings);
+            if (!isClone) {
+              populatePrices(tour.tour_pricings);
+            }
           })
           .catch((error) => {
             console.error("Error fetching tour:", error);
@@ -3678,6 +3705,7 @@
             description: document.getElementById("tourDescription").value,
             duration: tourDays.length,
             route: document.getElementById("tourRoute").value,
+            display_order: parseInt(document.getElementById("displayOrder").value) || 0,
             tot: document.getElementById("tourDeparture").value,
             date: new Date().toISOString(), // Use a specific date if required
             available_days: availableDays,
@@ -3706,9 +3734,13 @@
             JSON.stringify(tourData, null, 2)
           );
 
-          // Send PUT request
-          fetch(`${Endpoint}/api/v1/tours/${tourId}`, {
-            method: "PUT",
+          const isCloneMode = new URLSearchParams(window.location.search).get("clone") === "true";
+          const fetchUrl = isCloneMode ? `${Endpoint}/api/v1/tours` : `${Endpoint}/api/v1/tours/${tourId}`;
+          const fetchMethod = isCloneMode ? "POST" : "PUT";
+
+          // Send POST/PUT request
+          fetch(fetchUrl, {
+            method: fetchMethod,
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
@@ -3717,20 +3749,20 @@
           })
             .then((response) => {
               if (response.ok) {
-                alert("Tour updated successfully!");
+                alert(isCloneMode ? "Tour cloned successfully!" : "Tour updated successfully!");
                 window.location.href = "tours.html";
               } else {
                 return response.json().then((errorData) => {
-                  console.error("Failed to update tour:", errorData);
+                  console.error("Failed to save tour:", errorData);
                   alert(
-                    `Error: ${errorData.message || "Failed to update tour."}`
+                    `Error: ${errorData.message || "Failed to save tour."}`
                   );
                 });
               }
             })
             .catch((error) => {
-              console.error("Error updating tour:", error);
-              alert("Failed to update tour. Please try again later.");
+              console.error("Error saving tour:", error);
+              alert("Failed to save tour. Please try again later.");
             });
         });
     </script>

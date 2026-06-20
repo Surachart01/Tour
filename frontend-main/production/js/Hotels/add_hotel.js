@@ -1661,6 +1661,10 @@ document.addEventListener("DOMContentLoaded", function () {
     .addEventListener("submit", function (event) {
       event.preventDefault();
       const name = document.getElementById("hotelName").value;
+      const displayOrder = parseInt(
+        document.getElementById("displayOrder").value || "0",
+        10
+      );
       const city = document.getElementById("hotelLocation").value;
       const address = document.getElementById("hotelAddress").value;
       const earlyCheckinAdd = parseInt(
@@ -1775,6 +1779,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const hotelData = {
         name,
+        display_order: displayOrder,
         country: document.getElementById("country").value,
         city,
         address,

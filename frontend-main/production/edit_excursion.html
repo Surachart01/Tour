@@ -1227,18 +1227,29 @@
             .then((excursion) => {
               console.log("Loading excursion data:", excursion);
 
+              const isClone = new URLSearchParams(window.location.search).get("clone") === "true";
+              if (isClone) {
+                document.title = "Add Excursion (Clone)";
+                const titleH1 = document.querySelector("h1");
+                if (titleH1) titleH1.textContent = "Add Excursion (Clone)";
+                const submitBtn = document.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                  submitBtn.innerHTML = '<i class="fas fa-save" style="margin-right: 8px"></i>Create Excursion';
+                }
+              }
+
               // Populate form with excursion data
               document.getElementById("excursionName").value =
                 excursion.name || "";
               document.getElementById("code").value = excursion.code || "";
               document.getElementById("orderExcursion").value =
-                excursion.order || "";
+                excursion.display_order ?? excursion.order ?? "";
               document.getElementById("description").value =
                 excursion.description || "";
               document.getElementById("SICPriceAdult").value =
-                excursion.sic_price_adult || "";
+                isClone ? 0 : (excursion.sic_price_adult || "");
               document.getElementById("SICPriceChild").value =
-                excursion.sic_price_child || "";
+                isClone ? 0 : (excursion.sic_price_child || "");
 
               // Handle city selection
               const citySelect = document.getElementById("city");
@@ -1263,9 +1274,11 @@
               supplierDropdown.value = excursion.supplier_id || "";
 
               // Populate excursion prices
-              excursion.prices.forEach((price) => {
-                addExcursionPriceRow(price);
-              });
+              if (!isClone && excursion.prices) {
+                excursion.prices.forEach((price) => {
+                  addExcursionPriceRow(price);
+                });
+              }
 
               // Populate available days checkboxes
               if (
@@ -1521,7 +1534,7 @@
               name: document.getElementById("excursionName").value,
               city: document.getElementById("city").value,
               code: document.getElementById("code").value,
-              order: parseInt(document.getElementById("orderExcursion").value),
+              display_order: parseInt(document.getElementById("orderExcursion").value) || 0,
               description: document.getElementById("description").value,
               sic_price_adult: parseFloat(
                 document.getElementById("SICPriceAdult").value
@@ -1555,9 +1568,13 @@
 
             console.log("Excursion Data being sent to backend:", excursionData);
 
-            // Send the updated data to the backend using the PUT method
-            fetch(`${Endpoint}/api/v1/excursions/${excursionId}`, {
-              method: "PUT",
+            const isCloneMode = new URLSearchParams(window.location.search).get("clone") === "true";
+            const fetchUrl = isCloneMode ? `${Endpoint}/api/v1/excursions` : `${Endpoint}/api/v1/excursions/${excursionId}`;
+            const fetchMethod = isCloneMode ? "POST" : "PUT";
+
+            // Send the updated data to the backend using the correct method
+            fetch(fetchUrl, {
+              method: fetchMethod,
               headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
@@ -1577,10 +1594,10 @@
                     );
                     return;
                   } else {
-                    throw new Error("Failed to update excursion");
+                    throw new Error("Failed to save excursion");
                   }
                 }
-                alert("Excursion data saved successfully!");
+                alert(isCloneMode ? "Excursion data cloned successfully!" : "Excursion data saved successfully!");
                 // Redirect to the excursions page after saving
                 window.location.href = "excursions.html";
               })

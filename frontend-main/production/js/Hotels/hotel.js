@@ -104,9 +104,11 @@ function renderTable() {
     }
 
     row.innerHTML = `
+      <td>${hotel.display_order ?? 0}</td>
       <td>${hotel.name}</td>
       <td>${hotel.city}</td>
       <td><button class="btn btn-primary btn-sm edit-btn" data-id="${hotel.id}"><i class="fa fa-edit"></i> Edit</button></td>
+      <td><button class="btn btn-success btn-sm clone-btn" data-id="${hotel.id}"><i class="fa fa-copy"></i> Clone</button></td>
       <td><button class="btn btn-danger btn-sm delete-btn" data-id="${hotel.id}"><i class="fa fa-trash"></i> Delete</button></td>
     `;
 
@@ -115,11 +117,18 @@ function renderTable() {
 
   updatePaginationButtons();
 
-  // Add event listeners for the edit and delete buttons
+  // Add event listeners for the edit, clone and delete buttons
   document.querySelectorAll(".edit-btn").forEach((btn) => {
     btn.addEventListener("click", function () {
       const hotelId = this.getAttribute("data-id");
       window.location.href = `edit_hotel.html?id=${hotelId}`;
+    });
+  });
+
+  document.querySelectorAll(".clone-btn").forEach((btn) => {
+    btn.addEventListener("click", function () {
+      const hotelId = this.getAttribute("data-id");
+      window.location.href = `edit_hotel.html?id=${hotelId}&clone=true`;
     });
   });
 

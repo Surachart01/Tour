@@ -431,7 +431,21 @@
                 </div>
 
                 <div class="col-md-6 form-group">
-                  <!-- Display Order removed to align with add_transfer.html -->
+                  <label for="displayOrder">
+                    <i
+                      class="fas fa-sort-numeric-down"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Display Order
+                  </label>
+                  <input
+                    type="number"
+                    id="displayOrder"
+                    class="form-control"
+                    placeholder="Enter display order"
+                    min="0"
+                    value="0"
+                  />
                 </div>
               </div>
             </form>
@@ -1124,15 +1138,28 @@
                 }, 1500); // Wait for cities to be loaded
               }
 
+              const isClone = new URLSearchParams(window.location.search).get("clone") === "true";
+              if (isClone) {
+                document.title = "Add Transfer (Clone)";
+                const titleH1 = document.querySelector("h1");
+                if (titleH1) titleH1.textContent = "Add Transfer (Clone)";
+                const submitBtn = document.getElementById("submitTransfer");
+                if (submitBtn) {
+                  submitBtn.innerHTML = '<i class="fas fa-save" style="margin-right: 8px"></i>Create Transfer';
+                }
+              }
+
               document.getElementById("description").value =
                 transfer.description || "";
               document.getElementById("departure").value =
                 transfer.departure || "";
               document.getElementById("arrival").value = transfer.arrival || "";
               document.getElementById("SICPriceAdult").value =
-                transfer.sic_price_adult || "";
+                isClone ? 0 : (transfer.sic_price_adult || "");
               document.getElementById("SICPriceChild").value =
-                transfer.sic_price_child || "";
+                isClone ? 0 : (transfer.sic_price_child || "");
+              document.getElementById("displayOrder").value =
+                transfer.display_order ?? transfer.order ?? 0;
 
               // Set the selected supplier
               if (transfer.supplier_id) {
@@ -1141,7 +1168,7 @@
                 }, 300);
               }
 
-              if (transfer.prices && transfer.prices.length > 0) {
+              if (!isClone && transfer.prices && transfer.prices.length > 0) {
                 transfer.prices.forEach((price) => {
                   addTransferPriceRow(price);
                 });
@@ -1417,7 +1444,7 @@
             sic_price_child: parseFloat(
               document.getElementById("SICPriceChild").value
             ),
-            order: null,
+            display_order: parseInt(document.getElementById("displayOrder").value) || 0,
             supplier_id: parseInt(
               document.getElementById("supplier").value,
               10
@@ -1434,8 +1461,12 @@
 
           console.log("Sending transfer data:", transferData);
 
-          fetch(`${Endpoint}/api/v1/transfers/${transferId}`, {
-            method: "PUT",
+          const isCloneMode = new URLSearchParams(window.location.search).get("clone") === "true";
+          const fetchUrl = isCloneMode ? `${Endpoint}/api/v1/transfers` : `${Endpoint}/api/v1/transfers/${transferId}`;
+          const fetchMethod = isCloneMode ? "POST" : "PUT";
+
+          fetch(fetchUrl, {
+            method: fetchMethod,
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -1445,8 +1476,8 @@
             .then((response) => {
               console.log("API response status:", response.status);
               if (response.ok) {
-                console.log("Transfer updated successfully");
-                alert("Transfer updated successfully!");
+                console.log(isCloneMode ? "Transfer cloned successfully" : "Transfer updated successfully");
+                alert(isCloneMode ? "Transfer cloned successfully!" : "Transfer updated successfully!");
                 window.location.href = "transfers.html";
               } else {
                 if (response.status === 401) {

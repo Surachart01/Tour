@@ -512,6 +512,7 @@
                               <th>Arrival</th>
                               <th>Description</th>
                               <th>Edit</th>
+                              <th>Clone</th>
                               <th>Delete</th>
                             </tr>
                           </thead>
@@ -909,10 +910,9 @@
             const row = document.createElement("tr");
 
             const supplierName = transfer.supplier_name || "N/A";
-            const rowIndex = start + idx + 1;
 
             row.innerHTML = `
-      <td>${rowIndex}</td>
+      <td>${transfer.display_order ?? 0}</td>
       <td>${transfer.city}</td>
       <td>${transfer.transfer_type}</td>
       <td>${supplierName}</td>
@@ -920,16 +920,23 @@
       <td>${transfer.arrival}</td>
       <td class="description-cell"><div class="description-text">${transfer.description || ''}</div></td>
       <td><button class="btn btn-primary btn-sm edit-btn"><i class="fa fa-edit"></i> Edit</button></td>
+      <td><button class="btn btn-success btn-sm clone-btn"><i class="fa fa-copy"></i> Clone</button></td>
       <td><button class="btn btn-danger btn-sm delete-btn"><i class="fa fa-trash"></i> Delete</button></td>
     `;
 
             // Attach event listeners to the buttons
             const editButton = row.querySelector(".edit-btn");
+            const cloneButton = row.querySelector(".clone-btn");
             const deleteButton = row.querySelector(".delete-btn");
 
             // Dynamically bind the click event for the Edit button
             editButton.addEventListener("click", () => {
               editTransfer(transfer.id);
+            });
+
+            // Dynamically bind the click event for the Clone button
+            cloneButton.addEventListener("click", () => {
+              cloneTransfer(transfer.id);
             });
 
             // Dynamically bind the click event for the Delete button
@@ -952,6 +959,11 @@
         // Edit transfer redirect
         function editTransfer(id) {
           window.location.href = `edit_transfer.html?id=${id}`;
+        }
+
+        // Clone transfer redirect
+        function cloneTransfer(id) {
+          window.location.href = `edit_transfer.html?id=${id}&clone=true`;
         }
 
         // Delete transfer function

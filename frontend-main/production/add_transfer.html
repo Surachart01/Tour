@@ -508,6 +508,24 @@
                   />
                 </div>
 
+                <div class="col-md-6 form-group">
+                  <label for="displayOrder">
+                    <i
+                      class="fas fa-sort-numeric-down"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Display Order
+                  </label>
+                  <input
+                    type="number"
+                    id="displayOrder"
+                    class="form-control"
+                    placeholder="Enter display order"
+                    min="0"
+                    value="0"
+                  />
+                </div>
+
 
               </div>
             </form>
@@ -1602,7 +1620,9 @@
               document.getElementById("SICPriceChild").value;
             const supplierValue = document.getElementById("supplier").value;
             const supplier = supplierValue ? parseInt(supplierValue, 10) : null;
-            const order = null;
+            const orderInput = document.getElementById("displayOrder").value;
+            const order = parseInt(orderInput, 10);
+            const displayOrder = isNaN(order) ? 0 : order;
 
             console.log("Form data collected:", {
               transferType,
@@ -1614,7 +1634,7 @@
               SICPriceAdult,
               SICPriceChild,
               supplier,
-              order,
+              displayOrder,
             });
 
             const transferPrices = [];
@@ -1642,7 +1662,7 @@
               arrival: arrival,
               sic_price_adult: parseFloat(SICPriceAdult),
               sic_price_child: parseFloat(SICPriceChild),
-              order,
+              display_order: displayOrder,
               supplier_id: supplier,
               prices: transferPrices,
             };

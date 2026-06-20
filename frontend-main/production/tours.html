@@ -91,27 +91,33 @@
 
       /* Table column width control */
       #contenttable th:nth-child(1) {
-        width: 12%;
-      } /* Start City */
+        width: 5%;
+      } /* # */
       #contenttable th:nth-child(2) {
+        width: 10%;
+      } /* Start City */
+      #contenttable th:nth-child(3) {
         width: 15%;
       } /* Name */
-      #contenttable th:nth-child(3) {
+      #contenttable th:nth-child(4) {
         width: 10%;
       } /* Duration */
-      #contenttable th:nth-child(4) {
+      #contenttable th:nth-child(5) {
         width: 15%;
       } /* Valid Days */
-      #contenttable th:nth-child(5) {
+      #contenttable th:nth-child(6) {
         width: 12%;
       } /* Category */
-      #contenttable th:nth-child(6) {
-        width: 24%;
-      } /* Description */
       #contenttable th:nth-child(7) {
+        width: 15%;
+      } /* Description */
+      #contenttable th:nth-child(8) {
         width: 6%;
       } /* Edit */
-      #contenttable th:nth-child(8) {
+      #contenttable th:nth-child(9) {
+        width: 6%;
+      } /* Clone */
+      #contenttable th:nth-child(10) {
         width: 6%;
       } /* Delete */
     </style>
@@ -456,6 +462,7 @@
                           >
                             <thead>
                               <tr>
+                                <th>#</th>
                                 <th>Start City</th>
                                 <th>Name</th>
                                 <th>Duration</th>
@@ -463,6 +470,7 @@
                                 <th>Category</th>
                                 <th>Description</th>
                                 <th>Edit</th>
+                                <th>Clone</th>
                                 <th>Delete</th>
                               </tr>
                             </thead>
@@ -629,6 +637,7 @@
 
           const row = document.createElement("tr");
           row.innerHTML = `
+       <td>${tour.display_order ?? 0}</td>
        <td>${tour.city}</td>
        <td>${tour.name}</td>
        <td><span class="badge badge-primary">${duration}</span></td>
@@ -636,6 +645,7 @@
        <td>${tour.category}</td>
        <td class="description-cell"><div class="description-text">${tour.description}</div></td>
        <td><button class="btn btn-primary btn-sm edit-btn" data-id="${tour.id}"><i class="fa fa-edit"></i> Edit</button></td>
+       <td><button class="btn btn-success btn-sm clone-btn" data-id="${tour.id}"><i class="fa fa-copy"></i> Clone</button></td>
        <td><button class="btn btn-danger btn-sm delete-btn" data-id="${tour.id}"><i class="fa fa-trash"></i> Delete</button></td>
      `;
           tableBody.appendChild(row);
@@ -775,6 +785,13 @@
           btn.addEventListener("click", function () {
             const id = this.dataset.id;
             window.location.href = `edit_tours.html?id=${id}`;
+          });
+        });
+
+        document.querySelectorAll(".clone-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const id = this.dataset.id;
+            window.location.href = `edit_tours.html?id=${id}&clone=true`;
           });
         });
 
