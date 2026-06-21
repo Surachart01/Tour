@@ -29,7 +29,8 @@ async function globalSetup(config) {
     // Check if the application is accessible
     console.log('Checking application accessibility...');
     
-    await page.goto('http://127.0.0.1:8080/production/login.html', { 
+    const baseUrl = config.use?.baseURL || 'http://127.0.0.1:5501';
+    await page.goto(`${baseUrl}/production/login.html`, { 
       waitUntil: 'networkidle',
       timeout: 30000 
     });

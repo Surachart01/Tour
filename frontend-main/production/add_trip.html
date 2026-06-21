@@ -1173,7 +1173,7 @@
                   </select>
                 </div>
                 <!-- City -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="transferCity">
                     <i
                       class="fas fa-city"
@@ -1203,7 +1203,7 @@
                   </div>
                 </div>
                 <!-- Date -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="transferDate">
                     <i
                       class="fas fa-calendar-alt"
@@ -1218,8 +1218,27 @@
                     required
                   />
                 </div>
+                <!-- Transfer Type -->
+                <div class="form-group col-md-3">
+                  <label for="transferRouteType">
+                    <i
+                      class="fas fa-exchange-alt"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Transfer Type *
+                  </label>
+                  <select
+                    id="transferRouteType"
+                    class="form-control transfer-route-type"
+                    required
+                  >
+                    <option value="" disabled selected>Select Type</option>
+                    <option value="TIN">TIN (Transfer In)</option>
+                    <option value="TOUT">TOUT (Transfer Out)</option>
+                  </select>
+                </div>
                 <!-- Transfer Dropdown -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="transferType">
                     <i
                       class="fas fa-bus"
@@ -2898,6 +2917,7 @@
         function searchTransfersByCity(cityDropdown, transferDropdown) {
           const selectedCity = cityDropdown.value;
           const transferDate = document.getElementById("transferDate")?.value;
+          const transferRouteType = document.getElementById("transferRouteType")?.value;
 
           if (!selectedCity) {
             alert("Please select a city.");
@@ -2910,12 +2930,15 @@
             return;
           }
 
-          console.log(`Fetching transfers for city: ${selectedCity}, date: ${transferDate}`);
+          console.log(`Fetching transfers for city: ${selectedCity}, date: ${transferDate}, type: ${transferRouteType || "all"}`);
 
           const url = new URL(`${Endpoint}/api/v1/transfers`);
           url.searchParams.append("city", selectedCity);
           url.searchParams.append("from_date", transferDate);
           url.searchParams.append("to_date", transferDate);
+          if (transferRouteType) {
+            url.searchParams.append("transfer_type", transferRouteType);
+          }
           url.searchParams.append("keyword", "");
 
           fetch(url, {
@@ -3855,6 +3878,17 @@
         // Listen for transfer date change to reload transfers (date filtering)
         document.querySelectorAll(".transfer-date").forEach((dateInput) => {
           dateInput.addEventListener("change", function () {
+            const cityDropdown = document.querySelector(".city-dropdown-transfer");
+            const transferDropdown = document.querySelector(".transfer-dropdown");
+            if (cityDropdown && cityDropdown.value && transferDropdown) {
+              searchTransfersByCity(cityDropdown, transferDropdown);
+            }
+          });
+        });
+
+        // Listen for transfer route type change to reload transfers
+        document.querySelectorAll(".transfer-route-type").forEach((typeInput) => {
+          typeInput.addEventListener("change", function () {
             const cityDropdown = document.querySelector(".city-dropdown-transfer");
             const transferDropdown = document.querySelector(".transfer-dropdown");
             if (cityDropdown && cityDropdown.value && transferDropdown) {
@@ -4878,7 +4912,7 @@
         // Get role from localStorage
         const role = localStorage.getItem("role");
 
-        if (role === "admin") {
+        if (role === "admin" || role === "superadmin") {
           // Admins can select any date (No restrictions)
           bookingDateInput.removeAttribute("min");
           bookingDateInput.removeAttribute("readonly"); // Allow editing for admin
@@ -4894,7 +4928,7 @@
 
         // Ensure Trip Start Date is always greater than Booking Date
         bookingDateInput.addEventListener("change", function () {
-          if (role === "admin") {
+          if (role === "admin" || role === "superadmin") {
             // Allow only admins to change trip start date dynamically
             let selectedBookingDate = new Date(bookingDateInput.value);
             let nextDay = new Date(selectedBookingDate);
@@ -5018,6 +5052,7 @@
                 rowData["remarks"] = cells[7]?.textContent.trim() || "";
                 rowData["total_cost"] =
                   parseFloat(cells[8]?.textContent.trim()) || 0.0;
+                rowData["price"] = rowData["total_cost"];
                 rowData["discount"] = 0.0; // Default to 0
                 rowData["final_cost"] = rowData["total_cost"]; // Set default final cost
                 rowData["notify_supplier"] = false; // Default false
@@ -5065,6 +5100,7 @@
                 rowData["departure_time"] = row.dataset.departureTime || "";
                 rowData["total_cost"] =
                   parseFloat(cells[6]?.textContent.trim()) || 0.0;
+                rowData["price"] = rowData["total_cost"];
                 rowData["discount"] = 0.0;
                 rowData["final_cost"] = rowData["total_cost"];
 
@@ -5100,6 +5136,7 @@
                 // ✅ Extract single cost value from table cell and map to backend structure
                 const costValue = parseFloat(cells[8]?.textContent.trim()) || 0;
                 flightData["total_cost"] = costValue; // Map single cost to total_cost
+                flightData["price"] = costValue;
                 flightData["discount"] = 0; // Set discount to 0 for simplified structure
                 flightData["final_cost"] = costValue; // Map single cost to final_cost
                 flightData["remarks"] = cells[9]?.textContent.trim() || ""; // Remarks
@@ -5142,6 +5179,7 @@
                 rowData["remarks"] = cells[5]?.textContent.trim() || "";
                 rowData["total_cost"] =
                   parseFloat(cells[7]?.textContent.trim()) || 0.0;
+                rowData["price"] = rowData["total_cost"];
                 rowData["discount"] = 0.0;
                 rowData["final_cost"] = rowData["total_cost"];
 

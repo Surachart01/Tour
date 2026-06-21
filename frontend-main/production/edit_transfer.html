@@ -25,6 +25,67 @@
     <link href="../build/css/custom.min.css" rel="stylesheet" />
 
     <style>
+      /* Premium Modal Styling */
+      .modal-content {
+        border: none;
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      }
+      .modal-header {
+        background: linear-gradient(135deg, #2a3f54 0%, #34495e 100%);
+        color: white;
+        border-top-left-radius: 14px;
+        border-top-right-radius: 14px;
+        padding: 18px 24px;
+      }
+      .modal-header .modal-title {
+        font-weight: 700;
+        font-size: 1.15rem;
+      }
+      .modal-header .close {
+        color: white;
+        opacity: 0.8;
+        outline: none;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+      }
+      .modal-header .close:hover {
+        opacity: 1;
+        color: white;
+      }
+      .modal-body {
+        padding: 24px;
+      }
+      .modal-body .form-group label {
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 6px;
+      }
+      .modal-body .form-control {
+        border-radius: 8px;
+        border: 1px solid #cbd5e0;
+        padding: 10px 14px;
+        height: auto;
+        transition: all 0.2s ease;
+      }
+      .modal-body .form-control:focus {
+        border-color: #1abb9c;
+        box-shadow: 0 0 0 3px rgba(26, 187, 156, 0.15);
+      }
+      .modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid #edf2f7;
+        background-color: #f7fafc;
+        border-bottom-left-radius: 14px;
+        border-bottom-right-radius: 14px;
+      }
+      .modal-footer .btn {
+        padding: 10px 20px;
+        font-weight: 600;
+        border-radius: 8px;
+      }
+
       /* Modern form enhancements */
       .form-control:focus {
         border-color: #1abb9c !important;
@@ -614,9 +675,16 @@
             </button>
             <button
               type="button"
+              id="saveTransferPriceAndAnother"
+              class="btn btn-info"
+              style="background-color: #17a2b8; border-color: #17a2b8; color: white;"
+            >
+              Save & Add Another
+            </button>
+            <button
+              type="button"
               id="saveTransferPrice"
               class="btn btn-primary"
-              data-dismiss="modal"
             >
               Save Price
             </button>
@@ -701,7 +769,6 @@
               type="button"
               id="saveEditedTransferPrice"
               class="btn btn-primary"
-              data-dismiss="modal"
             >
               Save Changes
             </button>
@@ -1249,18 +1316,46 @@
         .getElementById("saveTransferPrice")
         .addEventListener("click", addNewTransferPrice);
 
+      document
+        .getElementById("saveTransferPriceAndAnother")
+        .addEventListener("click", addNewTransferPriceAndKeep);
+
+      // Handle enter key in transferPriceForm to add and keep modal open
+      document.getElementById("transferPriceForm").addEventListener("keypress", function (event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          addNewTransferPriceAndKeep();
+        }
+      });
+
+      // Autofill date range from last table row on modal show
+      $("#addTransferPriceModal").on("show.bs.modal", function () {
+        const rows = document.querySelectorAll("#transferPriceTableBody tr");
+        if (rows.length > 0) {
+          const lastRow = rows[rows.length - 1];
+          const cells = lastRow.querySelectorAll("td");
+          if (cells.length >= 4 && !cells[0].hasAttribute("colspan") && cells[0].textContent.trim() !== "") {
+            document.getElementById("dateFrom").value = formatToYYYYMMDD(cells[0].textContent.trim());
+            document.getElementById("dateTo").value = formatToYYYYMMDD(cells[1].textContent.trim());
+          }
+        }
+      });
+
       // Handle clicks on edit, delete, and duplicate buttons
       function handleTableClick(event) {
-        if (event.target.classList.contains("edit-btn")) {
-          handleEditButtonClick(event.target);
+        const btn = event.target.closest("button");
+        if (!btn) return;
+
+        if (btn.classList.contains("edit-btn")) {
+          handleEditButtonClick(btn);
         }
 
-        if (event.target.classList.contains("delete-btn")) {
-          handleDeleteButtonClick(event.target);
+        if (btn.classList.contains("delete-btn")) {
+          handleDeleteButtonClick(btn);
         }
 
-        if (event.target.classList.contains("duplicate-btn")) {
-          handleDuplicateButtonClick(event.target);
+        if (btn.classList.contains("duplicate-btn")) {
+          handleDuplicateButtonClick(btn);
         }
       }
 
@@ -1286,16 +1381,20 @@
       // Function to save edited transfer price
       function saveEditedPrice() {
         if (currentRow) {
-          currentRow.cells[0].textContent = formatToDDMMYYYY(
-            document.getElementById("editDateFrom").value
-          );
-          currentRow.cells[1].textContent = formatToDDMMYYYY(
-            document.getElementById("editDateTo").value
-          );
-          currentRow.cells[2].textContent =
-            document.getElementById("editPax").value;
-          currentRow.cells[3].textContent =
-            document.getElementById("editPrice").value;
+          const dateFrom = document.getElementById("editDateFrom").value;
+          const dateTo = document.getElementById("editDateTo").value;
+          const pax = document.getElementById("editPax").value;
+          const price = document.getElementById("editPrice").value;
+
+          if (!dateFrom || !dateTo || !pax || !price) {
+            alert("All fields are required!");
+            return;
+          }
+
+          currentRow.cells[0].textContent = formatToDDMMYYYY(dateFrom);
+          currentRow.cells[1].textContent = formatToDDMMYYYY(dateTo);
+          currentRow.cells[2].textContent = pax;
+          currentRow.cells[3].textContent = price;
 
           $("#editTransferPriceModal").modal("hide");
         }
@@ -1328,26 +1427,28 @@
 
       // Function to save the duplicated transfer price
       function saveDuplicatedPrice() {
-        const dateFrom = formatToDDMMYYYY(
-          document.getElementById("duplicateDateFrom").value
-        );
-        const dateTo = formatToDDMMYYYY(
-          document.getElementById("duplicateDateTo").value
-        );
+        const dateFromInput = document.getElementById("duplicateDateFrom").value;
+        const dateToInput = document.getElementById("duplicateDateTo").value;
         const pax = document.getElementById("duplicatePax").value;
         const price = document.getElementById("duplicatePrice").value;
 
-        if (dateFrom && dateTo && pax && price) {
-          addTransferPriceRow({
-            start_date: dateFrom,
-            end_date: dateTo,
-            pax: pax,
-            price: price,
-          });
-
-          document.getElementById("duplicateTransferPriceForm").reset();
-          $("#duplicateTransferPriceModal").modal("hide");
+        if (!dateFromInput || !dateToInput || !pax || !price) {
+          alert("All fields are required!");
+          return;
         }
+
+        const dateFrom = formatToDDMMYYYY(dateFromInput);
+        const dateTo = formatToDDMMYYYY(dateToInput);
+
+        addTransferPriceRow({
+          start_date: dateFrom,
+          end_date: dateTo,
+          pax: pax,
+          price: price,
+        });
+
+        document.getElementById("duplicateTransferPriceForm").reset();
+        $("#duplicateTransferPriceModal").modal("hide");
       }
 
       // Add a new transfer price row when the "Save Price" button is clicked
@@ -1380,6 +1481,35 @@
 
         // Close the modal
         $("#addTransferPriceModal").modal("hide");
+      }
+
+      function addNewTransferPriceAndKeep() {
+        const dateFromVal = document.getElementById("dateFrom").value;
+        const dateToVal = document.getElementById("dateTo").value;
+        const dateFrom = formatToDDMMYYYY(dateFromVal);
+        const dateTo = formatToDDMMYYYY(dateToVal);
+        const pax = document.getElementById("pax").value;
+        const price = document.getElementById("price").value;
+
+        if (!dateFrom || !dateTo || !pax || !price) {
+          alert("All fields are required!");
+          return;
+        }
+
+        // Add new row to the table
+        addTransferPriceRow({
+          start_date: dateFrom,
+          end_date: dateTo,
+          pax: pax,
+          price: price,
+        });
+
+        // Reset only Pax and Price fields
+        document.getElementById("pax").value = "";
+        document.getElementById("price").value = "";
+
+        // Refocus Pax field
+        document.getElementById("pax").focus();
       }
 
       // Save Transfer button
@@ -1451,9 +1581,12 @@
             ), // Get the selected supplier's ID
             prices: Array.from(
               document.querySelectorAll("#transferPriceTableBody tr")
-            ).map((row) => ({
-              start_date: row.cells[0].textContent,
-              end_date: row.cells[1].textContent,
+            ).filter((row) => {
+              const cells = row.querySelectorAll("td");
+              return cells.length >= 4 && !cells[0].hasAttribute("colspan");
+            }).map((row) => ({
+              start_date: formatToYYYYMMDD(row.cells[0].textContent),
+              end_date: formatToYYYYMMDD(row.cells[1].textContent),
               pax: parseInt(row.cells[2].textContent, 10),
               price: parseFloat(row.cells[3].textContent),
             })),

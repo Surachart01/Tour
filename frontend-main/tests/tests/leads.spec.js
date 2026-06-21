@@ -13,8 +13,8 @@ test.describe('Leads Management Tests', () => {
     apiInterceptor = new ApiInterceptor(page);
     testData = new TestDataGenerator();
 
-    await apiInterceptor.startIntercepting();
     await authHelper.ensureLoggedIn({ username: 'vtadmin', password: 'testing@123' });
+    await apiInterceptor.startIntercepting();
   });
 
   test.afterEach(async () => {

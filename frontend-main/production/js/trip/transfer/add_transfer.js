@@ -168,6 +168,7 @@ document.getElementById("saveTransfer").addEventListener("click", function (even
   const transferFlight = document.getElementById("transferFlight").value || "";
   const remarks = document.getElementById("remarks").value;
   const transferPrice = document.getElementById("updatedTransferPrice").value || "N/A";
+  const transferRouteType = document.getElementById("transferRouteType")?.value || "";
 
   if (!transferCity || !transferType || !transferDate || !transferFrom || !transferTo) {
     alert("Please fill in all required fields.");
@@ -180,6 +181,7 @@ document.getElementById("saveTransfer").addEventListener("click", function (even
   const newTransfer = {
     transferId, // ✅ Ensure ID is included
     transferCity,
+    transferRouteType, // ✅ Store Route Type (TIN/TOUT)
     transferType,
     transferDate,
     transferFrom,
@@ -215,6 +217,7 @@ function addTransferRow(transfer) {
   newRow.dataset.transferId = transfer.transferId || "";
   newRow.dataset.flightTime = transfer.flightTime || "";
   newRow.dataset.transferFlight = transfer.transferFlight || "";
+  newRow.dataset.transferRouteType = transfer.transferRouteType || "";
 
   newRow.innerHTML = `
     <td>${transfer.transferDate}</td>
@@ -258,6 +261,7 @@ function updateTransferRow(row, transfer) {
   row.dataset.transferId = transfer.transferId;
   row.dataset.flightTime = transfer.flightTime || "";
   row.dataset.transferFlight = transfer.transferFlight || "";
+  row.dataset.transferRouteType = transfer.transferRouteType || "";
 }
 
 // Handle edit and delete button clicks
@@ -296,6 +300,11 @@ document.getElementById("transferTableBody").addEventListener("click", function 
     document.getElementById("transferFlight").value = row.dataset.transferFlight || "";
     document.getElementById("remarks").value = rowData.remarks;
     document.getElementById("updatedTransferPrice").value = rowData.price || "N/A";
+
+    const routeTypeDropdown = document.getElementById("transferRouteType");
+    if (routeTypeDropdown) {
+      routeTypeDropdown.value = row.dataset.transferRouteType || "";
+    }
 
     editingTransferRow = row;
 

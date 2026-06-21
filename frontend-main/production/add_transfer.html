@@ -51,6 +51,67 @@
     <link href="../build/css/custom.css" rel="stylesheet" />
 
     <style>
+      /* Premium Modal Styling */
+      .modal-content {
+        border: none;
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      }
+      .modal-header {
+        background: linear-gradient(135deg, #2a3f54 0%, #34495e 100%);
+        color: white;
+        border-top-left-radius: 14px;
+        border-top-right-radius: 14px;
+        padding: 18px 24px;
+      }
+      .modal-header .modal-title {
+        font-weight: 700;
+        font-size: 1.15rem;
+      }
+      .modal-header .close {
+        color: white;
+        opacity: 0.8;
+        outline: none;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+      }
+      .modal-header .close:hover {
+        opacity: 1;
+        color: white;
+      }
+      .modal-body {
+        padding: 24px;
+      }
+      .modal-body .form-group label {
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 6px;
+      }
+      .modal-body .form-control {
+        border-radius: 8px;
+        border: 1px solid #cbd5e0;
+        padding: 10px 14px;
+        height: auto;
+        transition: all 0.2s ease;
+      }
+      .modal-body .form-control:focus {
+        border-color: #1abb9c;
+        box-shadow: 0 0 0 3px rgba(26, 187, 156, 0.15);
+      }
+      .modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid #edf2f7;
+        background-color: #f7fafc;
+        border-bottom-left-radius: 14px;
+        border-bottom-right-radius: 14px;
+      }
+      .modal-footer .btn {
+        padding: 10px 20px;
+        font-weight: 600;
+        border-radius: 8px;
+      }
+
       /* Modern form enhancements */
       .form-control:focus {
         border-color: #1abb9c !important;
@@ -714,9 +775,16 @@
             </button>
             <button
               type="button"
+              id="saveTransferPriceAndAnother"
+              class="btn btn-info"
+              style="background-color: #17a2b8; border-color: #17a2b8; color: white;"
+            >
+              Save & Add Another
+            </button>
+            <button
+              type="button"
               id="saveTransferPrice"
               class="btn btn-primary"
-              data-dismiss="modal"
             >
               Save Price
             </button>
@@ -801,7 +869,6 @@
               type="button"
               id="saveEditedTransferPrice"
               class="btn btn-primary"
-              data-dismiss="modal"
             >
               Save Changes
             </button>
@@ -1645,8 +1712,8 @@
                 // Skip the "no data" row if it exists
                 if (cells.length >= 4 && !cells[0].hasAttribute("colspan")) {
                   transferPrices.push({
-                    start_date: cells[0].textContent,
-                    end_date: cells[1].textContent,
+                    start_date: formatToYYYYMMDD(cells[0].textContent),
+                    end_date: formatToYYYYMMDD(cells[1].textContent),
                     pax: parseInt(cells[2].textContent),
                     price: parseFloat(cells[3].textContent),
                   });
@@ -1730,58 +1797,150 @@
             const pax = document.getElementById("pax").value;
             const price = document.getElementById("price").value;
 
-            if (dateFrom && dateTo && pax && price) {
-              const tableBody = document.getElementById(
-                "transferPriceTableBody"
-              );
-
-              // Remove the "No transfer prices added yet" message if it exists
-              const noDataRow = tableBody.querySelector('tr td[colspan="5"]');
-              if (noDataRow) {
-                noDataRow.closest("tr").remove();
-              }
-
-              const row = `
-            <tr>
-              <td>${formatToDDMMYYYY(dateFrom)}</td>
-              <td>${formatToDDMMYYYY(dateTo)}</td>
-              <td>${pax}</td>
-              <td>${price}</td>
-              <td>
-                <div style="display: flex; gap: 15px; justify-content: center;">
-                  <div class="tooltip-btn">
-                    <button class="btn btn-primary btn-sm edit-btn" style="padding: 5px 8px;">
-                      <i class="fas fa-edit"></i>
-                    </button>
-                    <span class="tooltip-text">Edit</span>
-                  </div>
-                  <div class="tooltip-btn">
-                    <button class="btn btn-danger btn-sm delete-btn" style="padding: 5px 8px;">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                    <span class="tooltip-text">Delete</span>
-                  </div>
-                  <div class="tooltip-btn">
-                    <button class="btn btn-warning btn-sm duplicate-btn" style="padding: 5px 8px;">
-                      <i class="fas fa-copy"></i>
-                    </button>
-                    <span class="tooltip-text">Duplicate</span>
-                  </div>
-                </div>
-              </td>
-            </tr>
-          `;
-              tableBody.insertAdjacentHTML("beforeend", row);
+            if (!dateFrom || !dateTo || !pax || !price) {
+              alert("All fields are required!");
+              return;
             }
+
+            const tableBody = document.getElementById(
+              "transferPriceTableBody"
+            );
+
+            // Remove the "No transfer prices added yet" message if it exists
+            const noDataRow = tableBody.querySelector('tr td[colspan="5"]');
+            if (noDataRow) {
+              noDataRow.closest("tr").remove();
+            }
+
+            const row = `
+          <tr>
+            <td>${formatToDDMMYYYY(dateFrom)}</td>
+            <td>${formatToDDMMYYYY(dateTo)}</td>
+            <td>${pax}</td>
+            <td>${price}</td>
+            <td>
+              <div style="display: flex; gap: 15px; justify-content: center;">
+                <div class="tooltip-btn">
+                  <button class="btn btn-primary btn-sm edit-btn" style="padding: 5px 8px;">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <span class="tooltip-text">Edit</span>
+                </div>
+                <div class="tooltip-btn">
+                  <button class="btn btn-danger btn-sm delete-btn" style="padding: 5px 8px;">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                  <span class="tooltip-text">Delete</span>
+                </div>
+                <div class="tooltip-btn">
+                  <button class="btn btn-warning btn-sm duplicate-btn" style="padding: 5px 8px;">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                  <span class="tooltip-text">Duplicate</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+        `;
+            tableBody.insertAdjacentHTML("beforeend", row);
+
             document.getElementById("transferPriceForm").reset();
+            $("#addTransferPriceModal").modal("hide");
           });
+
+        function addNewTransferPriceAndKeep() {
+          const dateFrom = document.getElementById("dateFrom").value;
+          const dateTo = document.getElementById("dateTo").value;
+          const pax = document.getElementById("pax").value;
+          const price = document.getElementById("price").value;
+
+          if (!dateFrom || !dateTo || !pax || !price) {
+            alert("All fields are required!");
+            return;
+          }
+
+          const tableBody = document.getElementById(
+            "transferPriceTableBody"
+          );
+
+          // Remove the "No transfer prices added yet" message if it exists
+          const noDataRow = tableBody.querySelector('tr td[colspan="5"]');
+          if (noDataRow) {
+            noDataRow.closest("tr").remove();
+          }
+
+          const row = `
+        <tr>
+          <td>${formatToDDMMYYYY(dateFrom)}</td>
+          <td>${formatToDDMMYYYY(dateTo)}</td>
+          <td>${pax}</td>
+          <td>${price}</td>
+          <td>
+            <div style="display: flex; gap: 15px; justify-content: center;">
+              <div class="tooltip-btn">
+                <button class="btn btn-primary btn-sm edit-btn" style="padding: 5px 8px;">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <span class="tooltip-text">Edit</span>
+              </div>
+              <div class="tooltip-btn">
+                <button class="btn btn-danger btn-sm delete-btn" style="padding: 5px 8px;">
+                  <i class="fas fa-trash"></i>
+                </button>
+                <span class="tooltip-text">Delete</span>
+              </div>
+              <div class="tooltip-btn">
+                <button class="btn btn-warning btn-sm duplicate-btn" style="padding: 5px 8px;">
+                  <i class="fas fa-copy"></i>
+                </button>
+                <span class="tooltip-text">Duplicate</span>
+              </div>
+            </div>
+          </td>
+        </tr>
+      `;
+          tableBody.insertAdjacentHTML("beforeend", row);
+
+          // Reset only Pax and Price fields
+          document.getElementById("pax").value = "";
+          document.getElementById("price").value = "";
+
+          // Refocus Pax field
+          document.getElementById("pax").focus();
+        }
+
+        document
+          .getElementById("saveTransferPriceAndAnother")
+          .addEventListener("click", addNewTransferPriceAndKeep);
+
+        // Handle enter key in transferPriceForm to add and keep modal open
+        document.getElementById("transferPriceForm").addEventListener("keypress", function (event) {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            addNewTransferPriceAndKeep();
+          }
+        });
+
+        // Autofill date range from last table row on modal show
+        $("#addTransferPriceModal").on("show.bs.modal", function () {
+          const rows = document.querySelectorAll("#transferPriceTableBody tr");
+          if (rows.length > 0) {
+            const lastRow = rows[rows.length - 1];
+            const cells = lastRow.querySelectorAll("td");
+            if (cells.length >= 4 && !cells[0].hasAttribute("colspan") && cells[0].textContent.trim() !== "") {
+              document.getElementById("dateFrom").value = formatToYYYYMMDD(cells[0].textContent.trim());
+              document.getElementById("dateTo").value = formatToYYYYMMDD(cells[1].textContent.trim());
+            }
+          }
+        });
 
         // Edit Transfer Price Row
         document
           .getElementById("transferPriceTableBody")
           .addEventListener("click", function (event) {
-            if (event.target.classList.contains("edit-btn")) {
-              currentRow = event.target.closest("tr");
+            const btn = event.target.closest("button");
+            if (btn && btn.classList.contains("edit-btn")) {
+              currentRow = btn.closest("tr");
               document.getElementById("editDateFrom").value = formatToYYYYMMDD(
                 currentRow.cells[0].textContent
               );
@@ -1801,16 +1960,22 @@
           .getElementById("saveEditedTransferPrice")
           .addEventListener("click", function () {
             if (currentRow) {
-              currentRow.cells[0].textContent = formatToDDMMYYYY(
-                document.getElementById("editDateFrom").value
-              );
-              currentRow.cells[1].textContent = formatToDDMMYYYY(
-                document.getElementById("editDateTo").value
-              );
-              currentRow.cells[2].textContent =
-                document.getElementById("editPax").value;
-              currentRow.cells[3].textContent =
-                document.getElementById("editPrice").value;
+              const dateFrom = document.getElementById("editDateFrom").value;
+              const dateTo = document.getElementById("editDateTo").value;
+              const pax = document.getElementById("editPax").value;
+              const price = document.getElementById("editPrice").value;
+
+              if (!dateFrom || !dateTo || !pax || !price) {
+                alert("All fields are required!");
+                return;
+              }
+
+              currentRow.cells[0].textContent = formatToDDMMYYYY(dateFrom);
+              currentRow.cells[1].textContent = formatToDDMMYYYY(dateTo);
+              currentRow.cells[2].textContent = pax;
+              currentRow.cells[3].textContent = price;
+
+              $("#editTransferPriceModal").modal("hide");
             }
           });
 
@@ -1818,8 +1983,9 @@
         document
           .getElementById("transferPriceTableBody")
           .addEventListener("click", function (event) {
-            if (event.target.classList.contains("duplicate-btn")) {
-              currentRow = event.target.closest("tr");
+            const btn = event.target.closest("button");
+            if (btn && btn.classList.contains("duplicate-btn")) {
+              currentRow = btn.closest("tr");
 
               // Prefill the duplicate modal with current row data
               document.getElementById("duplicateDateFrom").value =
@@ -1840,71 +2006,73 @@
         document
           .getElementById("saveDuplicatedTransferPrice")
           .addEventListener("click", function () {
-            const dateFrom = formatToDDMMYYYY(
-              document.getElementById("duplicateDateFrom").value
-            );
-            const dateTo = formatToDDMMYYYY(
-              document.getElementById("duplicateDateTo").value
-            );
+            const dateFromInput = document.getElementById("duplicateDateFrom").value;
+            const dateToInput = document.getElementById("duplicateDateTo").value;
             const pax = document.getElementById("duplicatePax").value;
             const price = document.getElementById("duplicatePrice").value;
 
-            if (dateFrom && dateTo && pax && price) {
-              const tableBody = document.getElementById(
-                "transferPriceTableBody"
-              );
-
-              // Remove the "No transfer prices added yet" message if it exists
-              const noDataRow = tableBody.querySelector('tr td[colspan="5"]');
-              if (noDataRow) {
-                noDataRow.closest("tr").remove();
-              }
-
-              const row = `
-            <tr>
-              <td>${formatToDDMMYYYY(dateFrom)}</td>
-              <td>${formatToDDMMYYYY(dateTo)}</td>
-              <td>${pax}</td>
-              <td>${price}</td>
-              <td>
-                <div style="display: flex; gap: 15px; justify-content: center;">
-                  <div class="tooltip-btn">
-                    <button class="btn btn-primary btn-sm edit-btn" style="padding: 5px 8px;">
-                      <i class="fas fa-edit"></i>
-                    </button>
-                    <span class="tooltip-text">Edit</span>
-                  </div>
-                  <div class="tooltip-btn">
-                    <button class="btn btn-danger btn-sm delete-btn" style="padding: 5px 8px;">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                    <span class="tooltip-text">Delete</span>
-                  </div>
-                  <div class="tooltip-btn">
-                    <button class="btn btn-warning btn-sm duplicate-btn" style="padding: 5px 8px;">
-                      <i class="fas fa-copy"></i>
-                    </button>
-                    <span class="tooltip-text">Duplicate</span>
-                  </div>
-                </div>
-              </td>
-            </tr>
-          `;
-              tableBody.insertAdjacentHTML("beforeend", row);
-
-              // Reset and hide the duplicate modal
-              // document.getElementById("duplicateTransferPriceForm").reset();
-              // $("#duplicateTransferPriceModal").modal("hide");
+            if (!dateFromInput || !dateToInput || !pax || !price) {
+              alert("All fields are required!");
+              return;
             }
+
+            const dateFrom = formatToDDMMYYYY(dateFromInput);
+            const dateTo = formatToDDMMYYYY(dateToInput);
+
+            const tableBody = document.getElementById(
+              "transferPriceTableBody"
+            );
+
+            // Remove the "No transfer prices added yet" message if it exists
+            const noDataRow = tableBody.querySelector('tr td[colspan="5"]');
+            if (noDataRow) {
+              noDataRow.closest("tr").remove();
+            }
+
+            const row = `
+          <tr>
+            <td>${dateFrom}</td>
+            <td>${dateTo}</td>
+            <td>${pax}</td>
+            <td>${price}</td>
+            <td>
+              <div style="display: flex; gap: 15px; justify-content: center;">
+                <div class="tooltip-btn">
+                  <button class="btn btn-primary btn-sm edit-btn" style="padding: 5px 8px;">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <span class="tooltip-text">Edit</span>
+                </div>
+                <div class="tooltip-btn">
+                  <button class="btn btn-danger btn-sm delete-btn" style="padding: 5px 8px;">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                  <span class="tooltip-text">Delete</span>
+                </div>
+                <div class="tooltip-btn">
+                  <button class="btn btn-warning btn-sm duplicate-btn" style="padding: 5px 8px;">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                  <span class="tooltip-text">Duplicate</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+        `;
+            tableBody.insertAdjacentHTML("beforeend", row);
+
+            document.getElementById("duplicateTransferPriceForm").reset();
+            $("#duplicateTransferPriceModal").modal("hide");
           });
 
         // Delete Transfer Price Row
         document
           .getElementById("transferPriceTableBody")
           .addEventListener("click", function (event) {
-            if (event.target.classList.contains("delete-btn")) {
+            const btn = event.target.closest("button");
+            if (btn && btn.classList.contains("delete-btn")) {
               if (confirm("Are you sure you want to delete this row?")) {
-                event.target.closest("tr").remove();
+                btn.closest("tr").remove();
               }
             }
           });

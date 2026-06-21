@@ -50,6 +50,67 @@
     <!-- Custom Theme Style -->
     <link href="../build/css/custom.css" rel="stylesheet" />
     <style>
+      /* Premium Modal Styling */
+      .modal-content {
+        border: none;
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      }
+      .modal-header {
+        background: linear-gradient(135deg, #2a3f54 0%, #34495e 100%);
+        color: white;
+        border-top-left-radius: 14px;
+        border-top-right-radius: 14px;
+        padding: 18px 24px;
+      }
+      .modal-header .modal-title {
+        font-weight: 700;
+        font-size: 1.15rem;
+      }
+      .modal-header .close {
+        color: white;
+        opacity: 0.8;
+        outline: none;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+      }
+      .modal-header .close:hover {
+        opacity: 1;
+        color: white;
+      }
+      .modal-body {
+        padding: 24px;
+      }
+      .modal-body .form-group label {
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 6px;
+      }
+      .modal-body .form-control {
+        border-radius: 8px;
+        border: 1px solid #cbd5e0;
+        padding: 10px 14px;
+        height: auto;
+        transition: all 0.2s ease;
+      }
+      .modal-body .form-control:focus {
+        border-color: #1abb9c;
+        box-shadow: 0 0 0 3px rgba(26, 187, 156, 0.15);
+      }
+      .modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid #edf2f7;
+        background-color: #f7fafc;
+        border-bottom-left-radius: 14px;
+        border-bottom-right-radius: 14px;
+      }
+      .modal-footer .btn {
+        padding: 10px 20px;
+        font-weight: 600;
+        border-radius: 8px;
+      }
+
       /* Modern form enhancements */
       .form-control:focus {
         border-color: #1abb9c !important;
@@ -814,9 +875,16 @@
             </button>
             <button
               type="button"
+              id="saveExcursionPriceAndAnother"
+              class="btn btn-info"
+              style="background-color: #17a2b8; border-color: #17a2b8; color: white;"
+            >
+              Save & Add Another
+            </button>
+            <button
+              type="button"
               id="saveExcursionPrice"
               class="btn btn-primary"
-              data-dismiss="modal"
             >
               Save Price
             </button>
@@ -980,7 +1048,6 @@
               type="button"
               id="saveEditedExcursionPrice"
               class="btn btn-primary"
-              data-dismiss="modal"
             >
               Save Changes
             </button>
@@ -1380,10 +1447,10 @@
                 // Skip the "no data" row if it exists
                 if (cells.length >= 4 && !cells[0].hasAttribute("colspan")) {
                   excursionPrices.push({
-                    start_date: cells[0].textContent,
-                    end_date: cells[1].textContent,
-                    pax: parseInt(cells[2].textContent),
-                    price: parseFloat(cells[3].textContent),
+                    start_date: formatToYYYYMMDD(cells[0].textContent.trim()),
+                    end_date: formatToYYYYMMDD(cells[1].textContent.trim()),
+                    pax: parseInt(cells[2].textContent.trim()),
+                    price: parseFloat(cells[3].textContent.trim()),
                   });
                 }
               });
@@ -1408,8 +1475,10 @@
               sic_price_adult: parseFloat(SICPriceAdult),
               sic_price_child: parseFloat(SICPriceChild),
               supplier_id: supplierId, // Correctly parsed supplier ID
+              pricing: excursionPrices,
               prices: excursionPrices,
               available_days: availableDays,
+              valid_days: excursionValidDays.sort().join(','),
             };
 
             console.log("Excursion Data being sent to backend:", excursionData);
@@ -1456,6 +1525,7 @@
             const dateTo = document.getElementById("dateTo").value;
             const pax = document.getElementById("pax").value;
             const price = document.getElementById("price").value;
+
             if (dateFrom && dateTo && pax && price) {
               const tableBody = document.getElementById(
                 "excursionPriceTableBody"
@@ -1498,187 +1568,134 @@
               </tr>
             `;
               tableBody.insertAdjacentHTML("beforeend", row);
-            }
 
-            document.getElementById("excursionPriceForm").reset();
+              // Reset the form fields
+              document.getElementById("excursionPriceForm").reset();
+              $("#addExcursionPriceModal").modal("hide");
+            } else {
+              alert("Please fill all required fields");
+            }
           });
 
-        // Attach the event listener to the excursion price table body
+        function addNewExcursionPriceAndKeep() {
+          const dateFrom = document.getElementById("dateFrom").value;
+          const dateTo = document.getElementById("dateTo").value;
+          const pax = document.getElementById("pax").value;
+          const price = document.getElementById("price").value;
+
+          if (dateFrom && dateTo && pax && price) {
+            const tableBody = document.getElementById(
+              "excursionPriceTableBody"
+            );
+
+            // Remove the "no data" message if it exists
+            const noDataRow = tableBody.querySelector('tr td[colspan="5"]');
+            if (noDataRow) {
+              noDataRow.closest("tr").remove();
+            }
+
+            const row = `
+            <tr>
+              <td>${formatToDDMMYYYY(dateFrom)}</td>
+              <td>${formatToDDMMYYYY(dateTo)}</td>
+              <td>${pax}</td>
+              <td>${price}</td>
+              <td>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                  <div class="tooltip-btn">
+                    <button class="btn btn-primary btn-sm edit-btn" style="padding: 5px 8px;">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <span class="tooltip-text">Edit</span>
+                  </div>
+                  <div class="tooltip-btn">
+                    <button class="btn btn-danger btn-sm delete-btn" style="padding: 5px 8px;">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                    <span class="tooltip-text">Delete</span>
+                  </div>
+                  <div class="tooltip-btn">
+                    <button class="btn btn-warning btn-sm duplicate-btn" style="padding: 5px 8px;">
+                      <i class="fas fa-copy"></i>
+                    </button>
+                    <span class="tooltip-text">Duplicate</span>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          `;
+            tableBody.insertAdjacentHTML("beforeend", row);
+
+            // Reset only Pax and Price fields
+            document.getElementById("pax").value = "";
+            document.getElementById("price").value = "";
+
+            // Refocus Pax field
+            document.getElementById("pax").focus();
+          } else {
+            alert("Please fill all required fields");
+          }
+        }
+
+        document
+          .getElementById("saveExcursionPriceAndAnother")
+          .addEventListener("click", addNewExcursionPriceAndKeep);
+
+        // Handle enter key in excursionPriceForm to add and keep modal open
+        document.getElementById("excursionPriceForm").addEventListener("keypress", function (event) {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            addNewExcursionPriceAndKeep();
+          }
+        });
+
+        // Autofill date range from last table row on modal show
+        $("#addExcursionPriceModal").on("show.bs.modal", function () {
+          const rows = document.querySelectorAll("#excursionPriceTableBody tr");
+          if (rows.length > 0) {
+            const lastRow = rows[rows.length - 1];
+            const cells = lastRow.querySelectorAll("td");
+            if (cells.length >= 4 && !cells[0].hasAttribute("colspan") && cells[0].textContent.trim() !== "") {
+              document.getElementById("dateFrom").value = formatToYYYYMMDD(cells[0].textContent.trim());
+              document.getElementById("dateTo").value = formatToYYYYMMDD(cells[1].textContent.trim());
+            }
+          }
+        });
+
+        // Delegate clicks on edit, delete, and duplicate buttons
         document
           .getElementById("excursionPriceTableBody")
           .addEventListener("click", function (event) {
-            if (event.target.classList.contains("edit-btn")) {
-              currentRow = event.target.closest("tr");
+            const editBtn = event.target.closest(".edit-btn");
+            const deleteBtn = event.target.closest(".delete-btn");
+            const duplicateBtn = event.target.closest(".duplicate-btn");
 
-              // Prefill the edit modal with the current row's data
+            if (editBtn) {
+              currentRow = editBtn.closest("tr");
               document.getElementById("editDateFrom").value = formatToYYYYMMDD(
-                currentRow.cells[0].textContent
+                currentRow.cells[0].textContent.trim()
               );
               document.getElementById("editDateTo").value = formatToYYYYMMDD(
-                currentRow.cells[1].textContent
+                currentRow.cells[1].textContent.trim()
               );
               document.getElementById("editPax").value =
-                currentRow.cells[2].textContent;
+                currentRow.cells[2].textContent.trim();
               document.getElementById("editPrice").value =
-                currentRow.cells[3].textContent;
-
-              // Show the modal for editing
+                currentRow.cells[3].textContent.trim();
               $("#editExcursionPriceModal").modal("show");
             }
-          });
 
-        // Save changes made in the edit modal
-        document
-          .getElementById("saveEditedExcursionPrice")
-          .addEventListener("click", function () {
-            if (currentRow) {
-              // Update the current row with new data from the edit form
-              currentRow.cells[0].textContent = formatToDDMMYYYY(
-                document.getElementById("editDateFrom").value
-              );
-              currentRow.cells[1].textContent = formatToDDMMYYYY(
-                document.getElementById("editDateTo").value
-              );
-              currentRow.cells[2].textContent =
-                document.getElementById("editPax").value;
-              currentRow.cells[3].textContent =
-                document.getElementById("editPrice").value;
-
-              // Hide the modal
-              $("#editExcursionPriceModal").modal("hide");
-            }
-          });
-
-        document
-          .getElementById("excursionPriceTableBody")
-          .addEventListener("click", function (event) {
-            if (event.target.classList.contains("duplicate-btn")) {
-              duplicateRow = event.target.closest("tr");
-
-              // Prefill the modal with the current row data
-              document.getElementById("duplicateDateFrom").value =
-                formatToYYYYMMDD(duplicateRow.cells[0].textContent);
-              document.getElementById("duplicateDateTo").value =
-                formatToYYYYMMDD(duplicateRow.cells[1].textContent);
-              document.getElementById("duplicatePax").value =
-                duplicateRow.cells[2].textContent;
-              document.getElementById("duplicatePrice").value =
-                duplicateRow.cells[3].textContent;
-
-              // Show the duplicate modal
-              $("#duplicateExcursionPriceModal").modal("show");
-            }
-          });
-
-        // Handle saving the duplicated row
-        document
-          .getElementById("saveDuplicatedExcursionPrice")
-          .addEventListener("click", function () {
-            const dateFrom = formatToDDMMYYYY(
-              document.getElementById("duplicateDateFrom").value
-            );
-            const dateTo = formatToDDMMYYYY(
-              document.getElementById("duplicateDateTo").value
-            );
-            const pax = document.getElementById("duplicatePax").value;
-            const price = document.getElementById("duplicatePrice").value;
-
-            if (dateFrom && dateTo && pax && price) {
-              const tableBody = document.getElementById(
-                "excursionPriceTableBody"
-              );
-              // Remove the "no data" message if it exists
-              const noDataRow = tableBody.querySelector('tr td[colspan="5"]');
-              if (noDataRow) {
-                noDataRow.closest("tr").remove();
-              }
-
-              const duplicatedRow = `
-        <tr>
-          <td>${dateFrom}</td>
-          <td>${dateTo}</td>
-          <td>${pax}</td>
-          <td>${price}</td>
-          <td>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-              <div class="tooltip-btn">
-                <button class="btn btn-primary btn-sm edit-btn" style="padding: 5px 8px;">
-                  <i class="fas fa-edit"></i>
-                </button>
-                <span class="tooltip-text">Edit</span>
-              </div>
-              <div class="tooltip-btn">
-                <button class="btn btn-danger btn-sm delete-btn" style="padding: 5px 8px;">
-                  <i class="fas fa-trash"></i>
-                </button>
-                <span class="tooltip-text">Delete</span>
-              </div>
-              <div class="tooltip-btn">
-                <button class="btn btn-warning btn-sm duplicate-btn" style="padding: 5px 8px;">
-                  <i class="fas fa-copy"></i>
-                </button>
-                <span class="tooltip-text">Duplicate</span>
-              </div>
-            </div>
-          </td>
-        </tr>
-      `;
-              tableBody.insertAdjacentHTML("beforeend", duplicatedRow);
-            }
-          });
-
-        // Edit Excursion Row
-        document
-          .getElementById("excursionPriceTableBody")
-          .addEventListener("click", function (event) {
-            if (event.target.classList.contains("edit-btn")) {
-              currentRow = event.target.closest("tr");
-              document.getElementById("editDateFrom").value = formatToYYYYMMDD(
-                currentRow.cells[0].textContent
-              );
-              document.getElementById("editDateTo").value = formatToYYYYMMDD(
-                currentRow.cells[1].textContent
-              );
-              document.getElementById("editPax").value =
-                currentRow.cells[2].textContent;
-              document.getElementById("editPrice").value =
-                currentRow.cells[3].textContent;
-              $("#editExcursionPriceModal").modal("show");
-            }
-          });
-
-        // Save Edited Excursion Price
-        document
-          .getElementById("saveEditedExcursionPrice")
-          .addEventListener("click", function () {
-            if (currentRow) {
-              currentRow.cells[0].textContent = formatToDDMMYYYY(
-                document.getElementById("editDateFrom").value
-              );
-              currentRow.cells[1].textContent = formatToDDMMYYYY(
-                document.getElementById("editDateTo").value
-              );
-              currentRow.cells[2].textContent =
-                document.getElementById("editPax").value;
-              currentRow.cells[3].textContent =
-                document.getElementById("editPrice").value;
-            }
-          });
-
-        // Delete Excursion Price Row
-        document
-          .getElementById("excursionPriceTableBody")
-          .addEventListener("click", function (event) {
-            if (event.target.classList.contains("delete-btn")) {
+            if (deleteBtn) {
               if (confirm("Are you sure you want to delete this row?")) {
-                const row = event.target.closest("tr");
+                const row = deleteBtn.closest("tr");
                 row.remove();
 
                 // Check if table is empty and add "no data" message back
                 const tableBody = document.getElementById(
                   "excursionPriceTableBody"
                 );
-                if (tableBody.children.length === 0) {
+                if (tableBody.querySelectorAll("tr").length === 0 || 
+                    (tableBody.querySelectorAll("tr").length === 1 && tableBody.querySelector('tr td[colspan="5"]'))) {
                   const noDataRow = `
                     <tr>
                       <td
@@ -1699,9 +1716,103 @@
                       </td>
                     </tr>
                   `;
-                  tableBody.insertAdjacentHTML("beforeend", noDataRow);
+                  tableBody.innerHTML = noDataRow;
                 }
               }
+            }
+
+            if (duplicateBtn) {
+              duplicateRow = duplicateBtn.closest("tr");
+              document.getElementById("duplicateDateFrom").value =
+                formatToYYYYMMDD(duplicateRow.cells[0].textContent.trim());
+              document.getElementById("duplicateDateTo").value =
+                formatToYYYYMMDD(duplicateRow.cells[1].textContent.trim());
+              document.getElementById("duplicatePax").value =
+                duplicateRow.cells[2].textContent.trim();
+              document.getElementById("duplicatePrice").value =
+                duplicateRow.cells[3].textContent.trim();
+              $("#duplicateExcursionPriceModal").modal("show");
+            }
+          });
+
+        // Save Edited Excursion Price
+        document
+          .getElementById("saveEditedExcursionPrice")
+          .addEventListener("click", function () {
+            const editDateFrom = document.getElementById("editDateFrom").value;
+            const editDateTo = document.getElementById("editDateTo").value;
+            const editPax = document.getElementById("editPax").value;
+            const editPrice = document.getElementById("editPrice").value;
+
+            if (editDateFrom && editDateTo && editPax && editPrice) {
+              if (currentRow) {
+                currentRow.cells[0].textContent = formatToDDMMYYYY(editDateFrom);
+                currentRow.cells[1].textContent = formatToDDMMYYYY(editDateTo);
+                currentRow.cells[2].textContent = editPax;
+                currentRow.cells[3].textContent = editPrice;
+              }
+              $("#editExcursionPriceModal").modal("hide");
+            } else {
+              alert("Please fill all required fields");
+            }
+          });
+
+        // Handle saving the duplicated row
+        document
+          .getElementById("saveDuplicatedExcursionPrice")
+          .addEventListener("click", function () {
+            const dateFromStr = document.getElementById("duplicateDateFrom").value;
+            const dateToStr = document.getElementById("duplicateDateTo").value;
+            const pax = document.getElementById("duplicatePax").value;
+            const price = document.getElementById("duplicatePrice").value;
+
+            if (dateFromStr && dateToStr && pax && price) {
+              const tableBody = document.getElementById(
+                "excursionPriceTableBody"
+              );
+              // Remove the "no data" message if it exists
+              const noDataRow = tableBody.querySelector('tr td[colspan="5"]');
+              if (noDataRow) {
+                noDataRow.closest("tr").remove();
+              }
+
+              const dateFrom = formatToDDMMYYYY(dateFromStr);
+              const dateTo = formatToDDMMYYYY(dateToStr);
+
+              const duplicatedRow = `
+              <tr>
+                <td>${dateFrom}</td>
+                <td>${dateTo}</td>
+                <td>${pax}</td>
+                <td>${price}</td>
+                <td>
+                  <div style="display: flex; gap: 10px; justify-content: center;">
+                    <div class="tooltip-btn">
+                      <button class="btn btn-primary btn-sm edit-btn" style="padding: 5px 8px;">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <span class="tooltip-text">Edit</span>
+                    </div>
+                    <div class="tooltip-btn">
+                      <button class="btn btn-danger btn-sm delete-btn" style="padding: 5px 8px;">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                      <span class="tooltip-text">Delete</span>
+                    </div>
+                    <div class="tooltip-btn">
+                      <button class="btn btn-warning btn-sm duplicate-btn" style="padding: 5px 8px;">
+                        <i class="fas fa-copy"></i>
+                      </button>
+                      <span class="tooltip-text">Duplicate</span>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            `;
+              tableBody.insertAdjacentHTML("beforeend", duplicatedRow);
+              $("#duplicateExcursionPriceModal").modal("hide");
+            } else {
+              alert("Please fill all required fields");
             }
           });
       });

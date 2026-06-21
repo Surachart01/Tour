@@ -43,6 +43,29 @@ export function formatExcursionResponse(excursion) {
 export async function createExcursion(req, res, next) {
   try {
     const data = req.body;
+    const pricingData = data.pricing || data.prices || [];
+    const valid_days = Array.isArray(data.available_days)
+      ? data.available_days.map(d => d.day_of_week).sort().join(',')
+      : (data.valid_days || null);
+
+    // Filter duplicates in pricingData before saving
+    const seen = new Set();
+    const uniquePricingData = [];
+    for (const p of pricingData) {
+      if (!p.start_date || !p.end_date) continue;
+      const startStr = String(p.start_date).split('T')[0].trim();
+      const endStr = String(p.end_date).split('T')[0].trim();
+      const paxVal = parseInt(p.pax, 10);
+      const priceVal = parseFloat(p.price || 0);
+      const costVal = parseFloat(p.cost || 0);
+
+      const key = `${startStr}_${endStr}_${paxVal}_${priceVal}_${costVal}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniquePricingData.push(p);
+      }
+    }
+
     const excursion = await prisma.excursions.create({
       data: {
         name: data.name, city: data.city, code: data.code || null,
@@ -51,14 +74,14 @@ export async function createExcursion(req, res, next) {
         sic_price_adult: data.sic_price_adult, sic_price_child: data.sic_price_child,
         walkin_price: data.walkin_price, currency_id: data.currency_id,
         supplier_name: data.supplier_name || null,
-        valid_days: data.valid_days || null,
+        valid_days: valid_days,
         user_id: data.user_id ? parseInt(data.user_id) : null,
         country: data.country || "Thailand",
         display_order: data.display_order !== undefined ? parseInt(data.display_order) : 0,
-        excursion_pricing: data.pricing ? {
-          create: data.pricing.map(p => ({
+        excursion_pricing: uniquePricingData.length > 0 ? {
+          create: uniquePricingData.map(p => ({
             start_date: new Date(p.start_date), end_date: new Date(p.end_date),
-            pax: p.pax, price: p.price, cost: p.cost, currency_id: p.currency_id
+            pax: p.pax, price: p.price, cost: p.cost || 0, currency_id: p.currency_id || null
           }))
         } : undefined
       },
@@ -118,6 +141,7 @@ export async function listAvailableExcursionsByCity(req, res, next) {
     let where = {};
     if (city) where.city = city;
     if (keyword) { where.name = { contains: keyword, mode: 'insensitive' }; }
+
     const excursions = await prisma.excursions.findMany({
       where,
       include: {
@@ -131,7 +155,29 @@ export async function listAvailableExcursionsByCity(req, res, next) {
         currencies: true
       }
     });
-    const formatted = excursions.map(formatExcursionResponse);
+
+    let formatted = excursions.map(formatExcursionResponse);
+
+    // Filter by day-of-week when from_date is provided
+    // valid_days is stored as comma-separated day numbers, e.g. "0,1,2,6" (0=Sun, 6=Sat)
+    // Excursions with no valid_days set are available every day (backward compatibility)
+    if (from_date) {
+      const targetDow = new Date(from_date).getDay(); // 0=Sun ... 6=Sat
+      const daysOfWeekShort = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+      const daysOfWeekFull = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+      formatted = formatted.filter(exc => {
+        if (!exc.valid_days || exc.valid_days.trim() === '') return true;
+        const allowedList = exc.valid_days.split(',').map(d => d.trim().toLowerCase());
+        if (allowedList.length === 0) return true;
+
+        const matchesDigit = allowedList.includes(String(targetDow));
+        const matchesShort = allowedList.includes(daysOfWeekShort[targetDow]);
+        const matchesFull = allowedList.includes(daysOfWeekFull[targetDow]);
+
+        return matchesDigit || matchesShort || matchesFull;
+      });
+    }
+
     formatted.sort((a, b) => {
       if (a.order !== b.order) return a.order - b.order;
       return a.name.localeCompare(b.name);
@@ -145,6 +191,29 @@ export async function updateExcursion(req, res, next) {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid excursion ID');
     const data = req.body;
+    const pricingData = data.pricing || data.prices || [];
+    const valid_days = Array.isArray(data.available_days)
+      ? data.available_days.map(d => d.day_of_week).sort().join(',')
+      : (data.valid_days !== undefined ? data.valid_days : undefined);
+
+    // Filter duplicates in pricingData before saving
+    const seen = new Set();
+    const uniquePricingData = [];
+    for (const p of pricingData) {
+      if (!p.start_date || !p.end_date) continue;
+      const startStr = String(p.start_date).split('T')[0].trim();
+      const endStr = String(p.end_date).split('T')[0].trim();
+      const paxVal = parseInt(p.pax, 10);
+      const priceVal = parseFloat(p.price || 0);
+      const costVal = parseFloat(p.cost || 0);
+
+      const key = `${startStr}_${endStr}_${paxVal}_${priceVal}_${costVal}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniquePricingData.push(p);
+      }
+    }
+
     await prisma.$transaction(async (tx) => {
       await tx.excursion_pricing.deleteMany({ where: { excursion_id: id } });
       await tx.excursions.update({
@@ -155,14 +224,14 @@ export async function updateExcursion(req, res, next) {
           sic_price_adult: data.sic_price_adult, sic_price_child: data.sic_price_child,
           walkin_price: data.walkin_price, currency_id: data.currency_id,
           supplier_name: data.supplier_name !== undefined ? data.supplier_name : undefined,
-          valid_days: data.valid_days !== undefined ? data.valid_days : undefined,
+          valid_days: valid_days !== undefined ? valid_days : undefined,
           user_id: data.user_id !== undefined ? (data.user_id ? parseInt(data.user_id) : null) : undefined,
           country: data.country !== undefined ? data.country : undefined,
           display_order: data.display_order !== undefined ? parseInt(data.display_order) : undefined,
-          excursion_pricing: data.pricing ? {
-            create: data.pricing.map(p => ({
+          excursion_pricing: uniquePricingData.length > 0 ? {
+            create: uniquePricingData.map(p => ({
               start_date: new Date(p.start_date), end_date: new Date(p.end_date),
-              pax: p.pax, price: p.price, cost: p.cost, currency_id: p.currency_id
+              pax: p.pax, price: p.price, cost: p.cost || 0, currency_id: p.currency_id || null
             }))
           } : undefined
         }
@@ -218,7 +287,13 @@ export async function calculateExcursionCost(req, res, next) {
     const final_cost = calculateExcursionCostLogic(excursion, request, markupGroup, markups);
     return res.json({ final_cost, discount: 0 });
   } catch (err) {
-    if (err.message && (err.message.includes('not found') || err.message.includes('not available') || err.message.includes('invalid'))) {
+    if (err.message && (
+      err.message.includes('not found') ||
+      err.message.includes('not available') ||
+      err.message.includes('invalid') ||
+      err.message.includes('pricing') ||
+      err.message.includes('Pax')
+    )) {
       return res.status(400).send(err.message);
     }
     next(err);

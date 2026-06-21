@@ -45,7 +45,8 @@ export async function listUserProfiles(req, res, next) {
 
 export async function getUserProfile(req, res, next) {
   try {
-    const userIDParam = req.params.userID;
+    const userIDParam = req.params.userID || (req.user ? String(req.user.user_id) : undefined);
+    if (!userIDParam) return res.status(400).json({ error: 'User ID is required' });
     let profile;
     const numericId = parseInt(userIDParam);
     if (!isNaN(numericId)) {
@@ -104,7 +105,8 @@ export async function getUserProfile(req, res, next) {
 
 export async function updateUserProfile(req, res, next) {
   try {
-    const userID = parseInt(req.params.userID);
+    const userID = req.params.userID ? parseInt(req.params.userID) : (req.user ? req.user.user_id : NaN);
+    if (isNaN(userID)) return res.status(400).json({ error: 'Invalid or missing user ID' });
     const data = req.body;
     const profile = await prisma.userProfile.update({
       where: { userId: userID },

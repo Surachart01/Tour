@@ -35,21 +35,8 @@ class ApiInterceptor {
 
       this.requests.push(requestData);
       
-      // Only intercept actual API requests, let everything else pass through
-      if (isApiRequest) {
-        console.log('Intercepting API request:', url);
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ intercepted: true })
-        }).catch(async () => {
-          // If fulfill fails, just continue the request normally
-          await route.continue();
-        });
-      } else {
-        // Let non-API requests (HTML, CSS, JS, images) pass through normally
-        await route.continue();
-      }
+      // Let all requests pass through to the real backend
+      await route.continue();
     });
 
     // Intercept responses

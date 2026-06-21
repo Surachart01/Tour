@@ -1230,7 +1230,7 @@
             <form id="transferForm">
               <div class="form-row">
                 <!-- City -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="transferCity">City *</label>
                   <select
                     class="form-control city-dropdown-transfer"
@@ -1242,7 +1242,7 @@
                   </select>
                 </div>
                 <!-- Date -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="transferDate">Date *</label>
                   <input
                     type="date"
@@ -1251,8 +1251,27 @@
                     required
                   />
                 </div>
+                <!-- Transfer Type -->
+                <div class="form-group col-md-3">
+                  <label for="transferRouteType">
+                    <i
+                      class="fas fa-exchange-alt"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Transfer Type *
+                  </label>
+                  <select
+                    id="transferRouteType"
+                    class="form-control transfer-route-type"
+                    required
+                  >
+                    <option value="" disabled selected>Select Type</option>
+                    <option value="TIN">TIN (Transfer In)</option>
+                    <option value="TOUT">TOUT (Transfer Out)</option>
+                  </select>
+                </div>
                 <!-- Transfer Dropdown -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="transferType">Transfer *</label>
                   <select
                     id="transferType"
@@ -2609,11 +2628,37 @@
               excursionDropdown.innerHTML =
                 '<option value="">Select Excursion</option>'; // Clear previous options
 
+              const dateValue = document.getElementById("excursionDate")?.value;
+              let dayIndex = -1;
+              if (dateValue) {
+                const dateObj = new Date(dateValue);
+                if (!isNaN(dateObj.getTime())) {
+                  dayIndex = dateObj.getDay();
+                }
+              }
+
               excursions.forEach((excursion) => {
-                const option = document.createElement("option");
-                option.value = excursion.id; // Use excursion ID
-                option.textContent = excursion.name; // Display excursion name
-                excursionDropdown.appendChild(option);
+                let isValid = true;
+                if (dayIndex !== -1 && excursion.valid_days && excursion.valid_days.trim() !== "") {
+                  const daysOfWeekShort = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+                  const daysOfWeekFull = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+                  const allowedList = excursion.valid_days.split(",").map(d => d.trim().toLowerCase());
+                  
+                  const matchesDigit = allowedList.includes(String(dayIndex));
+                  const matchesShort = allowedList.includes(daysOfWeekShort[dayIndex]);
+                  const matchesFull = allowedList.includes(daysOfWeekFull[dayIndex]);
+                  
+                  if (!matchesDigit && !matchesShort && !matchesFull) {
+                    isValid = false;
+                  }
+                }
+
+                if (isValid) {
+                  const option = document.createElement("option");
+                  option.value = excursion.id; // Use excursion ID
+                  option.textContent = excursion.name; // Display excursion name
+                  excursionDropdown.appendChild(option);
+                }
               });
             })
             .catch((error) => {
@@ -2900,6 +2945,7 @@
             rowData["remarks"] = cells[5]?.textContent.trim() || "";
             rowData["total_cost"] =
               parseFloat(cells[7]?.textContent.trim()) || 0.0;
+            rowData["price"] = rowData["total_cost"];
             rowData["discount"] = 0.0;
             rowData["final_cost"] = rowData["total_cost"];
 
@@ -2945,11 +2991,37 @@
               excursionDropdown.innerHTML =
                 '<option value="">Select Excursion</option>'; // Clear previous options
 
+              const dateValue = document.getElementById("excursionDate")?.value;
+              let dayIndex = -1;
+              if (dateValue) {
+                const dateObj = new Date(dateValue);
+                if (!isNaN(dateObj.getTime())) {
+                  dayIndex = dateObj.getDay();
+                }
+              }
+
               excursions.forEach((excursion) => {
-                const option = document.createElement("option");
-                option.value = excursion.id;
-                option.textContent = excursion.name;
-                excursionDropdown.appendChild(option);
+                let isValid = true;
+                if (dayIndex !== -1 && excursion.valid_days && excursion.valid_days.trim() !== "") {
+                  const daysOfWeekShort = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+                  const daysOfWeekFull = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+                  const allowedList = excursion.valid_days.split(",").map(d => d.trim().toLowerCase());
+                  
+                  const matchesDigit = allowedList.includes(String(dayIndex));
+                  const matchesShort = allowedList.includes(daysOfWeekShort[dayIndex]);
+                  const matchesFull = allowedList.includes(daysOfWeekFull[dayIndex]);
+                  
+                  if (!matchesDigit && !matchesShort && !matchesFull) {
+                    isValid = false;
+                  }
+                }
+
+                if (isValid) {
+                  const option = document.createElement("option");
+                  option.value = excursion.id;
+                  option.textContent = excursion.name;
+                  excursionDropdown.appendChild(option);
+                }
               });
 
               console.log("Excursions loaded:", excursions);
@@ -2978,6 +3050,16 @@
 
               searchExcursionByCity(cityDropdown, excursionDropdown);
             });
+          });
+
+        document
+          .getElementById("excursionDate")
+          .addEventListener("change", function () {
+            const cityDropdown = document.getElementById("excursionCity");
+            const excursionDropdown = document.getElementById("excursionName");
+            if (cityDropdown && cityDropdown.value && excursionDropdown) {
+              searchExcursionByCity(cityDropdown, excursionDropdown);
+            }
           });
 
         document
@@ -3117,9 +3199,13 @@
 
           const excursionDropdown = document.getElementById("excursionName");
 
-          // ✅ Fetch excursions based on the selected city
+          // ✅ Fetch excursions based on the selected city and date (day-of-week filter)
           const url = new URL(`${Endpoint}/api/v1/excursions`);
           url.searchParams.append("city", excursion.excursionCity);
+          if (formattedDate) {
+            url.searchParams.append("from_date", formattedDate);
+            url.searchParams.append("to_date", formattedDate);
+          }
 
           fetch(url, {
             method: "GET",
@@ -3295,6 +3381,7 @@
           row.dataset.transferId = transfer.transfer_id; // ✅ Store transfer_id correctly
           row.dataset.flightTime = transfer.flight_time || ""; // ✅ Store Flight Time
           row.dataset.transferFlight = transfer.flight_number || ""; // ✅ Store Flight Number
+          row.dataset.transferRouteType = transfer.transfers?.transfer_type || transfer.transfer_type || ""; // ✅ Store Transfer Route Type
           console.log(formatToYYYYMMDD(transfer.date));
           // ✅ Store the quotation status in the dataset
           row.dataset.quotationStatus = quotationStatus;
@@ -3331,16 +3418,20 @@
         // Fetch transfers based on selected city
         function searchTransfersByCity(cityDropdown, transferDropdown) {
           const selectedCity = cityDropdown.value;
+          const transferRouteType = document.getElementById("transferRouteType")?.value;
 
           if (!selectedCity) {
             alert("Please select a city.");
             return;
           }
 
-          console.log(`Fetching transfers for city: ${selectedCity}`);
+          console.log(`Fetching transfers for city: ${selectedCity}, type: ${transferRouteType || "all"}`);
 
           const url = new URL(`${Endpoint}/api/v1/transfers`);
           url.searchParams.append("city", selectedCity);
+          if (transferRouteType) {
+            url.searchParams.append("transfer_type", transferRouteType);
+          }
 
           fetch(url, {
             method: "GET",
@@ -3397,6 +3488,17 @@
               searchTransfersByCity(cityDropdown, transferDropdown);
             });
           });
+
+        // Listen for transfer route type change to reload transfers
+        document.querySelectorAll(".transfer-route-type").forEach((typeInput) => {
+          typeInput.addEventListener("change", function () {
+            const cityDropdown = document.querySelector(".city-dropdown-transfer");
+            const transferDropdown = document.getElementById("transferType");
+            if (cityDropdown && cityDropdown.value && transferDropdown) {
+              searchTransfersByCity(cityDropdown, transferDropdown);
+            }
+          });
+        });
 
         // Event listener for the "Add Transfer" button
         document
@@ -3536,6 +3638,7 @@
               transferDate: formatToDDMMYYYY(
                 document.getElementById("transferDate").value
               ),
+              transferRouteType: document.getElementById("transferRouteType")?.value || "",
               transferType: transferType.trim(),
               transferFrom: document
                 .getElementById("transferFrom")
@@ -3588,6 +3691,7 @@
           row.dataset.transferId = transfer.transfer_id;
           row.dataset.flightTime = transfer.flightTime;
           row.dataset.transferFlight = transfer.transferFlight;
+          row.dataset.transferRouteType = transfer.transferRouteType || "";
 
           row.innerHTML = `
                     <td>${formatToDDMMYYYY(transfer.transferDate)}</td>
@@ -3633,6 +3737,7 @@
               document.getElementById("transferDate").value
             ),
             transfer_description: selectedTransferOption.textContent.trim(),
+            transferRouteType: document.getElementById("transferRouteType")?.value || "",
             from_location: document.getElementById("transferFrom").value,
             to_location: document.getElementById("transferTo").value,
             tot: document.getElementById("transferToT").value,
@@ -3651,6 +3756,8 @@
             updatedTransfer.flight_time || "";
           editingTransferRow.dataset.flightNumber =
             updatedTransfer.flight_number || "";
+          editingTransferRow.dataset.transferRouteType =
+            updatedTransfer.transferRouteType || "";
 
           // ✅ Update row directly in the table
           editingTransferRow.innerHTML = `
@@ -3696,6 +3803,7 @@
           console.log("Editing Transfer Row:", row);
 
           const transferId = row.dataset.transferId;
+          const transferRouteType = row.dataset.transferRouteType || "";
 
           if (!transferId) {
             console.error("Error: Transfer ID missing in row dataset.");
@@ -3717,14 +3825,32 @@
             final_cost: row.cells[8].textContent.trim(),
             flightTime: row.dataset.flightTime || "", // ✅ Always get latest flight time
             transferFlight: row.dataset.transferFlight || "", // ✅ Always get latest flight number
+            transferRouteType: transferRouteType,
           };
 
           console.log("Loaded Transfer Data for Editing:", transfer);
           let formattedDate = formatToYYYYMMDD(transfer.transferDate);
 
           // ✅ Populate modal fields with fresh data
-          document.getElementById("transferCity").value =
-            transfer.transferCity || "";
+          const cityDropdown = document.getElementById("transferCity");
+          if (cityDropdown) {
+            let cityFound = false;
+            for (let i = 0; i < cityDropdown.options.length; i++) {
+              if (cityDropdown.options[i].value.toLowerCase() === (transfer.transferCity || "").toLowerCase()) {
+                cityDropdown.selectedIndex = i;
+                cityFound = true;
+                break;
+              }
+            }
+            if (!cityFound && transfer.transferCity) {
+              console.log("⚠️ City not found in dropdown options, adding manually:", transfer.transferCity);
+              const option = document.createElement("option");
+              option.value = transfer.transferCity;
+              option.textContent = transfer.transferCity;
+              option.selected = true;
+              cityDropdown.appendChild(option);
+            }
+          }
           document.getElementById("transferDate").value = formattedDate;
           document.getElementById("transferFrom").value =
             transfer.transferFrom || "";
@@ -3734,6 +3860,9 @@
             transfer.transferToT || "";
           document.getElementById("updatedTransferPrice").value =
             transfer.final_cost || "N/A";
+          if (document.getElementById("transferRouteType")) {
+            document.getElementById("transferRouteType").value = transferRouteType;
+          }
 
           // ✅ **Disable fields if the quotation is approved**
           const isQuotationApproved = quotationStatus === "Approved";
@@ -3747,6 +3876,9 @@
           document.getElementById("transferTo").disabled = !canEdit;
           document.getElementById("transferToT").disabled = !canEdit;
           document.getElementById("transferType").disabled = !canEdit;
+          if (document.getElementById("transferRouteType")) {
+            document.getElementById("transferRouteType").disabled = !canEdit;
+          }
           document.getElementById("updatedTransferPrice").disabled = !canEdit;
           document.getElementById("getTransferPriceBtn").disabled = !canEdit;
 
@@ -3763,6 +3895,9 @@
 
           const url = new URL(`${Endpoint}/api/v1/transfers`);
           url.searchParams.append("city", transfer.transferCity);
+          if (transferRouteType) {
+            url.searchParams.append("transfer_type", transferRouteType);
+          }
           fetch(url, {
             method: "GET",
             headers: {
@@ -3778,18 +3913,33 @@
               transferDropdown.innerHTML =
                 '<option value="">Select Transfer</option>'; // Clear previous options
 
+              let transferFound = false;
               transfers.forEach((transferOption) => {
                 const option = document.createElement("option");
                 option.value = transferOption.id;
                 option.textContent = transferOption.description;
 
-                // ✅ Preselect the transfer if it matches the row value
-                if (transferOption.description === transfer.transferType) {
+                // ✅ Preselect the transfer if it matches the row value (case-insensitive)
+                if (
+                  transferOption.description.trim().toLowerCase() ===
+                  (transfer.transferType || "").trim().toLowerCase()
+                ) {
                   option.selected = true;
+                  transferFound = true;
                 }
 
                 transferDropdown.appendChild(option);
               });
+
+              // ✅ Fallback: If original transfer not found in the loaded list, append and select it manually
+              if (!transferFound && transfer.transferType && transfer.transfer_id) {
+                console.log("⚠️ Original transfer not found in fetched options, adding manually:", transfer.transferType);
+                const option = document.createElement("option");
+                option.value = transfer.transfer_id;
+                option.textContent = transfer.transferType;
+                option.selected = true;
+                transferDropdown.appendChild(option);
+              }
             })
             .catch((error) => {
               console.error("Error fetching transfers:", error);
@@ -8219,6 +8369,7 @@
                 rowData["remarks"] = cells[7]?.textContent.trim() || "";
                 rowData["total_cost"] =
                   parseFloat(cells[8]?.textContent.trim()) || 0.0;
+                rowData["price"] = rowData["total_cost"];
                 rowData["discount"] = 0.0; // Default to 0
                 rowData["final_cost"] = rowData["total_cost"]; // Set default final cost
                 rowData["notify_supplier"] = false; // Default false
@@ -8267,6 +8418,7 @@
                   parseInt(row.dataset.tripleRooms) || 0;
                 rowData["total_cost"] =
                   parseFloat(cells[6]?.textContent.trim()) || 0.0;
+                rowData["price"] = rowData["total_cost"];
                 rowData["discount"] = 0.0;
                 rowData["final_cost"] = rowData["total_cost"];
 
@@ -8304,6 +8456,7 @@
                 // ✅ Extract cost data - use the single cost value for both total_cost and final_cost
                 const costValue = parseFloat(cells[8]?.textContent.trim()) || 0;
                 flightData["total_cost"] = costValue;
+                flightData["price"] = costValue;
                 flightData["discount"] = 0;
                 flightData["final_cost"] = costValue;
 
@@ -8345,6 +8498,7 @@
                 rowData["remarks"] = cells[5]?.textContent.trim() || "";
                 rowData["total_cost"] =
                   parseFloat(cells[7]?.textContent.trim()) || 0.0;
+                rowData["price"] = rowData["total_cost"];
                 rowData["discount"] = 0.0;
                 rowData["final_cost"] = rowData["total_cost"];
 

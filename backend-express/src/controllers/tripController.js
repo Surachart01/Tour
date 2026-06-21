@@ -210,6 +210,7 @@ function mapTripResponse(trip) {
       final_cost: toFloat(e.price),
       date: fmtDate(e.from_date),
       from_date: fmtDate(e.from_date),
+      excursion_name: e.excursion_name || e.excursions?.name || "",
     })),
     tours: (trip.tour_trip_items || []).map((t) => ({
       ...t,
@@ -218,6 +219,7 @@ function mapTripResponse(trip) {
       final_cost: toFloat(t.price),
       from_date: fmtDate(t.from_date),
       to_date: fmtDate(t.to_date),
+      tour_name: t.tours?.name || "",
     })),
     transfers: (trip.transfer_trip_items || []).map((t) => ({
       ...t,
@@ -226,6 +228,10 @@ function mapTripResponse(trip) {
       final_cost: toFloat(t.price),
       date: fmtDate(t.from_date),
       from_date: fmtDate(t.from_date),
+      city: t.city || t.transfers?.city || "",
+      transfer_description: t.transfer_description || t.transfers?.description || "",
+      pickup_time: t.pickup_time || "",
+      flight_time: t.flight_time || "",
     })),
     flights: (trip.flight_trip_items || []).map((f) => ({
       ...f,
@@ -417,7 +423,8 @@ export async function createQuotation(req, res, next) {
           const transferDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           await tx.transfer_trip_items.create({
             data: {
-              trip_item_id: id, transfer_id: parseInt(item.transfer_id),
+              trip_item_id: id,
+              transfer_id: (item.transfer_id && !isNaN(parseInt(item.transfer_id))) ? parseInt(item.transfer_id) : null,
               from_location: item.from_location, to_location: item.to_location,
               from_date: transferDate, to_date: transferDate,
               flight_number: item.flight_number, tot: item.tot,
@@ -461,7 +468,7 @@ export async function createQuotation(req, res, next) {
       }
 
       return trip;
-    });
+    }, { timeout: 20000 });
 
     const trip = await prisma.trips.findUnique({
       where: { id: createdTrip.id },
@@ -512,7 +519,7 @@ export async function listQuotations(req, res, next) {
     const claims = req.user;
     const where = { approved: false, declined: false };
     if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
-      where.agent_id = claims.agent_id || 0;
+      where.user_id = claims.user_id;
     }
     const trips = await prisma.trips.findMany({
       where,
@@ -532,7 +539,7 @@ export async function listQuotationsByDateRange(req, res, next) {
       where.created_at = { gte: new Date(from_date), lte: new Date(to_date) };
     }
     if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
-      where.agent_id = claims.agent_id || 0;
+      where.user_id = claims.user_id;
     }
     const trips = await prisma.trips.findMany({ where, include: { agents: true }, orderBy: { created_at: 'desc' } });
     return res.json(trips.map(mapTripResponse));
@@ -546,7 +553,7 @@ export async function getQuotation(req, res, next) {
     const claims = req.user;
     const where = { id };
     if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
-      where.agent_id = claims.agent_id || 0;
+      where.user_id = claims.user_id;
     }
     const trip = await prisma.trips.findFirst({
       where,
@@ -596,7 +603,7 @@ export async function updateQuotation(req, res, next) {
     const existing = await prisma.trips.findUnique({ where: { id } });
     if (!existing) return res.status(404).send('Quotation not found');
     if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
-      if (existing.agent_id !== claims.agent_id) {
+      if (existing.user_id !== claims.user_id) {
         return res.status(403).send('Forbidden: Access denied to this quotation');
       }
     }
@@ -788,7 +795,8 @@ export async function updateQuotation(req, res, next) {
           const transferDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           await tx.transfer_trip_items.create({
             data: {
-              trip_item_id: id, transfer_id: parseInt(item.transfer_id),
+              trip_item_id: id,
+              transfer_id: (item.transfer_id && !isNaN(parseInt(item.transfer_id))) ? parseInt(item.transfer_id) : null,
               from_location: item.from_location, to_location: item.to_location,
               from_date: transferDate, to_date: transferDate,
               flight_number: item.flight_number, tot: item.tot,
@@ -828,7 +836,7 @@ export async function updateQuotation(req, res, next) {
           });
         }
       }
-    });
+    }, { timeout: 20000 });
 
     const updated = await prisma.trips.findUnique({
       where: { id },
@@ -875,7 +883,7 @@ export async function finalizeQuotation(req, res, next) {
     const existing = await prisma.trips.findUnique({ where: { id } });
     if (!existing) return res.status(404).send('Quotation not found');
     if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
-      if (existing.agent_id !== claims.agent_id) {
+      if (existing.user_id !== claims.user_id) {
         return res.status(403).send('Forbidden: Access denied to this quotation');
       }
     }
@@ -897,7 +905,7 @@ export async function cancelQuotation(req, res, next) {
     const existing = await prisma.trips.findUnique({ where: { id } });
     if (!existing) return res.status(404).send('Quotation not found');
     if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
-      if (existing.agent_id !== claims.agent_id) {
+      if (existing.user_id !== claims.user_id) {
         return res.status(403).send('Forbidden: Access denied to this quotation');
       }
     }
@@ -919,7 +927,7 @@ export async function deleteQuotation(req, res, next) {
     const existing = await prisma.trips.findUnique({ where: { id } });
     if (!existing) return res.status(404).send('Quotation not found');
     if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
-      if (existing.agent_id !== claims.agent_id) {
+      if (existing.user_id !== claims.user_id) {
         return res.status(403).send('Forbidden: Access denied to this quotation');
       }
     }

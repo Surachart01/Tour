@@ -50,6 +50,24 @@ export async function createTransfer(req, res, next) {
       supplierName = supplier?.name || null;
     }
 
+    // Filter duplicates in pricingData before saving
+    const seen = new Set();
+    const uniquePricingData = [];
+    for (const p of pricingData) {
+      if (!p.start_date || !p.end_date) continue;
+      const startStr = String(p.start_date).split('T')[0].trim();
+      const endStr = String(p.end_date).split('T')[0].trim();
+      const paxVal = parseInt(p.pax, 10);
+      const priceVal = parseFloat(p.price || 0);
+      const costVal = parseFloat(p.cost || 0);
+
+      const key = `${startStr}_${endStr}_${paxVal}_${priceVal}_${costVal}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniquePricingData.push(p);
+      }
+    }
+
     const transfer = await prisma.transfers.create({
       data: {
         transfer_type: data.transfer_type, city: data.city,
@@ -63,8 +81,8 @@ export async function createTransfer(req, res, next) {
         supplier_id: data.supplier_id ? parseInt(data.supplier_id) : null,
         display_order: data.display_order !== undefined ? parseInt(data.display_order) :
                        (data.order !== undefined ? parseInt(data.order) : 0),
-        transfer_pricing: pricingData.length > 0 ? {
-          create: pricingData.map(p => ({
+        transfer_pricing: uniquePricingData.length > 0 ? {
+          create: uniquePricingData.map(p => ({
             start_date: new Date(p.start_date), end_date: new Date(p.end_date),
             pax: p.pax, price: p.price, cost: p.cost || 0, currency_id: p.currency_id || null
           }))
@@ -91,7 +109,13 @@ export async function getTransferByID(req, res, next) {
 
 export async function getTransfers(req, res, next) {
   try {
+    const { transfer_type } = req.query;
+    let where = {};
+    if (transfer_type) {
+      where.transfer_type = transfer_type;
+    }
     const transfers = await prisma.transfers.findMany({
+      where,
       include: { transfer_pricing: { include: { currencies: true } } }
     });
     const formatted = transfers.map(formatTransferResponse);
@@ -105,10 +129,14 @@ export async function getTransfers(req, res, next) {
 
 export async function getTransferByCity(req, res, next) {
   try {
-    const { city } = req.query;
+    const { city, transfer_type } = req.query;
     if (!city) return res.status(400).send('City parameter is required');
+    let where = { city };
+    if (transfer_type) {
+      where.transfer_type = transfer_type;
+    }
     const transfers = await prisma.transfers.findMany({
-      where: { city },
+      where,
       include: { transfer_pricing: { include: { currencies: true } } }
     });
     const formatted = transfers.map(formatTransferResponse);
@@ -122,9 +150,10 @@ export async function getTransferByCity(req, res, next) {
 
 export async function listAvailableTransfersByCity(req, res, next) {
   try {
-    const { city, from_date, to_date, keyword } = req.query;
+    const { city, from_date, to_date, keyword, transfer_type } = req.query;
     let where = {};
     if (city) where.city = city;
+    if (transfer_type) where.transfer_type = transfer_type;
     if (keyword) {
       where.OR = [
         { departure: { contains: keyword, mode: 'insensitive' } },
@@ -172,6 +201,24 @@ export async function updateTransfer(req, res, next) {
       supplierName = supplier?.name || null;
     }
 
+    // Filter duplicates in pricingData before saving
+    const seen = new Set();
+    const uniquePricingData = [];
+    for (const p of pricingData) {
+      if (!p.start_date || !p.end_date) continue;
+      const startStr = String(p.start_date).split('T')[0].trim();
+      const endStr = String(p.end_date).split('T')[0].trim();
+      const paxVal = parseInt(p.pax, 10);
+      const priceVal = parseFloat(p.price || 0);
+      const costVal = parseFloat(p.cost || 0);
+
+      const key = `${startStr}_${endStr}_${paxVal}_${priceVal}_${costVal}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniquePricingData.push(p);
+      }
+    }
+
     await prisma.$transaction(async (tx) => {
       await tx.transfer_pricing.deleteMany({ where: { transfer_id: id } });
       await tx.transfers.update({
@@ -187,8 +234,8 @@ export async function updateTransfer(req, res, next) {
           supplier_id: data.supplier_id !== undefined ? (data.supplier_id ? parseInt(data.supplier_id) : null) : undefined,
           display_order: data.display_order !== undefined ? parseInt(data.display_order) :
                          (data.order !== undefined ? parseInt(data.order) : undefined),
-          transfer_pricing: pricingData.length > 0 ? {
-            create: pricingData.map(p => ({
+          transfer_pricing: uniquePricingData.length > 0 ? {
+            create: uniquePricingData.map(p => ({
               start_date: new Date(p.start_date), end_date: new Date(p.end_date),
               pax: p.pax, price: p.price, cost: p.cost || 0, currency_id: p.currency_id || null
             }))
@@ -246,7 +293,13 @@ export async function calculateTransfersCost(req, res, next) {
     const final_cost = calculateTransferCostLogic(transfer, request, markupGroup, markups);
     return res.json({ final_cost, discount: 0 });
   } catch (err) {
-    if (err.message && (err.message.includes('not found') || err.message.includes('not available') || err.message.includes('invalid'))) {
+    if (err.message && (
+      err.message.includes('not found') ||
+      err.message.includes('not available') ||
+      err.message.includes('invalid') ||
+      err.message.includes('pricing') ||
+      err.message.includes('Pax')
+    )) {
       return res.status(400).send(err.message);
     }
     next(err);

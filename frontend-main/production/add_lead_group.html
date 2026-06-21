@@ -545,7 +545,7 @@
             <form id="transferForm">
               <div class="form-row">
                 <!-- Country -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="transferCountry">Country *</label>
                   <select
                     class="form-control"
@@ -556,7 +556,7 @@
                   </select>
                 </div>
                 <!-- City -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="transferCity">City *</label>
                   <select
                     class="form-control city-dropdown-transfer"
@@ -568,7 +568,7 @@
                   </select>
                 </div>
                 <!-- Date -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="transferDate">Date *</label>
                   <input
                     type="date"
@@ -577,8 +577,27 @@
                     required
                   />
                 </div>
+                <!-- Transfer Type -->
+                <div class="form-group col-md-3">
+                  <label for="transferRouteType">
+                    <i
+                      class="fas fa-exchange-alt"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Transfer Type *
+                  </label>
+                  <select
+                    id="transferRouteType"
+                    class="form-control transfer-route-type"
+                    required
+                  >
+                    <option value="" disabled selected>Select Type</option>
+                    <option value="TIN">TIN (Transfer In)</option>
+                    <option value="TOUT">TOUT (Transfer Out)</option>
+                  </select>
+                </div>
                 <!-- Transfer Dropdown -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="transferType">Transfer *</label>
                   <select
                     id="transferType"

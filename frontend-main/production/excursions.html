@@ -565,6 +565,7 @@
               filteredExcursions = [...excursions]; // Copy sorted data for filtering
               totalPages = Math.ceil(filteredExcursions.length / rowsPerPage) || 1;
               populateFilters(excursions);
+              restoreFilters();
               updateExcursionsCount();
               renderExcursions();
               updatePaginationButtons();
@@ -708,6 +709,7 @@
         function nextPage() {
           if (currentPage < totalPages) {
             currentPage++;
+            sessionStorage.setItem("excursionCurrentPage", currentPage);
             renderExcursions();
             updatePaginationButtons();
           }
@@ -717,6 +719,7 @@
         function prevPage() {
           if (currentPage > 1) {
             currentPage--;
+            sessionStorage.setItem("excursionCurrentPage", currentPage);
             renderExcursions();
             updatePaginationButtons();
           }
@@ -768,21 +771,17 @@
           }
         }
 
-        // Filter excursions based on Country, City, Type, and Search input
-        function filterExcursionsTable() {
+        // Run filtering logic but do not reset pagination or render
+        function runFilterLogicOnly() {
           const selectedCountry = document.getElementById("filterCountry").value;
           const selectedCity = document.getElementById("filterCity").value;
           const selectedType = document.getElementById("filterType").value;
           const searchValue = searchBox.value.toLowerCase();
 
           filteredExcursions = excursions.filter((excursion) => {
-            // Country filter
             const matchCountry = selectedCountry === "All" || (excursion.country || "Thailand") === selectedCountry;
-            
-            // City filter
             const matchCity = selectedCity === "All" || excursion.city === selectedCity;
-
-            // Type filter (is_sic_excursion)
+            
             let matchType = true;
             if (selectedType === "SIC") {
               matchType = excursion.is_sic_excursion === true;
@@ -790,23 +789,12 @@
               matchType = excursion.is_sic_excursion === false || !excursion.is_sic_excursion;
             }
 
-            // Keyword filter
             const formatAvailableDaysForSearch = (availableDays) => {
               if (!availableDays || availableDays.length === 0) {
                 return "all days";
               }
-              const dayNames = [
-                "sunday",
-                "monday",
-                "tuesday",
-                "wednesday",
-                "thursday",
-                "friday",
-                "saturday",
-              ];
-              return availableDays
-                .map((day) => dayNames[day.day_of_week])
-                .join(" ");
+              const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+              return availableDays.map((day) => dayNames[day.day_of_week]).join(" ");
             };
 
             const validDaysText = formatAvailableDaysForSearch(excursion.available_days);
@@ -821,8 +809,65 @@
             return matchCountry && matchCity && matchType && matchKeyword;
           });
 
-          currentPage = 1; // Reset to the first page on filter
           totalPages = Math.ceil(filteredExcursions.length / rowsPerPage) || 1;
+        }
+
+        // Restore saved filters from sessionStorage
+        function restoreFilters() {
+          const savedCountry = sessionStorage.getItem("excursionFilterCountry");
+          const savedCity = sessionStorage.getItem("excursionFilterCity");
+          const savedType = sessionStorage.getItem("excursionFilterType");
+          const savedSearch = sessionStorage.getItem("excursionSearchBox");
+          const savedRows = sessionStorage.getItem("excursionRowsPerPage");
+          const savedPage = sessionStorage.getItem("excursionCurrentPage");
+
+          if (savedCountry) {
+            document.getElementById("filterCountry").value = savedCountry;
+            populateCities(savedCountry);
+          }
+          if (savedCity) {
+            const filterCity = document.getElementById("filterCity");
+            if (Array.from(filterCity.options).some(opt => opt.value === savedCity)) {
+              filterCity.value = savedCity;
+            }
+          }
+          if (savedType) {
+            document.getElementById("filterType").value = savedType;
+          }
+          if (savedSearch !== null) {
+            searchBox.value = savedSearch;
+          }
+          if (savedRows) {
+            rowsSelect.value = savedRows;
+            rowsPerPage = savedRows === "All" ? excursions.length : parseInt(savedRows);
+          }
+
+          runFilterLogicOnly();
+
+          if (savedPage) {
+            const pageNum = parseInt(savedPage);
+            if (pageNum > 0 && pageNum <= totalPages) {
+              currentPage = pageNum;
+            }
+          }
+        }
+
+        // Filter excursions based on Country, City, Type, and Search input
+        function filterExcursionsTable() {
+          runFilterLogicOnly();
+          currentPage = 1; // Reset to the first page on filter
+
+          const selectedCountry = document.getElementById("filterCountry").value;
+          const selectedCity = document.getElementById("filterCity").value;
+          const selectedType = document.getElementById("filterType").value;
+
+          // Save to sessionStorage
+          sessionStorage.setItem("excursionFilterCountry", selectedCountry);
+          sessionStorage.setItem("excursionFilterCity", selectedCity);
+          sessionStorage.setItem("excursionFilterType", selectedType);
+          sessionStorage.setItem("excursionSearchBox", searchBox.value);
+          sessionStorage.setItem("excursionRowsPerPage", rowsSelect.value);
+          sessionStorage.setItem("excursionCurrentPage", currentPage);
 
           // Update count and render the filtered table
           updateExcursionsCount();
@@ -858,6 +903,8 @@
           rowsPerPage =
             this.value === "All" ? excursions.length : parseInt(this.value);
           currentPage = 1; // Reset to first page
+          sessionStorage.setItem("excursionRowsPerPage", this.value);
+          sessionStorage.setItem("excursionCurrentPage", currentPage);
           totalPages = Math.ceil(filteredExcursions.length / rowsPerPage) || 1;
           renderExcursions();
           updatePaginationButtons();

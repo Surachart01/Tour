@@ -592,7 +592,7 @@
             <form id="transferForm">
               <div class="form-row">
                 <!-- City -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="transferCity">City *</label>
                   <select
                     class="form-control city-dropdown-transfer"
@@ -603,7 +603,7 @@
                   </select>
                 </div>
                 <!-- Date -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="transferDate">Date *</label>
                   <input
                     type="date"
@@ -612,8 +612,27 @@
                     required
                   />
                 </div>
+                <!-- Transfer Type -->
+                <div class="form-group col-md-3">
+                  <label for="transferRouteType">
+                    <i
+                      class="fas fa-exchange-alt"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Transfer Type *
+                  </label>
+                  <select
+                    id="transferRouteType"
+                    class="form-control transfer-route-type"
+                    required
+                  >
+                    <option value="" disabled selected>Select Type</option>
+                    <option value="TIN">TIN (Transfer In)</option>
+                    <option value="TOUT">TOUT (Transfer Out)</option>
+                  </select>
+                </div>
                 <!-- Transfer Dropdown -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="transferType">Transfer *</label>
                   <select
                     id="transferType"
@@ -1626,8 +1645,8 @@
 
         // Excursion Section Start:
 
-        // Fetch excursion based on selected city
-        function searchExcursionByCity(cityDropdown, excursionDropdown) {
+        // Fetch excursion based on selected city and optionally date (for day-of-week filtering)
+        function searchExcursionByCity(cityDropdown, excursionDropdown, selectedDate) {
           const selectedCity = cityDropdown.value;
 
           if (!selectedCity) {
@@ -1635,10 +1654,16 @@
             return;
           }
 
-          console.log(`Fetching excursion for city: ${selectedCity}`); // Debugging log
+          console.log(`Fetching excursion for city: ${selectedCity}, date: ${selectedDate || "(none)"}`);
 
           const url = new URL(`${Endpoint}/api/v1/excursions`);
           url.searchParams.append("city", selectedCity);
+
+          // If a date is provided, add from_date and to_date to filter by day-of-week
+          if (selectedDate) {
+            url.searchParams.append("from_date", selectedDate);
+            url.searchParams.append("to_date", selectedDate);
+          }
 
           fetch(url, {
             method: "GET",
@@ -1661,6 +1686,14 @@
               }
               excursionDropdown.innerHTML =
                 '<option value="">Select Excursion</option>'; // Clear previous options
+              if (excursions.length === 0 && selectedDate) {
+                // No excursions available on this day-of-week
+                const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                const d = new Date(selectedDate);
+                const dayName = dayNames[d.getDay()];
+                alert(`ไม่มี Excursion ที่สามารถใช้งานได้ในวัน${dayName} (${selectedDate}) สำหรับเมืองนี้`);
+                return;
+              }
               excursions.forEach((excursion) => {
                 const option = document.createElement("option");
                 option.value = excursion.id; // Use excursion ID
@@ -1691,9 +1724,19 @@
                 return;
               }
 
-              searchExcursionByCity(cityDropdown, excursionDropdown);
+              const selectedDate = document.getElementById("excursionDate")?.value || "";
+              searchExcursionByCity(cityDropdown, excursionDropdown, selectedDate);
             });
           });
+
+        // Re-fetch excursions when date changes (day-of-week filtering)
+        document.getElementById("excursionDate")?.addEventListener("change", function () {
+          const cityDropdown = document.getElementById("excursionCity");
+          const excursionDropdown = document.querySelector(".excursion-dropdown");
+          if (cityDropdown && cityDropdown.value && excursionDropdown) {
+            searchExcursionByCity(cityDropdown, excursionDropdown, this.value);
+          }
+        });
 
         function formatDateForInput(dateString) {
           if (!dateString) return ""; // Ensure it's not empty
@@ -1767,76 +1810,7 @@
           return dataArray;
         }
 
-        function searchExcursionByCity(cityDropdown, excursionDropdown) {
-          const selectedCity = cityDropdown.value;
-
-          if (!selectedCity) {
-            alert("Please select a city.");
-            return;
-          }
-
-          console.log(`Fetching excursions for city: ${selectedCity}`);
-
-          const url = new URL(`${Endpoint}/api/v1/excursions`);
-          url.searchParams.append("city", selectedCity);
-
-          fetch(url, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          })
-            .then((response) => {
-              if (!response.ok) {
-                console.error("Error response from API:", response.status);
-                throw new Error("Failed to fetch excursions.");
-              }
-              return response.json();
-            })
-            .then((excursions) => {
-              if (!excursionDropdown) {
-                console.error("Excursion dropdown element is not found.");
-                return;
-              }
-
-              excursionDropdown.innerHTML =
-                '<option value="">Select Excursion</option>'; // Clear previous options
-
-              excursions.forEach((excursion) => {
-                const option = document.createElement("option");
-                option.value = excursion.id;
-                option.textContent = excursion.name;
-                excursionDropdown.appendChild(option);
-              });
-
-              console.log("Excursions loaded:", excursions);
-            })
-            .catch((error) => {
-              console.error("Error fetching excursions:", error);
-              alert("Failed to load excursions. Please try again later.");
-            });
-        }
-
-        document
-          .querySelectorAll(".city-dropdown-excursion")
-          .forEach((cityDropdown) => {
-            cityDropdown.addEventListener("change", function (event) {
-              const excursionDropdown = document.querySelector(
-                ".excursion-dropdown"
-              );
-
-              if (!excursionDropdown) {
-                console.error(
-                  "Excursion dropdown not found for city:",
-                  event.target.value
-                );
-                return;
-              }
-
-              searchExcursionByCity(cityDropdown, excursionDropdown);
-            });
-          });
+        // (searchExcursionByCity is defined above with date filtering support)
 
         document
           .getElementById("excursionTableBody")
@@ -1984,11 +1958,15 @@
               document.getElementById("updatedExcursionPrice").value =
                 excursion.updatedExcursionPrice || "N/A";
 
-              // ✅ Fetch excursions based on the selected city
+              // ✅ Fetch excursions based on the selected city AND date (day-of-week filter)
               const excursionDropdown =
                 document.getElementById("excursionName");
               const url = new URL(`${Endpoint}/api/v1/excursions`);
               url.searchParams.append("city", excursion.excursionCity);
+              if (formattedDate) {
+                url.searchParams.append("from_date", formattedDate);
+                url.searchParams.append("to_date", formattedDate);
+              }
 
               return fetch(url, {
                 method: "GET",
@@ -2053,6 +2031,7 @@
           row.dataset.transferId = transfer.transfer_id;
           row.dataset.flightTime = transfer.flight_time || "";
           row.dataset.transferFlight = transfer.flight_number || "";
+          row.dataset.transferRouteType = transfer.transfers?.transfer_type || transfer.transfer_type || "";
 
           let viewButton = `<button class="btn btn-sm btn-secondary edit-transfer fa fa-book" type="button"></button>`;
 
@@ -2075,16 +2054,20 @@
         // Fetch transfers based on selected city
         function searchTransfersByCity(cityDropdown, transferDropdown) {
           const selectedCity = cityDropdown.value;
+          const transferRouteType = document.getElementById("transferRouteType")?.value;
 
           if (!selectedCity) {
             alert("Please select a city.");
             return;
           }
 
-          console.log(`Fetching transfers for city: ${selectedCity}`);
+          console.log(`Fetching transfers for city: ${selectedCity}, type: ${transferRouteType || "all"}`);
 
           const url = new URL(`${Endpoint}/api/v1/transfers`);
           url.searchParams.append("city", selectedCity);
+          if (transferRouteType) {
+            url.searchParams.append("transfer_type", transferRouteType);
+          }
 
           fetch(url, {
             method: "GET",
@@ -2142,6 +2125,17 @@
             });
           });
 
+        // Listen for transfer route type change to reload transfers
+        document.querySelectorAll(".transfer-route-type").forEach((typeInput) => {
+          typeInput.addEventListener("change", function () {
+            const cityDropdown = document.querySelector(".city-dropdown-transfer");
+            const transferDropdown = document.getElementById("transferType");
+            if (cityDropdown && cityDropdown.value && transferDropdown) {
+              searchTransfersByCity(cityDropdown, transferDropdown);
+            }
+          });
+        });
+
         // Event listener for the "Add Transfer" button
         // Show the transfer modal when the button is clicked
         // Event listener for the "Add Transfer" button
@@ -2155,6 +2149,7 @@
           console.log("Editing Transfer Row:", row);
 
           const transferId = row.dataset.transferId;
+          const transferRouteType = row.dataset.transferRouteType || "";
 
           if (!transferId) {
             console.error("Error: Transfer ID missing in row dataset.");
@@ -2176,6 +2171,7 @@
             final_cost: row.cells[8].textContent.trim(),
             flightTime: row.dataset.flightTime || "", // ✅ Always get latest flight time
             transferFlight: row.dataset.transferFlight || "", // ✅ Always get latest flight number
+            transferRouteType: transferRouteType,
           };
 
           console.log("Loaded Transfer Data for Editing:", transfer);
@@ -2289,12 +2285,18 @@
               document.getElementById("remarks").value = transfer.remarks || "";
               document.getElementById("updatedTransferPrice").value =
                 transfer.final_cost || "N/A";
+              if (document.getElementById("transferRouteType")) {
+                document.getElementById("transferRouteType").value = transferRouteType;
+              }
 
               // ✅ Fetch and Populate the Transfer Description Dropdown
               const transferDropdown = document.getElementById("transferType");
 
               const url = new URL(`${Endpoint}/api/v1/transfers`);
               url.searchParams.append("city", transfer.transferCity);
+              if (transferRouteType) {
+                url.searchParams.append("transfer_type", transferRouteType);
+              }
               return fetch(url, {
                 method: "GET",
                 headers: {
@@ -2312,18 +2314,33 @@
               transferDropdown.innerHTML =
                 '<option value="">Select Transfer</option>';
 
+              let transferFound = false;
               transfers.forEach((transferOption) => {
                 const option = document.createElement("option");
                 option.value = transferOption.id;
                 option.textContent = transferOption.description;
 
-                // ✅ Preselect the transfer if it matches the row value
-                if (transferOption.description === transfer.transferType) {
+                // ✅ Preselect the transfer if it matches the row value (case-insensitive)
+                if (
+                  transferOption.description.trim().toLowerCase() ===
+                  (transfer.transferType || "").trim().toLowerCase()
+                ) {
                   option.selected = true;
+                  transferFound = true;
                 }
 
                 transferDropdown.appendChild(option);
               });
+
+              // ✅ Fallback: If original transfer not found in the loaded list, append and select it manually
+              if (!transferFound && transfer.transferType && transfer.transfer_id) {
+                console.log("⚠️ Original transfer not found in fetched options, adding manually:", transfer.transferType);
+                const option = document.createElement("option");
+                option.value = transfer.transfer_id;
+                option.textContent = transfer.transferType;
+                option.selected = true;
+                transferDropdown.appendChild(option);
+              }
             })
             .catch((error) => {
               console.error("Error in editTransfer:", error);

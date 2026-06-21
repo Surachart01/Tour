@@ -140,7 +140,7 @@ test.describe('Transfers Management Tests', () => {
     await page.fill('#arrival', transferData.arrival);
     await page.fill('#SICPriceAdult', transferData.SICPriceAdult);
     await page.fill('#SICPriceChild', transferData.SICPriceChild);
-    await page.fill('#orderTransfer', transferData.orderTransfer);
+    await page.fill('#displayOrder', transferData.orderTransfer);
     
     console.log('💰 Adding transfer prices...');
     
@@ -409,8 +409,8 @@ test.describe('Transfers Management Tests', () => {
     await page.fill('#SICPriceAdult', updatedData.SICPriceAdult);
     await page.fill('#SICPriceChild', '');
     await page.fill('#SICPriceChild', updatedData.SICPriceChild);
-    await page.fill('#orderTransfer', '');
-    await page.fill('#orderTransfer', updatedData.orderTransfer);
+    await page.fill('#displayOrder', '');
+    await page.fill('#displayOrder', updatedData.orderTransfer);
     
     console.log('✅ Updated all form fields');
     

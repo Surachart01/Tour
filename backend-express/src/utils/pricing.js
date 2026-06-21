@@ -7,6 +7,8 @@ function applyMarkup(basePrice, markupValue, markupUnit) {
   } else {
     finalPrice = basePrice + markupValue;
   }
+  // Fix JS floating-point precision issues (e.g. 990.0000000000001 -> 990)
+  finalPrice = Math.round(finalPrice * 10000) / 10000;
   // Applying ceiling to the nearest multiple of 10
   return Math.ceil(finalPrice / 10) * 10;
 }
@@ -62,19 +64,25 @@ export function calculateExcursionCostLogic(excursion, request, markupGroup, mar
     return (parseInt(request.number_of_adults) || 0) * markedUpAdultPrice + (parseInt(request.number_of_kids) || 0) * markedUpChildPrice;
   } else if (request.toe && request.toe.toLowerCase() === 'pvt') {
     const travelDate = new Date(request.travel_date);
-    const applicablePricing = (excursion.excursion_pricing || []).find(pricing => {
+    const activePricings = (excursion.excursion_pricing || []).filter(pricing => {
       const startDate = new Date(pricing.start_date);
       const endDate = new Date(pricing.end_date);
-      return totalPax === parseInt(pricing.pax) && travelDate >= startDate && travelDate <= endDate;
+      return travelDate >= startDate && travelDate <= endDate;
     });
 
+    if (activePricings.length === 0) {
+      throw new Error('no excursion pricing available for the requested date range');
+    }
+
+    const applicablePricing = activePricings.find(pricing => totalPax === parseInt(pricing.pax));
+
     if (!applicablePricing) {
-      throw new Error('no excursion pricing available for the requested pax and date range');
+      throw new Error('No private excursion pricing available for the requested Pax and date range');
     }
 
     const baseCostPerPerson = parseFloat(applicablePricing.price || 0);
-    const markedUpPerPersonCost = calculateMarkedUpPrice(baseCostPerPerson, markupGroup, 'excursion', markups);
-    return markedUpPerPersonCost * totalPax;
+    const finalPrice = baseCostPerPerson * totalPax;
+    return Math.round(finalPrice * 10000) / 10000;
   }
 
   throw new Error(`invalid TOE value: ${request.toe}, must be 'SIC' or 'PVT'`);
@@ -96,19 +104,25 @@ export function calculateTransferCostLogic(transfer, request, markupGroup, marku
     return (parseInt(request.number_of_adults) || 0) * markedUpAdultPrice + (parseInt(request.number_of_kids) || 0) * markedUpChildPrice;
   } else if (request.tot && request.tot.toLowerCase() === 'pvt') {
     const travelDate = new Date(request.travel_date);
-    const applicablePricing = (transfer.transfer_pricing || []).find(pricing => {
+    const activePricings = (transfer.transfer_pricing || []).filter(pricing => {
       const startDate = new Date(pricing.start_date);
       const endDate = new Date(pricing.end_date);
-      return totalPax === parseInt(pricing.pax) && travelDate >= startDate && travelDate <= endDate;
+      return travelDate >= startDate && travelDate <= endDate;
     });
 
+    if (activePricings.length === 0) {
+      throw new Error('no private transfer pricing available for the requested date range');
+    }
+
+    const applicablePricing = activePricings.find(pricing => totalPax === parseInt(pricing.pax));
+
     if (!applicablePricing) {
-      throw new Error('no private transfer pricing available for the requested pax and date range');
+      throw new Error('No private transfer pricing available for the requested Pax and date range');
     }
 
     const baseCostPerPerson = parseFloat(applicablePricing.price || 0);
-    const markedUpPerPersonCost = calculateMarkedUpPrice(baseCostPerPerson, markupGroup, 'transfer', markups);
-    return markedUpPerPersonCost * totalPax;
+    const finalPrice = baseCostPerPerson * totalPax;
+    return Math.round(finalPrice * 10000) / 10000;
   }
 
   throw new Error(`invalid Tot value: ${request.tot}, must be 'SIC' or 'PVT'`);
@@ -549,6 +563,10 @@ export function calculateHotelCostLogic(hotel, request, markupGroup, markups, ma
 
   if (finalCost < 0) finalCost = 0;
   if (discount < 0) discount = 0;
+
+  // Fix JS floating-point precision issues
+  finalCost = Math.round(finalCost * 10000) / 10000;
+  discount = Math.round(discount * 10000) / 10000;
 
   // Round to nearest 10
   finalCost = Math.ceil(finalCost / 10) * 10;
