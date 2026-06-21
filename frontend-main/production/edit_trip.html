@@ -2806,52 +2806,38 @@
           excursionTableBody.appendChild(row);
         }
 
-        function updateExcursion() {
+        function updateExcursion(excursion) {
           if (!editingExcursionRow) {
             console.error("Error: No excursion row is being edited.");
             return;
           }
 
-          const excursionId = editingExcursionRow.dataset.excursionId;
+          const oldExcursionId = editingExcursionRow.dataset.excursionId;
+          const newExcursionId = excursion.excursion_id;
 
-          const updatedExcursion = {
-            excursion_id: excursionId,
-            city: document.getElementById("excursionCity").value,
-            date: formatToDDMMYYYY(
-              document.getElementById("excursionDate").value
-            ),
-            excursion_name: document.getElementById("excursionName").value,
-            hotel: document.getElementById("excursionHotel").value,
-            pickup_time: document.getElementById("excursionPickupTime").value,
-            type_of_excursion: document.getElementById("typeOfExcursion").value,
-            remarks: document.getElementById("excursionRemarks").value,
-            final_cost:
-              document.getElementById("updatedExcursionPrice").value || "N/A",
-          };
+          console.log("Updating Excursion:", excursion);
 
-          console.log("Updating Excursion:", updatedExcursion);
+          // Update dataset on the row
+          editingExcursionRow.dataset.excursionId = newExcursionId;
 
           // ✅ Update row directly
           editingExcursionRow.innerHTML = `
-                <td>${updatedExcursion.date}</td>
-                <td>${updatedExcursion.city}</td>
-                <td>${
-                  document.getElementById("excursionName").selectedOptions[0]
-                    .textContent
-                }</td>
-                <td>${updatedExcursion.pickup_time}</td>
-                <td>${updatedExcursion.hotel}</td>
-                <td>${updatedExcursion.remarks}</td>
-                <td>${updatedExcursion.type_of_excursion}</td>
-                <td class="excursion-price">${updatedExcursion.final_cost}</td>
+                <td>${excursion.date}</td>
+                <td>${excursion.city}</td>
+                <td>${excursion.excursion_name}</td>
+                <td>${excursion.event_time}</td>
+                <td>${excursion.hotel}</td>
+                <td>${excursion.remarks}</td>
+                <td>${excursion.toe}</td>
+                <td class="excursion-price">${excursion.total_cost}</td>
                 <td>
-                  <div class="tooltip-btn">
+                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
                     <button class="btn btn-sm btn-warning edit-excursion" type="button">
                       <i class="fa fa-edit"></i>
                     </button>
                     <span class="tooltip-text">Edit</span>
                   </div>
-                  <div class="tooltip-btn">
+                  <div class="tooltip-btn" style="display: inline-block;">
                     <button class="btn btn-sm btn-danger delete-excursion" type="button">
                       <i class="fa fa-trash"></i>
                     </button>
@@ -2862,13 +2848,13 @@
 
           // ✅ Update the excursions array
           const index = excursionsArray.findIndex(
-            (e) => e.excursion_id === excursionId
+            (e) => String(e.excursion_id) === String(oldExcursionId)
           );
-          if (index !== -1) excursionsArray[index] = updatedExcursion;
-
-          // ✅ Reset editing row and close modal
-          editingExcursionRow = null;
-          $("#addExcursionModal").modal("hide");
+          if (index !== -1) {
+            excursionsArray[index] = excursion;
+          } else {
+            excursionsArray.push(excursion);
+          }
         }
 
         function formatDateForInput(dateString) {
@@ -3087,9 +3073,7 @@
                 .textContent;
 
             const excursion = {
-              excursion_id: editingExcursionRow
-                ? editingExcursionRow.dataset.excursionId
-                : document.getElementById("excursionName").value,
+              excursion_id: document.getElementById("excursionName").value,
               city: document.getElementById("excursionCity").value.trim(),
               date: formatToDDMMYYYY(
                 document.getElementById("excursionDate").value
@@ -3225,6 +3209,7 @@
               excursionDropdown.innerHTML =
                 '<option value="">Select Excursion</option>';
 
+              let excursionFound = false;
               excursions.forEach((exc) => {
                 const option = document.createElement("option");
                 option.value = exc.id; // Use ID as the value
@@ -3233,10 +3218,21 @@
                 // ✅ Preselect the correct excursion name every time
                 if (exc.name === excursion.excursionName) {
                   option.selected = true;
+                  excursionFound = true;
                 }
 
                 excursionDropdown.appendChild(option);
               });
+
+              // ✅ Fallback: If original excursion not found in the loaded list, append and select it manually
+              if (!excursionFound && excursion.excursionName && excursion.excursion_id) {
+                console.log("⚠️ Original excursion not found in fetched options, adding manually:", excursion.excursionName);
+                const option = document.createElement("option");
+                option.value = excursion.excursion_id;
+                option.textContent = excursion.excursionName;
+                option.selected = true;
+                excursionDropdown.appendChild(option);
+              }
 
               console.log("Excursion dropdown updated:", excursions);
             })

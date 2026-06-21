@@ -2171,6 +2171,7 @@
               excursionDropdown.innerHTML =
                 '<option value="">Select Excursion</option>';
 
+              let excursionFound = false;
               excursions.forEach((exc) => {
                 const option = document.createElement("option");
                 option.value = exc.id; // Use ID as the value
@@ -2179,10 +2180,21 @@
                 // ✅ Preselect the correct excursion name every time
                 if (exc.name === excursion.excursionName) {
                   option.selected = true;
+                  excursionFound = true;
                 }
 
                 excursionDropdown.appendChild(option);
               });
+
+              // ✅ Fallback: If original excursion not found in the loaded list, append and select it manually
+              if (!excursionFound && excursion.excursionName && excursion.excursion_id) {
+                console.log("⚠️ Original excursion not found in fetched options, adding manually:", excursion.excursionName);
+                const option = document.createElement("option");
+                option.value = excursion.excursion_id;
+                option.textContent = excursion.excursionName;
+                option.selected = true;
+                excursionDropdown.appendChild(option);
+              }
 
               console.log("Excursion dropdown updated:", excursions);
             })

@@ -81,7 +81,8 @@ export function calculateExcursionCostLogic(excursion, request, markupGroup, mar
     }
 
     const baseCostPerPerson = parseFloat(applicablePricing.price || 0);
-    const finalPrice = baseCostPerPerson * totalPax;
+    const markedUpPricePerPerson = calculateMarkedUpPrice(baseCostPerPerson, markupGroup, 'excursion', markups);
+    const finalPrice = markedUpPricePerPerson * totalPax;
     return Math.round(finalPrice * 10000) / 10000;
   }
 
@@ -121,7 +122,8 @@ export function calculateTransferCostLogic(transfer, request, markupGroup, marku
     }
 
     const baseCostPerPerson = parseFloat(applicablePricing.price || 0);
-    const finalPrice = baseCostPerPerson * totalPax;
+    const markedUpPricePerPerson = calculateMarkedUpPrice(baseCostPerPerson, markupGroup, 'transfer', markups);
+    const finalPrice = markedUpPricePerPerson * totalPax;
     return Math.round(finalPrice * 10000) / 10000;
   }
 
