@@ -758,13 +758,23 @@
                 <label for="dateTo">Date To *</label>
                 <input type="date" id="dateTo" class="form-control" required />
               </div>
-              <div class="form-group">
-                <label for="pax">Pax *</label>
-                <input type="number" id="pax" class="form-control" required />
+              <div class="pricing-details-header mt-3">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                  <span class="font-weight-bold" style="font-size: 16px; color: #333;">Pricing Details</span>
+                  <div class="d-flex align-items-center" style="gap: 8px;">
+                    <span class="small font-weight-bold text-muted mr-1" style="font-size: 11px;">MAX PAX:</span>
+                    <input type="number" id="maxPaxInput" class="form-control form-control-sm text-center" value="6" min="1" style="width: 55px; height: 28px; border-radius: 4px;" />
+                    <button type="button" id="generatePaxBtn" class="btn btn-sm" style="background-color: #f05a28; color: white; border: none; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 12px;">
+                      <i class="fas fa-bolt" style="margin-right: 4px;"></i>Generate
+                    </button>
+                    <button type="button" id="addSinglePaxBtn" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 12px; height: 28px; display: inline-flex; align-items: center; justify-content: center;">
+                      <i class="fas fa-plus" style="margin-right: 4px;"></i>Add 1
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div class="form-group">
-                <label for="price">Price *</label>
-                <input type="number" id="price" class="form-control" required />
+              <div id="paxPricingContainer" style="max-height: 280px; overflow-y: auto; padding-right: 5px;">
+                <!-- Dynamically generated Pax rows will go here -->
               </div>
             </form>
           </div>
@@ -1191,6 +1201,7 @@
       }
 
       let currentRow = null; // To keep track of the currently edited row
+      let editingDateRange = null; // Track date range being edited
       const excursionId = new URLSearchParams(window.location.search).get("id"); // Get the excursion ID from the URL
 
       // Load the excursion data for editing from the backend
@@ -1395,12 +1406,6 @@
                 </button>
                 <span class="tooltip-text">Delete</span>
               </div>
-              <div class="tooltip-btn">
-                <button class="btn btn-warning btn-sm duplicate-btn" style="padding: 5px 8px;">
-                  <i class="fas fa-copy"></i>
-                </button>
-                <span class="tooltip-text">Duplicate</span>
-              </div>
             </div>
           </td>
       `;
@@ -1507,21 +1512,62 @@
       // Function to handle the Edit button click
       function handleEditButtonClick(button) {
         currentRow = button.closest("tr");
+        const start_date = currentRow.cells[0].textContent.trim();
+        const end_date = currentRow.cells[1].textContent.trim();
 
-        // Prefill the edit modal with the current row's data
-        document.getElementById("editDateFrom").value = formatToYYYYMMDD(
-          currentRow.cells[0].textContent.trim()
-        );
-        document.getElementById("editDateTo").value = formatToYYYYMMDD(
-          currentRow.cells[1].textContent.trim()
-        );
-        document.getElementById("editPax").value =
-          currentRow.cells[2].textContent.trim();
-        document.getElementById("editPrice").value =
-          currentRow.cells[3].textContent.trim();
+        // Convert the date strings to yyyy-mm-dd for the date inputs
+        const dateFromVal = formatToYYYYMMDD(start_date);
+        const dateToVal = formatToYYYYMMDD(end_date);
 
-        // Show the edit modal
-        $("#editExcursionPriceModal").modal("show");
+        document.getElementById("dateFrom").value = dateFromVal;
+        document.getElementById("dateTo").value = dateToVal;
+
+        // Set editingDateRange
+        editingDateRange = { start_date: start_date, end_date: end_date };
+
+        // Find all rows with the same start_date and end_date
+        const prices = {};
+        let maxPax = 6;
+        const rows = document.querySelectorAll("#excursionPriceTableBody tr");
+        rows.forEach((row) => {
+          const cells = row.querySelectorAll("td");
+          if (cells.length >= 4 && !cells[0].hasAttribute("colspan")) {
+            const rowStart = cells[0].textContent.trim();
+            const rowEnd = cells[1].textContent.trim();
+            if (rowStart === start_date && rowEnd === end_date) {
+              const paxVal = parseInt(cells[2].textContent.trim(), 10);
+              const priceVal = cells[3].textContent.trim();
+              if (!isNaN(paxVal)) {
+                prices[paxVal] = priceVal;
+                if (paxVal > maxPax) {
+                  maxPax = paxVal;
+                }
+              }
+            }
+          }
+        });
+
+        // Set MAX PAX input
+        document.getElementById("maxPaxInput").value = maxPax;
+
+        // Populate dynamic PAX rows in paxPricingContainer
+        const container = document.getElementById("paxPricingContainer");
+        container.innerHTML = "";
+        for (let i = 1; i <= maxPax; i++) {
+          const priceVal = prices[i] !== undefined ? prices[i] : "";
+          container.insertAdjacentHTML("beforeend", createPaxRowHTML(i, priceVal));
+        }
+
+        // Change modal title to indicate Editing
+        document.getElementById("addExcursionPriceModalLabel").textContent = "Edit Excursion Price";
+
+        // Hide Save & Add Another button during Edit mode
+        const saveAndAnotherBtn = document.getElementById("saveExcursionPriceAndAnother");
+        if (saveAndAnotherBtn) {
+          saveAndAnotherBtn.style.display = "none";
+        }
+
+        $("#addExcursionPriceModal").modal("show");
       }
 
       // Function to handle the Delete button click
@@ -1552,68 +1598,222 @@
         $("#duplicateExcursionPriceModal").modal("show");
       }
 
+      // Helper to create Pax row HTML
+      function createPaxRowHTML(paxNum, priceVal = "") {
+        return `
+          <div class="pax-price-card mb-2" data-pax="${paxNum}" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; background-color: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <div class="form-row align-items-center">
+              <div class="col-5">
+                <label class="small font-weight-bold text-muted mb-1 text-uppercase">Pax *</label>
+                <input type="number" class="form-control pax-number-input form-control-sm" value="${paxNum}" required min="1" style="border-radius: 6px;" />
+              </div>
+              <div class="col-5">
+                <label class="small font-weight-bold text-muted mb-1 text-uppercase">Price *</label>
+                <input type="number" class="form-control pax-price-input form-control-sm" value="${priceVal}" placeholder="Price" min="0" step="0.01" style="border-radius: 6px;" />
+              </div>
+              <div class="col-2 text-center mt-3">
+                <button type="button" class="btn btn-outline-danger btn-sm delete-pax-row-btn" style="border-radius: 6px; padding: 6px 10px; background: #fff3f3; border-color: #ffd2d2; color: #dc3545;">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function generatePaxRows(count) {
+        const container = document.getElementById("paxPricingContainer");
+        container.innerHTML = "";
+        for (let i = 1; i <= count; i++) {
+          container.insertAdjacentHTML("beforeend", createPaxRowHTML(i));
+        }
+      }
+
+      // Event listeners for dynamic rows
+      function setupDynamicPaxEvents() {
+        const genBtn = document.getElementById("generatePaxBtn");
+        if (genBtn) {
+          // Remove old listeners to avoid multiple attachments
+          const newGenBtn = genBtn.cloneNode(true);
+          genBtn.parentNode.replaceChild(newGenBtn, genBtn);
+          newGenBtn.addEventListener("click", function() {
+            const count = parseInt(document.getElementById("maxPaxInput").value, 10) || 6;
+            generatePaxRows(count);
+          });
+        }
+
+        const addBtn = document.getElementById("addSinglePaxBtn");
+        if (addBtn) {
+          const newAddBtn = addBtn.cloneNode(true);
+          addBtn.parentNode.replaceChild(newAddBtn, addBtn);
+          newAddBtn.addEventListener("click", function() {
+            const container = document.getElementById("paxPricingContainer");
+            const existingRows = container.querySelectorAll(".pax-price-card");
+            let nextPaxNum = 1;
+            if (existingRows.length > 0) {
+              const lastRow = existingRows[existingRows.length - 1];
+              const lastPaxInput = lastRow.querySelector(".pax-number-input");
+              if (lastPaxInput) {
+                nextPaxNum = (parseInt(lastPaxInput.value, 10) || 0) + 1;
+              } else {
+                nextPaxNum = existingRows.length + 1;
+              }
+            }
+            container.insertAdjacentHTML("beforeend", createPaxRowHTML(nextPaxNum));
+            container.scrollTop = container.scrollHeight;
+          });
+        }
+
+        const container = document.getElementById("paxPricingContainer");
+        if (container) {
+          container.removeEventListener("click", handleDeletePaxRowClick);
+          container.addEventListener("click", handleDeletePaxRowClick);
+        }
+      }
+
+      function handleDeletePaxRowClick(event) {
+        const deleteBtn = event.target.closest(".delete-pax-row-btn");
+        if (deleteBtn) {
+          const card = deleteBtn.closest(".pax-price-card");
+          if (card) card.remove();
+        }
+      }
+
       function addNewExcursionPriceAndKeep() {
         const dateFrom = document.getElementById("dateFrom").value;
         const dateTo = document.getElementById("dateTo").value;
-        const pax = document.getElementById("pax").value;
-        const price = document.getElementById("price").value;
 
-        if (dateFrom && dateTo && pax && price) {
+        if (!dateFrom || !dateTo) {
+          alert("Please fill in Date From and Date To");
+          return;
+        }
+
+        // Collect non-empty prices
+        const prices = [];
+        const rows = document.querySelectorAll("#paxPricingContainer .pax-price-card");
+        rows.forEach((row) => {
+          const paxInput = row.querySelector(".pax-number-input");
+          const priceInput = row.querySelector(".pax-price-input");
+          if (paxInput && priceInput && priceInput.value.trim() !== "") {
+            prices.push({
+              pax: parseInt(paxInput.value.trim(), 10),
+              price: parseFloat(priceInput.value.trim()),
+            });
+          }
+        });
+
+        if (prices.length === 0) {
+          alert("Please enter a price for at least one Pax");
+          return;
+        }
+
+        // Remove old rows matching the edited date range
+        if (editingDateRange) {
+          const tableRows = document.querySelectorAll("#excursionPriceTableBody tr");
+          tableRows.forEach((row) => {
+            const cells = row.querySelectorAll("td");
+            if (cells.length >= 4 && !cells[0].hasAttribute("colspan")) {
+              const rowStart = cells[0].textContent.trim();
+              const rowEnd = cells[1].textContent.trim();
+              if (rowStart === editingDateRange.start_date && rowEnd === editingDateRange.end_date) {
+                row.remove();
+              }
+            }
+          });
+          editingDateRange = null; // Clear edit tracking
+        }
+
+        prices.forEach(({ pax, price }) => {
           addExcursionPriceRow({
             start_date: dateFrom,
             end_date: dateTo,
             pax: pax,
             price: price,
           });
+        });
 
-          // Reset only Pax and Price fields
-          document.getElementById("pax").value = "";
-          document.getElementById("price").value = "";
+        // Reset only Price inputs
+        const priceInputs = document.querySelectorAll("#paxPricingContainer .pax-price-input");
+        priceInputs.forEach(input => input.value = "");
 
-          // Re-bind event listeners
-          setupEventListeners();
-          
-          // Refocus Pax field
-          document.getElementById("pax").focus();
-        } else {
-          alert("Please fill all required fields");
-        }
+        // Refocus first Price input
+        const firstPriceInput = document.querySelector("#paxPricingContainer .pax-price-input");
+        if (firstPriceInput) firstPriceInput.focus();
       }
 
       // Initialize event listeners when DOM is loaded
       function initializeEventListeners() {
+        setupDynamicPaxEvents();
+
         // Add a new excursion price row when the "Save Price" button is clicked
         const saveButton = document.getElementById("saveExcursionPrice");
         if (saveButton) {
-          saveButton.addEventListener("click", function () {
+          // Clone and replace to prevent multiple event bindings
+          const newSaveButton = saveButton.cloneNode(true);
+          saveButton.parentNode.replaceChild(newSaveButton, saveButton);
+          newSaveButton.addEventListener("click", function () {
             const dateFrom = document.getElementById("dateFrom").value;
             const dateTo = document.getElementById("dateTo").value;
-            const pax = document.getElementById("pax").value;
-            const price = document.getElementById("price").value;
 
-            if (dateFrom && dateTo && pax && price) {
+            if (!dateFrom || !dateTo) {
+              alert("Please fill in Date From and Date To");
+              return;
+            }
+
+            // Collect non-empty prices
+            const prices = [];
+            const rows = document.querySelectorAll("#paxPricingContainer .pax-price-card");
+            rows.forEach((row) => {
+              const paxInput = row.querySelector(".pax-number-input");
+              const priceInput = row.querySelector(".pax-price-input");
+              if (paxInput && priceInput && priceInput.value.trim() !== "") {
+                prices.push({
+                  pax: parseInt(paxInput.value.trim(), 10),
+                  price: parseFloat(priceInput.value.trim()),
+                });
+              }
+            });
+
+            if (prices.length === 0) {
+              alert("Please enter a price for at least one Pax");
+              return;
+            }
+
+            // Remove old rows matching the edited date range
+            if (editingDateRange) {
+              const tableRows = document.querySelectorAll("#excursionPriceTableBody tr");
+              tableRows.forEach((row) => {
+                const cells = row.querySelectorAll("td");
+                if (cells.length >= 4 && !cells[0].hasAttribute("colspan")) {
+                  const rowStart = cells[0].textContent.trim();
+                  const rowEnd = cells[1].textContent.trim();
+                  if (rowStart === editingDateRange.start_date && rowEnd === editingDateRange.end_date) {
+                    row.remove();
+                  }
+                }
+              });
+            }
+
+            prices.forEach(({ pax, price }) => {
               addExcursionPriceRow({
                 start_date: dateFrom,
                 end_date: dateTo,
                 pax: pax,
                 price: price,
               });
+            });
 
-              // Reset the form fields
-              document.getElementById("excursionPriceForm").reset();
-
-              // Re-bind event listeners
-              setupEventListeners();
-              $("#addExcursionPriceModal").modal("hide");
-            } else {
-              alert("Please fill all required fields");
-            }
+            // Reset the form fields and close modal
+            document.getElementById("excursionPriceForm").reset();
+            $("#addExcursionPriceModal").modal("hide");
           });
         }
 
         const saveAndAnotherButton = document.getElementById("saveExcursionPriceAndAnother");
         if (saveAndAnotherButton) {
-          saveAndAnotherButton.addEventListener("click", addNewExcursionPriceAndKeep);
+          const newSaveAndAnotherButton = saveAndAnotherButton.cloneNode(true);
+          saveAndAnotherButton.parentNode.replaceChild(newSaveAndAnotherButton, saveAndAnotherButton);
+          newSaveAndAnotherButton.addEventListener("click", addNewExcursionPriceAndKeep);
         }
 
         // Handle enter key in excursionPriceForm to add and keep modal open
@@ -1627,17 +1827,31 @@
           });
         }
 
-        // Autofill date range from last table row on modal show
+        // Autofill date range from last table row and generate default 6 rows on modal show
         $("#addExcursionPriceModal").on("show.bs.modal", function () {
-          const rows = document.querySelectorAll("#excursionPriceTableBody tr");
-          if (rows.length > 0) {
-            const lastRow = rows[rows.length - 1];
-            const cells = lastRow.querySelectorAll("td");
-            if (cells.length >= 4 && !cells[0].hasAttribute("colspan") && cells[0].textContent.trim() !== "") {
-              document.getElementById("dateFrom").value = formatToYYYYMMDD(cells[0].textContent.trim());
-              document.getElementById("dateTo").value = formatToYYYYMMDD(cells[1].textContent.trim());
+          if (!editingDateRange) {
+            document.getElementById("addExcursionPriceModalLabel").textContent = "Add Excursion Price";
+            const saveAndAnotherBtn = document.getElementById("saveExcursionPriceAndAnother");
+            if (saveAndAnotherBtn) {
+              saveAndAnotherBtn.style.display = "inline-block";
             }
+            const rows = document.querySelectorAll("#excursionPriceTableBody tr");
+            if (rows.length > 0) {
+              const lastRow = rows[rows.length - 1];
+              const cells = lastRow.querySelectorAll("td");
+              if (cells.length >= 4 && !cells[0].hasAttribute("colspan") && cells[0].textContent.trim() !== "") {
+                document.getElementById("dateFrom").value = formatToYYYYMMDD(cells[0].textContent.trim());
+                document.getElementById("dateTo").value = formatToYYYYMMDD(cells[1].textContent.trim());
+              }
+            }
+            // Default to generate 6 pax rows
+            document.getElementById("maxPaxInput").value = "6";
+            generatePaxRows(6);
           }
+        });
+
+        $("#addExcursionPriceModal").on("hidden.bs.modal", function () {
+          editingDateRange = null;
         });
         // Add event listener for the "Save Changes" button
         const submitButton = document.getElementById("submitExcursion");

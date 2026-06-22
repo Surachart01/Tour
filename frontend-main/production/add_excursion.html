@@ -855,13 +855,23 @@
                 <label for="dateTo">Date To *</label>
                 <input type="date" id="dateTo" class="form-control" required />
               </div>
-              <div class="form-group">
-                <label for="pax">Pax *</label>
-                <input type="number" id="pax" class="form-control" required />
+              <div class="pricing-details-header mt-3">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                  <span class="font-weight-bold" style="font-size: 16px; color: #333;">Pricing Details</span>
+                  <div class="d-flex align-items-center" style="gap: 8px;">
+                    <span class="small font-weight-bold text-muted mr-1" style="font-size: 11px;">MAX PAX:</span>
+                    <input type="number" id="maxPaxInput" class="form-control form-control-sm text-center" value="6" min="1" style="width: 55px; height: 28px; border-radius: 4px;" />
+                    <button type="button" id="generatePaxBtn" class="btn btn-sm" style="background-color: #f05a28; color: white; border: none; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 12px;">
+                      <i class="fas fa-bolt" style="margin-right: 4px;"></i>Generate
+                    </button>
+                    <button type="button" id="addSinglePaxBtn" class="btn btn-sm btn-outline-secondary" style="padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 12px; height: 28px; display: inline-flex; align-items: center; justify-content: center;">
+                      <i class="fas fa-plus" style="margin-right: 4px;"></i>Add 1
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div class="form-group">
-                <label for="price">Price *</label>
-                <input type="number" id="price" class="form-control" required />
+              <div id="paxPricingContainer" style="max-height: 280px; overflow-y: auto; padding-right: 5px;">
+                <!-- Dynamically generated Pax rows will go here -->
               </div>
             </form>
           </div>
@@ -1517,84 +1527,16 @@
               });
           });
 
-        // Add Excursion Row to the table
-        document
-          .getElementById("saveExcursionPrice")
-          .addEventListener("click", function () {
-            const dateFrom = document.getElementById("dateFrom").value;
-            const dateTo = document.getElementById("dateTo").value;
-            const pax = document.getElementById("pax").value;
-            const price = document.getElementById("price").value;
+        // Helper to insert a row to pricing table
+        function addExcursionPriceRowDirect(dateFrom, dateTo, pax, price) {
+          const tableBody = document.getElementById("excursionPriceTableBody");
+          // Remove the "no data" message if it exists
+          const noDataRow = tableBody.querySelector('tr td[colspan="5"]');
+          if (noDataRow) {
+            noDataRow.closest("tr").remove();
+          }
 
-            if (dateFrom && dateTo && pax && price) {
-              const tableBody = document.getElementById(
-                "excursionPriceTableBody"
-              );
-
-              // Remove the "no data" message if it exists
-              const noDataRow = tableBody.querySelector('tr td[colspan="5"]');
-              if (noDataRow) {
-                noDataRow.closest("tr").remove();
-              }
-
-              const row = `
-              <tr>
-                <td>${formatToDDMMYYYY(dateFrom)}</td>
-                <td>${formatToDDMMYYYY(dateTo)}</td>
-                <td>${pax}</td>
-                <td>${price}</td>
-                <td>
-                  <div style="display: flex; gap: 10px; justify-content: center;">
-                    <div class="tooltip-btn">
-                      <button class="btn btn-primary btn-sm edit-btn" style="padding: 5px 8px;">
-                        <i class="fas fa-edit"></i>
-                      </button>
-                      <span class="tooltip-text">Edit</span>
-                    </div>
-                    <div class="tooltip-btn">
-                      <button class="btn btn-danger btn-sm delete-btn" style="padding: 5px 8px;">
-                        <i class="fas fa-trash"></i>
-                      </button>
-                      <span class="tooltip-text">Delete</span>
-                    </div>
-                    <div class="tooltip-btn">
-                      <button class="btn btn-warning btn-sm duplicate-btn" style="padding: 5px 8px;">
-                        <i class="fas fa-copy"></i>
-                      </button>
-                      <span class="tooltip-text">Duplicate</span>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            `;
-              tableBody.insertAdjacentHTML("beforeend", row);
-
-              // Reset the form fields
-              document.getElementById("excursionPriceForm").reset();
-              $("#addExcursionPriceModal").modal("hide");
-            } else {
-              alert("Please fill all required fields");
-            }
-          });
-
-        function addNewExcursionPriceAndKeep() {
-          const dateFrom = document.getElementById("dateFrom").value;
-          const dateTo = document.getElementById("dateTo").value;
-          const pax = document.getElementById("pax").value;
-          const price = document.getElementById("price").value;
-
-          if (dateFrom && dateTo && pax && price) {
-            const tableBody = document.getElementById(
-              "excursionPriceTableBody"
-            );
-
-            // Remove the "no data" message if it exists
-            const noDataRow = tableBody.querySelector('tr td[colspan="5"]');
-            if (noDataRow) {
-              noDataRow.closest("tr").remove();
-            }
-
-            const row = `
+          const row = `
             <tr>
               <td>${formatToDDMMYYYY(dateFrom)}</td>
               <td>${formatToDDMMYYYY(dateTo)}</td>
@@ -1614,27 +1556,158 @@
                     </button>
                     <span class="tooltip-text">Delete</span>
                   </div>
-                  <div class="tooltip-btn">
-                    <button class="btn btn-warning btn-sm duplicate-btn" style="padding: 5px 8px;">
-                      <i class="fas fa-copy"></i>
-                    </button>
-                    <span class="tooltip-text">Duplicate</span>
-                  </div>
                 </div>
               </td>
             </tr>
           `;
-            tableBody.insertAdjacentHTML("beforeend", row);
+          tableBody.insertAdjacentHTML("beforeend", row);
+        }
 
-            // Reset only Pax and Price fields
-            document.getElementById("pax").value = "";
-            document.getElementById("price").value = "";
 
-            // Refocus Pax field
-            document.getElementById("pax").focus();
-          } else {
-            alert("Please fill all required fields");
+        // Helper to create Pax row HTML
+        function createPaxRowHTML(paxNum, priceVal = "") {
+          return `
+            <div class="pax-price-card mb-2" data-pax="${paxNum}" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; background-color: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+              <div class="form-row align-items-center">
+                <div class="col-5">
+                  <label class="small font-weight-bold text-muted mb-1 text-uppercase">Pax *</label>
+                  <input type="number" class="form-control pax-number-input form-control-sm" value="${paxNum}" required min="1" style="border-radius: 6px;" />
+                </div>
+                <div class="col-5">
+                  <label class="small font-weight-bold text-muted mb-1 text-uppercase">Price *</label>
+                  <input type="number" class="form-control pax-price-input form-control-sm" value="${priceVal}" placeholder="Price" min="0" step="0.01" style="border-radius: 6px;" />
+                </div>
+                <div class="col-2 text-center mt-3">
+                  <button type="button" class="btn btn-outline-danger btn-sm delete-pax-row-btn" style="border-radius: 6px; padding: 6px 10px; background: #fff3f3; border-color: #ffd2d2; color: #dc3545;">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        function generatePaxRows(count) {
+          const container = document.getElementById("paxPricingContainer");
+          container.innerHTML = "";
+          for (let i = 1; i <= count; i++) {
+            container.insertAdjacentHTML("beforeend", createPaxRowHTML(i));
           }
+        }
+
+        // Event listeners for dynamic rows
+        document.getElementById("generatePaxBtn").addEventListener("click", function() {
+          const count = parseInt(document.getElementById("maxPaxInput").value, 10) || 6;
+          generatePaxRows(count);
+        });
+
+        document.getElementById("addSinglePaxBtn").addEventListener("click", function() {
+          const container = document.getElementById("paxPricingContainer");
+          const existingRows = container.querySelectorAll(".pax-price-card");
+          let nextPaxNum = 1;
+          if (existingRows.length > 0) {
+            // Find max pax number currently
+            const lastRow = existingRows[existingRows.length - 1];
+            const lastPaxInput = lastRow.querySelector(".pax-number-input");
+            if (lastPaxInput) {
+              nextPaxNum = (parseInt(lastPaxInput.value, 10) || 0) + 1;
+            } else {
+              nextPaxNum = existingRows.length + 1;
+            }
+          }
+          container.insertAdjacentHTML("beforeend", createPaxRowHTML(nextPaxNum));
+          // Scroll container to bottom
+          container.scrollTop = container.scrollHeight;
+        });
+
+        // Delete pax row event delegation
+        document.getElementById("paxPricingContainer").addEventListener("click", function(event) {
+          const deleteBtn = event.target.closest(".delete-pax-row-btn");
+          if (deleteBtn) {
+            const card = deleteBtn.closest(".pax-price-card");
+            if (card) card.remove();
+          }
+        });
+
+        // Add Excursion Row to the table
+        document
+          .getElementById("saveExcursionPrice")
+          .addEventListener("click", function () {
+            const dateFrom = document.getElementById("dateFrom").value;
+            const dateTo = document.getElementById("dateTo").value;
+
+            if (!dateFrom || !dateTo) {
+              alert("Please fill in Date From and Date To");
+              return;
+            }
+
+            // Collect non-empty prices
+            const prices = [];
+            const rows = document.querySelectorAll("#paxPricingContainer .pax-price-card");
+            rows.forEach((row) => {
+              const paxInput = row.querySelector(".pax-number-input");
+              const priceInput = row.querySelector(".pax-price-input");
+              if (paxInput && priceInput && priceInput.value.trim() !== "") {
+                prices.push({
+                  pax: parseInt(paxInput.value.trim(), 10),
+                  price: parseFloat(priceInput.value.trim()),
+                });
+              }
+            });
+
+            if (prices.length === 0) {
+              alert("Please enter a price for at least one Pax");
+              return;
+            }
+
+            prices.forEach(({ pax, price }) => {
+              addExcursionPriceRowDirect(dateFrom, dateTo, pax, price);
+            });
+
+            // Reset the form fields and close modal
+            document.getElementById("excursionPriceForm").reset();
+            $("#addExcursionPriceModal").modal("hide");
+          });
+
+        function addNewExcursionPriceAndKeep() {
+          const dateFrom = document.getElementById("dateFrom").value;
+          const dateTo = document.getElementById("dateTo").value;
+
+          if (!dateFrom || !dateTo) {
+            alert("Please fill in Date From and Date To");
+            return;
+          }
+
+          // Collect non-empty prices
+          const prices = [];
+          const rows = document.querySelectorAll("#paxPricingContainer .pax-price-card");
+          rows.forEach((row) => {
+            const paxInput = row.querySelector(".pax-number-input");
+            const priceInput = row.querySelector(".pax-price-input");
+            if (paxInput && priceInput && priceInput.value.trim() !== "") {
+              prices.push({
+                pax: parseInt(paxInput.value.trim(), 10),
+                price: parseFloat(priceInput.value.trim()),
+              });
+            }
+          });
+
+          if (prices.length === 0) {
+            alert("Please enter a price for at least one Pax");
+            return;
+          }
+
+          prices.forEach(({ pax, price }) => {
+            addExcursionPriceRowDirect(dateFrom, dateTo, pax, price);
+          });
+
+          // Reset only Price inputs
+          const priceInputs = document.querySelectorAll("#paxPricingContainer .pax-price-input");
+          priceInputs.forEach(input => input.value = "");
+
+          // Refocus first Price input
+          const firstPriceInput = document.querySelector("#paxPricingContainer .pax-price-input");
+          if (firstPriceInput) firstPriceInput.focus();
         }
 
         document
@@ -1649,7 +1722,7 @@
           }
         });
 
-        // Autofill date range from last table row on modal show
+        // Autofill date range from last table row and generate default 6 rows on modal show
         $("#addExcursionPriceModal").on("show.bs.modal", function () {
           const rows = document.querySelectorAll("#excursionPriceTableBody tr");
           if (rows.length > 0) {
@@ -1660,6 +1733,9 @@
               document.getElementById("dateTo").value = formatToYYYYMMDD(cells[1].textContent.trim());
             }
           }
+          // Default to generate 6 pax rows
+          document.getElementById("maxPaxInput").value = "6";
+          generatePaxRows(6);
         });
 
         // Delegate clicks on edit, delete, and duplicate buttons
@@ -1798,12 +1874,6 @@
                         <i class="fas fa-trash"></i>
                       </button>
                       <span class="tooltip-text">Delete</span>
-                    </div>
-                    <div class="tooltip-btn">
-                      <button class="btn btn-warning btn-sm duplicate-btn" style="padding: 5px 8px;">
-                        <i class="fas fa-copy"></i>
-                      </button>
-                      <span class="tooltip-text">Duplicate</span>
                     </div>
                   </div>
                 </td>
