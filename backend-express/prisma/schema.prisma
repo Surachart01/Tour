@@ -264,9 +264,11 @@ model excursions {
   user_id              Int?
   country              String?                @default("Thailand") @db.VarChar(100)
   display_order        Int?                   @default(0) @map("display_order")
+  supplier_id          Int?
   excursion_pricing    excursion_pricing[]
   excursion_trip_items excursion_trip_items[]
   currencies           currencies?            @relation(fields: [currency_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  suppliers            suppliers?             @relation(fields: [supplier_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 }
 
 model flight_trip_items {
@@ -575,6 +577,7 @@ model suppliers {
   created_at                       DateTime?              @default(now()) @db.Timestamp(6)
   updated_at                       DateTime?              @default(now()) @db.Timestamp(6)
   excursion_trip_items             excursion_trip_items[]
+  excursions                       excursions[]
   tour_trip_items                  tour_trip_items[]
   transfer_trip_items              transfer_trip_items[]
   cancellation_allowed_before_days Int?                   @default(1) @map("cancellation_allowed_before_days")

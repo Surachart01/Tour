@@ -1,18 +1,32 @@
 import prisma from '../config/db.js';
-import { calculateTransferCostLogic } from '../utils/pricing.js';
+import { calculateTransferCostLogic, calculateMarkedUpPrice } from '../utils/pricing.js';
 
-export function formatTransferResponse(transfer) {
+export function formatTransferResponse(transfer, markupGroup = '', markups = []) {
   if (!transfer) return null;
-  const prices = (transfer.transfer_pricing || []).map(p => ({
-    id: p.id,
-    transfer_id: p.transfer_id,
-    start_date: p.start_date ? (p.start_date instanceof Date ? p.start_date.toISOString().split('T')[0] : String(p.start_date)) : '',
-    end_date: p.end_date ? (p.end_date instanceof Date ? p.end_date.toISOString().split('T')[0] : String(p.end_date)) : '',
-    pax: p.pax,
-    price: p.price ? parseFloat(p.price) : 0,
-    cost: p.cost ? parseFloat(p.cost) : 0,
-    currency_id: p.currency_id
-  }));
+  const prices = (transfer.transfer_pricing || []).map(p => {
+    let priceVal = p.price ? parseFloat(p.price) : 0;
+    if (markupGroup && markups && markups.length > 0) {
+      priceVal = calculateMarkedUpPrice(priceVal, markupGroup, 'transfer', markups);
+    }
+    return {
+      id: p.id,
+      transfer_id: p.transfer_id,
+      start_date: p.start_date ? (p.start_date instanceof Date ? p.start_date.toISOString().split('T')[0] : String(p.start_date)) : '',
+      end_date: p.end_date ? (p.end_date instanceof Date ? p.end_date.toISOString().split('T')[0] : String(p.end_date)) : '',
+      pax: p.pax,
+      price: priceVal,
+      cost: p.cost ? parseFloat(p.cost) : 0,
+      currency_id: p.currency_id
+    };
+  });
+
+  let sicPriceAdult = transfer.sic_price_adult ? parseFloat(transfer.sic_price_adult) : 0;
+  let sicPriceChild = transfer.sic_price_child ? parseFloat(transfer.sic_price_child) : 0;
+
+  if (markupGroup && markups && markups.length > 0) {
+    sicPriceAdult = calculateMarkedUpPrice(sicPriceAdult, markupGroup, 'transfer', markups);
+    sicPriceChild = calculateMarkedUpPrice(sicPriceChild, markupGroup, 'transfer', markups);
+  }
 
   return {
     id: transfer.id,
@@ -24,8 +38,8 @@ export function formatTransferResponse(transfer) {
     supplier_name: transfer.supplier_name,
     user_id: transfer.user_id,
     country: transfer.country,
-    sic_price_adult: transfer.sic_price_adult ? parseFloat(transfer.sic_price_adult) : 0,
-    sic_price_child: transfer.sic_price_child ? parseFloat(transfer.sic_price_child) : 0,
+    sic_price_adult: sicPriceAdult,
+    sic_price_child: sicPriceChild,
     supplier_id: transfer.supplier_id,
     display_order: transfer.display_order,
     order: (transfer.display_order === 0 || transfer.display_order === null || transfer.display_order === undefined) ? 100000 : transfer.display_order,
@@ -98,12 +112,22 @@ export async function getTransferByID(req, res, next) {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid transfer ID');
+
+    let markupGroup = '';
+    const claims = req.user;
+    if (claims && claims.role !== 'admin') {
+      markupGroup = claims.markup_group || '';
+    }
+    const markups = await prisma.markups.findMany({
+      include: { hotel_markup_percentages: true, currencies: true }
+    });
+
     const transfer = await prisma.transfers.findUnique({
       where: { id },
       include: { transfer_pricing: { include: { currencies: true } } }
     });
     if (!transfer) return res.status(404).send('Transfer not found');
-    return res.json(formatTransferResponse(transfer));
+    return res.json(formatTransferResponse(transfer, markupGroup, markups));
   } catch (err) { next(err); }
 }
 
@@ -114,11 +138,21 @@ export async function getTransfers(req, res, next) {
     if (transfer_type) {
       where.transfer_type = transfer_type;
     }
+
+    let markupGroup = '';
+    const claims = req.user;
+    if (claims && claims.role !== 'admin') {
+      markupGroup = claims.markup_group || '';
+    }
+    const markups = await prisma.markups.findMany({
+      include: { hotel_markup_percentages: true, currencies: true }
+    });
+
     const transfers = await prisma.transfers.findMany({
       where,
       include: { transfer_pricing: { include: { currencies: true } } }
     });
-    const formatted = transfers.map(formatTransferResponse);
+    const formatted = transfers.map(t => formatTransferResponse(t, markupGroup, markups));
     formatted.sort((a, b) => {
       if (a.order !== b.order) return a.order - b.order;
       return a.departure.localeCompare(b.departure);
@@ -135,11 +169,21 @@ export async function getTransferByCity(req, res, next) {
     if (transfer_type) {
       where.transfer_type = transfer_type;
     }
+
+    let markupGroup = '';
+    const claims = req.user;
+    if (claims && claims.role !== 'admin') {
+      markupGroup = claims.markup_group || '';
+    }
+    const markups = await prisma.markups.findMany({
+      include: { hotel_markup_percentages: true, currencies: true }
+    });
+
     const transfers = await prisma.transfers.findMany({
       where,
       include: { transfer_pricing: { include: { currencies: true } } }
     });
-    const formatted = transfers.map(formatTransferResponse);
+    const formatted = transfers.map(t => formatTransferResponse(t, markupGroup, markups));
     formatted.sort((a, b) => {
       if (a.order !== b.order) return a.order - b.order;
       return a.departure.localeCompare(b.departure);
@@ -161,6 +205,16 @@ export async function listAvailableTransfersByCity(req, res, next) {
         { description: { contains: keyword, mode: 'insensitive' } }
       ];
     }
+
+    let markupGroup = '';
+    const claims = req.user;
+    if (claims && claims.role !== 'admin') {
+      markupGroup = claims.markup_group || '';
+    }
+    const markups = await prisma.markups.findMany({
+      include: { hotel_markup_percentages: true, currencies: true }
+    });
+
     const transfers = await prisma.transfers.findMany({
       where,
       include: {
@@ -173,7 +227,7 @@ export async function listAvailableTransfersByCity(req, res, next) {
         } : { include: { currencies: true } }
       }
     });
-    const formatted = transfers.map(formatTransferResponse);
+    const formatted = transfers.map(t => formatTransferResponse(t, markupGroup, markups));
     formatted.sort((a, b) => {
       if (a.order !== b.order) return a.order - b.order;
       return a.departure.localeCompare(b.departure);

@@ -7533,21 +7533,26 @@
           const flightsTableBody = document.getElementById("flightsTableBody");
           const row = document.createElement("tr");
 
-          // Store cost data in dataset for editing
+          // Store flight id and cost data in dataset for editing
+          row.dataset.id = flight.id || `temp-${Date.now()}`;
           row.dataset.totalCost = flight.total_cost || 0;
           row.dataset.discount = flight.discount || 0;
           row.dataset.finalCost = flight.final_cost || flight.total_cost || 0;
 
+          // Normalize field names: DB uses from_date, flight_airline, edt, eat
+          const flightDate = (flight.from_date || flight.date || flight.flight_date || "").split("T")[0];
+          const flightAirline = flight.flight_airline || flight.flight_name || "";
+          const edt = flight.edt || flight.departure_time || "";
+          const eat = flight.eat || flight.arrival_time || "";
+
           row.innerHTML = `
-                  <td>${
-                    flight.flight_date ? flight.flight_date.split("T")[0] : ""
-                  }</td>
-                  <td>${flight.flight_name || ""}</td>
+                  <td>${flightDate}</td>
+                  <td>${flightAirline}</td>
                   <td>${flight.flight_number || ""}</td>
                   <td>${flight.in_or_out || ""}</td>
                   <td>${flight.route || ""}</td>
-                  <td>${flight.departure_time || ""}</td>
-                  <td>${flight.arrival_time || ""}</td>
+                  <td>${edt}</td>
+                  <td>${eat}</td>
                   <td>${flight.issued_by || ""}</td>
                   <td class="flight-cost">${
                     flight.final_cost || flight.total_cost || 0
@@ -7584,13 +7589,18 @@
               id: editingFlightRow
                 ? editingFlightRow.dataset.id
                 : `temp-${Date.now()}`,
-              flight_name: document.getElementById("flight").value.trim(),
+              // Use field names matching the backend DB schema
+              flight_airline: document.getElementById("flight").value.trim(),
+              flight_name: document.getElementById("flight").value.trim(), // keep for display
               flight_number: document.getElementById("number").value.trim(),
               flight_date: document.getElementById("flightDate").value,
+              from_date: document.getElementById("flightDate").value,
               in_or_out: document.getElementById("flightInOut").value,
               route: document.getElementById("flightRoute").value.trim(),
-              departure_time: document.getElementById("departureTime").value,
-              arrival_time: document.getElementById("arrivalTime").value,
+              edt: document.getElementById("departureTime").value,
+              eat: document.getElementById("arrivalTime").value,
+              departure_time: document.getElementById("departureTime").value, // keep for display
+              arrival_time: document.getElementById("arrivalTime").value,     // keep for display
               issued_by: document.getElementById("issuedBy").value.trim(),
               remarks: document.getElementById("flightRemarks").value.trim(),
               total_cost: cost,
@@ -7598,28 +7608,20 @@
               final_cost: cost,
             };
 
-            if (
-              !flight.flight_name ||
-              !flight.flight_date ||
-              !flight.flight_number
-            ) {
-              alert("Please fill in all required fields!");
+            if (!flight.flight_number) {
+              alert("Please fill in the Flight Number!");
               return;
             }
 
             if (editingFlightRow) {
+              // updateFlight handles both DOM update and flightsArray update
               updateFlight(flight);
-              const index = flightsArray.findIndex((f) => f.id === flight.id);
-              if (index !== -1) {
-                flightsArray[index] = flight; // Update the flight in the array
-              }
             } else {
               flightsArray.push(flight);
               addFlightRow(flight);
+              editingFlightRow = null;
+              $("#flightModal").modal("hide");
             }
-
-            editingFlightRow = null;
-            $("#flightModal").modal("hide");
           });
 
         // ✅ Add a New Flight Row
@@ -7628,19 +7630,23 @@
           const row = document.createElement("tr");
 
           row.dataset.id = flight.id;
-          // Store cost data in dataset for editing
           row.dataset.totalCost = flight.total_cost || 0;
           row.dataset.discount = flight.discount || 0;
           row.dataset.finalCost = flight.final_cost || flight.total_cost || 0;
 
+          const flightAirline = flight.flight_airline || flight.flight_name || "";
+          const edt = flight.edt || flight.departure_time || "";
+          const eat = flight.eat || flight.arrival_time || "";
+          const flightDate = (flight.from_date || flight.flight_date || "").split("T")[0];
+
           row.innerHTML = `
-                  <td>${flight.flight_date}</td>
-                  <td>${flight.flight_name}</td>
+                  <td>${flightDate}</td>
+                  <td>${flightAirline}</td>
                   <td>${flight.flight_number}</td>
                   <td>${flight.in_or_out}</td>
                   <td>${flight.route}</td>
-                  <td>${flight.departure_time}</td>
-                  <td>${flight.arrival_time}</td>
+                  <td>${edt}</td>
+                  <td>${eat}</td>
                   <td>${flight.issued_by}</td>
                   <td class="flight-cost">${
                     flight.final_cost || flight.total_cost || 0
@@ -7673,13 +7679,17 @@
 
           const updatedFlight = {
             id: flightId,
-            flight_name: flight.flight_name,
-            flight_date: flight.flight_date,
+            flight_airline: flight.flight_airline || flight.flight_name || "",
+            flight_name: flight.flight_airline || flight.flight_name || "",
+            flight_date: flight.from_date || flight.flight_date || "",
+            from_date: flight.from_date || flight.flight_date || "",
             flight_number: flight.flight_number,
             in_or_out: flight.in_or_out,
             route: flight.route,
-            departure_time: flight.departure_time,
-            arrival_time: flight.arrival_time,
+            edt: flight.edt || flight.departure_time || "",
+            eat: flight.eat || flight.arrival_time || "",
+            departure_time: flight.edt || flight.departure_time || "",
+            arrival_time: flight.eat || flight.arrival_time || "",
             issued_by: flight.issued_by,
             remarks: flight.remarks,
             total_cost: flight.total_cost,
@@ -7689,20 +7699,25 @@
 
           console.log("Updating Flight:", updatedFlight);
 
-          // Update cost data in dataset
-          editingFlightRow.dataset.cost = updatedFlight.total_cost;
+          // Update dataset attributes before innerHTML replacement
+          editingFlightRow.dataset.id = flightId;
+          editingFlightRow.dataset.totalCost = updatedFlight.total_cost;
+          editingFlightRow.dataset.discount = updatedFlight.discount;
+          editingFlightRow.dataset.finalCost = updatedFlight.final_cost;
+
+          const flightDate = (updatedFlight.from_date || "").split("T")[0];
 
           // ✅ Update row directly instead of inserting a duplicate
           editingFlightRow.innerHTML = `
-              <td>${updatedFlight.flight_date}</td>
-              <td>${updatedFlight.flight_name}</td>
+              <td>${flightDate}</td>
+              <td>${updatedFlight.flight_airline}</td>
               <td>${updatedFlight.flight_number}</td>
               <td>${updatedFlight.in_or_out}</td>
               <td>${updatedFlight.route}</td>
-              <td>${updatedFlight.departure_time}</td>
-              <td>${updatedFlight.arrival_time}</td>
+              <td>${updatedFlight.edt}</td>
+              <td>${updatedFlight.eat}</td>
               <td>${updatedFlight.issued_by}</td>
-              <td class="flight-cost">${updatedFlight.total_cost}</td>
+              <td class="flight-cost">${updatedFlight.final_cost || updatedFlight.total_cost}</td>
               <td>${updatedFlight.remarks}</td>
               <td>
                 <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
@@ -7720,8 +7735,8 @@
               </td>
           `;
 
-          // ✅ Update `flightsArray`
-          const index = flightsArray.findIndex((f) => f.id === flightId);
+          // ✅ Update flightsArray
+          const index = flightsArray.findIndex((f) => String(f.id) === String(flightId));
           if (index !== -1) {
             flightsArray[index] = updatedFlight;
           }
@@ -7735,54 +7750,56 @@
           .getElementById("flightsTableBody")
           .addEventListener("click", function (event) {
             const row = event.target.closest("tr");
+            const editBtn = event.target.closest(".edit-flight");
+            const deleteBtn = event.target.closest(".delete-flight");
 
-            if (event.target.classList.contains("edit-flight")) {
+            if (editBtn) {
               editFlight(row);
-            } else if (event.target.classList.contains("delete-flight")) {
+            } else if (deleteBtn) {
               deleteFlight(row);
             }
           });
 
         // ✅ Edit Flight
         function editFlight(row) {
-          // Extract Flight Number & Date from the row
-          const flightNumber = row.cells[2]?.textContent.trim();
-          const flightDate = row.cells[0]?.textContent.trim();
+          const rowId = row.dataset.id;
 
-          if (!flightNumber || !flightDate) {
-            console.error("Error: Flight Number or Date missing in row.");
-            alert("Error: Flight information is incomplete!");
-            return;
-          }
-
-          // Find the flight in the array
+          // Find the flight in the array by id
           let flight = flightsArray.find(
-            (f) =>
-              f.flight_number === flightNumber && f.flight_date === flightDate
+            (f) => String(f.id) === String(rowId)
           );
 
+          // Fallback: search by flight_number + date from DOM cells
           if (!flight) {
-            console.error(
-              "Error: Flight not found in array:",
-              flightNumber,
-              flightDate
+            const flightNumber = row.cells[2]?.textContent.trim();
+            const flightDateDisplay = row.cells[0]?.textContent.trim();
+            flight = flightsArray.find(
+              (f) =>
+                f.flight_number === flightNumber &&
+                (f.from_date || f.date || f.flight_date || "").split("T")[0] === flightDateDisplay
             );
+          }
+
+          if (!flight) {
+            console.error("Error: Flight not found in array for row id:", rowId);
             alert("Error: Flight not found!");
             return;
           }
 
-          // ✅ Populate modal fields with fresh data
-          document.getElementById("flight").value = flight.flight_name || "";
+          // Normalize field names from DB (from_date, flight_airline, edt, eat)
+          const flightDate = (flight.from_date || flight.date || flight.flight_date || "").split("T")[0];
+          const flightAirline = flight.flight_airline || flight.flight_name || "";
+          const edt = flight.edt || flight.departure_time || "";
+          const eat = flight.eat || flight.arrival_time || "";
+
+          // ✅ Populate modal fields
+          document.getElementById("flight").value = flightAirline;
           document.getElementById("number").value = flight.flight_number || "";
-          document.getElementById("flightDate").value = formatToYYYYMMDD(
-            flight.flight_date || ""
-          );
+          document.getElementById("flightDate").value = formatToYYYYMMDD(flightDate);
           document.getElementById("flightRoute").value = flight.route || "";
           document.getElementById("flightInOut").value = flight.in_or_out || "";
-          document.getElementById("departureTime").value =
-            flight.departure_time || "";
-          document.getElementById("arrivalTime").value =
-            flight.arrival_time || "";
+          document.getElementById("departureTime").value = edt;
+          document.getElementById("arrivalTime").value = eat;
           document.getElementById("issuedBy").value = flight.issued_by || "";
           document.getElementById("flightRemarks").value = flight.remarks || "";
 
@@ -7800,22 +7817,18 @@
         function deleteFlight(row) {
           if (!confirm("Are you sure you want to delete this flight?")) return;
 
-          const flightNumber = row.cells[2]?.textContent.trim();
-          const flightDate = row.cells[0]?.textContent.trim();
+          const rowId = row.dataset.id;
 
-          if (!flightNumber || !flightDate) {
-            console.error("Error: Flight Number or Date missing in row.");
-            alert("Error: Flight information is incomplete!");
-            return;
-          }
-
-          // Remove from flightsArray
-          flightsArray = flightsArray.filter(
-            (f) =>
-              !(
-                f.flight_number === flightNumber && f.flight_date === flightDate
-              )
-          );
+          // Remove from flightsArray by id, fallback to flight_number+date
+          flightsArray = flightsArray.filter((f) => {
+            if (rowId) return String(f.id) !== String(rowId);
+            const flightNumber = row.cells[2]?.textContent.trim();
+            const flightDateDisplay = row.cells[0]?.textContent.trim();
+            return !(
+              f.flight_number === flightNumber &&
+              (f.flight_date || "").split("T")[0] === flightDateDisplay
+            );
+          });
 
           // Remove row from the table
           row.remove();
@@ -8434,29 +8447,34 @@
                 let flightData = {};
                 const cells = row.querySelectorAll("td");
 
-                // ✅ Extracting Data from Table Cells
-                flightData["flight_name"] = cells[1]?.textContent.trim() || ""; // Flight Name
-                flightData["flight_number"] =
-                  cells[2]?.textContent.trim() || ""; // Flight Number
-                flightData["in_or_out"] = cells[3]?.textContent.trim() || ""; // Flight In/Out
-                flightData["route"] = cells[4]?.textContent.trim() || ""; // Flight Route
-                flightData["flight_date"] = formatToYYYYMMDD(
-                  cells[0]?.textContent.trim() || ""
-                ); // Convert date format
-                flightData["departure_time"] =
-                  cells[5]?.textContent.trim() || ""; // Departure Time
-                flightData["arrival_time"] = cells[6]?.textContent.trim() || ""; // Arrival Time
-                flightData["issued_by"] = cells[7]?.textContent.trim() || ""; // Issued By
-                flightData["remarks"] = cells[9]?.textContent.trim() || ""; // Remarks (moved to column 9)
+                // ✅ Map cells to backend field names
+                const dateValue = cells[0]?.textContent.trim() || "";
+                const formattedDate = formatToYYYYMMDD(dateValue);
 
-                // ✅ Extract cost data - use the single cost value for both total_cost and final_cost
+                flightData["flight_airline"] = cells[1]?.textContent.trim() || ""; // Airline name (backend: flight_airline)
+                flightData["flight_name"]    = cells[1]?.textContent.trim() || ""; // Keep alias
+                flightData["flight_number"]  = cells[2]?.textContent.trim() || "";
+                flightData["in_or_out"]      = cells[3]?.textContent.trim() || "";
+                flightData["route"]          = cells[4]?.textContent.trim() || "";
+                flightData["edt"]            = cells[5]?.textContent.trim() || ""; // Estimated Departure Time (backend: edt)
+                flightData["eat"]            = cells[6]?.textContent.trim() || ""; // Estimated Arrival Time (backend: eat)
+                flightData["departure_time"] = cells[5]?.textContent.trim() || ""; // Keep alias
+                flightData["arrival_time"]   = cells[6]?.textContent.trim() || ""; // Keep alias
+                flightData["issued_by"]      = cells[7]?.textContent.trim() || "";
+                flightData["remarks"]        = cells[9]?.textContent.trim() || "";
+
+                // ✅ Date fields - backend reads: item.from_date || item.flight_date || item.date
+                flightData["flight_date"] = formattedDate;
+                flightData["from_date"]   = formattedDate;
+                flightData["date"]        = formattedDate;
+
+                // ✅ Cost fields
                 const costValue = parseFloat(cells[8]?.textContent.trim()) || 0;
                 flightData["total_cost"] = costValue;
-                flightData["price"] = costValue;
-                flightData["discount"] = 0;
+                flightData["price"]      = costValue;
+                flightData["discount"]   = 0;
                 flightData["final_cost"] = costValue;
 
-                // ✅ Adding Default Values
                 flightData["trip_item_id"] = 0; // Placeholder (if needed)
                 flightData["approved"] = false;
                 flightData["declined"] = false;

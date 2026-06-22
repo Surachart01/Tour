@@ -1235,7 +1235,7 @@
             if (!token) {
               alert("You are not authorized. Please log in first.");
               window.location.href = "login.html";
-              return;
+              return Promise.reject("Unauthorized");
             }
 
             // Clear existing options except the first one
@@ -1244,7 +1244,7 @@
             }
 
             // Fetch and populate suppliers
-            fetch(
+            return fetch(
               `${Endpoint}/api/v1/suppliers/names?service_type=excursions`,
               {
                 method: "GET",
@@ -1282,7 +1282,11 @@
           }
 
           // Load suppliers on page load
-          populateSuppliersDropdown();
+          try {
+            await populateSuppliersDropdown();
+          } catch (err) {
+            console.error("Failed to load suppliers:", err);
+          }
 
           // Fetch excursion details to populate form
           fetch(`${Endpoint}/api/v1/excursions/${excursionId}`, {
@@ -1350,7 +1354,31 @@
               }
 
               // Set the selected supplier
-              supplierDropdown.value = excursion.supplier_id || "";
+              if (excursion.supplier_id) {
+                supplierDropdown.value = excursion.supplier_id;
+              } else if (excursion.supplier_name) {
+                // Fallback: match by name (case-insensitive)
+                const options = Array.from(supplierDropdown.options);
+                const matchedOption = options.find(
+                  (opt) => opt.text.trim().toLowerCase() === excursion.supplier_name.trim().toLowerCase()
+                );
+                if (matchedOption) {
+                  supplierDropdown.value = matchedOption.value;
+                } else {
+                  // Fallback: check if one name contains the other
+                  const partialMatch = options.find(
+                    (opt) => opt.text.trim().toLowerCase().includes(excursion.supplier_name.trim().toLowerCase()) ||
+                             excursion.supplier_name.trim().toLowerCase().includes(opt.text.trim().toLowerCase())
+                  );
+                  if (partialMatch) {
+                    supplierDropdown.value = partialMatch.value;
+                  } else {
+                    supplierDropdown.value = "";
+                  }
+                }
+              } else {
+                supplierDropdown.value = "";
+              }
 
               // Populate excursion prices
               if (!isClone && excursion.prices) {

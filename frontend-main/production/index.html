@@ -2273,6 +2273,12 @@
         document.getElementById("profileName").innerText = username;
         document.getElementById("navProfileName").innerText = username;
 
+        // Populate tables with initial data automatically on load
+        fetchDataAndPopulateTable(hotelsTable, "hotels", {}, hotelData, "hotelsTable", "hotels");
+        fetchDataAndPopulateTable(toursTable, "tours", {}, tourData, "toursTable", "tours");
+        fetchDataAndPopulateTable(excursionsTable, "excursions", {}, excursionData, "excursionsTable", "excursions");
+        fetchDataAndPopulateTable(transfersTable, "transfers", {}, transferData, "transfersTable", "transfers");
+
         // Ensure only one section is visible at a time
         $(".btn-group button").on("click", function () {
           $(".collapse").collapse("hide"); // Hide all sections

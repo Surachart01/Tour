@@ -1,19 +1,31 @@
 import prisma from '../config/db.js';
-import { calculateTourCostLogic } from '../utils/pricing.js';
+import { calculateTourCostLogic, calculateMarkedUpPrice } from '../utils/pricing.js';
 
-export function formatTourResponse(tour) {
+export function formatTourResponse(tour, markupGroup = '', markups = []) {
   if (!tour) return null;
-  const tour_pricings = (tour.tour_pricing || []).map(p => ({
-    id: p.id,
-    tour_id: p.tour_id,
-    start_date: p.start_date ? (p.start_date instanceof Date ? p.start_date.toISOString().split('T')[0] : String(p.start_date)) : '',
-    end_date: p.end_date ? (p.end_date instanceof Date ? p.end_date.toISOString().split('T')[0] : String(p.end_date)) : '',
-    pax: p.pax,
-    single_price: p.single_room_price ? parseFloat(p.single_room_price) : 0,
-    double_price: p.double_room_price ? parseFloat(p.double_room_price) : 0,
-    triple_price: p.triple_room_price ? parseFloat(p.triple_room_price) : 0,
-    currency_id: p.currency_id
-  }));
+  const tour_pricings = (tour.tour_pricing || []).map(p => {
+    let singlePrice = p.single_room_price ? parseFloat(p.single_room_price) : 0;
+    let doublePrice = p.double_room_price ? parseFloat(p.double_room_price) : 0;
+    let triplePrice = p.triple_room_price ? parseFloat(p.triple_room_price) : 0;
+
+    if (markupGroup && markups && markups.length > 0) {
+      singlePrice = calculateMarkedUpPrice(singlePrice, markupGroup, 'tour', markups);
+      doublePrice = calculateMarkedUpPrice(doublePrice, markupGroup, 'tour', markups);
+      triplePrice = calculateMarkedUpPrice(triplePrice, markupGroup, 'tour', markups);
+    }
+
+    return {
+      id: p.id,
+      tour_id: p.tour_id,
+      start_date: p.start_date ? (p.start_date instanceof Date ? p.start_date.toISOString().split('T')[0] : String(p.start_date)) : '',
+      end_date: p.end_date ? (p.end_date instanceof Date ? p.end_date.toISOString().split('T')[0] : String(p.end_date)) : '',
+      pax: p.pax,
+      single_price: singlePrice,
+      double_price: doublePrice,
+      triple_price: triplePrice,
+      currency_id: p.currency_id
+    };
+  });
 
   const available_days = (tour.valid_days || '').split(',').filter(x => x).map(x => ({
     day_of_week: parseInt(x)
@@ -85,21 +97,40 @@ export async function getTourByID(req, res, next) {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid tour ID');
+
+    let markupGroup = '';
+    const claims = req.user;
+    if (claims && claims.role !== 'admin') {
+      markupGroup = claims.markup_group || '';
+    }
+    const markups = await prisma.markups.findMany({
+      include: { hotel_markup_percentages: true, currencies: true }
+    });
+
     const tour = await prisma.tours.findUnique({
       where: { id },
       include: { tour_pricing: { include: { currencies: true } } }
     });
     if (!tour) return res.status(404).send('Tour not found');
-    return res.json(formatTourResponse(tour));
+    return res.json(formatTourResponse(tour, markupGroup, markups));
   } catch (err) { next(err); }
 }
 
 export async function getAllTours(req, res, next) {
   try {
+    let markupGroup = '';
+    const claims = req.user;
+    if (claims && claims.role !== 'admin') {
+      markupGroup = claims.markup_group || '';
+    }
+    const markups = await prisma.markups.findMany({
+      include: { hotel_markup_percentages: true, currencies: true }
+    });
+
     const tours = await prisma.tours.findMany({
       include: { tour_pricing: { include: { currencies: true } } }
     });
-    const formatted = tours.map(formatTourResponse);
+    const formatted = tours.map(t => formatTourResponse(t, markupGroup, markups));
     formatted.sort((a, b) => {
       if (a.order !== b.order) return a.order - b.order;
       return a.name.localeCompare(b.name);
@@ -112,10 +143,20 @@ export async function listToursByCity(req, res, next) {
   try {
     const { city } = req.query;
     if (!city) return res.status(400).send('City parameter is required');
+
+    let markupGroup = '';
+    const claims = req.user;
+    if (claims && claims.role !== 'admin') {
+      markupGroup = claims.markup_group || '';
+    }
+    const markups = await prisma.markups.findMany({
+      include: { hotel_markup_percentages: true, currencies: true }
+    });
+
     const tours = await prisma.tours.findMany({
       include: { tour_pricing: { include: { currencies: true } } }
     });
-    const formatted = tours.map(formatTourResponse);
+    const formatted = tours.map(t => formatTourResponse(t, markupGroup, markups));
     formatted.sort((a, b) => {
       if (a.order !== b.order) return a.order - b.order;
       return a.name.localeCompare(b.name);
@@ -132,6 +173,15 @@ export async function listAvailableToursByCity(req, res, next) {
     // Filter by city if provided
     if (city) { where.city = { equals: city, mode: 'insensitive' }; }
     if (keyword) { where.name = { contains: keyword, mode: 'insensitive' }; }
+
+    let markupGroup = '';
+    const claims = req.user;
+    if (claims && claims.role !== 'admin') {
+      markupGroup = claims.markup_group || '';
+    }
+    const markups = await prisma.markups.findMany({
+      include: { hotel_markup_percentages: true, currencies: true }
+    });
 
     const tours = await prisma.tours.findMany({
       where,
@@ -164,7 +214,7 @@ export async function listAvailableToursByCity(req, res, next) {
       filtered = filtered.filter(tour => tour.tour_pricing.length > 0);
     }
 
-    const formatted = filtered.map(formatTourResponse);
+    const formatted = filtered.map(t => formatTourResponse(t, markupGroup, markups));
     formatted.sort((a, b) => {
       if (a.order !== b.order) return a.order - b.order;
       return a.name.localeCompare(b.name);

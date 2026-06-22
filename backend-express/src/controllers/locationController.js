@@ -5,22 +5,7 @@ const countryDatabase = {
   "SG": { code: "SG", name: "Singapore", currency_code: "SGD", currency_name: "Singapore Dollar", region: "Asia", phone_code: "+65", popular: true },
   "MY": { code: "MY", name: "Malaysia", currency_code: "MYR", currency_name: "Malaysian Ringgit", region: "Asia", phone_code: "+60", popular: true },
   "ID": { code: "ID", name: "Indonesia", currency_code: "IDR", currency_name: "Indonesian Rupiah", region: "Asia", phone_code: "+62", popular: true },
-  "VN": { code: "VN", name: "Vietnam", currency_code: "VND", currency_name: "Vietnamese Dong", region: "Asia", phone_code: "+84", popular: true },
-  "PH": { code: "PH", name: "Philippines", currency_code: "PHP", currency_name: "Philippine Peso", region: "Asia", phone_code: "+63", popular: true },
-  "IN": { code: "IN", name: "India", currency_code: "INR", currency_name: "Indian Rupee", region: "Asia", phone_code: "+91", popular: true },
-  "CN": { code: "CN", name: "China", currency_code: "CNY", currency_name: "Chinese Yuan", region: "Asia", phone_code: "+86", popular: true },
-  "JP": { code: "JP", name: "Japan", currency_code: "JPY", currency_name: "Japanese Yen", region: "Asia", phone_code: "+81", popular: true },
-  "KR": { code: "KR", name: "South Korea", currency_code: "KRW", currency_name: "South Korean Won", region: "Asia", phone_code: "+82", popular: true },
-  "US": { code: "US", name: "United States", currency_code: "USD", currency_name: "US Dollar", region: "North America", phone_code: "+1", popular: true },
-  "GB": { code: "GB", name: "United Kingdom", currency_code: "GBP", currency_name: "British Pound", region: "Europe", phone_code: "+44", popular: true },
-  "AU": { code: "AU", name: "Australia", currency_code: "AUD", currency_name: "Australian Dollar", region: "Oceania", phone_code: "+61", popular: true },
-  "CA": { code: "CA", name: "Canada", currency_code: "CAD", currency_name: "Canadian Dollar", region: "North America", phone_code: "+1", popular: true },
-  "DE": { code: "DE", name: "Germany", currency_code: "EUR", currency_name: "Euro", region: "Europe", phone_code: "+49", popular: true },
-  "FR": { code: "FR", name: "France", currency_code: "EUR", currency_name: "Euro", region: "Europe", phone_code: "+33", popular: true },
-  "IT": { code: "IT", name: "Italy", currency_code: "EUR", currency_name: "Euro", region: "Europe", phone_code: "+39", popular: true },
-  "ES": { code: "ES", name: "Spain", currency_code: "EUR", currency_name: "Euro", region: "Europe", phone_code: "+34", popular: true },
-  "NL": { code: "NL", name: "Netherlands", currency_code: "EUR", currency_name: "Euro", region: "Europe", phone_code: "+31", popular: true },
-  "CH": { code: "CH", name: "Switzerland", currency_code: "CHF", currency_name: "Swiss Franc", region: "Europe", phone_code: "+41", popular: true }
+  "VN": { code: "VN", name: "Vietnam", currency_code: "VND", currency_name: "Vietnamese Dong", region: "Asia", phone_code: "+84", popular: true }
 };
 
 export async function listCurrencies(req, res, next) {
