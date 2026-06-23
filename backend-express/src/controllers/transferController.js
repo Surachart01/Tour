@@ -90,8 +90,8 @@ export async function createTransfer(req, res, next) {
         supplier_name: supplierName,
         user_id: data.user_id ? parseInt(data.user_id) : null,
         country: data.country || "Thailand",
-        sic_price_adult: data.sic_price_adult !== undefined ? data.sic_price_adult : 0.00,
-        sic_price_child: data.sic_price_child !== undefined ? data.sic_price_child : 0.00,
+        sic_price_adult: data.sic_price_adult !== undefined && data.sic_price_adult !== null ? (isNaN(parseFloat(data.sic_price_adult)) ? 0.00 : parseFloat(data.sic_price_adult)) : 0.00,
+        sic_price_child: data.sic_price_child !== undefined && data.sic_price_child !== null ? (isNaN(parseFloat(data.sic_price_child)) ? 0.00 : parseFloat(data.sic_price_child)) : 0.00,
         supplier_id: data.supplier_id ? parseInt(data.supplier_id) : null,
         display_order: data.display_order !== undefined ? parseInt(data.display_order) :
                        (data.order !== undefined ? parseInt(data.order) : 0),
@@ -115,7 +115,7 @@ export async function getTransferByID(req, res, next) {
 
     let markupGroup = '';
     const claims = req.user;
-    if (claims && claims.role !== 'admin') {
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       markupGroup = claims.markup_group || '';
     }
     const markups = await prisma.markups.findMany({
@@ -141,7 +141,7 @@ export async function getTransfers(req, res, next) {
 
     let markupGroup = '';
     const claims = req.user;
-    if (claims && claims.role !== 'admin') {
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       markupGroup = claims.markup_group || '';
     }
     const markups = await prisma.markups.findMany({
@@ -172,7 +172,7 @@ export async function getTransferByCity(req, res, next) {
 
     let markupGroup = '';
     const claims = req.user;
-    if (claims && claims.role !== 'admin') {
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       markupGroup = claims.markup_group || '';
     }
     const markups = await prisma.markups.findMany({
@@ -208,7 +208,7 @@ export async function listAvailableTransfersByCity(req, res, next) {
 
     let markupGroup = '';
     const claims = req.user;
-    if (claims && claims.role !== 'admin') {
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       markupGroup = claims.markup_group || '';
     }
     const markups = await prisma.markups.findMany({
@@ -283,8 +283,8 @@ export async function updateTransfer(req, res, next) {
           supplier_name: supplierName,
           user_id: data.user_id !== undefined ? (data.user_id ? parseInt(data.user_id) : null) : undefined,
           country: data.country !== undefined ? data.country : undefined,
-          sic_price_adult: data.sic_price_adult !== undefined ? data.sic_price_adult : undefined,
-          sic_price_child: data.sic_price_child !== undefined ? data.sic_price_child : undefined,
+          sic_price_adult: data.sic_price_adult !== undefined && data.sic_price_adult !== null ? (isNaN(parseFloat(data.sic_price_adult)) ? null : parseFloat(data.sic_price_adult)) : undefined,
+          sic_price_child: data.sic_price_child !== undefined && data.sic_price_child !== null ? (isNaN(parseFloat(data.sic_price_child)) ? null : parseFloat(data.sic_price_child)) : undefined,
           supplier_id: data.supplier_id !== undefined ? (data.supplier_id ? parseInt(data.supplier_id) : null) : undefined,
           display_order: data.display_order !== undefined ? parseInt(data.display_order) :
                          (data.order !== undefined ? parseInt(data.order) : undefined),
@@ -317,7 +317,7 @@ export async function calculateTransfersCost(req, res, next) {
 
     let markupGroup = 'TO Bronze'; // Default fallback
     if (claims) {
-      if (claims.role !== 'admin') {
+      if (claims.role !== 'admin' && claims.role !== 'superadmin') {
         markupGroup = claims.markup_group || '';
       }
     }

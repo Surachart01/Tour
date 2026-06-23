@@ -191,7 +191,7 @@ export async function getHotel(req, res, next) {
 
     let markupGroup = '';
     const claims = req.user;
-    if (claims && claims.role !== 'admin') {
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       markupGroup = claims.markup_group || '';
     }
     const markups = await prisma.markups.findMany({
@@ -211,7 +211,7 @@ export async function listHotels(req, res, next) {
   try {
     let markupGroup = '';
     const claims = req.user;
-    if (claims && claims.role !== 'admin') {
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       markupGroup = claims.markup_group || '';
     }
     const markups = await prisma.markups.findMany({
@@ -243,7 +243,7 @@ export async function listHotelsByCity(req, res, next) {
 
     let markupGroup = '';
     const claims = req.user;
-    if (claims && claims.role !== 'admin') {
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       markupGroup = claims.markup_group || '';
     }
     const markups = await prisma.markups.findMany({
@@ -270,7 +270,7 @@ export async function listAvailableHotelsByCity(req, res, next) {
 
     let markupGroup = '';
     const claims = req.user;
-    if (claims && claims.role !== 'admin') {
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       markupGroup = claims.markup_group || '';
     }
     const markups = await prisma.markups.findMany({
@@ -429,7 +429,7 @@ export async function calculateHotelCost(req, res, next) {
 
     let markupGroup = 'TO Bronze'; // Default fallback
     if (claims) {
-      if (claims.role !== 'admin') {
+      if (claims.role !== 'admin' && claims.role !== 'superadmin') {
         markupGroup = claims.markup_group || '';
       }
     }

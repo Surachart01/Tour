@@ -100,7 +100,7 @@ export async function getTourByID(req, res, next) {
 
     let markupGroup = '';
     const claims = req.user;
-    if (claims && claims.role !== 'admin') {
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       markupGroup = claims.markup_group || '';
     }
     const markups = await prisma.markups.findMany({
@@ -120,7 +120,7 @@ export async function getAllTours(req, res, next) {
   try {
     let markupGroup = '';
     const claims = req.user;
-    if (claims && claims.role !== 'admin') {
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       markupGroup = claims.markup_group || '';
     }
     const markups = await prisma.markups.findMany({
@@ -146,7 +146,7 @@ export async function listToursByCity(req, res, next) {
 
     let markupGroup = '';
     const claims = req.user;
-    if (claims && claims.role !== 'admin') {
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       markupGroup = claims.markup_group || '';
     }
     const markups = await prisma.markups.findMany({
@@ -176,7 +176,7 @@ export async function listAvailableToursByCity(req, res, next) {
 
     let markupGroup = '';
     const claims = req.user;
-    if (claims && claims.role !== 'admin') {
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       markupGroup = claims.markup_group || '';
     }
     const markups = await prisma.markups.findMany({
@@ -288,7 +288,7 @@ export async function calculateToursCost(req, res, next) {
 
     let markupGroup = 'TO Bronze'; // Default fallback
     if (claims) {
-      if (claims.role !== 'admin') {
+      if (claims.role !== 'admin' && claims.role !== 'superadmin') {
         markupGroup = claims.markup_group || '';
       }
     }

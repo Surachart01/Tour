@@ -93,13 +93,17 @@ export async function createExcursion(req, res, next) {
       }
     }
 
+    const sicPriceAdult = data.sic_price_adult !== undefined && data.sic_price_adult !== null ? (isNaN(parseFloat(data.sic_price_adult)) ? null : parseFloat(data.sic_price_adult)) : null;
+    const sicPriceChild = data.sic_price_child !== undefined && data.sic_price_child !== null ? (isNaN(parseFloat(data.sic_price_child)) ? null : parseFloat(data.sic_price_child)) : null;
+    const walkinPrice = data.walkin_price !== undefined && data.walkin_price !== null ? (isNaN(parseFloat(data.walkin_price)) ? null : parseFloat(data.walkin_price)) : null;
+
     const excursion = await prisma.excursions.create({
       data: {
         name: data.name, city: data.city, code: data.code || null,
         is_sic_excursion: data.is_sic_excursion || false,
         description: data.description || null,
-        sic_price_adult: data.sic_price_adult, sic_price_child: data.sic_price_child,
-        walkin_price: data.walkin_price, currency_id: data.currency_id,
+        sic_price_adult: sicPriceAdult, sic_price_child: sicPriceChild,
+        walkin_price: walkinPrice, currency_id: data.currency_id,
         supplier_name: supplierName,
         supplier_id: data.supplier_id ? parseInt(data.supplier_id) : null,
         valid_days: valid_days,
@@ -126,7 +130,7 @@ export async function getExcursionByID(req, res, next) {
 
     let markupGroup = '';
     const claims = req.user;
-    if (claims && claims.role !== 'admin') {
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       markupGroup = claims.markup_group || '';
     }
     const markups = await prisma.markups.findMany({
@@ -146,7 +150,7 @@ export async function getExcursions(req, res, next) {
   try {
     let markupGroup = '';
     const claims = req.user;
-    if (claims && claims.role !== 'admin') {
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       markupGroup = claims.markup_group || '';
     }
     const markups = await prisma.markups.findMany({
@@ -172,7 +176,7 @@ export async function listExcursionsByLocation(req, res, next) {
 
     let markupGroup = '';
     const claims = req.user;
-    if (claims && claims.role !== 'admin') {
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       markupGroup = claims.markup_group || '';
     }
     const markups = await prisma.markups.findMany({
@@ -201,7 +205,7 @@ export async function listAvailableExcursionsByCity(req, res, next) {
 
     let markupGroup = '';
     const claims = req.user;
-    if (claims && claims.role !== 'admin') {
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       markupGroup = claims.markup_group || '';
     }
     const markups = await prisma.markups.findMany({
@@ -262,6 +266,10 @@ export async function updateExcursion(req, res, next) {
       ? data.available_days.map(d => d.day_of_week).sort().join(',')
       : (data.valid_days !== undefined ? data.valid_days : undefined);
 
+    const sicPriceAdult = data.sic_price_adult !== undefined && data.sic_price_adult !== null ? (isNaN(parseFloat(data.sic_price_adult)) ? null : parseFloat(data.sic_price_adult)) : undefined;
+    const sicPriceChild = data.sic_price_child !== undefined && data.sic_price_child !== null ? (isNaN(parseFloat(data.sic_price_child)) ? null : parseFloat(data.sic_price_child)) : undefined;
+    const walkinPrice = data.walkin_price !== undefined && data.walkin_price !== null ? (isNaN(parseFloat(data.walkin_price)) ? null : parseFloat(data.walkin_price)) : undefined;
+
     // Auto-lookup supplier name from supplier_id if not provided
     let supplierName = data.supplier_name;
     if (supplierName === undefined && data.supplier_id) {
@@ -297,8 +305,8 @@ export async function updateExcursion(req, res, next) {
         data: {
           name: data.name, city: data.city, code: data.code,
           is_sic_excursion: data.is_sic_excursion, description: data.description,
-          sic_price_adult: data.sic_price_adult, sic_price_child: data.sic_price_child,
-          walkin_price: data.walkin_price, currency_id: data.currency_id,
+          sic_price_adult: sicPriceAdult, sic_price_child: sicPriceChild,
+          walkin_price: walkinPrice, currency_id: data.currency_id,
           supplier_name: supplierName !== undefined ? supplierName : undefined,
           supplier_id: data.supplier_id !== undefined ? (data.supplier_id ? parseInt(data.supplier_id) : null) : undefined,
           valid_days: valid_days !== undefined ? valid_days : undefined,
@@ -334,7 +342,7 @@ export async function calculateExcursionCost(req, res, next) {
 
     let markupGroup = 'TO Bronze'; // Default fallback
     if (claims) {
-      if (claims.role !== 'admin') {
+      if (claims.role !== 'admin' && claims.role !== 'superadmin') {
         markupGroup = claims.markup_group || '';
       }
     }

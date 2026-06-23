@@ -14,6 +14,10 @@ function applyMarkup(basePrice, markupValue, markupUnit) {
 }
 
 export function calculateMarkedUpPrice(basePrice, markupGroup, serviceType, markups) {
+  const parsedPrice = parseFloat(basePrice);
+  if (isNaN(parsedPrice) || parsedPrice === 0) {
+    return 0;
+  }
   const markup = markups.find(m => m.markup_group === markupGroup);
   if (!markup) {
     return basePrice;
