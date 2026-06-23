@@ -278,7 +278,7 @@ function updateFilterStatus(metadata) {
 // Format date for display
 function formatDateForDisplay(dateString) {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-GB');
+  return date.toLocaleDateString('en-GB').replace(/\//g, '-');
 }
 
 // Show info message
@@ -681,5 +681,5 @@ function formatCurrency(amount) {
 function formatDate(dateString) {
   if (!dateString) return 'N/A';
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-GB');
+  return date.toLocaleDateString('en-GB').replace(/\//g, '-');
 } 

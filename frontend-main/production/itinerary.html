@@ -599,7 +599,7 @@
         // Format date for display
         function formatDateForDisplay(dateString) {
           const date = new Date(dateString);
-          return date.toLocaleDateString("en-GB");
+          return date.toLocaleDateString("en-GB").replace(/\//g, "-");
         }
 
         tripTableBody.addEventListener("click", function (event) {
@@ -781,7 +781,7 @@
                 <td>${trip.agent.name}</td>
                 <td>${trip.quotation_reference}</td>
                 <td>${trip.client_name}</td>
-                <td>${new Date(trip.start_date).toLocaleDateString()}</td>
+                <td>${formatDateForDisplay(trip.start_date)}</td>
                 <td>${trip.number_of_adults + trip.number_of_kids}</td>
                 <td>${trip.client_phone}</td>
                 <td>${trip.client_booking}</td>

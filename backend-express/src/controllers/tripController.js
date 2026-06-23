@@ -272,7 +272,9 @@ export async function createQuotation(req, res, next) {
     const discount_amount = data.discount_amount !== undefined ? parseFloat(data.discount_amount) : (data.discount !== undefined ? parseFloat(data.discount) : calculated.discount_amount);
     const final_amount = data.final_amount !== undefined ? parseFloat(data.final_amount) : (data.final_cost !== undefined ? parseFloat(data.final_cost) : calculated.final_amount);
 
-    const trip_start_date = data.trip_start_date ? parseOptionalDate(data.trip_start_date) : null;
+    const trip_start_date = data.trip_start_date
+      ? parseOptionalDate(data.trip_start_date)
+      : (data.start_date ? parseOptionalDate(data.start_date) : null);
     const tripFallbackDate = trip_start_date && !isNaN(trip_start_date.getTime()) ? trip_start_date : new Date();
     let payment_deadline = data.payment_deadline ? parseOptionalDate(data.payment_deadline) : null;
     let cancellation_deadline = data.cancellation_deadline ? parseOptionalDate(data.cancellation_deadline) : null;
@@ -620,7 +622,9 @@ export async function updateQuotation(req, res, next) {
     const discount_amount = data.discount_amount !== undefined ? parseFloat(data.discount_amount) : (data.discount !== undefined ? parseFloat(data.discount) : calculated.discount_amount);
     const final_amount = data.final_amount !== undefined ? parseFloat(data.final_amount) : (data.final_cost !== undefined ? parseFloat(data.final_cost) : calculated.final_amount);
 
-    const trip_start_date = data.trip_start_date !== undefined ? parseOptionalDate(data.trip_start_date) : undefined;
+    const trip_start_date = data.trip_start_date !== undefined
+      ? parseOptionalDate(data.trip_start_date)
+      : (data.start_date !== undefined ? parseOptionalDate(data.start_date) : undefined);
     
     let payment_deadline = undefined;
     let cancellation_deadline = undefined;

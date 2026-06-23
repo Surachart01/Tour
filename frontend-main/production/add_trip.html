@@ -678,8 +678,8 @@
                           <th>Number</th>
                           <th>In/Out</th>
                           <th>Route</th>
-                          <th>EDT</th>
-                          <th>EAT</th>
+                          <th>ETD</th>
+                          <th>ETA</th>
                           <th>Issued</th>
                           <th>Cost</th>
                           <th>Remarks</th>
@@ -2593,11 +2593,17 @@
                 assistanceFeeAmount.disabled = false;
                 assistanceFeeAmount.style.backgroundColor = "";
                 assistanceFeeAmount.style.cursor = "";
+                // Restore default amount if 0 or empty
+                if (parseFloat(assistanceFeeAmount.value) === 0 || !assistanceFeeAmount.value) {
+                  assistanceFeeAmount.value = defaultAssistanceFee ? parseFloat(defaultAssistanceFee) : 1000;
+                }
               } else {
                 // Disable the assistance fee amount field
                 assistanceFeeAmount.disabled = true;
                 assistanceFeeAmount.style.backgroundColor = "#f8f9fa";
                 assistanceFeeAmount.style.cursor = "not-allowed";
+                // Set to 0 because it's not included
+                assistanceFeeAmount.value = 0;
               }
             }
           });
@@ -2605,14 +2611,17 @@
 
         // Set default values based on agent configuration
         if (includeAssistanceFee) {
-          // Check if agent has assistance fee enabled (default to true if not set)
-          const shouldEnable = enableAssistanceFee === null ? true : enableAssistanceFee === "true";
+          // Check if agent has assistance fee enabled (only default to true if explicitly set to "true")
+          const shouldEnable = enableAssistanceFee === "true";
           includeAssistanceFee.checked = shouldEnable;
           console.log(`Setting assistance fee checkbox to: ${shouldEnable} (agent config: ${enableAssistanceFee})`);
         }
         if (assistanceFeeAmount) {
-          // Use agent's default amount or fallback to 1000
-          const defaultAmount = defaultAssistanceFee ? parseFloat(defaultAssistanceFee) : 1000;
+          // Use agent's default amount or 0 depending on whether it is enabled
+          const shouldEnable = enableAssistanceFee === "true";
+          const defaultAmount = shouldEnable
+            ? (defaultAssistanceFee ? parseFloat(defaultAssistanceFee) : 1000)
+            : 0;
           assistanceFeeAmount.value = defaultAmount;
           console.log(`Setting assistance fee amount to: ${defaultAmount} (agent config: ${defaultAssistanceFee})`);
         }

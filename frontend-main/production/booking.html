@@ -652,7 +652,7 @@
         // Format date for display
         function formatDateForDisplay(dateString) {
           const date = new Date(dateString);
-          return date.toLocaleDateString("en-GB");
+          return date.toLocaleDateString("en-GB").replace(/\//g, "-");
         }
 
         tripTableBody.addEventListener("click", function (event) {
@@ -845,7 +845,7 @@
             const formattedDate = new Date(trip.start_date)
               .toLocaleDateString("en-GB")
               .split("/")
-              .join("/");
+              .join("-");
 
             // Format booking date to DD/MM/YYYY format, handle cases where booking_date might be null or invalid
             let formattedBookingDate = "N/A";
@@ -855,7 +855,7 @@
             ) {
               const bookingDate = new Date(trip.booking_date);
               if (!isNaN(bookingDate.getTime())) {
-                formattedBookingDate = bookingDate.toLocaleDateString("en-GB");
+                formattedBookingDate = bookingDate.toLocaleDateString("en-GB").replace(/\//g, "-");
               }
             }
 

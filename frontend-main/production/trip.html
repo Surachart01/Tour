@@ -658,7 +658,7 @@
         // Format date for display
         function formatDateForDisplay(dateString) {
           const date = new Date(dateString);
-          return date.toLocaleDateString("en-GB");
+          return date.toLocaleDateString("en-GB").replace(/\//g, "-");
         }
 
         // Fetch trips from backend API
@@ -816,7 +816,7 @@
             if (rawStartDate) {
               const sd = new Date(rawStartDate);
               if (!isNaN(sd.getTime())) {
-                formattedDate = sd.toLocaleDateString("en-GB");
+                formattedDate = sd.toLocaleDateString("en-GB").replace(/\//g, "-");
               }
             }
 
@@ -827,7 +827,7 @@
             if (rawBookingDate && rawBookingDate !== "0001-01-01T00:00:00Z") {
               const bookingDate = new Date(rawBookingDate);
               if (!isNaN(bookingDate.getTime())) {
-                formattedBookingDate = bookingDate.toLocaleDateString("en-GB");
+                formattedBookingDate = bookingDate.toLocaleDateString("en-GB").replace(/\//g, "-");
               }
             }
 

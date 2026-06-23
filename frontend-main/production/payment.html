@@ -677,7 +677,7 @@
         // Format date for display
         function formatDateForDisplay(dateString) {
           const date = new Date(dateString);
-          return date.toLocaleDateString("en-GB");
+          return date.toLocaleDateString("en-GB").replace(/\//g, "-");
         }
 
         async function fetchPayments(useAllData = true) {

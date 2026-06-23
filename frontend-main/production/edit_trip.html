@@ -794,8 +794,8 @@
                           <th>Number</th>
                           <th>In/Out</th>
                           <th>Route</th>
-                          <th>EDT</th>
-                          <th>EAT</th>
+                          <th>ETD</th>
+                          <th>ETA</th>
                           <th>Issued</th>
                           <th>Cost</th>
                           <th>Remarks</th>
@@ -7984,6 +7984,33 @@
               }
             }
 
+            // Recalculate price fields locally based on assistance fee and discount changes
+            const dbTotalCost = data.total_cost !== undefined ? data.total_cost : (data.total_amount || 0);
+            const dbDiscount = data.discount !== undefined ? data.discount : (data.discount_amount || 0);
+            const dbIncludeFee = Boolean(data.include_assistance_fee);
+            const dbFeeAmount = data.assistance_fee_amount || 0;
+
+            // Base total cost of the quotation (excluding any assistance fee that might have been saved in the database)
+            const baseTotalCost = dbTotalCost - (dbIncludeFee ? dbFeeAmount : 0);
+
+            function updateUIPriceFields() {
+              const includeAssistanceFee = document.getElementById("includeAssistanceFee");
+              const assistanceFeeAmount = document.getElementById("assistanceFeeAmount");
+              const totalPriceInput = document.getElementById("totalPrice");
+              const finalPriceInput = document.getElementById("finalPrice");
+              const discountInput = document.getElementById("discount");
+
+              const isChecked = includeAssistanceFee ? includeAssistanceFee.checked : false;
+              const fee = isChecked ? (parseFloat(assistanceFeeAmount.value) || 0) : 0;
+              const discount = discountInput ? (parseFloat(discountInput.value) || 0) : dbDiscount;
+
+              const newTotal = baseTotalCost + fee;
+              const newFinal = Math.max(0, newTotal - discount);
+
+              if (totalPriceInput) totalPriceInput.value = newTotal.toFixed(2);
+              if (finalPriceInput) finalPriceInput.value = newFinal.toFixed(2);
+            }
+
             // Add event listener for assistance fee checkbox
             if (includeAssistanceFee) {
               includeAssistanceFee.addEventListener("change", function () {
@@ -7998,13 +8025,21 @@
                     assistanceFeeAmount.disabled = false;
                     assistanceFeeAmount.style.backgroundColor = "";
                     assistanceFeeAmount.style.cursor = "";
+                    // Restore default amount if 0 or empty
+                    if (parseFloat(assistanceFeeAmount.value) === 0 || !assistanceFeeAmount.value) {
+                      const defaultAssistanceFee = localStorage.getItem("defaultAssistanceFee");
+                      assistanceFeeAmount.value = defaultAssistanceFee ? parseFloat(defaultAssistanceFee) : 1000;
+                    }
                   } else {
                     // Disable the assistance fee amount field
                     assistanceFeeAmount.disabled = true;
                     assistanceFeeAmount.style.backgroundColor = "#f8f9fa";
                     assistanceFeeAmount.style.cursor = "not-allowed";
+                    // Set to 0 because it's not included
+                    assistanceFeeAmount.value = 0;
                   }
                 }
+                updateUIPriceFields();
               });
             }
 
@@ -8012,7 +8047,16 @@
             if (assistanceFeeAmount) {
               assistanceFeeAmount.addEventListener("input", function () {
                 console.log("Assistance fee amount changed:", this.value);
-                // You can add logic here to recalculate final price if needed
+                updateUIPriceFields();
+              });
+            }
+
+            // Add event listener for discount changes
+            const discountInput = document.getElementById("discount");
+            if (discountInput) {
+              discountInput.addEventListener("input", function () {
+                console.log("Discount changed:", this.value);
+                updateUIPriceFields();
               });
             }
 
@@ -8022,46 +8066,61 @@
               assistance_fee_amount: data.assistance_fee_amount,
             });
 
-            if (
-              data.include_assistance_fee !== undefined &&
-              data.include_assistance_fee !== null
-            ) {
-              if (includeAssistanceFee) {
-                includeAssistanceFee.checked = Boolean(
-                  data.include_assistance_fee
-                );
-                console.log(
-                  "Setting checkbox to:",
-                  Boolean(data.include_assistance_fee)
-                );
-                // Trigger the change event to set the correct state
-                includeAssistanceFee.dispatchEvent(new Event("change"));
-              }
-            } else {
-              console.log(
-                "include_assistance_fee is undefined or null, using default (checked)"
-              );
+            const enableAssistanceFee = localStorage.getItem("enableAssistanceFee");
+            const defaultAssistanceFee = localStorage.getItem("defaultAssistanceFee");
+
+            const isAgentFeeEnabled = enableAssistanceFee === "true";
+
+            if (isAgentFeeEnabled) {
+              console.log("Agent has assistance fee enabled. Ticking checkbox automatically.");
               if (includeAssistanceFee) {
                 includeAssistanceFee.checked = true;
+                // Dispatch change event to set the correct state and styles
                 includeAssistanceFee.dispatchEvent(new Event("change"));
+              }
+              if (assistanceFeeAmount) {
+                // If checkbox is checked, we set the amount to default/saved value
+                const savedAmount = (data.assistance_fee_amount !== undefined && data.assistance_fee_amount !== null && data.assistance_fee_amount > 0)
+                  ? data.assistance_fee_amount
+                  : (defaultAssistanceFee ? parseFloat(defaultAssistanceFee) : 1000);
+                assistanceFeeAmount.value = savedAmount;
+              }
+            } else {
+              console.log("Agent does not have assistance fee enabled by default.");
+              if (
+                data.include_assistance_fee !== undefined &&
+                data.include_assistance_fee !== null
+              ) {
+                if (includeAssistanceFee) {
+                  includeAssistanceFee.checked = Boolean(
+                    data.include_assistance_fee
+                  );
+                  includeAssistanceFee.dispatchEvent(new Event("change"));
+                }
+              } else {
+                if (includeAssistanceFee) {
+                  includeAssistanceFee.checked = false;
+                  includeAssistanceFee.dispatchEvent(new Event("change"));
+                }
+              }
+
+              if (
+                data.assistance_fee_amount !== undefined &&
+                data.assistance_fee_amount !== null
+              ) {
+                if (assistanceFeeAmount) {
+                  const isChecked = includeAssistanceFee ? includeAssistanceFee.checked : false;
+                  assistanceFeeAmount.value = isChecked ? data.assistance_fee_amount : 0;
+                }
+              } else {
+                if (assistanceFeeAmount) {
+                  assistanceFeeAmount.value = 0;
+                }
               }
             }
 
-            if (
-              data.assistance_fee_amount !== undefined &&
-              data.assistance_fee_amount !== null
-            ) {
-              if (assistanceFeeAmount) {
-                assistanceFeeAmount.value = data.assistance_fee_amount;
-              }
-            } else {
-              console.log(
-                "assistance_fee_amount is undefined or null, using default (1000)"
-              );
-              if (assistanceFeeAmount) {
-                assistanceFeeAmount.value = 1000;
-              }
-            }
+            // Call price update function immediately to refresh the prices in the UI
+            updateUIPriceFields();
 
             // ✅ Populate include description in itinerary checkbox
             const includeDescriptionCheckbox = document.getElementById(
