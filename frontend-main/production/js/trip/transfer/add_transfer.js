@@ -49,7 +49,24 @@ function checkAndCalculateTransferPrice() {
 
 // Event listeners for relevant fields
 document.getElementById("transferCity").addEventListener("change", checkAndCalculateTransferPrice);
-document.getElementById("transferType").addEventListener("change", checkAndCalculateTransferPrice);
+document.getElementById("transferType").addEventListener("change", function () {
+  const selectedOption = this.options[this.selectedIndex];
+  if (selectedOption && this.value !== "") {
+    const text = selectedOption.textContent.trim();
+    if (text.includes("-")) {
+      const parts = text.split("-");
+      if (parts.length === 2) {
+        const fromVal = parts[0].trim();
+        const toVal = parts[1].trim();
+        const transferFromInput = document.getElementById("transferFrom");
+        const transferToInput = document.getElementById("transferTo");
+        if (transferFromInput) transferFromInput.value = fromVal;
+        if (transferToInput) transferToInput.value = toVal;
+      }
+    }
+  }
+  checkAndCalculateTransferPrice();
+});
 document.getElementById("transferDate").addEventListener("change", checkAndCalculateTransferPrice);
 document.getElementById("transferToT").addEventListener("change", checkAndCalculateTransferPrice);
 
@@ -219,14 +236,25 @@ function addTransferRow(transfer) {
   newRow.dataset.transferFlight = transfer.transferFlight || "";
   newRow.dataset.transferRouteType = transfer.transferRouteType || "";
 
+  let displayPickupTime = formatTimeToHHMM(transfer.transferPickupTime || transfer.flightTime || "");
+  if (!displayPickupTime && transfer.transferFlight && typeof flightsArray !== "undefined") {
+    const matchingFlight = flightsArray.find(
+      (f) => (f.flight_number || f.number || "").trim().toLowerCase() === (transfer.transferFlight || "").trim().toLowerCase()
+    );
+    if (matchingFlight) {
+      displayPickupTime = formatTimeToHHMM(matchingFlight.eat || matchingFlight.arrival_time || "");
+    }
+  }
+  newRow.dataset.pickupTime = displayPickupTime;
+
   newRow.innerHTML = `
     <td>${transfer.transferDate}</td>
+    <td>${transfer.transferFlight || ""}</td>
     <td>${transfer.transferCity}</td>
     <td>${transfer.transferType}</td>
     <td>${transfer.transferToT || ""}</td>
     <td>${transfer.transferFrom}</td>
     <td>${transfer.transferTo}</td>
-    <td>${transfer.transferPickupTime}</td>
     <td>${transfer.remarks || ""}</td>
     <td class="transfer-price">${transfer.price ? `${transfer.price}` : "N/A"}</td>
     <td>
@@ -248,20 +276,31 @@ function addTransferRow(transfer) {
 // Update an existing row in the table
 function updateTransferRow(row, transfer) {
   row.cells[0].textContent = transfer.transferDate;
-  row.cells[1].textContent = transfer.transferCity;
-  row.cells[2].textContent = transfer.transferType;
-  row.cells[3].textContent = transfer.transferToT || "";
-  row.cells[4].textContent = transfer.transferFrom;
-  row.cells[5].textContent = transfer.transferTo;
-  row.cells[6].textContent = transfer.transferPickupTime;
+  row.cells[1].textContent = transfer.transferFlight || "";
+  row.cells[2].textContent = transfer.transferCity;
+  row.cells[3].textContent = transfer.transferType;
+  row.cells[4].textContent = transfer.transferToT || "";
+  row.cells[5].textContent = transfer.transferFrom;
+  row.cells[6].textContent = transfer.transferTo;
   row.cells[7].textContent = transfer.remarks || "";
   row.cells[8].textContent = transfer.price ? `${transfer.price}` : "N/A";
+
+  let displayPickupTime = formatTimeToHHMM(transfer.transferPickupTime || transfer.flightTime || "");
+  if (!displayPickupTime && transfer.transferFlight && typeof flightsArray !== "undefined") {
+    const matchingFlight = flightsArray.find(
+      (f) => (f.flight_number || f.number || "").trim().toLowerCase() === (transfer.transferFlight || "").trim().toLowerCase()
+    );
+    if (matchingFlight) {
+      displayPickupTime = formatTimeToHHMM(matchingFlight.eat || matchingFlight.arrival_time || "");
+    }
+  }
 
   //Ensure `transferId`, `flightTime`, and `transferFlight` stay in dataset
   row.dataset.transferId = transfer.transferId;
   row.dataset.flightTime = transfer.flightTime || "";
   row.dataset.transferFlight = transfer.transferFlight || "";
   row.dataset.transferRouteType = transfer.transferRouteType || "";
+  row.dataset.pickupTime = displayPickupTime;
 }
 
 // Handle edit and delete button clicks
@@ -295,9 +334,32 @@ document.getElementById("transferTableBody").addEventListener("click", function 
     document.getElementById("transferFrom").value = rowData.transferFrom;
     document.getElementById("transferTo").value = rowData.transferTo;
     document.getElementById("transferToT").value = rowData.transferToT;
-    document.getElementById("transferPickupTime").value = rowData.transferPickupTime;
-    document.getElementById("flightTime").value = row.dataset.flightTime || "";
-    document.getElementById("transferFlight").value = row.dataset.transferFlight || "";
+    document.getElementById("transferPickupTime").value = formatTimeToHHMM(rowData.transferPickupTime);
+    document.getElementById("flightTime").value = formatTimeToHHMM(row.dataset.flightTime);
+
+    const transferFlightSelect = document.getElementById("transferFlight");
+    if (transferFlightSelect && typeof transferFlightSelect.refreshOptions === "function") {
+      transferFlightSelect.refreshOptions(row.dataset.transferFlight);
+    } else if (transferFlightSelect) {
+      transferFlightSelect.value = row.dataset.transferFlight || "";
+    }
+
+    // Fallback: If flight time or pickup time are empty, try to populate them from the selected flight details
+    if (transferFlightSelect && transferFlightSelect.value !== "") {
+      const selectedFlightOption = transferFlightSelect.options[transferFlightSelect.selectedIndex];
+      if (selectedFlightOption) {
+        const departure = selectedFlightOption.dataset.departure;
+        const arrival = selectedFlightOption.dataset.arrival;
+
+        if (departure && !document.getElementById("flightTime").value) {
+          document.getElementById("flightTime").value = formatTimeToHHMM(departure);
+        }
+        if (arrival && !document.getElementById("transferPickupTime").value) {
+          document.getElementById("transferPickupTime").value = formatTimeToHHMM(arrival);
+        }
+      }
+    }
+
     document.getElementById("remarks").value = rowData.remarks;
     document.getElementById("updatedTransferPrice").value = rowData.price || "N/A";
 
@@ -524,101 +586,188 @@ document.getElementById("getTransferPriceBtn").addEventListener("click", functio
 // Make isEditingTransfer available globally so add_trip.html can check it
 window.isEditingTransfer = () => isEditingTransfer;
 
-// Set up flight autocomplete when this script is loaded
-function setupFlightAutocomplete() {
-  const transferFlightInput = document.getElementById("transferFlight");
-  const flightListDatalist = document.getElementById("flightList");
+// Function to format time to HH:MM
+function formatTimeToHHMM(timeStr) {
+  if (!timeStr) return "";
+  const normalized = String(timeStr).trim().toLowerCase();
+  if (normalized === "undefined" || normalized === "null" || normalized === "n/a" || normalized === "-" || normalized === "nan" || normalized === "--:--") {
+    return "";
+  }
+  let t = timeStr;
+  if (t.includes("T")) {
+    const parts = t.split("T");
+    if (parts.length === 2) {
+      t = parts[1];
+    }
+  } else if (t.includes(" ")) {
+    const parts = t.split(" ");
+    if (parts.length === 2) {
+      t = parts[1];
+    }
+  }
+  if (t.includes("+")) {
+    t = t.split("+")[0];
+  }
+  if (t.includes("-")) {
+    t = t.split("-")[0];
+  }
+  if (t.endsWith("Z") || t.endsWith("z")) {
+    t = t.substring(0, t.length - 1);
+  }
+  const timeParts = t.split(":");
+  if (timeParts.length >= 2) {
+    return `${timeParts[0].padStart(2, '0').trim()}:${timeParts[1].padStart(2, '0').trim()}`;
+  }
+  if (/^\d{4}$/.test(t)) {
+    return `${t.substring(0, 2)}:${t.substring(2, 4)}`;
+  }
+  return timeStr;
+}
+
+// Set up flight select dropdown for transfer modal and auto field pre-fill
+function setupFlightDropdown() {
+  const transferFlightSelect = document.getElementById("transferFlight");
   const flightTimeInput = document.getElementById("flightTime");
+  const transferPickupTimeInput = document.getElementById("transferPickupTime");
+  const transferFromInput = document.getElementById("transferFrom");
+  const transferToInput = document.getElementById("transferTo");
 
-  if (!transferFlightInput || !flightListDatalist) return;
+  if (!transferFlightSelect) return;
 
-  function refreshFlightList() {
-    flightListDatalist.innerHTML = "";
+  function getAirportName(codeOrName) {
+    if (!codeOrName) return "";
+    const code = codeOrName.trim().toUpperCase();
+    const airports = {
+      "BKK": "Suvarnabhumi Airport",
+      "DMK": "Don Mueang Airport",
+      "HKT": "Phuket Airport",
+      "CNX": "Chiang Mai Airport",
+      "KBV": "Krabi Airport",
+      "USM": "Samui Airport",
+      "DXB": "Dubai Airport",
+      "SIN": "Singapore Changi Airport",
+      "KUL": "Kuala Lumpur Airport",
+      "HKG": "Hong Kong Airport",
+      "ICN": "Incheon Airport",
+      "NRT": "Narita Airport",
+      "HND": "Haneda Airport"
+    };
+    return airports[code] || codeOrName;
+  }
+
+  function getHotelNameFromQuotation(city) {
+    const hotels = typeof hotelsArray !== "undefined" ? hotelsArray : [];
+    if (!city) return hotels.length > 0 ? (hotels[0].hotelName || hotels[0].hotel_name || "") : "";
+    const matchedHotel = hotels.find(h => {
+      const hotelCity = h.city || h.hotelCity || "";
+      return hotelCity.toLowerCase().trim() === city.toLowerCase().trim();
+    });
+    if (matchedHotel) {
+      return matchedHotel.hotelName || matchedHotel.hotel_name || "";
+    }
+    if (hotels.length > 0) {
+      return hotels[0].hotelName || hotels[0].hotel_name || "";
+    }
+    return "";
+  }
+
+  function refreshFlightSelect(selectedValue) {
+    transferFlightSelect.innerHTML = '<option value="" disabled selected>Select Flight</option>';
     
     // Access flightsArray from add_flight.js
     const flights = typeof flightsArray !== "undefined" ? flightsArray : [];
-    console.log("Refreshing flight autocomplete dropdown. Flights found:", flights);
+    console.log("Refreshing flight select dropdown. Flights found:", flights);
     
-    flights.forEach((flight) => {
+    flights.forEach((flight, idx) => {
       const flightNo = flight.number || flight.flight_number || "";
-      const flightName = flight.flight || flight.flight_name || "";
+      const airline = flight.flight_airline || "";
+
+      // Normalise flight number with airline code prefix if not already present
+      let combinedFlight = flightNo;
+      if (airline && !flightNo.toLowerCase().startsWith(airline.toLowerCase())) {
+        combinedFlight = `${airline} ${flightNo}`;
+      }
+
+      if (!combinedFlight) return;
+
       const flightInOut = flight.flightInOut || flight.in_or_out || "";
       const route = flight.flightRoute || flight.route || "";
-      const depTime = flight.departureTime || flight.departure_time || "";
-      const arrTime = flight.arrivalTime || flight.arrival_time || "";
-
-      if (!flightNo) return;
+      const depTime = flight.departureTime || flight.departure_time || flight.edt || "";
+      const arrTime = flight.arrivalTime || flight.arrival_time || flight.eat || "";
 
       const option = document.createElement("option");
-      option.value = flightNo;
-      option.textContent = `${flightName} (${flightInOut}) ${route ? '- ' + route : ''}`;
+      option.value = combinedFlight;
+      option.textContent = `${combinedFlight} (${flightInOut}) ${route ? '- ' + route : ''}`;
+      
+      option.dataset.index = idx;
       option.dataset.flightNo = flightNo;
-      option.dataset.flightName = flightName;
+      option.dataset.airline = airline;
+      option.dataset.combinedFlight = combinedFlight;
       option.dataset.inout = flightInOut;
       option.dataset.departure = depTime;
       option.dataset.arrival = arrTime;
       option.dataset.route = route;
 
-      flightListDatalist.appendChild(option);
+      if (selectedValue && (combinedFlight.toLowerCase() === selectedValue.toLowerCase() || flightNo.toLowerCase() === selectedValue.toLowerCase())) {
+        option.selected = true;
+      }
+
+      transferFlightSelect.appendChild(option);
     });
   }
 
-  // Bind shown.bs.modal to refresh options whenever the modal opens
-  $("#addTransferModal").on("shown.bs.modal", function () {
-    refreshFlightList();
-  });
+  // Attach to element so we can trigger it from edit event handler
+  transferFlightSelect.refreshOptions = function(selectedValue) {
+    refreshFlightSelect(selectedValue);
+  };
 
-  // Event listener when user types or selects a value from the datalist
-  transferFlightInput.addEventListener("input", function () {
-    const val = this.value;
-    const options = Array.from(flightListDatalist.options);
-    const matchedOption = options.find(opt => opt.value === val);
+  transferFlightSelect.addEventListener("change", function () {
+    const selectedOption = this.options[this.selectedIndex];
+    if (!selectedOption || this.value === "") return;
 
-    if (matchedOption) {
-      const inout = matchedOption.dataset.inout;
-      const departure = matchedOption.dataset.departure;
-      const arrival = matchedOption.dataset.arrival;
-      const route = matchedOption.dataset.route;
+    const inout = selectedOption.dataset.inout || "";
+    const departure = selectedOption.dataset.departure;
+    const arrival = selectedOption.dataset.arrival;
+    const route = selectedOption.dataset.route;
 
-      console.log(`Matched flight: ${val}, direction: ${inout}, dep: ${departure}, arr: ${arrival}`);
+    console.log(`Dropdown matched flight: ${this.value}, direction: ${inout}, dep: ${departure}, arr: ${arrival}`);
 
-      // Set the flight time automatically based on direction
-      if (inout === "Flight In") {
-        if (arrival && flightTimeInput) {
-          flightTimeInput.value = arrival;
-          console.log("Automatically set Flight Time to Arrival (ETA):", arrival);
+    // 1. Set Flight Time to ETD (departure)
+    if (flightTimeInput && departure) {
+      flightTimeInput.value = formatTimeToHHMM(departure);
+    }
+
+    // 2. Set Pickup Time to ETA (arrival)
+    if (transferPickupTimeInput && arrival) {
+      transferPickupTimeInput.value = formatTimeToHHMM(arrival);
+    }
+
+    // 3. Pre-fill From / To based on route "DEP-ARR"
+    if (route && route.includes("-")) {
+      const parts = route.split("-");
+      if (parts.length === 2) {
+        const depLoc = parts[0].trim();
+        const arrLoc = parts[1].trim();
+        
+        const depAirport = getAirportName(depLoc);
+        const arrAirport = getAirportName(arrLoc);
+
+        if (transferFromInput) {
+          transferFromInput.value = depAirport;
         }
-      } else if (inout === "Flight Out") {
-        if (departure && flightTimeInput) {
-          flightTimeInput.value = departure;
-          console.log("Automatically set Flight Time to Departure (ETD):", departure);
-        }
-      }
-
-      // Pre-fill From / To if empty and route has the "FROM-TO" format
-      const transferFromInput = document.getElementById("transferFrom");
-      const transferToInput = document.getElementById("transferTo");
-      
-      if (route && route.includes("-")) {
-        const parts = route.split("-");
-        if (parts.length === 2) {
-          const depLoc = parts[0].trim();
-          const arrLoc = parts[1].trim();
-          
-          if (inout === "Flight In") {
-            if (transferFromInput && !transferFromInput.value) {
-              transferFromInput.value = arrLoc; // Pick up from arrival airport
-            }
-          } else if (inout === "Flight Out") {
-            if (transferToInput && !transferToInput.value) {
-              transferToInput.value = depLoc; // Drop off at departure airport
-            }
-          }
+        if (transferToInput) {
+          transferToInput.value = arrAirport;
         }
       }
     }
   });
+
+  // Bind shown.bs.modal to refresh options whenever the modal opens
+  $("#addTransferModal").on("shown.bs.modal", function () {
+    const currentVal = transferFlightSelect.value;
+    refreshFlightSelect(currentVal);
+  });
 }
 
 // Initialize on load
-setupFlightAutocomplete();
+setupFlightDropdown();

@@ -297,7 +297,7 @@
                         <th>ToT</th>
                         <th>From</th>
                         <th>To</th>
-                        <th>PickUp</th>
+                        <th>Arrival Time</th>
                         <th>Remarks</th>
                         <th>Price</th>
                         <th>View</th>
@@ -322,7 +322,7 @@
                         <th>Date</th>
                         <th>City</th>
                         <th>Name</th>
-                        <th>PickUp</th>
+                        <th>Arrival Time</th>
                         <th>Hotel</th>
                         <th>Remarks</th>
                         <th>ToE</th>
@@ -485,14 +485,25 @@
                     <option value="Flight Out">Flight Out</option>
                   </select>
                 </div>
-                <!-- Route -->
-                <div class="form-group col-md-4">
-                  <label for="flightRoute">Route</label>
+                <!-- From -->
+                <div class="form-group col-md-2">
+                  <label for="flightFrom">From</label>
                   <input
                     type="text"
                     class="form-control"
-                    id="flightRoute"
-                    placeholder="Route"
+                    id="flightFrom"
+                    placeholder="From"
+                    required
+                  />
+                </div>
+                <!-- To -->
+                <div class="form-group col-md-2">
+                  <label for="flightTo">To</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="flightTo"
+                    placeholder="To"
                     required
                   />
                 </div>
@@ -642,6 +653,17 @@
                     <option value="" disabled selected>Select Transfer</option>
                   </select>
                 </div>
+                <!-- Flight -->
+                <div class="form-group col-md-4">
+                  <label for="transferFlight">Flight</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="transferFlight"
+                    placeholder="Flight details"
+                    required
+                  />
+                </div>
                 <!-- From -->
                 <div class="form-group col-md-4">
                   <label for="transferFrom">From</label>
@@ -661,17 +683,6 @@
                     class="form-control"
                     id="transferTo"
                     placeholder="Enter destination"
-                    required
-                  />
-                </div>
-                <!-- Flight -->
-                <div class="form-group col-md-4">
-                  <label for="transferFlight">Flight</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="transferFlight"
-                    placeholder="Flight details"
                     required
                   />
                 </div>
@@ -696,7 +707,7 @@
                 </div>
                 <!-- Pickup Time -->
                 <div class="form-group col-md-4">
-                  <label for="transferPickupTime">Pickup Time</label>
+                  <label for="transferPickupTime">Arrival Time</label>
                   <input
                     type="time"
                     class="form-control"
@@ -821,7 +832,7 @@
                 </div>
                 <!-- Pickup Time -->
                 <div class="form-group col-md-4">
-                  <label for="excursionPickupTime">Pickup Time</label>
+                  <label for="excursionPickupTime">Arrival Time</label>
                   <input
                     type="time"
                     class="form-control"
@@ -2148,6 +2159,27 @@
           });
         });
 
+        const transferTypeSelect = document.getElementById("transferType");
+        if (transferTypeSelect) {
+          transferTypeSelect.addEventListener("change", function () {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption && this.value !== "") {
+              const text = selectedOption.textContent.trim();
+              if (text.includes("-")) {
+                const parts = text.split("-");
+                if (parts.length === 2) {
+                  const fromVal = parts[0].trim();
+                  const toVal = parts[1].trim();
+                  const transferFromInput = document.getElementById("transferFrom");
+                  const transferToInput = document.getElementById("transferTo");
+                  if (transferFromInput) transferFromInput.value = fromVal;
+                  if (transferToInput) transferToInput.value = toVal;
+                }
+              }
+            }
+          });
+        }
+
         // Event listener for the "Add Transfer" button
         // Show the transfer modal when the button is clicked
         // Event listener for the "Add Transfer" button
@@ -2289,9 +2321,9 @@
               document.getElementById("transferToT").value =
                 transfer.transferToT || "";
               document.getElementById("transferPickupTime").value =
-                transfer.transferPickupTime || "";
+                formatTimeToHHMM(transfer.transferPickupTime);
               document.getElementById("flightTime").value =
-                transfer.flightTime || "";
+                formatTimeToHHMM(transfer.flightTime);
               document.getElementById("transferFlight").value =
                 transfer.transferFlight || "";
               document.getElementById("remarks").value = transfer.remarks || "";
@@ -3919,7 +3951,22 @@
           document.getElementById("flightDate").value = formatToYYYYMMDD(
             flight.flight_date || ""
           );
-          document.getElementById("flightRoute").value = flight.route || "";
+          const routeVal = flight.route || "";
+          let fromVal = "";
+          let toVal = "";
+          if (routeVal.includes("-")) {
+            const parts = routeVal.split("-");
+            fromVal = parts[0] ? parts[0].trim() : "";
+            toVal = parts[1] ? parts[1].trim() : "";
+          } else {
+            fromVal = routeVal;
+          }
+          if (document.getElementById("flightFrom")) {
+            document.getElementById("flightFrom").value = fromVal;
+          }
+          if (document.getElementById("flightTo")) {
+            document.getElementById("flightTo").value = toVal;
+          }
           document.getElementById("flightInOut").value = flight.in_or_out || "";
           document.getElementById("departureTime").value =
             flight.departure_time || "";
@@ -4020,6 +4067,43 @@
 
           // Return null for invalid formats
           return null;
+        }
+
+        function formatTimeToHHMM(timeStr) {
+          if (!timeStr) return "";
+          const normalized = String(timeStr).trim().toLowerCase();
+          if (normalized === "undefined" || normalized === "null" || normalized === "n/a" || normalized === "-" || normalized === "nan" || normalized === "--:--") {
+            return "";
+          }
+          let t = timeStr;
+          if (t.includes("T")) {
+            const parts = t.split("T");
+            if (parts.length === 2) {
+              t = parts[1];
+            }
+          } else if (t.includes(" ")) {
+            const parts = t.split(" ");
+            if (parts.length === 2) {
+              t = parts[1];
+            }
+          }
+          if (t.includes("+")) {
+            t = t.split("+")[0];
+          }
+          if (t.includes("-")) {
+            t = t.split("-")[0];
+          }
+          if (t.endsWith("Z") || t.endsWith("z")) {
+            t = t.substring(0, t.length - 1);
+          }
+          const timeParts = t.split(":");
+          if (timeParts.length >= 2) {
+            return `${timeParts[0].padStart(2, '0').trim()}:${timeParts[1].padStart(2, '0').trim()}`;
+          }
+          if (/^\d{4}$/.test(t)) {
+            return `${t.substring(0, 2)}:${t.substring(2, 4)}`;
+          }
+          return timeStr;
         }
 
         // Populate cities on page load for all relevant dropdowns

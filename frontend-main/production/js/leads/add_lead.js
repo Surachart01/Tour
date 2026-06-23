@@ -200,6 +200,28 @@ function setupServiceModalListeners() {
     document.getElementById('saveTransfer').addEventListener('click', () => saveService('transfers'));
     document.getElementById('getTransferPriceBtn').addEventListener('click', calculateTransferPrice);
     
+    // Auto-populate From/To when transfer changes
+    const transferTypeSelect = document.getElementById('transferType');
+    if (transferTypeSelect) {
+        transferTypeSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption && this.value !== '') {
+                const text = selectedOption.textContent.trim();
+                if (text.includes('-')) {
+                    const parts = text.split('-');
+                    if (parts.length === 2) {
+                        const fromVal = parts[0].trim();
+                        const toVal = parts[1].trim();
+                        const transferFromInput = document.getElementById('transferFrom');
+                        const transferToInput = document.getElementById('transferTo');
+                        if (transferFromInput) transferFromInput.value = fromVal;
+                        if (transferToInput) transferToInput.value = toVal;
+                    }
+                }
+            }
+        });
+    }
+    
     // Hotel modal
     document.getElementById('saveHotelBooking').addEventListener('click', () => saveService('hotels'));
     document.getElementById('getHotelPriceBtn').addEventListener('click', calculateHotelPrice);
@@ -1436,7 +1458,7 @@ function collectServiceData(serviceType) {
                 flightName: flightName,
                 number: document.getElementById('number').value || '',
                 flightInOut: document.getElementById('flightInOut').value || '',
-                route: document.getElementById('flightRoute').value || '',
+                route: (document.getElementById('flightFrom') && document.getElementById('flightTo')) ? `${document.getElementById('flightFrom').value.trim()}-${document.getElementById('flightTo').value.trim()}` : '',
                 date: formattedFlightDate,
                 departureTime: document.getElementById('departureTime').value || '',
                 arrivalTime: document.getElementById('arrivalTime').value || '',
@@ -1932,7 +1954,22 @@ function populateServiceModal(serviceType, service) {
             document.getElementById('flight').value = service.flightName || '';
             document.getElementById('number').value = service.number || '';
             document.getElementById('flightInOut').value = service.flightInOut || '';
-            document.getElementById('flightRoute').value = service.route || '';
+            const routeVal = service.route || '';
+            let fromVal = '';
+            let toVal = '';
+            if (routeVal.includes('-')) {
+                const parts = routeVal.split('-');
+                fromVal = parts[0] ? parts[0].trim() : '';
+                toVal = parts[1] ? parts[1].trim() : '';
+            } else {
+                fromVal = routeVal;
+            }
+            if (document.getElementById('flightFrom')) {
+                document.getElementById('flightFrom').value = fromVal;
+            }
+            if (document.getElementById('flightTo')) {
+                document.getElementById('flightTo').value = toVal;
+            }
             const formattedDate = formatDateForInput(service.date || '');
             console.log('Setting flight date in edit modal:', formattedDate, 'from:', service.date);
             document.getElementById('flightDate').value = formattedDate;
@@ -1945,8 +1982,8 @@ function populateServiceModal(serviceType, service) {
                     console.error('Flight date was not set properly in edit modal!');
                 }
             }, 100);
-            document.getElementById('departureTime').value = service.departureTime || '';
-            document.getElementById('arrivalTime').value = service.arrivalTime || '';
+            document.getElementById('departureTime').value = formatTimeToHHMM(service.departureTime);
+            document.getElementById('arrivalTime').value = formatTimeToHHMM(service.arrivalTime);
             document.getElementById('issuedBy').value = service.issuedBy || '';
             document.getElementById('flightCost').value = service.finalCost || service.cost || '';
             document.getElementById('flightRemarks').value = service.remarks || '';
@@ -1960,9 +1997,9 @@ function populateServiceModal(serviceType, service) {
             document.getElementById('transferFrom').value = service.from || '';
             document.getElementById('transferTo').value = service.to || '';
             document.getElementById('transferFlight').value = service.flight || '';
-            document.getElementById('flightTime').value = service.flightTime || '';
+            document.getElementById('flightTime').value = formatTimeToHHMM(service.flightTime);
             document.getElementById('transferToT').value = service.tot || '';
-            document.getElementById('transferPickupTime').value = service.pickupTime || '';
+            document.getElementById('transferPickupTime').value = formatTimeToHHMM(service.pickupTime);
             document.getElementById('backendTransferPrice').value = service.backendPrice || '';
             document.getElementById('transferRemarks').value = service.remarks || '';
             
@@ -2064,7 +2101,7 @@ function populateServiceModal(serviceType, service) {
             // Set basic fields first
             document.getElementById('excursionDate').value = formatDateForInput(service.date || '');
             document.getElementById('excursionHotel').value = service.hotel || '';
-            document.getElementById('excursionPickupTime').value = service.pickupTime || '';
+            document.getElementById('excursionPickupTime').value = formatTimeToHHMM(service.pickupTime);
             document.getElementById('typeOfExcursion').value = service.typeOfExcursion || '';
             document.getElementById('backendExcursionPrice').value = service.backendPrice || '';
             document.getElementById('excursionRemarks').value = service.remarks || '';
@@ -2360,6 +2397,43 @@ function populateRoomTypesForEdit(service) {
         
         console.log(`Created ${service.roomTypeDetails.length} room type blocks for editing`);
     }
+}
+
+function formatTimeToHHMM(timeStr) {
+  if (!timeStr) return "";
+  const normalized = String(timeStr).trim().toLowerCase();
+  if (normalized === "undefined" || normalized === "null" || normalized === "n/a" || normalized === "-" || normalized === "nan" || normalized === "--:--") {
+    return "";
+  }
+  let t = timeStr;
+  if (t.includes("T")) {
+    const parts = t.split("T");
+    if (parts.length === 2) {
+      t = parts[1];
+    }
+  } else if (t.includes(" ")) {
+    const parts = t.split(" ");
+    if (parts.length === 2) {
+      t = parts[1];
+    }
+  }
+  if (t.includes("+")) {
+    t = t.split("+")[0];
+  }
+  if (t.includes("-")) {
+    t = t.split("-")[0];
+  }
+  if (t.endsWith("Z") || t.endsWith("z")) {
+    t = t.substring(0, t.length - 1);
+  }
+  const timeParts = t.split(":");
+  if (timeParts.length >= 2) {
+    return `${timeParts[0].padStart(2, '0').trim()}:${timeParts[1].padStart(2, '0').trim()}`;
+  }
+  if (/^\d{4}$/.test(t)) {
+    return `${t.substring(0, 2)}:${t.substring(2, 4)}`;
+  }
+  return timeStr;
 }
 
 // Format date for display

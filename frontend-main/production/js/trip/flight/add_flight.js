@@ -51,7 +51,9 @@ document.getElementById("saveFlight").addEventListener("click", function (event)
     const flight = document.getElementById("flight").value;
     const number = document.getElementById("number").value;
     const flightInOut = document.getElementById("flightInOut").value;
-    const flightRoute = document.getElementById("flightRoute").value;
+    const flightFromVal = document.getElementById("flightFrom")?.value?.trim() || "";
+    const flightToVal = document.getElementById("flightTo")?.value?.trim() || "";
+    const flightRoute = flightToVal ? `${flightFromVal}-${flightToVal}` : flightFromVal;
     const flightDate = formatToDDMMYYYY(document.getElementById("flightDate").value);
     const departureTime = document.getElementById("departureTime").value;
     const arrivalTime = document.getElementById("arrivalTime").value;
@@ -154,7 +156,24 @@ document.getElementById("flightsTableBody").addEventListener("click", function (
       document.getElementById("flight").value = rowData.flight;
       document.getElementById("number").value = rowData.number;
       document.getElementById("flightInOut").value = rowData.flightInOut;
-      document.getElementById("flightRoute").value = rowData.flightRoute;
+      
+      const routeVal = rowData.flightRoute || "";
+      let fromVal = "";
+      let toVal = "";
+      if (routeVal.includes("-")) {
+        const parts = routeVal.split("-");
+        fromVal = parts[0] ? parts[0].trim() : "";
+        toVal = parts[1] ? parts[1].trim() : "";
+      } else {
+        fromVal = routeVal;
+      }
+      if (document.getElementById("flightFrom")) {
+        document.getElementById("flightFrom").value = fromVal;
+      }
+      if (document.getElementById("flightTo")) {
+        document.getElementById("flightTo").value = toVal;
+      }
+
       document.getElementById("departureTime").value = rowData.departureTime;
       document.getElementById("arrivalTime").value = rowData.arrivalTime;
       document.getElementById("issuedBy").value = rowData.issuedBy;

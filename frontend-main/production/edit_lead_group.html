@@ -419,14 +419,25 @@
                     <option value="Flight Out">Flight Out</option>
                   </select>
                 </div>
-                <!-- Route -->
-                <div class="form-group col-md-4">
-                  <label for="flightRoute">Route</label>
+                <!-- From -->
+                <div class="form-group col-md-2">
+                  <label for="flightFrom">From</label>
                   <input
                     type="text"
                     class="form-control"
-                    id="flightRoute"
-                    placeholder="Route"
+                    id="flightFrom"
+                    placeholder="From"
+                    required
+                  />
+                </div>
+                <!-- To -->
+                <div class="form-group col-md-2">
+                  <label for="flightTo">To</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="flightTo"
+                    placeholder="To"
                     required
                   />
                 </div>
@@ -593,6 +604,16 @@
                     <option value="" disabled selected>Select Transfer</option>
                   </select>
                 </div>
+                <!-- Flight -->
+                <div class="form-group col-md-4">
+                  <label for="transferFlight">Flight</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="transferFlight"
+                    placeholder="Flight details"
+                  />
+                </div>
                 <!-- From -->
                 <div class="form-group col-md-4">
                   <label for="transferFrom">From</label>
@@ -613,16 +634,6 @@
                     id="transferTo"
                     placeholder="Enter destination"
                     required
-                  />
-                </div>
-                <!-- Flight -->
-                <div class="form-group col-md-4">
-                  <label for="transferFlight">Flight</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="transferFlight"
-                    placeholder="Flight details"
                   />
                 </div>
                 <!-- Flight Time -->
@@ -986,7 +997,7 @@
                 </div>
                 <!-- Pickup Time -->
                 <div class="form-group col-md-4">
-                  <label for="excursionPickupTime">Pickup Time</label>
+                  <label for="excursionPickupTime">Arrival Time</label>
                   <input
                     type="time"
                     class="form-control"

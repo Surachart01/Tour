@@ -828,12 +828,12 @@
                       <thead>
                         <tr>
                           <th>Date</th>
+                          <th>Flight</th>
                           <th>City</th>
                           <th>Transfer Description</th>
                           <th>ToT</th>
                           <th>From</th>
                           <th>To</th>
-                          <th>PickUp</th>
                           <th>Remarks</th>
                           <th>Price</th>
                           <th>Actions</th>
@@ -867,7 +867,7 @@
                           <th>Date</th>
                           <th>City</th>
                           <th>Name</th>
-                          <th>PickUp</th>
+                          <th>Arrival Time</th>
                           <th>Hotel</th>
                           <th>Remarks</th>
                           <th>ToE</th>
@@ -1111,14 +1111,25 @@
                     <option value="Flight Out">Flight Out</option>
                   </select>
                 </div>
-                <!-- Route -->
-                <div class="form-group col-md-4">
-                  <label for="flightRoute">Route</label>
+                <!-- From -->
+                <div class="form-group col-md-2">
+                  <label for="flightFrom">From</label>
                   <input
                     type="text"
                     class="form-control"
-                    id="flightRoute"
-                    placeholder="Route"
+                    id="flightFrom"
+                    placeholder="From"
+                    required
+                  />
+                </div>
+                <!-- To -->
+                <div class="form-group col-md-2">
+                  <label for="flightTo">To</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="flightTo"
+                    placeholder="To"
                     required
                   />
                 </div>
@@ -1281,6 +1292,17 @@
                     <option value="" disabled selected>Select Transfer</option>
                   </select>
                 </div>
+                <!-- Flight -->
+                <div class="form-group col-md-4">
+                  <label for="transferFlight">Flight</label>
+                  <select
+                    class="form-control"
+                    id="transferFlight"
+                    required
+                  >
+                    <option value="" disabled selected>Select Flight</option>
+                  </select>
+                </div>
                 <!-- From -->
                 <div class="form-group col-md-4">
                   <label for="transferFrom">From</label>
@@ -1303,19 +1325,6 @@
                     required
                   />
                 </div>
-                <!-- Flight -->
-                <div class="form-group col-md-4">
-                  <label for="transferFlight">Flight</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="transferFlight"
-                    list="flightList"
-                    placeholder="Flight details"
-                    required
-                  />
-                  <datalist id="flightList"></datalist>
-                </div>
                 <!-- Flight Time -->
                 <div class="form-group col-md-4">
                   <label for="flightTime">Flight Time</label>
@@ -1337,7 +1346,7 @@
                 </div>
                 <!-- Pickup Time -->
                 <div class="form-group col-md-4">
-                  <label for="transferPickupTime">Pickup Time</label>
+                  <label for="transferPickupTime">Arrival Time</label>
                   <input
                     type="time"
                     class="form-control"
@@ -1472,9 +1481,9 @@
                     required
                   />
                 </div>
-                <!-- Pickup Time -->
+                <!-- Arrival Time -->
                 <div class="form-group col-md-4">
-                  <label for="excursionPickupTime">Pickup Time</label>
+                  <label for="excursionPickupTime">Arrival Time</label>
                   <input
                     type="time"
                     class="form-control"
@@ -3288,7 +3297,24 @@
           .addEventListener("change", checkAndCalculateTransferPrice);
         document
           .getElementById("transferType")
-          .addEventListener("change", checkAndCalculateTransferPrice);
+          .addEventListener("change", function () {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption && this.value !== "") {
+              const text = selectedOption.textContent.trim();
+              if (text.includes("-")) {
+                const parts = text.split("-");
+                if (parts.length === 2) {
+                  const fromVal = parts[0].trim();
+                  const toVal = parts[1].trim();
+                  const transferFromInput = document.getElementById("transferFrom");
+                  const transferToInput = document.getElementById("transferTo");
+                  if (transferFromInput) transferFromInput.value = fromVal;
+                  if (transferToInput) transferToInput.value = toVal;
+                }
+              }
+            }
+            checkAndCalculateTransferPrice();
+          });
         document
           .getElementById("transferDate")
           .addEventListener("change", checkAndCalculateTransferPrice);
@@ -3382,14 +3408,25 @@
           // ✅ Store the quotation status in the dataset
           row.dataset.quotationStatus = quotationStatus;
 
+          let displayPickupTime = formatTimeToHHMM(transfer.pickup_time || transfer.flight_time || "");
+          if (!displayPickupTime && transfer.flight_number && typeof flightsArray !== "undefined") {
+            const matchingFlight = flightsArray.find(
+              (f) => (f.flight_number || "").trim().toLowerCase() === (transfer.flight_number || "").trim().toLowerCase()
+            );
+            if (matchingFlight) {
+              displayPickupTime = formatTimeToHHMM(matchingFlight.eat || matchingFlight.arrival_time || "");
+            }
+          }
+          row.dataset.pickupTime = displayPickupTime;
+
           row.innerHTML = `
                 <td>${transfer.date || ""}</td>
+                <td>${transfer.flight_number || ""}</td>
                 <td>${transfer.city || ""}</td>
                 <td>${transfer.transfer_description || ""}</td>
                 <td>${transfer.tot || ""}</td>
                 <td>${transfer.from_location || ""}</td>
                 <td>${transfer.to_location || ""}</td>
-                <td>${transfer.pickup_time || ""}</td>
                 <td>${transfer.remarks || ""}</td>
                 <td class="transfer-price">${transfer.final_cost}</td>
                 <td>
@@ -3512,104 +3549,153 @@
             $("#addTransferModal").modal("show"); // Show the transfer modal
           });
 
-        // Set up flight autocomplete for transfer modal
-        function setupFlightAutocomplete() {
-          const transferFlightInput = document.getElementById("transferFlight");
-          const flightListDatalist = document.getElementById("flightList");
+        // Set up flight select dropdown for transfer modal and auto field pre-fill
+        function setupFlightDropdown() {
+          const transferFlightSelect = document.getElementById("transferFlight");
           const flightTimeInput = document.getElementById("flightTime");
+          const transferPickupTimeInput = document.getElementById("transferPickupTime");
+          const transferFromInput = document.getElementById("transferFrom");
+          const transferToInput = document.getElementById("transferTo");
 
-          if (!transferFlightInput || !flightListDatalist) return;
+          if (!transferFlightSelect) return;
 
-          function refreshFlightList() {
-            flightListDatalist.innerHTML = "";
+          function getAirportName(codeOrName) {
+            if (!codeOrName) return "";
+            const code = codeOrName.trim().toUpperCase();
+            const airports = {
+              "BKK": "Suvarnabhumi Airport",
+              "DMK": "Don Mueang Airport",
+              "HKT": "Phuket Airport",
+              "CNX": "Chiang Mai Airport",
+              "KBV": "Krabi Airport",
+              "USM": "Samui Airport",
+              "DXB": "Dubai Airport",
+              "SIN": "Singapore Changi Airport",
+              "KUL": "Kuala Lumpur Airport",
+              "HKG": "Hong Kong Airport",
+              "ICN": "Incheon Airport",
+              "NRT": "Narita Airport",
+              "HND": "Haneda Airport"
+            };
+            return airports[code] || codeOrName;
+          }
+
+          function getHotelNameFromQuotation(city) {
+            const hotels = typeof hotelsArray !== "undefined" ? hotelsArray : [];
+            if (!city) return hotels.length > 0 ? (hotels[0].hotelName || hotels[0].hotel_name || "") : "";
+            const matchedHotel = hotels.find(h => {
+              const hotelCity = h.city || h.hotelCity || "";
+              return hotelCity.toLowerCase().trim() === city.toLowerCase().trim();
+            });
+            if (matchedHotel) {
+              return matchedHotel.hotelName || matchedHotel.hotel_name || "";
+            }
+            if (hotels.length > 0) {
+              return hotels[0].hotelName || hotels[0].hotel_name || "";
+            }
+            return "";
+          }
+
+
+          function refreshFlightSelect(selectedValue) {
+            transferFlightSelect.innerHTML = '<option value="" disabled selected>Select Flight</option>';
             
-            // Access flightsArray
             const flights = typeof flightsArray !== "undefined" ? flightsArray : [];
-            console.log("Refreshing flight autocomplete dropdown. Flights found:", flights);
+            console.log("Refreshing flight select dropdown. Flights found:", flights);
             
-            flights.forEach((flight) => {
+            flights.forEach((flight, idx) => {
               const flightNo = flight.flight_number || flight.number || "";
-              const flightName = flight.flight_name || flight.flight || "";
+              const airline = flight.flight_airline || "";
+              
+              // Normalise flight number with airline code prefix if not already present
+              let combinedFlight = flightNo;
+              if (airline && !flightNo.toLowerCase().startsWith(airline.toLowerCase())) {
+                combinedFlight = `${airline} ${flightNo}`;
+              }
+
+              if (!combinedFlight) return;
+
               const flightInOut = flight.in_or_out || flight.flightInOut || "";
               const route = flight.route || flight.flightRoute || "";
-              const depTime = flight.departure_time || flight.departureTime || "";
-              const arrTime = flight.arrival_time || flight.arrivalTime || "";
-
-              if (!flightNo) return;
+              const depTime = flight.edt || flight.departure_time || "";
+              const arrTime = flight.eat || flight.arrival_time || "";
 
               const option = document.createElement("option");
-              option.value = flightNo;
-              option.textContent = `${flightName} (${flightInOut}) ${route ? '- ' + route : ''}`;
+              option.value = combinedFlight;
+              option.textContent = `${combinedFlight} (${flightInOut}) ${route ? '- ' + route : ''}`;
+              
+              option.dataset.index = idx;
               option.dataset.flightNo = flightNo;
-              option.dataset.flightName = flightName;
+              option.dataset.airline = airline;
+              option.dataset.combinedFlight = combinedFlight;
               option.dataset.inout = flightInOut;
               option.dataset.departure = depTime;
               option.dataset.arrival = arrTime;
               option.dataset.route = route;
 
-              flightListDatalist.appendChild(option);
+              if (selectedValue && (combinedFlight.toLowerCase() === selectedValue.toLowerCase() || flightNo.toLowerCase() === selectedValue.toLowerCase())) {
+                option.selected = true;
+              }
+
+              transferFlightSelect.appendChild(option);
             });
           }
 
-          // Bind shown.bs.modal to refresh options whenever the modal opens
-          $("#addTransferModal").on("shown.bs.modal", function () {
-            refreshFlightList();
-          });
+          // Attach to element so we can trigger it from editTransfer
+          transferFlightSelect.refreshOptions = function(selectedValue) {
+            refreshFlightSelect(selectedValue);
+          };
 
-          // Event listener when user types or selects a value from the datalist
-          transferFlightInput.addEventListener("input", function () {
-            const val = this.value;
-            const options = Array.from(flightListDatalist.options);
-            const matchedOption = options.find(opt => opt.value === val);
+          transferFlightSelect.addEventListener("change", function () {
+            const selectedOption = this.options[this.selectedIndex];
+            if (!selectedOption || this.value === "") return;
 
-            if (matchedOption) {
-              const inout = matchedOption.dataset.inout;
-              const departure = matchedOption.dataset.departure;
-              const arrival = matchedOption.dataset.arrival;
-              const route = matchedOption.dataset.route;
+            const inout = selectedOption.dataset.inout || "";
+            const departure = selectedOption.dataset.departure;
+            const arrival = selectedOption.dataset.arrival;
+            const route = selectedOption.dataset.route;
 
-              console.log(`Matched flight: ${val}, direction: ${inout}, dep: ${departure}, arr: ${arrival}`);
+            console.log(`Dropdown matched flight: ${this.value}, direction: ${inout}, dep: ${departure}, arr: ${arrival}`);
 
-              // Set the flight time automatically based on direction
-              if (inout === "Flight In") {
-                if (arrival && flightTimeInput) {
-                  flightTimeInput.value = arrival;
-                  console.log("Automatically set Flight Time to Arrival (ETA):", arrival);
+            // 1. Set Flight Time to ETD (departure)
+            if (flightTimeInput && departure) {
+              flightTimeInput.value = formatTimeToHHMM(departure);
+            }
+
+            // 2. Set Pickup Time to ETA (arrival)
+            if (transferPickupTimeInput && arrival) {
+              transferPickupTimeInput.value = formatTimeToHHMM(arrival);
+            }
+
+            // 3. Pre-fill From / To based on route "DEP-ARR"
+            if (route && route.includes("-")) {
+              const parts = route.split("-");
+              if (parts.length === 2) {
+                const depLoc = parts[0].trim();
+                const arrLoc = parts[1].trim();
+                
+                const depAirport = getAirportName(depLoc);
+                const arrAirport = getAirportName(arrLoc);
+
+                if (transferFromInput) {
+                  transferFromInput.value = depAirport;
                 }
-              } else if (inout === "Flight Out") {
-                if (departure && flightTimeInput) {
-                  flightTimeInput.value = departure;
-                  console.log("Automatically set Flight Time to Departure (ETD):", departure);
-                }
-              }
-
-              // Pre-fill From / To if empty and route has the "FROM-TO" format
-              const transferFromInput = document.getElementById("transferFrom");
-              const transferToInput = document.getElementById("transferTo");
-              
-              if (route && route.includes("-")) {
-                const parts = route.split("-");
-                if (parts.length === 2) {
-                  const depLoc = parts[0].trim();
-                  const arrLoc = parts[1].trim();
-                  
-                  if (inout === "Flight In") {
-                    if (transferFromInput && !transferFromInput.value) {
-                      transferFromInput.value = arrLoc; // Pick up from arrival airport
-                    }
-                  } else if (inout === "Flight Out") {
-                    if (transferToInput && !transferToInput.value) {
-                      transferToInput.value = depLoc; // Drop off at departure airport
-                    }
-                  }
+                if (transferToInput) {
+                  transferToInput.value = arrAirport;
                 }
               }
             }
           });
+
+          // Bind shown.bs.modal to refresh options whenever the modal opens
+          $("#addTransferModal").on("shown.bs.modal", function () {
+            const currentVal = transferFlightSelect.value;
+            refreshFlightSelect(currentVal);
+          });
         }
 
         // Initialize on load
-        setupFlightAutocomplete();
+        setupFlightDropdown();
 
         // let transfersArray = []; // Array to store transfer data
         // let editingTransferRow = null; // Keep track of the row being edited
@@ -3689,14 +3775,25 @@
           row.dataset.transferFlight = transfer.transferFlight;
           row.dataset.transferRouteType = transfer.transferRouteType || "";
 
+          let displayPickupTime = formatTimeToHHMM(transfer.transferPickupTime || transfer.flightTime || "");
+          if (!displayPickupTime && transfer.transferFlight && typeof flightsArray !== "undefined") {
+            const matchingFlight = flightsArray.find(
+              (f) => (f.flight_number || f.number || "").trim().toLowerCase() === (transfer.transferFlight || "").trim().toLowerCase()
+            );
+            if (matchingFlight) {
+              displayPickupTime = formatTimeToHHMM(matchingFlight.eat || matchingFlight.arrival_time || "");
+            }
+          }
+          row.dataset.pickupTime = displayPickupTime;
+
           row.innerHTML = `
                     <td>${formatToDDMMYYYY(transfer.transferDate)}</td>
+                    <td>${transfer.transferFlight || ""}</td>
                     <td>${transfer.transferCity}</td>
                     <td>${transfer.transferType}</td>
                     <td>${transfer.transferToT || ""}</td>
                     <td>${transfer.transferFrom}</td>
                     <td>${transfer.transferTo}</td>
-                    <td>${transfer.transferPickupTime}</td>
                     <td>${transfer.remarks || ""}</td>
                     <td class="transfer-price">${transfer.price || "N/A"}</td>
                     <td>
@@ -3750,20 +3847,31 @@
           // ✅ Update `data-*` attributes to store latest values
           editingTransferRow.dataset.flightTime =
             updatedTransfer.flight_time || "";
-          editingTransferRow.dataset.flightNumber =
+          editingTransferRow.dataset.transferFlight =
             updatedTransfer.flight_number || "";
           editingTransferRow.dataset.transferRouteType =
             updatedTransfer.transferRouteType || "";
 
+          let displayPickupTime = formatTimeToHHMM(updatedTransfer.pickup_time || updatedTransfer.flight_time || "");
+          if (!displayPickupTime && updatedTransfer.flight_number && typeof flightsArray !== "undefined") {
+            const matchingFlight = flightsArray.find(
+              (f) => (f.flight_number || f.number || "").trim().toLowerCase() === (updatedTransfer.flight_number || "").trim().toLowerCase()
+            );
+            if (matchingFlight) {
+              displayPickupTime = formatTimeToHHMM(matchingFlight.eat || matchingFlight.arrival_time || "");
+            }
+          }
+          editingTransferRow.dataset.pickupTime = displayPickupTime;
+
           // ✅ Update row directly in the table
           editingTransferRow.innerHTML = `
                   <td>${updatedTransfer.date}</td>
+                  <td>${updatedTransfer.flight_number || ""}</td>
                   <td>${updatedTransfer.city}</td>
                   <td>${updatedTransfer.transfer_description}</td>
                   <td>${updatedTransfer.tot}</td>
                   <td>${updatedTransfer.from_location}</td>
                   <td>${updatedTransfer.to_location}</td>
-                  <td>${updatedTransfer.pickup_time}</td>
                   <td>${updatedTransfer.remarks}</td>
                   <td class="transfer-price">${updatedTransfer.final_cost}</td>
                   <td>
@@ -3810,13 +3918,13 @@
           // ✅ Extract fresh data from the row (always up-to-date)
           let transfer = {
             transfer_id: transferId,
-            transferDate: formatToYYYYMMDD(row.cells[0].textContent.trim()),
-            transferCity: row.cells[1].textContent.trim(),
-            transferType: row.cells[2].textContent.trim(), // ✅ Transfer Description (Dropdown)
-            transferToT: row.cells[3].textContent.trim(),
-            transferFrom: row.cells[4].textContent.trim(),
-            transferTo: row.cells[5].textContent.trim(),
-            transferPickupTime: row.cells[6].textContent.trim(),
+            transferDate: row.cells[0].textContent.trim(),
+            transferCity: row.cells[2].textContent.trim(),
+            transferType: row.cells[3].textContent.trim(), // ✅ Transfer Description (Dropdown)
+            transferToT: row.cells[4].textContent.trim(),
+            transferFrom: row.cells[5].textContent.trim(),
+            transferTo: row.cells[6].textContent.trim(),
+            transferPickupTime: row.dataset.pickupTime || "",
             remarks: row.cells[7].textContent.trim(),
             final_cost: row.cells[8].textContent.trim(),
             flightTime: row.dataset.flightTime || "", // ✅ Always get latest flight time
@@ -3879,11 +3987,33 @@
           document.getElementById("getTransferPriceBtn").disabled = !canEdit;
 
           document.getElementById("transferPickupTime").value =
-            transfer.transferPickupTime || "";
+            formatTimeToHHMM(transfer.transferPickupTime);
           document.getElementById("flightTime").value =
-            transfer.flightTime || "";
-          document.getElementById("transferFlight").value =
-            transfer.transferFlight || "";
+            formatTimeToHHMM(transfer.flightTime);
+
+          const transferFlightSelect = document.getElementById("transferFlight");
+          if (transferFlightSelect && typeof transferFlightSelect.refreshOptions === "function") {
+            transferFlightSelect.refreshOptions(transfer.transferFlight);
+          } else if (transferFlightSelect) {
+            transferFlightSelect.value = transfer.transferFlight || "";
+          }
+
+          // Fallback: If flight time or pickup time are empty, try to populate them from the selected flight details
+          if (transferFlightSelect && transferFlightSelect.value !== "") {
+            const selectedFlightOption = transferFlightSelect.options[transferFlightSelect.selectedIndex];
+            if (selectedFlightOption) {
+              const departure = selectedFlightOption.dataset.departure;
+              const arrival = selectedFlightOption.dataset.arrival;
+
+              if (departure && !document.getElementById("flightTime").value) {
+                document.getElementById("flightTime").value = formatTimeToHHMM(departure);
+              }
+              if (arrival && !document.getElementById("transferPickupTime").value) {
+                document.getElementById("transferPickupTime").value = formatTimeToHHMM(arrival);
+              }
+            }
+          }
+
           document.getElementById("remarks").value = transfer.remarks || "";
 
           // ✅ Fetch and Populate the Transfer Description Dropdown
@@ -7585,6 +7715,10 @@
             const cost =
               parseFloat(document.getElementById("flightCost").value) || 0;
 
+            const flightFromVal = document.getElementById("flightFrom")?.value?.trim() || "";
+            const flightToVal = document.getElementById("flightTo")?.value?.trim() || "";
+            const flightRoute = flightToVal ? `${flightFromVal}-${flightToVal}` : flightFromVal;
+
             const flight = {
               id: editingFlightRow
                 ? editingFlightRow.dataset.id
@@ -7596,7 +7730,7 @@
               flight_date: document.getElementById("flightDate").value,
               from_date: document.getElementById("flightDate").value,
               in_or_out: document.getElementById("flightInOut").value,
-              route: document.getElementById("flightRoute").value.trim(),
+              route: flightRoute,
               edt: document.getElementById("departureTime").value,
               eat: document.getElementById("arrivalTime").value,
               departure_time: document.getElementById("departureTime").value, // keep for display
@@ -7796,7 +7930,22 @@
           document.getElementById("flight").value = flightAirline;
           document.getElementById("number").value = flight.flight_number || "";
           document.getElementById("flightDate").value = formatToYYYYMMDD(flightDate);
-          document.getElementById("flightRoute").value = flight.route || "";
+          const routeVal = flight.route || "";
+          let fromVal = "";
+          let toVal = "";
+          if (routeVal.includes("-")) {
+            const parts = routeVal.split("-");
+            fromVal = parts[0] ? parts[0].trim() : "";
+            toVal = parts[1] ? parts[1].trim() : "";
+          } else {
+            fromVal = routeVal;
+          }
+          if (document.getElementById("flightFrom")) {
+            document.getElementById("flightFrom").value = fromVal;
+          }
+          if (document.getElementById("flightTo")) {
+            document.getElementById("flightTo").value = toVal;
+          }
           document.getElementById("flightInOut").value = flight.in_or_out || "";
           document.getElementById("departureTime").value = edt;
           document.getElementById("arrivalTime").value = eat;
@@ -7866,6 +8015,43 @@
 
           // Return null for invalid formats
           return null;
+        }
+
+        function formatTimeToHHMM(timeStr) {
+          if (!timeStr) return "";
+          const normalized = String(timeStr).trim().toLowerCase();
+          if (normalized === "undefined" || normalized === "null" || normalized === "n/a" || normalized === "-" || normalized === "nan" || normalized === "--:--") {
+            return "";
+          }
+          let t = timeStr;
+          if (t.includes("T")) {
+            const parts = t.split("T");
+            if (parts.length === 2) {
+              t = parts[1];
+            }
+          } else if (t.includes(" ")) {
+            const parts = t.split(" ");
+            if (parts.length === 2) {
+              t = parts[1];
+            }
+          }
+          if (t.includes("+")) {
+            t = t.split("+")[0];
+          }
+          if (t.includes("-")) {
+            t = t.split("-")[0];
+          }
+          if (t.endsWith("Z") || t.endsWith("z")) {
+            t = t.substring(0, t.length - 1);
+          }
+          const timeParts = t.split(":");
+          if (timeParts.length >= 2) {
+            return `${timeParts[0].padStart(2, '0').trim()}:${timeParts[1].padStart(2, '0').trim()}`;
+          }
+          if (/^\d{4}$/.test(t)) {
+            return `${t.substring(0, 2)}:${t.substring(2, 4)}`;
+          }
+          return timeStr;
         }
 
         // Populate cities on page load for all relevant dropdowns
@@ -8243,6 +8429,7 @@
             }
 
             // ✅ Populate Data for Transfers, Hotels, Excursions, Tours, Flights
+            flightsArray = data.flights || [];
             if (data.transfers && data.transfers.length > 0) {
               transfersArray = data.transfers;
               data.transfers.forEach((transfer) =>
@@ -8424,16 +8611,16 @@
                 rowData["trip_item_id"] = 0; // This should be assigned dynamically if needed
                 rowData["transfer_id"] =
                   parseInt(row.dataset.transferId, 10) || 0; // Ensure TransferID
-                rowData["transfer_description"] = cells[2]?.textContent.trim();
+                rowData["transfer_description"] = cells[3]?.textContent.trim();
                 // rowData["supplier_id"] = null; // Default to null unless provided
-                rowData["city"] = cells[1]?.textContent.trim();
-                rowData["from_location"] = cells[4]?.textContent.trim();
-                rowData["to_location"] = cells[5]?.textContent.trim();
+                rowData["city"] = cells[2]?.textContent.trim();
+                rowData["from_location"] = cells[5]?.textContent.trim();
+                rowData["to_location"] = cells[6]?.textContent.trim();
                 rowData["date"] = formatToYYYYMMDD(transferDate);
                 rowData["flight_time"] = row.dataset.flightTime || "";
-                rowData["pickup_time"] = cells[6]?.textContent.trim();
+                rowData["pickup_time"] = row.dataset.pickupTime || "";
                 rowData["flight_number"] = row.dataset.transferFlight || "";
-                rowData["tot"] = cells[3]?.textContent.trim();
+                rowData["tot"] = cells[4]?.textContent.trim();
                 rowData["remarks"] = cells[7]?.textContent.trim() || "";
                 rowData["total_cost"] =
                   parseFloat(cells[8]?.textContent.trim()) || 0.0;

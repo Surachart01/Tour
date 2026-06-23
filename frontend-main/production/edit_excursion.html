@@ -1288,8 +1288,7 @@
             console.error("Failed to load suppliers:", err);
           }
 
-          // Fetch excursion details to populate form
-          fetch(`${Endpoint}/api/v1/excursions/${excursionId}`, {
+          fetch(`${Endpoint}/api/v1/excursions/${excursionId}?excludeMarkup=true`, {
             method: "GET",
             headers: {
               Authorization: `Bearer ${token}`,

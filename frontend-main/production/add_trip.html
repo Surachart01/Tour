@@ -712,12 +712,12 @@
                       <thead>
                         <tr>
                           <th>Date</th>
+                          <th>Flight</th>
                           <th>City</th>
                           <th>Transfer Description</th>
                           <th>ToT</th>
                           <th>From</th>
                           <th>To</th>
-                          <th>PickUp</th>
                           <th>Remarks</th>
                           <th>Price</th>
                           <th>Actions</th>
@@ -751,7 +751,7 @@
                           <th>Date</th>
                           <th>City</th>
                           <th>Name</th>
-                          <th>PickUp</th>
+                          <th>Arrival Time</th>
                           <th>Hotel</th>
                           <th>Remarks</th>
                           <th>ToE</th>
@@ -998,20 +998,37 @@
                     <option value="Flight Out">Flight Out</option>
                   </select>
                 </div>
-                <!-- Route -->
-                <div class="form-group col-md-4">
-                  <label for="flightRoute">
+                <!-- From -->
+                <div class="form-group col-md-2">
+                  <label for="flightFrom">
                     <i
-                      class="fas fa-route"
+                      class="fas fa-plane-departure"
                       style="margin-right: 8px; color: #1abb9c"
                     ></i>
-                    Route
+                    From
                   </label>
                   <input
                     type="text"
                     class="form-control"
-                    id="flightRoute"
-                    placeholder="Route"
+                    id="flightFrom"
+                    placeholder="From"
+                    required
+                  />
+                </div>
+                <!-- To -->
+                <div class="form-group col-md-2">
+                  <label for="flightTo">
+                    <i
+                      class="fas fa-plane-arrival"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    To
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="flightTo"
+                    placeholder="To"
                     required
                   />
                 </div>
@@ -1254,6 +1271,23 @@
                     <option value="" disabled selected>Select Transfer</option>
                   </select>
                 </div>
+                 <!-- Flight -->
+                <div class="form-group col-md-4">
+                  <label for="transferFlight">
+                    <i
+                      class="fas fa-plane"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Flight
+                  </label>
+                  <select
+                    class="form-control"
+                    id="transferFlight"
+                    required
+                  >
+                    <option value="" disabled selected>Select Flight</option>
+                  </select>
+                </div>
                 <!-- From -->
                 <div class="form-group col-md-4">
                   <label for="transferFrom">
@@ -1287,25 +1321,6 @@
                     placeholder="Enter destination"
                     required
                   />
-                </div>
-                <!-- Flight -->
-                <div class="form-group col-md-4">
-                  <label for="transferFlight">
-                    <i
-                      class="fas fa-plane"
-                      style="margin-right: 8px; color: #1abb9c"
-                    ></i>
-                    Flight
-                  </label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="transferFlight"
-                    list="flightList"
-                    placeholder="Flight details"
-                    required
-                  />
-                  <datalist id="flightList"></datalist>
                 </div>
                 <!-- Flight Time -->
                 <div class="form-group col-md-4">
@@ -1345,7 +1360,7 @@
                       class="fas fa-clock"
                       style="margin-right: 8px; color: #1abb9c"
                     ></i>
-                    Pickup Time
+                    Arrival Time
                   </label>
                   <input
                     type="time"
@@ -1544,7 +1559,7 @@
                       class="fas fa-clock"
                       style="margin-right: 8px; color: #1abb9c"
                     ></i>
-                    Pickup Time
+                    Arrival Time
                   </label>
                   <input
                     type="time"
@@ -5048,16 +5063,16 @@
                 rowData["trip_item_id"] = 0; // This should be assigned dynamically if needed
                 rowData["transfer_id"] =
                   parseInt(row.dataset.transferId, 10) || 0; // Ensure TransferID
-                rowData["transfer_description"] = cells[2]?.textContent.trim();
+                rowData["transfer_description"] = cells[3]?.textContent.trim();
                 // rowData["supplier_id"] = null; // Default to null unless provided
-                rowData["city"] = cells[1]?.textContent.trim();
-                rowData["from_location"] = cells[4]?.textContent.trim();
-                rowData["to_location"] = cells[5]?.textContent.trim();
+                rowData["city"] = cells[2]?.textContent.trim();
+                rowData["from_location"] = cells[5]?.textContent.trim();
+                rowData["to_location"] = cells[6]?.textContent.trim();
                 rowData["date"] = formatToYYYYMMDD(transferDate);
                 rowData["flight_time"] = row.dataset.flightTime || "";
-                rowData["pickup_time"] = cells[6]?.textContent.trim();
+                rowData["pickup_time"] = row.dataset.pickupTime || "";
                 rowData["flight_number"] = row.dataset.transferFlight || "";
-                rowData["tot"] = cells[3]?.textContent.trim();
+                rowData["tot"] = cells[4]?.textContent.trim();
                 rowData["remarks"] = cells[7]?.textContent.trim() || "";
                 rowData["total_cost"] =
                   parseFloat(cells[8]?.textContent.trim()) || 0.0;

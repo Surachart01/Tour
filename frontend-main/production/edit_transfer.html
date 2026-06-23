@@ -1158,7 +1158,7 @@
         await populateSuppliersDropdown();
 
         if (transferId) {
-          fetch(`${Endpoint}/api/v1/transfers/${transferId}`, {
+          fetch(`${Endpoint}/api/v1/transfers/${transferId}?excludeMarkup=true`, {
             headers: {
               method: "GET",
               Authorization: `Bearer ${token}`,

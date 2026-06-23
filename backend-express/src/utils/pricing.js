@@ -58,7 +58,7 @@ export function calculateExcursionCostLogic(excursion, request, markupGroup, mar
   if (request.toe && request.toe.toLowerCase() === 'sic') {
     const sicPriceAdult = parseFloat(excursion.sic_price_adult || 0);
     const sicPriceChild = parseFloat(excursion.sic_price_child || 0);
-    if (sicPriceAdult === 0 || sicPriceChild === 0) {
+    if (sicPriceAdult === 0) {
       throw new Error('SIC pricing not available for this excursion');
     }
 
@@ -99,7 +99,7 @@ export function calculateTransferCostLogic(transfer, request, markupGroup, marku
   if (request.tot && request.tot.toLowerCase() === 'sic') {
     const sicPriceAdult = parseFloat(transfer.sic_price_adult || 0);
     const sicPriceChild = parseFloat(transfer.sic_price_child || 0);
-    if (sicPriceAdult === 0 || sicPriceChild === 0) {
+    if (sicPriceAdult === 0) {
       throw new Error('SIC pricing not available for this transfer');
     }
 

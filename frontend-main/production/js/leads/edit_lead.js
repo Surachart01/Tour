@@ -406,6 +406,29 @@ function setupEventListeners() {
 
   // Get Price button event listeners
   document.getElementById('getTransferPriceBtn').addEventListener('click', calculateTransferPrice);
+  
+  // Auto-populate From/To when transfer changes
+  const transferTypeSelect = document.getElementById('transferType');
+  if (transferTypeSelect) {
+    transferTypeSelect.addEventListener('change', function() {
+      const selectedOption = this.options[this.selectedIndex];
+      if (selectedOption && this.value !== '') {
+        const text = selectedOption.textContent.trim();
+        if (text.includes('-')) {
+          const parts = text.split('-');
+          if (parts.length === 2) {
+            const fromVal = parts[0].trim();
+            const toVal = parts[1].trim();
+            const transferFromInput = document.getElementById('transferFrom');
+            const transferToInput = document.getElementById('transferTo');
+            if (transferFromInput) transferFromInput.value = fromVal;
+            if (transferToInput) transferToInput.value = toVal;
+          }
+        }
+      }
+    });
+  }
+  
   document.getElementById('getHotelPriceBtn').addEventListener('click', calculateHotelPrice);
   document.getElementById('getExcursionPriceBtn').addEventListener('click', calculateExcursionPrice);
   document.getElementById('getTourPriceBtn').addEventListener('click', calculateTourPrice);
@@ -692,10 +715,25 @@ function populateServiceModal(serviceType, service) {
       document.getElementById('number').value = service.flight_number || service.number || '';
       // Backend sends in_or_out, frontend expects flightInOut
       document.getElementById('flightInOut').value = service.in_or_out || service.flight_in_out || service.flightInOut || '';
-      document.getElementById('flightRoute').value = service.route || '';
+      const routeVal = service.route || '';
+      let fromVal = '';
+      let toVal = '';
+      if (routeVal.includes('-')) {
+        const parts = routeVal.split('-');
+        fromVal = parts[0] ? parts[0].trim() : '';
+        toVal = parts[1] ? parts[1].trim() : '';
+      } else {
+        fromVal = routeVal;
+      }
+      if (document.getElementById('flightFrom')) {
+        document.getElementById('flightFrom').value = fromVal;
+      }
+      if (document.getElementById('flightTo')) {
+        document.getElementById('flightTo').value = toVal;
+      }
       document.getElementById('flightDate').value = formatDateForInput(service.flight_date || service.date || '');
-      document.getElementById('departureTime').value = service.departure_time || service.departureTime || '';
-      document.getElementById('arrivalTime').value = service.arrival_time || service.arrivalTime || '';
+      document.getElementById('departureTime').value = formatTimeToHHMM(service.departure_time || service.departureTime);
+      document.getElementById('arrivalTime').value = formatTimeToHHMM(service.arrival_time || service.arrivalTime);
       document.getElementById('issuedBy').value = service.issued_by || service.issuedBy || '';
       // Always load the original base cost, not the marked-up final cost
       document.getElementById('flightCost').value = service.cost || service.total_cost || '';
@@ -708,9 +746,9 @@ function populateServiceModal(serviceType, service) {
       document.getElementById('transferFrom').value = service.from_location || service.from || '';
       document.getElementById('transferTo').value = service.to_location || service.to || '';
       document.getElementById('transferFlight').value = service.flight_number || service.flight || '';
-      document.getElementById('flightTime').value = service.flight_time || service.flightTime || '';
+      document.getElementById('flightTime').value = formatTimeToHHMM(service.flight_time || service.flightTime);
       document.getElementById('transferToT').value = service.tot || '';
-      document.getElementById('transferPickupTime').value = service.pickup_time || service.pickupTime || '';
+      document.getElementById('transferPickupTime').value = formatTimeToHHMM(service.pickup_time || service.pickupTime);
       document.getElementById('transferRemarks').value = service.remarks || '';
       
       // Populate backend price field
@@ -872,8 +910,7 @@ function populateServiceModal(serviceType, service) {
     case 'excursions':
       document.getElementById('excursionDate').value = formatDateForInput(service.date || '');
       document.getElementById('excursionHotel').value = service.hotel || '';
-      // Handle event_time from backend response (maps to pickup time field in UI)
-      document.getElementById('excursionPickupTime').value = service.event_time || service.pickup_time || service.pickupTime || '';
+      document.getElementById('excursionPickupTime').value = formatTimeToHHMM(service.event_time || service.pickup_time || service.pickupTime);
       // Handle toe (Type of Excursion) from backend response
       document.getElementById('typeOfExcursion').value = service.toe || service.tot || service.type_of_excursion || '';
       document.getElementById('excursionRemarks').value = service.remarks || '';
@@ -1080,7 +1117,7 @@ function saveFlightData() {
     flight: document.getElementById('flight').value,
     number: document.getElementById('number').value,
     flight_in_out: document.getElementById('flightInOut').value,
-    route: document.getElementById('flightRoute').value,
+    route: (document.getElementById('flightFrom') && document.getElementById('flightTo')) ? `${document.getElementById('flightFrom').value.trim()}-${document.getElementById('flightTo').value.trim()}` : '',
     date: document.getElementById('flightDate').value,
     departure_time: document.getElementById('departureTime').value,
     arrival_time: document.getElementById('arrivalTime').value,
@@ -2404,6 +2441,43 @@ async function apiCall(endpoint, method = 'GET', data = null) {
 }
 
 // Utility Functions
+function formatTimeToHHMM(timeStr) {
+  if (!timeStr) return "";
+  const normalized = String(timeStr).trim().toLowerCase();
+  if (normalized === "undefined" || normalized === "null" || normalized === "n/a" || normalized === "-" || normalized === "nan" || normalized === "--:--") {
+    return "";
+  }
+  let t = timeStr;
+  if (t.includes("T")) {
+    const parts = t.split("T");
+    if (parts.length === 2) {
+      t = parts[1];
+    }
+  } else if (t.includes(" ")) {
+    const parts = t.split(" ");
+    if (parts.length === 2) {
+      t = parts[1];
+    }
+  }
+  if (t.includes("+")) {
+    t = t.split("+")[0];
+  }
+  if (t.includes("-")) {
+    t = t.split("-")[0];
+  }
+  if (t.endsWith("Z") || t.endsWith("z")) {
+    t = t.substring(0, t.length - 1);
+  }
+  const timeParts = t.split(":");
+  if (timeParts.length >= 2) {
+    return `${timeParts[0].padStart(2, '0').trim()}:${timeParts[1].padStart(2, '0').trim()}`;
+  }
+  if (/^\d{4}$/.test(t)) {
+    return `${t.substring(0, 2)}:${t.substring(2, 4)}`;
+  }
+  return timeStr;
+}
+
 // Format date from backend for HTML input (converts various formats to YYYY-MM-DD)
 function formatDateForInput(dateString) {
   if (!dateString) return '';
@@ -3664,7 +3738,12 @@ function initializeNewFlightModal() {
   document.getElementById('flight').value = '';
   document.getElementById('number').value = '';
   document.getElementById('flightInOut').value = '';
-  document.getElementById('flightRoute').value = '';
+  if (document.getElementById('flightFrom')) {
+    document.getElementById('flightFrom').value = '';
+  }
+  if (document.getElementById('flightTo')) {
+    document.getElementById('flightTo').value = '';
+  }
   document.getElementById('departureTime').value = '';
   document.getElementById('arrivalTime').value = '';
   document.getElementById('issuedBy').value = '';

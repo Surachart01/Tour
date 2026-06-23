@@ -433,7 +433,12 @@ export async function createQuotation(req, res, next) {
               supplier_id: item.supplier_id ? parseInt(item.supplier_id) : null, guide_name: item.guide_name,
               guide_contact: item.guide_contact, price: parseFloat(item.price) || 0,
               currency_id: item.currency_id ? parseInt(item.currency_id) : null, remarks: item.remarks,
-              approved: item.approved || false, declined: item.declined || false
+              approved: item.approved || false, declined: item.declined || false,
+              city: item.city || item.transferCity || null,
+              transfer_description: item.transfer_description || item.transferType || null,
+              pickup_time: item.pickup_time || item.transferPickupTime || null,
+              flight_time: item.flight_time || item.flightTime || null,
+              type_of_transfer: item.type_of_transfer || item.transferRouteType || null
             }
           });
         }
@@ -807,7 +812,12 @@ export async function updateQuotation(req, res, next) {
               supplier_id: item.supplier_id ? parseInt(item.supplier_id) : null, guide_name: item.guide_name,
               guide_contact: item.guide_contact, price: parseFloat(item.price) || 0,
               currency_id: item.currency_id ? parseInt(item.currency_id) : null, remarks: item.remarks,
-              approved: item.approved || false, declined: item.declined || false
+              approved: item.approved || false, declined: item.declined || false,
+              city: item.city || item.transferCity || null,
+              transfer_description: item.transfer_description || item.transferType || null,
+              pickup_time: item.pickup_time || item.transferPickupTime || null,
+              flight_time: item.flight_time || item.flightTime || null,
+              type_of_transfer: item.type_of_transfer || item.transferRouteType || null
             }
           });
         }

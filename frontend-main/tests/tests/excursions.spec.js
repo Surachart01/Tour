@@ -117,8 +117,7 @@ test.describe('Comprehensive Excursions Management Tests', () => {
     
     await page.fill('#dateFrom', formatDate(tomorrow));
     await page.fill('#dateTo', formatDate(nextWeek));
-    await page.fill('#pax', '2');
-    await page.fill('#price', '150.00');
+    await page.fill('.pax-price-card[data-pax="2"] .pax-price-input', '150.00');
     await page.click('#saveExcursionPrice');
     await page.waitForTimeout(1000);
     
@@ -133,8 +132,7 @@ test.describe('Comprehensive Excursions Management Tests', () => {
     
     await page.fill('#dateFrom', formatDate(nextMonth));
     await page.fill('#dateTo', formatDate(nextMonthEnd));
-    await page.fill('#pax', '4');
-    await page.fill('#price', '280.00');
+    await page.fill('.pax-price-card[data-pax="4"] .pax-price-input', '280.00');
     await page.click('#saveExcursionPrice');
     await page.waitForTimeout(1000);
     
@@ -308,8 +306,9 @@ test.describe('Comprehensive Excursions Management Tests', () => {
     
     await page.fill('#dateFrom', formatDate(futureDate));
     await page.fill('#dateTo', formatDate(futureDateEnd));
-    await page.fill('#pax', '8');
-    await page.fill('#price', '500.00');
+    await page.fill('#maxPaxInput', '8');
+    await page.click('#generatePaxBtn');
+    await page.fill('.pax-price-card[data-pax="8"] .pax-price-input', '500.00');
     await page.click('#saveExcursionPrice');
     await page.waitForTimeout(1000);
     console.log('✅ Added new price entry during edit');

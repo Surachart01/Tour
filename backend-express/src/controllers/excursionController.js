@@ -130,7 +130,7 @@ export async function getExcursionByID(req, res, next) {
 
     let markupGroup = '';
     const claims = req.user;
-    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin' && req.query.excludeMarkup !== 'true' && req.query.raw !== 'true') {
       markupGroup = claims.markup_group || '';
     }
     const markups = await prisma.markups.findMany({
@@ -266,9 +266,15 @@ export async function updateExcursion(req, res, next) {
       ? data.available_days.map(d => d.day_of_week).sort().join(',')
       : (data.valid_days !== undefined ? data.valid_days : undefined);
 
-    const sicPriceAdult = data.sic_price_adult !== undefined && data.sic_price_adult !== null ? (isNaN(parseFloat(data.sic_price_adult)) ? null : parseFloat(data.sic_price_adult)) : undefined;
-    const sicPriceChild = data.sic_price_child !== undefined && data.sic_price_child !== null ? (isNaN(parseFloat(data.sic_price_child)) ? null : parseFloat(data.sic_price_child)) : undefined;
-    const walkinPrice = data.walkin_price !== undefined && data.walkin_price !== null ? (isNaN(parseFloat(data.walkin_price)) ? null : parseFloat(data.walkin_price)) : undefined;
+    const sicPriceAdult = data.sic_price_adult !== undefined
+      ? (data.sic_price_adult === null || data.sic_price_adult === '' || isNaN(parseFloat(data.sic_price_adult)) ? null : parseFloat(data.sic_price_adult))
+      : undefined;
+    const sicPriceChild = data.sic_price_child !== undefined
+      ? (data.sic_price_child === null || data.sic_price_child === '' || isNaN(parseFloat(data.sic_price_child)) ? null : parseFloat(data.sic_price_child))
+      : undefined;
+    const walkinPrice = data.walkin_price !== undefined
+      ? (data.walkin_price === null || data.walkin_price === '' || isNaN(parseFloat(data.walkin_price)) ? null : parseFloat(data.walkin_price))
+      : undefined;
 
     // Auto-lookup supplier name from supplier_id if not provided
     let supplierName = data.supplier_name;

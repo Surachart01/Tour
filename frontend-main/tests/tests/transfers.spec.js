@@ -151,8 +151,7 @@ test.describe('Transfers Management Tests', () => {
       
       await page.fill('#dateFrom', '2024-01-01');
       await page.fill('#dateTo', '2024-03-31');
-      await page.fill('#pax', '2');
-      await page.fill('#price', '100.00');
+      await page.fill('.pax-price-card[data-pax="2"] .pax-price-input', '100.00');
       
       await page.click('#saveTransferPrice');
       await page.waitForTimeout(2000);
@@ -164,8 +163,7 @@ test.describe('Transfers Management Tests', () => {
       
       await page.fill('#dateFrom', '2024-04-01');
       await page.fill('#dateTo', '2024-06-30');
-      await page.fill('#pax', '4');
-      await page.fill('#price', '180.00');
+      await page.fill('.pax-price-card[data-pax="4"] .pax-price-input', '180.00');
       
       await page.click('#saveTransferPrice');
       await page.waitForTimeout(2000);
