@@ -283,6 +283,48 @@
         background-color: #007bff !important;
         color: #ffffff !important;
       }
+
+      /* Responsive map and City Info Section Styling */
+      #thailand-map {
+        height: 550px;
+        background-color: #f4f6f9;
+        transition: height 0.3s ease;
+      }
+      @media (max-width: 991px) {
+        #thailand-map {
+          height: 400px;
+        }
+      }
+      @media (max-height: 800px) and (min-width: 992px) {
+        #thailand-map {
+          height: 480px;
+        }
+      }
+      #city-info-section {
+        border-top: 1px solid #eaeaea;
+        padding: 25px;
+        background-color: #ffffff;
+        border-radius: 0 0 12px 12px;
+      }
+      .city-info-tag {
+        display: inline-block;
+        background: #ebf5ff;
+        color: #007bff;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.88rem;
+        font-weight: 550;
+        margin-right: 8px;
+        margin-bottom: 8px;
+        border: 1px solid #d0e7ff;
+        transition: all 0.2s ease;
+      }
+      .city-info-tag:hover {
+        background: #007bff;
+        color: #ffffff;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0,123,255,0.15);
+      }
     </style>
   </head>
 
@@ -352,6 +394,7 @@
                       <li><a href="activities.html">Activities</a></li>
                       <li><a href="agents.html">Agents</a></li>
                       <li><a href="booking.html">Bookings</a></li>
+                      <li><a href="city_info.html">City Information</a></li>
                       <li><a href="excursions.html">Excursions</a></li>
                       <li><a href="hotels.html">Hotels</a></li>
                       <li><a href="markup.html">Markups</a></li>
@@ -908,7 +951,12 @@
                         <div id="map-info-panel" style="padding: 20px; flex-grow: 1; display: flex; flex-direction: column;">
                           <!-- Searching / Filtering input for provinces -->
                           <div class="form-group mb-3">
-                            <label for="provinceSearchInput" style="font-weight: 600; color: #555;">Find Province:</label>
+                            <div class="d-flex justify-content-between align-items-center mb-1" style="display: flex; justify-content: space-between; align-items: center;">
+                              <label for="provinceSearchInput" style="font-weight: 600; color: #555; margin-bottom: 0;">Find Province:</label>
+                              <button type="button" id="btn-reset-map" class="btn btn-xs btn-link text-danger" style="padding: 0; font-weight: 600; text-decoration: none; display: none; background: none; border: none;">
+                                <i class="fa fa-refresh"></i> Reset View
+                              </button>
+                            </div>
                             <div class="input-group">
                               <input type="text" id="provinceSearchInput" class="form-control" placeholder="Search province..." style="border-radius: 6px 0 0 6px;" />
                               <div class="input-group-append">
@@ -948,6 +996,33 @@
                                 <i class="fa fa-bus mr-2"></i> Search Transfers
                               </button>
                             </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- City Info Section at the bottom of the card body -->
+                    <div id="city-info-section" style="display: none; border-top: 1px solid #eee; padding: 25px; background-color: #ffffff;">
+                      <div class="d-flex align-items-center mb-3" style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <i class="fa fa-info-circle text-primary" style="font-size: 1.6rem; color: #007bff; margin-right: 12px;"></i>
+                        <h4 style="font-weight: 700; color: #2c3e50; margin: 0; font-size: 1.25rem;">
+                          City Information: <span id="city-info-title" style="color: #007bff; font-weight: 800;">Province Name</span>
+                        </h4>
+                      </div>
+                      <div class="row">
+                        <div class="col-md-8">
+                          <h5 style="font-weight: 600; color: #34495e; margin-bottom: 10px; font-size: 1.05rem;">About the City</h5>
+                          <p id="city-info-description" style="font-size: 0.98rem; line-height: 1.7; color: #555; margin-bottom: 0;">
+                            Description of the city...
+                          </p>
+                        </div>
+                        <div class="col-md-4" style="border-left: 1px solid #eee; padding-left: 25px;">
+                          <h5 style="font-weight: 600; color: #34495e; margin-bottom: 10px; font-size: 1.05rem;"><i class="fa fa-star text-warning" style="color: #f1c40f;"></i> Key Highlights</h5>
+                          <div id="city-info-highlights" style="display: flex; flex-wrap: wrap; margin-bottom: 10px;">
+                            <!-- Dynamic highlight tags will go here -->
+                          </div>
+                          <div id="city-info-best-time-wrapper" style="margin-top: 15px; font-size: 0.92rem; color: #666; display: none;">
+                            <strong><i class="fa fa-calendar-check-o text-success" style="color: #2ecc71;"></i> Best Time to Visit:</strong> <span id="city-info-best-time"></span>
                           </div>
                         </div>
                       </div>
@@ -2389,13 +2464,83 @@
         let selectedLayer = null;
         let provinceLayers = {}; // To store mapping from name to layer
 
+        let dynamicProvinceDetails = {};
+
+        // Fetch dynamic city info from API
+        function loadDynamicCityInfo() {
+          const token = localStorage.getItem('token');
+          if (!token) return;
+          
+          fetch(`${Endpoint}/api/v1/city-info`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          .then(res => {
+            if (res.ok) return res.json();
+            throw new Error('Failed to load city info');
+          })
+          .then(data => {
+            data.forEach(item => {
+              dynamicProvinceDetails[item.cityName.toLowerCase()] = {
+                id: item.id,
+                description: item.description,
+                highlights: item.highlights ? item.highlights.split(',') : [],
+                bestTime: item.bestTime
+              };
+            });
+            console.log('Loaded dynamic city info:', dynamicProvinceDetails);
+          })
+          .catch(err => {
+            console.warn('Error loading dynamic city info, using static fallback:', err);
+          });
+        }
+
+        // Call dynamic loader
+        loadDynamicCityInfo();
+
+        // Province database details for major destinations
+        const provinceDetails = {
+          "bangkok": {
+            description: "กรุงเทพมหานคร (Bangkok) เมืองหลวงของประเทศไทย เป็นศูนย์กลางความเจริญ การค้า วัฒนธรรม และการท่องเที่ยว โดดเด่นด้วยวัดวาอารามเก่าแก่อันงดงามอย่างพระบรมมหาราชวังและวัดพระแก้ว ควบคู่ไปกับตึกระฟ้าที่ทันสมัย ห้างสรรพสินค้าชั้นนำระดับโลก สตรีทฟู้ดที่มีชื่อเสียงระดับสากล และตลาดนัดจตุจักรที่กว้างขวาง",
+            highlights: ["วัดพระแก้ว & พระบรมมหาราชวัง", "ล่องเรือแม่น้ำเจ้าพระยา", "ตลาดนัดจตุจักร", "แหล่งช้อปปิ้งสยาม & ไอคอนสยาม", "สตรีทฟู้ดเยาวราช"],
+            bestTime: "พฤศจิกายน - กุมภาพันธ์ (อากาศเย็นสบายที่สุด)"
+          },
+          "chiang mai": {
+            description: "เชียงใหม่ (Chiang Mai) ศูนย์กลางวัฒนธรรมและการท่องเที่ยวของภาคเหนือ โอบล้อมด้วยภูเขาสลับซับซ้อน อุดมไปด้วยโบราณสถานล้านนา วัดเก่าแก่นับร้อยแห่ง เช่น วัดพระธาตุดอยสุเทพ วัดเจดีย์หลวง และแหล่งท่องเที่ยวทางธรรมชาติอย่างดอยอินทนนท์ รวมถึงสตรีทฟู้ดท้องถิ่นและตลาดคนเดินท่าแพ",
+            highlights: ["วัดพระธาตุดอยสุเทพ", "อุทยานแห่งชาติดอยอินทนนท์", "ถนนคนเดินท่าแพ", "เทศกาลยี่เป็ง (ลอยโคม)", "ปางช้างธรรมชาติ"],
+            bestTime: "พฤศจิกายน - กุมภาพันธ์ (ช่วงฤดูหนาว อากาศเย็นสบาย)"
+          },
+          "phuket": {
+            description: "ภูเก็ต (Phuket) เกาะที่ใหญ่ที่สุดของประเทศไทย ได้รับฉายาว่า 'ไข่มุกแห่งอันดามัน' มีชื่อเสียงระดับโลกในด้านหาดทรายสีขาวเนียน น้ำทะเลสีครามใส ย่านเมืองเก่าภูเก็ตที่มีสถาปัตยกรรมสไตล์ชิโนโปรตุกีสอันเป็นเอกลักษณ์ แหลมพรหมเทพจุดชมวิวพระอาทิตย์ตกดิน และอาหารพื้นเมืองที่ได้รับการขึ้นทะเบียนยูเนสโก",
+            highlights: ["แหลมพรหมเทพ", "หาดป่าตอง & หาดกะตะ", "ย่านเมืองเก่าชิโนโปรตุกีส", "วัดฉลอง & พระใหญ่ภูเก็ต", "ทริปดำน้ำเกาะพีพี/สิมิลัน"],
+            bestTime: "พฤศจิกายน - เมษายน (ช่วงคลื่นลมสงบ ทะเลสวยที่สุด)"
+          },
+          "chon buri": {
+            description: "ชลบุรี (Chon Buri) แหล่งท่องเที่ยวชายทะเลภาคตะวันออกที่ยอดนิยม ใกล้กรุงเทพฯ โดดเด่นด้วยเมืองพัทยาที่เป็นศูนย์รวมความบันเทิงระดับโลก หาดบางแสนที่ครึกครื้น เกาะล้านที่สวยงาม สวนนงนุชระดับแนวหน้าของโลก ปราสาทสัจธรรม สถาปัตยกรรมไม้แกะสลักทั้งหลัง และร้านอาหารทะเลสดๆ มากมาย",
+            highlights: ["เกาะล้าน & หาดพัทยา", "หาดบางแสน", "สวนนงนุชพัทยา", "ปราสาทสัจธรรม", "ตลาดน้ำ 4 ภาค"],
+            bestTime: "พฤศจิกายน - เมษายน (เที่ยวเกาะล้านได้น้ำใสสะอาด)"
+          },
+          "krabi": {
+            description: "กระบี่ (Krabi) สวรรค์ฝั่งอันดามัน เต็มไปด้วยความอัศจรรย์ทางธรรมชาติของภูเขาหินปูนสูงตระหง่านริมทะเล อ่าวนาง หาดทรายขาวละเอียดของหาดไร่เลย์ที่เป็นจุดปีนผาระดับโลก เกาะสวยงามอย่างหมู่เกาะพีพี เกาะห้อง และแหล่งท่องเที่ยวบนบกอย่างสระมรกตและน้ำตกร้อน",
+            highlights: ["หาดไร่เลย์ & อ่าวนาง", "สระมรกต & น้ำตกร้อน", "หมู่เกาะพีพี & เกาะห้อง", "ปีนผาปีนเขา", "วัดถ้ำเสือ"],
+            bestTime: "พฤศจิกายน - เมษายน (น้ำทะเลใส คลื่นลมสงบ)"
+          },
+          "surat thani": {
+            description: "สุราษฎร์ธานี (Surat Thani) จังหวัดที่มีพื้นที่กว้างขวางในภาคใต้ ได้รับสมญานามว่า 'เมืองร้อยเกาะ' เป็นที่ตั้งของเกาะสวรรค์ระดับโลกอย่างเกาะสมุย เกาะพะงัน และเกาะเต่า รวมถึงแหล่งท่องเที่ยวทางบกอันอุดมสมบูรณ์อย่างอุทยานแห่งชาติเขาสก และเขื่อนเชี่ยวหลาน (กุ้ยหลินเมืองไทย)",
+            highlights: ["เกาะสมุย (หาดเฉวง)", "เกาะพะงัน (ฟูลมูนปาร์ตี้)", "เกาะเต่า (แหล่งดำน้ำระดับโลก)", "เขื่อนเชี่ยวหลาน (กุ้ยหลินเมืองไทย)", "หอยนางรมยักษ์สุราษฎร์"],
+            bestTime: "มกราคม - เมษายน (ช่วงมรสุมหมด น้ำใส คลื่นลมนิ่ง)"
+          }
+        };
+
         // Initialize Leaflet map
         function initThailandMap() {
           map = L.map('thailand-map', {
             zoomControl: true,
             minZoom: 5,
             maxZoom: 9,
-            attributionControl: false
+            attributionControl: false,
+            scrollWheelZoom: false // Disable scroll wheel zoom to prevent accidental page scroll hijacking
           });
 
           // Custom styling for GeoJSON polygons
@@ -2466,6 +2611,37 @@
             });
         }
 
+        // Reset map selection and view
+        function resetMapView() {
+          if (selectedLayer) {
+            geoJsonLayer.resetStyle(selectedLayer);
+            selectedLayer = null;
+          }
+          $('#province-selected-info').hide();
+          $('#province-initial-info').show().css('display', 'flex');
+          $('#city-info-section').slideUp(300);
+          $('#btn-reset-map').fadeOut(200);
+          $('#provinceSearchInput').val('');
+          if (map && geoJsonLayer) {
+            map.fitBounds(geoJsonLayer.getBounds());
+          }
+        }
+
+        // Attach reset map button listener
+        $('#btn-reset-map').on('click', resetMapView);
+
+        // Responsive map size auto-adjust on resize
+        $(window).on('resize', function() {
+          if (map && geoJsonLayer) {
+            map.invalidateSize();
+            if (!selectedLayer) {
+              map.fitBounds(geoJsonLayer.getBounds());
+            } else {
+              map.fitBounds(selectedLayer.getBounds(), { padding: [30, 30], maxZoom: 8 });
+            }
+          }
+        });
+
         // Handle selecting a province
         function selectProvince(provinceName, layer) {
           // Reset style of previously selected layer
@@ -2484,8 +2660,11 @@
               fillOpacity: 0.95
             });
             
-            // Pan or zoom slightly to selected province
-            map.panTo(layer.getBounds().getCenter());
+            // Zoom to fit the selected province, limiting maxZoom to 8 to keep it readable (not too big)
+            map.fitBounds(layer.getBounds(), {
+              padding: [30, 30],
+              maxZoom: 8
+            });
           }
 
           // Update Info Panel UI
@@ -2493,6 +2672,60 @@
           $('#province-selected-info').show().css('display', 'flex');
           $('#selected-province-name').text(provinceName);
           $('#selected-province-label').text(provinceName);
+
+          // Get province details from database
+          const normName = provinceName.toLowerCase();
+          let details = null;
+          
+          // Check dynamic database first
+          const dynamicKey = Object.keys(dynamicProvinceDetails).find(key => 
+            normName.includes(key) || key.includes(normName)
+          );
+          
+          if (dynamicKey) {
+            details = dynamicProvinceDetails[dynamicKey];
+          } else {
+            // Fallback to static details
+            if (normName.includes("bangkok")) {
+              details = provinceDetails["bangkok"];
+            } else if (normName.includes("chon buri") || normName.includes("chonburi")) {
+              details = provinceDetails["chon buri"];
+            } else {
+              details = provinceDetails[normName];
+            }
+          }
+
+          if (!details) {
+            // Fallback default details
+            details = {
+              description: `${provinceName} เป็นหนึ่งในจังหวัดท่องเที่ยวที่มีความหลากหลายและเอกลักษณ์เฉพาะตัวในประเทศไทย ท่านสามารถค้นหาข้อมูลโรงแรม แพ็กเกจทัวร์ กิจกรรมท่องเที่ยว และบริการรถรับส่งในจังหวัดนี้เพื่อวางแผนการเดินทางได้อย่างสะดวกสบาย`,
+              highlights: ["สำรวจวัฒนธรรมท้องถิ่น", "ท่องเที่ยวสถานที่แนะนำ", "ชิมอาหารท้องถิ่นรสเด็ด"],
+              bestTime: "ตลอดทั้งปี"
+            };
+          }
+
+          // Update City Information Panel
+          $('#city-info-title').text(provinceName);
+          $('#city-info-description').text(details.description);
+
+          // Rebuild highlights
+          const highlightsContainer = $('#city-info-highlights');
+          highlightsContainer.empty();
+          details.highlights.forEach(highlight => {
+            highlightsContainer.append(`<span class="city-info-tag">${highlight}</span>`);
+          });
+
+          // Show best time to visit if available
+          if (details.bestTime) {
+            $('#city-info-best-time').text(details.bestTime);
+            $('#city-info-best-time-wrapper').show();
+          } else {
+            $('#city-info-best-time-wrapper').hide();
+          }
+
+          // Trigger display animations
+          $('#city-info-section').slideDown(300);
+          $('#btn-reset-map').fadeIn(200);
 
           // Update action button handlers
           $('#btn-search-hotels').off('click').on('click', function() {

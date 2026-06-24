@@ -3,7 +3,7 @@ const { expect } = require('@playwright/test');
 class AuthHelper {
   constructor(page) {
     this.page = page;
-    this.baseURL = 'http://127.0.0.1:5501';
+    this.baseURL = process.env.BASE_URL || 'http://127.0.0.1:5501';
   }
 
   async login(credentials = { username: process.env.TEST_USERNAME || 'vtadmin', password: process.env.TEST_PASSWORD || 'testing@123' }) {

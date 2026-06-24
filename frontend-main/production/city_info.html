@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manage City Information</title>
+
+    <!-- Bootstrap -->
+    <link href="../vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Font Awesome -->
+    <link href="../vendors/font-awesome/css/font-awesome.min.css" rel="stylesheet" />
+    <!-- Custom Theme Style -->
+    <link rel="stylesheet" href="../build/css/custom.min.css" />
+
+    <style>
+      .nav_title span,
+      .profile_info span,
+      .profile_info h2,
+      .side-menu a,
+      .navbar-right a {
+        font-size: 1rem;
+      }
+      .left_col.scroll-view {
+        overflow-y: auto;
+        max-height: 100vh;
+      }
+      body.nav-sm .left_col.scroll-view {
+        overflow-y: visible;
+        max-height: none;
+      }
+      .city-tag {
+        display: inline-block;
+        background: #ebf5ff;
+        color: #007bff;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.82rem;
+        margin-right: 5px;
+        margin-bottom: 5px;
+        border: 1px solid #d0e7ff;
+      }
+    </style>
+  </head>
+
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+        <!-- Sidebar -->
+        <div class="col-md-3 left_col menu_fixed">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border: 0">
+              <a href="index.html" class="site_title" style="display: block; text-align: center; font-size: 2rem; font-weight: bold; color: #007bff; text-decoration: none;">
+                <span style="font-size: 1.5rem">VeraThailandia!</span>
+              </a>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- menu profile quick info -->
+            <div class="profile clearfix">
+              <div class="profile_pic">
+                <img src="images/verathailandlogo.png" alt="..." class="img-circle profile_img" />
+              </div>
+              <div class="profile_info">
+                <span>Welcome,</span>
+                <h2 id="profileName"></h2>
+              </div>
+            </div>
+            <!-- /menu profile quick info -->
+
+            <br />
+
+            <!-- sidebar menu -->
+            <div id="sidebar-menu" class="main_menu_side hidden-print main_menu">
+              <div class="menu_section">
+                <h3>General</h3>
+                <ul class="nav side-menu">
+                  <li>
+                    <a href="index.html"><i class="fa fa-home"></i> Home</a>
+                  </li>
+                  <li id="controlPanelMenu">
+                    <a><i class="fa fa-edit"></i> Control-Panel <span class="fa fa-chevron-down"></span></a>
+                    <ul class="nav child_menu">
+                      <li><a href="activities.html">Activities</a></li>
+                      <li><a href="agents.html">Agents</a></li>
+                      <li><a href="booking.html">Bookings</a></li>
+                      <li><a href="city_info.html">City Information</a></li>
+                      <li><a href="excursions.html">Excursions</a></li>
+                      <li><a href="hotels.html">Hotels</a></li>
+                      <li><a href="markup.html">Markups</a></li>
+                      <li><a href="othercharges.html">Other Charges</a></li>
+                      <li><a href="stop_sale.html">Stop Sale</a></li>
+                      <li><a href="suppliers.html">Suppliers</a></li>
+                      <li><a href="tools.html">Tools</a></li>
+                      <li><a href="tours.html">Tours</a></li>
+                      <li><a href="transfers.html">Transfers</a></li>
+                      <li><a href="users.html">Users</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="trip.html"><i class="fa fa-book"></i> Quotation</a>
+                  </li>
+                  <li>
+                    <a href="payment.html"><i class="fa fa-pencil-square-o"></i> Payment</a>
+                  </li>
+                  <li>
+                    <a href="itinerary.html"><i class="fa fa-ticket"></i> Itinerary</a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- /sidebar menu -->
+          </div>
+        </div>
+
+        <!-- top navigation -->
+        <div class="top_nav">
+          <div class="nav_menu">
+            <div class="nav toggle">
+              <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+            </div>
+            <nav class="nav navbar-nav">
+              <ul class="navbar-right">
+                <li class="nav-item dropdown open" style="padding-left: 15px">
+                  <a href="javascript:;" class="user-profile dropdown-toggle" aria-haspopup="true" id="navbarDropdown" data-toggle="dropdown" aria-expanded="false">
+                    <img id="navProfileImage" src="images/verathailandlogo.png" alt="" />
+                    <span id="navProfileName"></span>
+                  </a>
+                  <div class="dropdown-menu dropdown-usermenu pull-right" aria-labelledby="navbarDropdown">
+                    <a class="dropdown-item" href="profile.html"><i class="fa fa-user pull-right"></i> Profile</a>
+                    <a class="dropdown-item" href="logout.html"><i class="fa fa-sign-out pull-right"></i> Log Out</a>
+                  </div>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+        <!-- /top navigation -->
+
+        <!-- Page content -->
+        <div class="right_col" role="main">
+          <div class="">
+            <div class="page-title">
+              <div class="title_left">
+                <h3>City Information Management</h3>
+              </div>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- Search and Action Header -->
+            <div class="row style-box-row" style="margin-bottom: 25px;">
+              <div class="col-md-8">
+                <input type="text" id="searchBox" class="form-control" placeholder="Search city name, description, highlights..." />
+              </div>
+              <div class="col-md-4 text-right">
+                <button type="button" id="btn-add-city" class="btn btn-success" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border: none; border-radius: 6px; padding: 8px 20px; font-weight: 600;">
+                  <i class="fa fa-plus"></i> Add City Info
+                </button>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-12 col-sm-12">
+                <div class="x_panel" style="border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                  <div class="x_title" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0;">
+                    <h2 style="margin: 0; font-weight: 600; color: #2c3e50;">Registered Cities</h2>
+                    <span class="badge badge-primary" style="padding: 6px 12px; border-radius: 12px; font-weight: 600;" id="cityCount">0 Cities</span>
+                  </div>
+                  <div class="x_content p-0">
+                    <div class="table-responsive">
+                      <table class="table table-striped table-bordered" style="margin-bottom: 0;">
+                        <thead>
+                          <tr style="background-color: #f8f9fa;">
+                            <th style="width: 20%; font-weight: 600;">City Name</th>
+                            <th style="width: 45%; font-weight: 600;">Description</th>
+                            <th style="width: 20%; font-weight: 600;">Highlights</th>
+                            <th style="width: 10%; font-weight: 600;">Best Time</th>
+                            <th style="width: 5%; text-align: center; font-weight: 600;">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody id="cityTableBody">
+                          <tr>
+                            <td colspan="5" class="text-center text-muted" style="padding: 30px;">Loading cities information...</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /Page content -->
+
+        <!-- Footer -->
+        <footer></footer>
+      </div>
+    </div>
+
+    <!-- Modal Form (Add / Edit City) -->
+    <div class="modal fade" id="cityModal" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+          <div class="modal-header" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; padding: 15px 20px; border-bottom: none;">
+            <h5 class="modal-title" id="cityModalTitle" style="font-weight: 700; margin: 0;">Add City Information</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8; font-size: 1.6rem; padding: 10px; margin: -10px -10px -10px auto; background: none; border: none;">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <form id="cityForm">
+            <div class="modal-body" style="padding: 25px;">
+              <input type="hidden" id="city-id" />
+              
+              <div class="form-group mb-4">
+                <label for="city-name" style="font-weight: 600; color: #495057;">City (Province) Name:</label>
+                <input type="text" class="form-control" id="city-name" required placeholder="e.g. Bangkok Metropolis, Chiang Mai, Phuket" style="border-radius: 6px; padding: 10px;" />
+              </div>
+              
+              <div class="form-group mb-4">
+                <label for="city-description" style="font-weight: 600; color: #495057;">Description (ข้อมูลเมืองสำคัญ):</label>
+                <textarea class="form-control" id="city-description" rows="4" required placeholder="Describe the city, landmarks, culture, etc." style="border-radius: 6px; padding: 10px; resize: vertical;"></textarea>
+              </div>
+
+              <div class="form-group mb-4">
+                <label for="city-highlights" style="font-weight: 600; color: #495057;">Highlights (คั่นด้วยเครื่องหมายจุลภาค , ):</label>
+                <input type="text" class="form-control" id="city-highlights" placeholder="e.g. วัดพระแก้ว, ตลาดน้ำ, สตรีทฟู้ดเยาวราช" style="border-radius: 6px; padding: 10px;" />
+                <small class="form-text text-muted">Enter attractions or tags separated by commas.</small>
+              </div>
+
+              <div class="form-group mb-0">
+                <label for="city-best-time" style="font-weight: 600; color: #495057;">Best Time to Visit (ช่วงที่น่าเที่ยวที่สุด):</label>
+                <input type="text" class="form-control" id="city-best-time" placeholder="e.g. พฤศจิกายน - กุมภาพันธ์" style="border-radius: 6px; padding: 10px;" />
+              </div>
+            </div>
+            <div class="modal-footer" style="background-color: #f8f9fa; border-top: 1px solid #f0f0f0; padding: 15px 25px;">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal" style="border-radius: 6px; padding: 8px 20px;">Cancel</button>
+              <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); border: none; border-radius: 6px; padding: 8px 25px; font-weight: 600;">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/common/role-permissions.js"></script>
+    <script src="../build/js/custom.min.js"></script>
+
+    <script>
+      // Verify role access
+      const role = localStorage.getItem("role");
+      if (role !== "admin" && role !== "superadmin") {
+        window.location.href = "index.html";
+      }
+
+      // Set profile name in sidebar & top nav
+      const username = localStorage.getItem("username") || "Admin";
+      document.getElementById("profileName").innerText = username;
+      document.getElementById("navProfileName").innerText = username;
+
+      let allCities = [];
+
+      // Fetch all cities on load
+      function fetchCities() {
+        const token = localStorage.getItem('token');
+        fetch(`${Endpoint}/api/v1/city-info`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        .then(res => {
+          if (res.status === 401) {
+            window.location.href = "login.html";
+            return;
+          }
+          return res.json();
+        })
+        .then(data => {
+          allCities = data || [];
+          renderCities(allCities);
+        })
+        .catch(err => {
+          console.error("Error fetching cities:", err);
+          $('#cityTableBody').html('<tr><td colspan="5" class="text-center text-danger">Failed to load city list.</td></tr>');
+        });
+      }
+
+      // Render cities to table
+      function renderCities(cities) {
+        $('#cityCount').text(`${cities.length} Cities`);
+        const tbody = $('#cityTableBody');
+        tbody.empty();
+
+        if (cities.length === 0) {
+          tbody.append('<tr><td colspan="5" class="text-center text-muted">No cities registered. Click "Add City Info" to add one!</td></tr>');
+          return;
+        }
+
+        cities.forEach(city => {
+          // Render highlights as badges
+          let highlightBadges = '';
+          if (city.highlights) {
+            city.highlights.split(',').forEach(h => {
+              if (h.trim()) {
+                highlightBadges += `<span class="city-tag">${h.trim()}</span>`;
+              }
+            });
+          }
+
+          tbody.append(`
+            <tr>
+              <td style="font-weight: 700; color: #2c3e50;">${city.cityName}</td>
+              <td style="line-height: 1.5; color: #555;">${city.description}</td>
+              <td>${highlightBadges || '<span class="text-muted">-</span>'}</td>
+              <td style="font-weight: 500;">${city.bestTime || '<span class="text-muted">-</span>'}</td>
+              <td style="text-align: center; white-space: nowrap;">
+                <button type="button" class="btn btn-outline-primary btn-sm btn-edit" data-id="${city.id}" style="padding: 4px 8px; margin-right: 4px;">
+                  <i class="fa fa-edit"></i>
+                </button>
+                <button type="button" class="btn btn-outline-danger btn-sm btn-delete" data-id="${city.id}" data-name="${city.cityName}" style="padding: 4px 8px;">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          `);
+        });
+
+        // Attach listeners
+        $('.btn-edit').on('click', function() {
+          const id = $(this).data('id');
+          openEditModal(id);
+        });
+
+        $('.btn-delete').on('click', function() {
+          const id = $(this).data('id');
+          const name = $(this).data('name');
+          deleteCity(id, name);
+        });
+      }
+
+      // Search handler
+      $('#searchBox').on('input', function() {
+        const query = $(this).val().toLowerCase().trim();
+        if (!query) {
+          renderCities(allCities);
+          return;
+        }
+
+        const filtered = allCities.filter(c => 
+          c.cityName.toLowerCase().includes(query) ||
+          c.description.toLowerCase().includes(query) ||
+          (c.highlights && c.highlights.toLowerCase().includes(query)) ||
+          (c.bestTime && c.bestTime.toLowerCase().includes(query))
+        );
+        renderCities(filtered);
+      });
+
+      // Open Modal for Add
+      $('#btn-add-city').on('click', function() {
+        $('#cityForm')[0].reset();
+        $('#city-id').val('');
+        $('#cityModalTitle').text('Add City Information');
+        $('#cityModal').modal('show');
+      });
+
+      // Open Modal for Edit
+      function openEditModal(id) {
+        const city = allCities.find(c => c.id === id);
+        if (!city) return;
+
+        $('#city-id').val(city.id);
+        $('#city-name').val(city.cityName);
+        $('#city-description').val(city.description);
+        $('#city-highlights').val(city.highlights);
+        $('#city-best-time').val(city.bestTime);
+
+        $('#cityModalTitle').text('Edit City Information');
+        $('#cityModal').modal('show');
+      }
+
+      // Form submission (Create / Update)
+      $('#cityForm').on('submit', function(e) {
+        e.preventDefault();
+
+        const id = $('#city-id').val();
+        const data = {
+          cityName: $('#city-name').val().trim(),
+          description: $('#city-description').val().trim(),
+          highlights: $('#city-highlights').val().trim(),
+          bestTime: $('#city-best-time').val().trim()
+        };
+
+        const token = localStorage.getItem('token');
+        const url = id ? `${Endpoint}/api/v1/city-info/${id}` : `${Endpoint}/api/v1/city-info`;
+        const method = id ? 'PUT' : 'POST';
+
+        fetch(url, {
+          method: method,
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        })
+        .then(res => {
+          if (!res.ok) throw new Error('Save operation failed');
+          return res.json();
+        })
+        .then(() => {
+          $('#cityModal').modal('hide');
+          fetchCities();
+        })
+        .catch(err => {
+          alert('Error: ' + err.message);
+        });
+      });
+
+      // Delete action
+      function deleteCity(id, name) {
+        if (!confirm(`Are you sure you want to delete information for "${name}"?`)) return;
+
+        const token = localStorage.getItem('token');
+        fetch(`${Endpoint}/api/v1/city-info/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        .then(res => {
+          if (!res.ok) throw new Error('Delete operation failed');
+          fetchCities();
+        })
+        .catch(err => {
+          alert('Error: ' + err.message);
+        });
+      }
+
+      // Initial load
+      $(document).ready(function() {
+        fetchCities();
+      });
+    </script>
+  </body>
+</html>

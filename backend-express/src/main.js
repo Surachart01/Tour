@@ -32,6 +32,7 @@ import taxInvoiceRoutes from './routes/taxInvoiceRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import userProfileRoutes from './routes/userProfileRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import cityInfoRoutes from './routes/cityInfoRoutes.js';
 
 // Phase 2: Advanced feature modules
 import fileUploadRoutes from './routes/fileUploadRoutes.js';
@@ -81,6 +82,7 @@ app.use('/api/v1', taxInvoiceRoutes);
 app.use('/api/v1', paymentRoutes);
 app.use('/api/v1', userProfileRoutes);
 app.use('/api/v1', notificationRoutes);
+app.use('/api/v1', cityInfoRoutes);
 
 // Phase 2: Advanced Feature Routes
 app.use('/api/v1', fileUploadRoutes);

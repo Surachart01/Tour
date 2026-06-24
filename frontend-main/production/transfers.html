@@ -471,6 +471,20 @@
                           >0</span
                         >
                       </div>
+                      
+                      <!-- Bulk Actions Group -->
+                      <div id="bulkActionsGroup" style="display: none; align-items: center; gap: 10px; margin-right: 15px;">
+                        <button type="button" id="btnBulkEdit" class="btn btn-primary btn-sm" style="border-radius: 6px; padding: 8px 14px; font-weight: 600; margin: 0; display: inline-flex; align-items: center; gap: 5px;">
+                          <i class="fa fa-edit"></i> Edit Selected (<span class="selected-count">0</span>)
+                        </button>
+                        <button type="button" id="btnBulkClone" class="btn btn-success btn-sm" style="border-radius: 6px; padding: 8px 14px; font-weight: 600; margin: 0; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border: none; display: inline-flex; align-items: center; gap: 5px;">
+                          <i class="fa fa-copy"></i> Clone Selected (<span class="selected-count">0</span>)
+                        </button>
+                        <button type="button" id="btnBulkDelete" class="btn btn-danger btn-sm" style="border-radius: 6px; padding: 8px 14px; font-weight: 600; margin: 0; display: inline-flex; align-items: center; gap: 5px;">
+                          <i class="fa fa-trash"></i> Delete Selected (<span class="selected-count">0</span>)
+                        </button>
+                      </div>
+
                       <button
                         id="addTransferButtonTop"
                         class="btn btn-success btn-sm"
@@ -504,6 +518,7 @@
                         >
                           <thead>
                             <tr>
+                              <th style="width: 3%; text-align: center; vertical-align: middle;"><input type="checkbox" id="selectAllTransfers" style="transform: scale(1.2); cursor: pointer;" /></th>
                               <th>#</th>
                               <th>City</th>
                               <th>Type</th>
@@ -583,6 +598,7 @@
         let currentPage = 1;
         let rowsPerPage = 25;
         let totalPages = 1;
+        let selectedIds = new Set();
 
         // Initial fetch of transfers from backend
         fetchTransfers();
@@ -742,6 +758,7 @@
         });
 
         function fetchTransfers() {
+          selectedIds.clear();
           fetch(`${Endpoint}/api/v1/transfers`, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -842,6 +859,7 @@
 
 
         function filterTransfers() {
+          selectedIds.clear();
           const searchTerm = searchBox.value.toLowerCase();
           const countryVal = document.getElementById("filterCountry").value;
           const cityVal = document.getElementById("filterCity").value;
@@ -912,6 +930,9 @@
             const supplierName = transfer.supplier_name || "N/A";
 
             row.innerHTML = `
+      <td style="text-align: center; vertical-align: middle;">
+        <input type="checkbox" class="transfer-select" data-id="${transfer.id}" style="transform: scale(1.2); cursor: pointer;" />
+      </td>
       <td>${transfer.display_order ?? 0}</td>
       <td>${transfer.city}</td>
       <td>${transfer.transfer_type}</td>
@@ -928,6 +949,17 @@
             const editButton = row.querySelector(".edit-btn");
             const cloneButton = row.querySelector(".clone-btn");
             const deleteButton = row.querySelector(".delete-btn");
+            const checkbox = row.querySelector(".transfer-select");
+
+            checkbox.addEventListener("change", function () {
+              const id = this.getAttribute("data-id");
+              if (this.checked) {
+                selectedIds.add(id);
+              } else {
+                selectedIds.delete(id);
+              }
+              updateSelectionUI();
+            });
 
             // Dynamically bind the click event for the Edit button
             editButton.addEventListener("click", () => {
@@ -948,6 +980,7 @@
           });
 
           updatePaginationButtons();
+          updateSelectionUI();
         }
 
         // Update pagination buttons
@@ -1013,6 +1046,258 @@
             transfersCountElement.textContent = `${filteredCount} of ${totalCount}`;
           }
         }
+
+        function updateSelectionUI() {
+          const checkboxes = document.querySelectorAll(".transfer-select");
+          let allChecked = checkboxes.length > 0;
+          checkboxes.forEach((cb) => {
+            const id = cb.getAttribute("data-id");
+            if (selectedIds.has(id)) {
+              cb.checked = true;
+            } else {
+              cb.checked = false;
+              allChecked = false;
+            }
+          });
+
+          const selectAll = document.getElementById("selectAllTransfers");
+          if (selectAll) {
+            selectAll.checked = checkboxes.length > 0 && allChecked;
+          }
+
+          const bulkGroup = document.getElementById("bulkActionsGroup");
+          if (bulkGroup) {
+            if (selectedIds.size > 0) {
+              bulkGroup.style.display = "inline-flex";
+              document.querySelectorAll(".selected-count").forEach(el => {
+                el.textContent = selectedIds.size;
+              });
+            } else {
+              bulkGroup.style.display = "none";
+            }
+          }
+        }
+
+        function showProgressOverlay(message) {
+          let overlay = document.getElementById("progressOverlay");
+          if (!overlay) {
+            overlay = document.createElement("div");
+            overlay.id = "progressOverlay";
+            overlay.style.position = "fixed";
+            overlay.style.top = "0";
+            overlay.style.left = "0";
+            overlay.style.width = "100%";
+            overlay.style.height = "100%";
+            overlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+            overlay.style.zIndex = "9999";
+            overlay.style.display = "flex";
+            overlay.style.flexDirection = "column";
+            overlay.style.alignItems = "center";
+            overlay.style.justifyContent = "center";
+            overlay.style.color = "#fff";
+            overlay.style.fontFamily = "sans-serif";
+            overlay.style.fontSize = "18px";
+            
+            const spinner = document.createElement("div");
+            spinner.className = "spinner";
+            spinner.style.border = "4px solid rgba(255, 255, 255, 0.3)";
+            spinner.style.borderTop = "4px solid #fff";
+            spinner.style.borderRadius = "50%";
+            spinner.style.width = "40px";
+            spinner.style.height = "40px";
+            spinner.style.animation = "spin 1s linear infinite";
+            spinner.style.marginBottom = "15px";
+            
+            if (!document.getElementById("spinAnimation")) {
+              const style = document.createElement("style");
+              style.id = "spinAnimation";
+              style.innerHTML = `
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              `;
+              document.head.appendChild(style);
+            }
+            
+            overlay.appendChild(spinner);
+            
+            const text = document.createElement("div");
+            text.id = "progressOverlayText";
+            text.textContent = message;
+            overlay.appendChild(text);
+            
+            document.body.appendChild(overlay);
+          } else {
+            document.getElementById("progressOverlayText").textContent = message;
+            overlay.style.display = "flex";
+          }
+        }
+
+        function hideProgressOverlay() {
+          const overlay = document.getElementById("progressOverlay");
+          if (overlay) {
+            overlay.style.display = "none";
+          }
+        }
+
+        async function bulkCloneTransfers() {
+          const idsToClone = Array.from(selectedIds);
+          if (idsToClone.length === 0) return;
+          
+          if (!confirm(`Are you sure you want to clone ${idsToClone.length} selected transfers?`)) {
+            return;
+          }
+          
+          const token = localStorage.getItem("token");
+          let clonedCount = 0;
+          let errorCount = 0;
+          
+          showProgressOverlay(`Cloning 0 of ${idsToClone.length}...`);
+          
+          for (let i = 0; i < idsToClone.length; i++) {
+            const id = idsToClone[i];
+            showProgressOverlay(`Cloning ${i + 1} of ${idsToClone.length}...`);
+            
+            try {
+              const response = await fetch(`${Endpoint}/api/v1/transfers/${id}?excludeMarkup=true`, {
+                headers: {
+                  Authorization: `Bearer ${token}`
+                }
+              });
+              
+              if (!response.ok) throw new Error("Failed to fetch transfer " + id);
+              
+              const detail = await response.json();
+              
+              const payload = {
+                transfer_type: detail.transfer_type,
+                city: detail.city,
+                description: detail.description,
+                departure: detail.departure,
+                arrival: detail.arrival,
+                sic_price_adult: detail.sic_price_adult,
+                sic_price_child: detail.sic_price_child,
+                supplier_id: detail.supplier_id,
+                display_order: detail.display_order,
+                country: detail.country || "Thailand",
+                prices: (detail.prices || []).map(p => ({
+                  start_date: p.start_date,
+                  end_date: p.end_date,
+                  pax: p.pax,
+                  price: p.price,
+                  cost: p.cost,
+                  currency_id: p.currency_id
+                }))
+              };
+              
+              const createResponse = await fetch(`${Endpoint}/api/v1/transfers`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+              });
+              
+              if (!createResponse.ok) throw new Error("Failed to clone transfer " + id);
+              
+              clonedCount++;
+            } catch (err) {
+              console.error(err);
+              errorCount++;
+            }
+          }
+          
+          hideProgressOverlay();
+          
+          if (errorCount === 0) {
+            alert(`Successfully cloned ${clonedCount} transfers!`);
+          } else {
+            alert(`Cloned ${clonedCount} transfers. Failed to clone ${errorCount} transfers.`);
+          }
+          
+          selectedIds.clear();
+          fetchTransfers();
+        }
+
+        async function bulkDeleteTransfers() {
+          const idsToDelete = Array.from(selectedIds);
+          if (idsToDelete.length === 0) return;
+          
+          if (!confirm(`Are you sure you want to delete ${idsToDelete.length} selected transfers? This action cannot be undone.`)) {
+            return;
+          }
+          
+          const token = localStorage.getItem("token");
+          let deletedCount = 0;
+          let errorCount = 0;
+          
+          showProgressOverlay(`Deleting 0 of ${idsToDelete.length}...`);
+          
+          for (let i = 0; i < idsToDelete.length; i++) {
+            const id = idsToDelete[i];
+            showProgressOverlay(`Deleting ${i + 1} of ${idsToDelete.length}...`);
+            
+            try {
+              const response = await fetch(`${Endpoint}/api/v1/transfers/${id}`, {
+                method: "DELETE",
+                headers: {
+                  Authorization: `Bearer ${token}`
+                }
+              });
+              
+              if (!response.ok) throw new Error("Failed to delete transfer " + id);
+              
+              deletedCount++;
+            } catch (err) {
+              console.error(err);
+              errorCount++;
+            }
+          }
+          
+          hideProgressOverlay();
+          
+          if (errorCount === 0) {
+            alert(`Successfully deleted ${deletedCount} transfers!`);
+          } else {
+            alert(`Deleted ${deletedCount} transfers. Failed to delete ${errorCount} transfers.`);
+          }
+          
+          selectedIds.clear();
+          fetchTransfers();
+        }
+
+        // Select All listener
+        const selectAllCheckbox = document.getElementById("selectAllTransfers");
+        if (selectAllCheckbox) {
+          selectAllCheckbox.addEventListener("change", function () {
+            const checkboxes = document.querySelectorAll(".transfer-select");
+            checkboxes.forEach((cb) => {
+              const id = cb.getAttribute("data-id");
+              if (this.checked) {
+                selectedIds.add(id);
+              } else {
+                selectedIds.delete(id);
+              }
+            });
+            updateSelectionUI();
+          });
+        }
+
+        // Bulk action buttons listeners
+        document.getElementById("btnBulkClone").addEventListener("click", bulkCloneTransfers);
+        document.getElementById("btnBulkDelete").addEventListener("click", bulkDeleteTransfers);
+        document.getElementById("btnBulkEdit").addEventListener("click", function () {
+          const idsToEdit = filteredTransfers
+            .map(t => String(t.id))
+            .filter(id => selectedIds.has(id));
+          
+          if (idsToEdit.length === 0) return;
+          
+          sessionStorage.setItem("edit_queue", JSON.stringify(idsToEdit));
+          window.location.href = `edit_transfer.html?id=${idsToEdit[0]}&batch=true`;
+        });
       });
     </script>
   </body>

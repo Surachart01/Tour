@@ -245,17 +245,7 @@ function setupCityChangeListeners() {
             }
         });
     });
-    
-    // Transfer route type change
-    document.querySelectorAll('.transfer-route-type').forEach(dropdown => {
-        dropdown.addEventListener('change', function() {
-            const cityDropdown = document.querySelector('.city-dropdown-transfer');
-            const transferDropdown = document.querySelector('.transfer-dropdown');
-            if (cityDropdown && cityDropdown.value && transferDropdown) {
-                searchTransfersByCity(cityDropdown, transferDropdown);
-            }
-        });
-    });
+
     
     // Hotel city change
     document.querySelectorAll('.city-dropdown-hotel').forEach(dropdown => {
@@ -2199,16 +2189,12 @@ function hideButtonLoading(buttonId) {
 // Search transfers by city
 function searchTransfersByCity(cityDropdown, transferDropdown) {
     const selectedCity = cityDropdown.value;
-    const transferRouteType = document.getElementById("transferRouteType")?.value;
     const token = localStorage.getItem('token');
     
     if (!selectedCity) return Promise.resolve();
     
     const url = new URL(`${Endpoint}/api/v1/transfers`);
     url.searchParams.append('city', selectedCity);
-    if (transferRouteType) {
-        url.searchParams.append('transfer_type', transferRouteType);
-    }
     
     return fetch(url, {
         method: 'GET',

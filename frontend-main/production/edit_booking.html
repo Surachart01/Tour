@@ -704,8 +704,8 @@
           <div class="modal-body">
             <form id="transferForm">
               <div class="form-row">
-                <!-- City -->
-                <div class="form-group col-md-3">
+                 <!-- City -->
+                <div class="form-group col-md-4">
                   <label for="transferCity">City *</label>
                   <select
                     class="form-control city-dropdown-transfer"
@@ -716,7 +716,7 @@
                   </select>
                 </div>
                 <!-- Date -->
-                <div class="form-group col-md-3">
+                <div class="form-group col-md-4">
                   <label for="transferDate">Date *</label>
                   <input
                     type="date"
@@ -725,27 +725,8 @@
                     required
                   />
                 </div>
-                <!-- Transfer Type -->
-                <div class="form-group col-md-3">
-                  <label for="transferRouteType">
-                    <i
-                      class="fas fa-exchange-alt"
-                      style="margin-right: 8px; color: #1abb9c"
-                    ></i>
-                    Transfer Type *
-                  </label>
-                  <select
-                    id="transferRouteType"
-                    class="form-control transfer-route-type"
-                    required
-                  >
-                    <option value="" disabled selected>Select Type</option>
-                    <option value="TIN">TIN (Transfer In)</option>
-                    <option value="TOUT">TOUT (Transfer Out)</option>
-                  </select>
-                </div>
                 <!-- Transfer Dropdown -->
-                <div class="form-group col-md-3">
+                <div class="form-group col-md-4">
                   <label for="transferType">Transfer *</label>
                   <select
                     id="transferType"
@@ -763,6 +744,26 @@
                     class="form-control"
                     id="transferFlight"
                     placeholder="Flight details"
+                    required
+                  />
+                </div>
+                <!-- Flight Time -->
+                <div class="form-group col-md-4">
+                  <label for="flightTime">Time</label>
+                  <input
+                    type="time"
+                    class="form-control"
+                    id="flightTime"
+                    required
+                  />
+                </div>
+                <!-- Pickup Time -->
+                <div class="form-group col-md-4">
+                  <label for="transferPickupTime">Arrival Time</label>
+                  <input
+                    type="time"
+                    class="form-control"
+                    id="transferPickupTime"
                     required
                   />
                 </div>
@@ -788,16 +789,6 @@
                     required
                   />
                 </div>
-                <!-- Flight Time -->
-                <div class="form-group col-md-4">
-                  <label for="flightTime">Flight Time</label>
-                  <input
-                    type="time"
-                    class="form-control"
-                    id="flightTime"
-                    required
-                  />
-                </div>
                 <!-- ToT -->
                 <div class="form-group col-md-4">
                   <label for="transferToT">ToT *</label>
@@ -806,16 +797,6 @@
                     <option value="PVT">PVT</option>
                     <option value="SIC">SIC</option>
                   </select>
-                </div>
-                <!-- Pickup Time -->
-                <div class="form-group col-md-4">
-                  <label for="transferPickupTime">Arrival Time</label>
-                  <input
-                    type="time"
-                    class="form-control"
-                    id="transferPickupTime"
-                    required
-                  />
                 </div>
                 <div class="col-md-4 col-sm-6 form-group">
                   <label for="updatedTransferPrice"
@@ -2236,7 +2217,6 @@
           row.dataset.transferId = transfer.transfer_id;
           row.dataset.flightTime = transfer.flight_time || "";
           row.dataset.transferFlight = transfer.flight_number || "";
-          row.dataset.transferRouteType = transfer.transfers?.transfer_type || transfer.transfer_type || "";
           row.dataset.pickupTime = transfer.pickup_time || "";
 
           let approveButton = `<button class="btn btn-sm btn-success approve-transfer fa fa-check" type="button"></button>`;
@@ -2282,20 +2262,16 @@
         // Fetch transfers based on selected city
         function searchTransfersByCity(cityDropdown, transferDropdown) {
           const selectedCity = cityDropdown.value;
-          const transferRouteType = document.getElementById("transferRouteType")?.value;
 
           if (!selectedCity) {
             alert("Please select a city.");
             return;
           }
 
-          console.log(`Fetching transfers for city: ${selectedCity}, type: ${transferRouteType || "all"}`);
+          console.log(`Fetching transfers for city: ${selectedCity}`);
 
           const url = new URL(`${Endpoint}/api/v1/transfers`);
           url.searchParams.append("city", selectedCity);
-          if (transferRouteType) {
-            url.searchParams.append("transfer_type", transferRouteType);
-          }
 
           fetch(url, {
             method: "GET",
@@ -2353,17 +2329,6 @@
             });
           });
 
-        // Listen for transfer route type change to reload transfers
-        document.querySelectorAll(".transfer-route-type").forEach((typeInput) => {
-          typeInput.addEventListener("change", function () {
-            const cityDropdown = document.querySelector(".city-dropdown-transfer");
-            const transferDropdown = document.getElementById("transferType");
-            if (cityDropdown && cityDropdown.value && transferDropdown) {
-              searchTransfersByCity(cityDropdown, transferDropdown);
-            }
-          });
-        });
-
         const transferTypeSelect = document.getElementById("transferType");
         if (transferTypeSelect) {
           transferTypeSelect.addEventListener("change", function () {
@@ -2398,7 +2363,6 @@
           console.log("Editing Transfer Row:", row);
 
           const transferId = row.dataset.transferId;
-          const transferRouteType = row.dataset.transferRouteType || "";
 
           if (!transferId) {
             console.error("Error: Transfer ID missing in row dataset.");
@@ -2420,7 +2384,6 @@
             final_cost: row.cells[7].textContent.trim(),
             flightTime: row.dataset.flightTime || "", // ✅ Always get latest flight time
             transferFlight: row.dataset.transferFlight || "", // ✅ Always get latest flight number
-            transferRouteType: transferRouteType,
           };
 
           console.log("Loaded Transfer Data for Editing:", transfer);
@@ -2462,18 +2425,12 @@
           document.getElementById("remarks").value = transfer.remarks || "";
           document.getElementById("updatedTransferPrice").value =
             transfer.final_cost || "N/A";
-          if (document.getElementById("transferRouteType")) {
-            document.getElementById("transferRouteType").value = transferRouteType;
-          }
 
           // ✅ Fetch and Populate the Transfer Description Dropdown
           const transferDropdown = document.getElementById("transferType");
 
           const url = new URL(`${Endpoint}/api/v1/transfers`);
           url.searchParams.append("city", transfer.transferCity);
-          if (transferRouteType) {
-            url.searchParams.append("transfer_type", transferRouteType);
-          }
           fetch(url, {
             method: "GET",
             headers: {

@@ -358,6 +358,31 @@
           "
         >
           <div style="padding: 40px">
+            <!-- Batch Edit Banner -->
+            <div id="batchEditBanner" style="display: none; background: linear-gradient(135deg, #1f4068 0%, #162447 100%); color: white; padding: 20px 25px; border-radius: 10px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 250px;">
+                <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; margin-bottom: 5px; font-weight: 600;">Batch Edit Mode</div>
+                <div style="font-size: 16px; font-weight: bold; display: flex; align-items: center; gap: 10px;">
+                  <i class="fas fa-edit" style="color: #00fff0;"></i>
+                  <span>Editing item <span id="batchCurrentIndex">0</span> of <span id="batchTotalCount">0</span> selected transfers</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.15); height: 6px; border-radius: 3px; margin-top: 12px; overflow: hidden; width: 100%; max-width: 400px;">
+                  <div id="batchProgressBar" style="background: linear-gradient(90deg, #00fff0, #00d2fc); height: 100%; width: 0%; border-radius: 3px; transition: width 0.4s ease;"></div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <button type="button" id="btnBatchPrev" class="btn btn-sm btn-secondary" style="background-color: #6c757d; border: none; border-radius: 6px; padding: 10px 18px; font-weight: bold; color: white; display: none; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(108, 117, 125, 0.3); transition: all 0.2s;">
+                  <i class="fas fa-step-backward"></i> Previous
+                </button>
+                <button type="button" id="btnBatchSkip" class="btn btn-sm btn-info" style="background-color: #17a2b8; border: none; border-radius: 6px; padding: 10px 18px; font-weight: bold; color: white; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(23, 162, 184, 0.3); transition: all 0.2s;">
+                  <i class="fas fa-step-forward"></i> Skip / Next
+                </button>
+                <button type="button" id="btnBatchCancel" class="btn btn-sm btn-danger" style="background-color: #dc3545; border: none; border-radius: 6px; padding: 10px 18px; font-weight: bold; color: white; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(220, 53, 69, 0.3); transition: all 0.2s;">
+                  <i class="fas fa-times-circle"></i> Cancel Batch
+                </button>
+              </div>
+            </div>
+
             <form id="editTransferForm" class="form-label-left input_mask">
               <div class="row">
                 <div class="col-md-6 form-group">
@@ -1260,6 +1285,56 @@
               console.error("Error fetching transfer details:", error);
             });
         }
+
+        // Batch Edit Mode Initialization
+        const urlParams = new URLSearchParams(window.location.search);
+        const isBatchMode = urlParams.get("batch") === "true";
+        if (isBatchMode && transferId) {
+          let queue = [];
+          try {
+            queue = JSON.parse(sessionStorage.getItem("edit_queue")) || [];
+          } catch (e) {
+            console.error("Failed to parse edit_queue:", e);
+          }
+          const currentIdIndex = queue.indexOf(String(transferId));
+          if (currentIdIndex !== -1) {
+            document.getElementById("batchEditBanner").style.display = "flex";
+            document.getElementById("batchCurrentIndex").textContent = currentIdIndex + 1;
+            document.getElementById("batchTotalCount").textContent = queue.length;
+            const pct = ((currentIdIndex + 1) / queue.length) * 100;
+            document.getElementById("batchProgressBar").style.width = pct + "%";
+            
+            // Previous button handler
+            if (currentIdIndex > 0) {
+              const btnPrev = document.getElementById("btnBatchPrev");
+              if (btnPrev) {
+                btnPrev.style.display = "inline-flex";
+                btnPrev.addEventListener("click", function () {
+                  const prevId = queue[currentIdIndex - 1];
+                  if (prevId) {
+                    window.location.href = `edit_transfer.html?id=${prevId}&batch=true`;
+                  }
+                });
+              }
+            }
+            
+            document.getElementById("btnBatchSkip").addEventListener("click", function () {
+              const nextId = queue[currentIdIndex + 1];
+              if (nextId) {
+                window.location.href = `edit_transfer.html?id=${nextId}&batch=true`;
+              } else {
+                alert("Reached the end of the batch!");
+                sessionStorage.removeItem("edit_queue");
+                window.location.href = "transfers.html";
+              }
+            });
+            
+            document.getElementById("btnBatchCancel").addEventListener("click", function () {
+              sessionStorage.removeItem("edit_queue");
+              window.location.href = "transfers.html";
+            });
+          }
+        }
       });
 
       // Function to add a new transfer price row to the table
@@ -1821,8 +1896,28 @@
               console.log("API response status:", response.status);
               if (response.ok) {
                 console.log(isCloneMode ? "Transfer cloned successfully" : "Transfer updated successfully");
-                alert(isCloneMode ? "Transfer cloned successfully!" : "Transfer updated successfully!");
-                window.location.href = "transfers.html";
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                const isBatchMode = urlParams.get("batch") === "true";
+                if (isBatchMode) {
+                  let queue = [];
+                  try {
+                    queue = JSON.parse(sessionStorage.getItem("edit_queue")) || [];
+                  } catch (e) {}
+                  const currentIdIndex = queue.indexOf(String(transferId));
+                  const nextId = queue[currentIdIndex + 1];
+                  if (nextId) {
+                    alert("Transfer updated successfully! Proceeding to next transfer...");
+                    window.location.href = `edit_transfer.html?id=${nextId}&batch=true`;
+                  } else {
+                    alert("Batch edit completed successfully!");
+                    sessionStorage.removeItem("edit_queue");
+                    window.location.href = "transfers.html";
+                  }
+                } else {
+                  alert(isCloneMode ? "Transfer cloned successfully!" : "Transfer updated successfully!");
+                  window.location.href = "transfers.html";
+                }
               } else {
                 if (response.status === 401) {
                   // Handle 401 Unauthorized

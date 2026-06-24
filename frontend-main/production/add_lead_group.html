@@ -566,16 +566,15 @@
                     <option value="" disabled selected>Loading countries...</option>
                   </select>
                 </div>
-                <!-- City -->
+                <!-- Transfer Dropdown -->
                 <div class="form-group col-md-3">
-                  <label for="transferCity">City *</label>
+                  <label for="transferType">Transfer *</label>
                   <select
-                    class="form-control city-dropdown-transfer"
-                    id="transferCity"
+                    id="transferType"
+                    class="form-control transfer-dropdown"
                     required
                   >
-                    <option value="" disabled selected>Select country first</option>
-                    <!-- Cities will be populated dynamically -->
+                    <option value="" disabled selected>Select Transfer</option>
                   </select>
                 </div>
                 <!-- Date -->
@@ -588,34 +587,16 @@
                     required
                   />
                 </div>
-                <!-- Transfer Type -->
+                <!-- City -->
                 <div class="form-group col-md-3">
-                  <label for="transferRouteType">
-                    <i
-                      class="fas fa-exchange-alt"
-                      style="margin-right: 8px; color: #1abb9c"
-                    ></i>
-                    Transfer Type *
-                  </label>
+                  <label for="transferCity">City *</label>
                   <select
-                    id="transferRouteType"
-                    class="form-control transfer-route-type"
+                    class="form-control city-dropdown-transfer"
+                    id="transferCity"
                     required
                   >
-                    <option value="" disabled selected>Select Type</option>
-                    <option value="TIN">TIN (Transfer In)</option>
-                    <option value="TOUT">TOUT (Transfer Out)</option>
-                  </select>
-                </div>
-                <!-- Transfer Dropdown -->
-                <div class="form-group col-md-3">
-                  <label for="transferType">Transfer *</label>
-                  <select
-                    id="transferType"
-                    class="form-control transfer-dropdown"
-                    required
-                  >
-                    <option value="" disabled selected>Select Transfer</option>
+                    <option value="" disabled selected>Select country first</option>
+                    <!-- Cities will be populated dynamically -->
                   </select>
                 </div>
                 <!-- Flight -->
@@ -626,6 +607,20 @@
                     class="form-control"
                     id="transferFlight"
                     placeholder="Flight details"
+                  />
+                </div>
+                <!-- Flight Time -->
+                <div class="form-group col-md-4">
+                  <label for="flightTime">Time</label>
+                  <input type="time" class="form-control" id="flightTime" />
+                </div>
+                <!-- Pickup Time -->
+                <div class="form-group col-md-4">
+                  <label for="transferPickupTime">Pickup Time</label>
+                  <input
+                    type="time"
+                    class="form-control"
+                    id="transferPickupTime"
                   />
                 </div>
                 <!-- From -->
@@ -650,11 +645,6 @@
                     required
                   />
                 </div>
-                <!-- Flight Time -->
-                <div class="form-group col-md-4">
-                  <label for="flightTime">Flight Time</label>
-                  <input type="time" class="form-control" id="flightTime" />
-                </div>
                 <!-- ToT -->
                 <div class="form-group col-md-4">
                   <label for="transferToT">ToT *</label>
@@ -663,15 +653,6 @@
                     <option value="PVT">PVT</option>
                     <option value="SIC">SIC</option>
                   </select>
-                </div>
-                <!-- Pickup Time -->
-                <div class="form-group col-md-4">
-                  <label for="transferPickupTime">Pickup Time</label>
-                  <input
-                    type="time"
-                    class="form-control"
-                    id="transferPickupTime"
-                  />
                 </div>
                 <!-- Backend Price Section -->
                 <div class="col-md-6 col-sm-6 form-group">

@@ -1239,8 +1239,8 @@
           <div class="modal-body">
             <form id="transferForm">
               <div class="form-row">
-                <!-- City -->
-                <div class="form-group col-md-3">
+                 <!-- City * -->
+                <div class="form-group col-md-4">
                   <label for="transferCity">City *</label>
                   <select
                     class="form-control city-dropdown-transfer"
@@ -1251,8 +1251,8 @@
                     <!-- Cities will be populated dynamically -->
                   </select>
                 </div>
-                <!-- Date -->
-                <div class="form-group col-md-3">
+                <!-- Date * -->
+                <div class="form-group col-md-4">
                   <label for="transferDate">Date *</label>
                   <input
                     type="date"
@@ -1261,27 +1261,8 @@
                     required
                   />
                 </div>
-                <!-- Transfer Type -->
-                <div class="form-group col-md-3">
-                  <label for="transferRouteType">
-                    <i
-                      class="fas fa-exchange-alt"
-                      style="margin-right: 8px; color: #1abb9c"
-                    ></i>
-                    Transfer Type *
-                  </label>
-                  <select
-                    id="transferRouteType"
-                    class="form-control transfer-route-type"
-                    required
-                  >
-                    <option value="" disabled selected>Select Type</option>
-                    <option value="TIN">TIN (Transfer In)</option>
-                    <option value="TOUT">TOUT (Transfer Out)</option>
-                  </select>
-                </div>
-                <!-- Transfer Dropdown -->
-                <div class="form-group col-md-3">
+                <!-- Transfer Dropdown * -->
+                <div class="form-group col-md-4">
                   <label for="transferType">Transfer *</label>
                   <select
                     id="transferType"
@@ -1291,6 +1272,7 @@
                     <option value="" disabled selected>Select Transfer</option>
                   </select>
                 </div>
+
                 <!-- Flight -->
                 <div class="form-group col-md-4">
                   <label for="transferFlight">Flight</label>
@@ -1301,6 +1283,26 @@
                   >
                     <option value="" disabled selected>Select Flight</option>
                   </select>
+                </div>
+                <!-- Flight Time -->
+                <div class="form-group col-md-4">
+                  <label for="flightTime">Time</label>
+                  <input
+                    type="time"
+                    class="form-control"
+                    id="flightTime"
+                    required
+                  />
+                </div>
+                <!-- Pickup Time -->
+                <div class="form-group col-md-4">
+                  <label for="transferPickupTime">Arrival Time</label>
+                  <input
+                    type="time"
+                    class="form-control"
+                    id="transferPickupTime"
+                    required
+                  />
                 </div>
                 <!-- From -->
                 <div class="form-group col-md-4">
@@ -1324,16 +1326,6 @@
                     required
                   />
                 </div>
-                <!-- Flight Time -->
-                <div class="form-group col-md-4">
-                  <label for="flightTime">Flight Time</label>
-                  <input
-                    type="time"
-                    class="form-control"
-                    id="flightTime"
-                    required
-                  />
-                </div>
                 <!-- ToT -->
                 <div class="form-group col-md-4">
                   <label for="transferToT">ToT *</label>
@@ -1342,16 +1334,6 @@
                     <option value="PVT">PVT</option>
                     <option value="SIC">SIC</option>
                   </select>
-                </div>
-                <!-- Pickup Time -->
-                <div class="form-group col-md-4">
-                  <label for="transferPickupTime">Arrival Time</label>
-                  <input
-                    type="time"
-                    class="form-control"
-                    id="transferPickupTime"
-                    required
-                  />
                 </div>
                 <div class="col-md-4 col-sm-6 form-group">
                   <label for="updatedTransferPrice"
@@ -3402,7 +3384,6 @@
           row.dataset.transferId = transfer.transfer_id; // ✅ Store transfer_id correctly
           row.dataset.flightTime = transfer.flight_time || ""; // ✅ Store Flight Time
           row.dataset.transferFlight = transfer.flight_number || ""; // ✅ Store Flight Number
-          row.dataset.transferRouteType = transfer.transfers?.transfer_type || transfer.transfer_type || ""; // ✅ Store Transfer Route Type
           console.log(formatToYYYYMMDD(transfer.date));
           // ✅ Store the quotation status in the dataset
           row.dataset.quotationStatus = quotationStatus;
@@ -3450,20 +3431,16 @@
         // Fetch transfers based on selected city
         function searchTransfersByCity(cityDropdown, transferDropdown) {
           const selectedCity = cityDropdown.value;
-          const transferRouteType = document.getElementById("transferRouteType")?.value;
 
           if (!selectedCity) {
             alert("Please select a city.");
             return;
           }
 
-          console.log(`Fetching transfers for city: ${selectedCity}, type: ${transferRouteType || "all"}`);
+          console.log(`Fetching transfers for city: ${selectedCity}`);
 
           const url = new URL(`${Endpoint}/api/v1/transfers`);
           url.searchParams.append("city", selectedCity);
-          if (transferRouteType) {
-            url.searchParams.append("transfer_type", transferRouteType);
-          }
 
           fetch(url, {
             method: "GET",
@@ -3520,17 +3497,6 @@
               searchTransfersByCity(cityDropdown, transferDropdown);
             });
           });
-
-        // Listen for transfer route type change to reload transfers
-        document.querySelectorAll(".transfer-route-type").forEach((typeInput) => {
-          typeInput.addEventListener("change", function () {
-            const cityDropdown = document.querySelector(".city-dropdown-transfer");
-            const transferDropdown = document.getElementById("transferType");
-            if (cityDropdown && cityDropdown.value && transferDropdown) {
-              searchTransfersByCity(cityDropdown, transferDropdown);
-            }
-          });
-        });
 
         // Event listener for the "Add Transfer" button
         document
@@ -3719,7 +3685,6 @@
               transferDate: formatToDDMMYYYY(
                 document.getElementById("transferDate").value
               ),
-              transferRouteType: document.getElementById("transferRouteType")?.value || "",
               transferType: transferType.trim(),
               transferFrom: document
                 .getElementById("transferFrom")
@@ -3772,7 +3737,6 @@
           row.dataset.transferId = transfer.transfer_id;
           row.dataset.flightTime = transfer.flightTime;
           row.dataset.transferFlight = transfer.transferFlight;
-          row.dataset.transferRouteType = transfer.transferRouteType || "";
 
           let displayPickupTime = formatTimeToHHMM(transfer.transferPickupTime || transfer.flightTime || "");
           if (!displayPickupTime && transfer.transferFlight && typeof flightsArray !== "undefined") {
@@ -3829,7 +3793,6 @@
               document.getElementById("transferDate").value
             ),
             transfer_description: selectedTransferOption.textContent.trim(),
-            transferRouteType: document.getElementById("transferRouteType")?.value || "",
             from_location: document.getElementById("transferFrom").value,
             to_location: document.getElementById("transferTo").value,
             tot: document.getElementById("transferToT").value,
@@ -3848,8 +3811,6 @@
             updatedTransfer.flight_time || "";
           editingTransferRow.dataset.transferFlight =
             updatedTransfer.flight_number || "";
-          editingTransferRow.dataset.transferRouteType =
-            updatedTransfer.transferRouteType || "";
 
           let displayPickupTime = formatTimeToHHMM(updatedTransfer.pickup_time || updatedTransfer.flight_time || "");
           if (!displayPickupTime && updatedTransfer.flight_number && typeof flightsArray !== "undefined") {
@@ -3906,7 +3867,6 @@
           console.log("Editing Transfer Row:", row);
 
           const transferId = row.dataset.transferId;
-          const transferRouteType = row.dataset.transferRouteType || "";
 
           if (!transferId) {
             console.error("Error: Transfer ID missing in row dataset.");
@@ -3917,18 +3877,17 @@
           // ✅ Extract fresh data from the row (always up-to-date)
           let transfer = {
             transfer_id: transferId,
-            transferDate: row.cells[0].textContent.trim(),
-            transferCity: row.cells[2].textContent.trim(),
-            transferType: row.cells[3].textContent.trim(), // ✅ Transfer Description (Dropdown)
-            transferToT: row.cells[4].textContent.trim(),
-            transferFrom: row.cells[5].textContent.trim(),
-            transferTo: row.cells[6].textContent.trim(),
+            transferDate: row.dataset.transferDate || row.cells[0].textContent.trim().substring(0, 10),
+            transferCity: row.cells[1].textContent.trim(),
+            transferType: row.cells[2].textContent.trim(), // ✅ Transfer Description (Dropdown)
+            transferToT: row.cells[3].textContent.trim(),
+            transferFrom: row.cells[4].textContent.trim(),
+            transferTo: row.cells[5].textContent.trim(),
             transferPickupTime: row.dataset.pickupTime || "",
-            remarks: row.cells[7].textContent.trim(),
-            final_cost: row.cells[8].textContent.trim(),
+            remarks: row.cells[6].textContent.trim(),
+            final_cost: row.cells[7].textContent.trim(),
             flightTime: row.dataset.flightTime || "", // ✅ Always get latest flight time
             transferFlight: row.dataset.transferFlight || "", // ✅ Always get latest flight number
-            transferRouteType: transferRouteType,
           };
 
           console.log("Loaded Transfer Data for Editing:", transfer);
@@ -3963,9 +3922,6 @@
             transfer.transferToT || "";
           document.getElementById("updatedTransferPrice").value =
             transfer.final_cost || "N/A";
-          if (document.getElementById("transferRouteType")) {
-            document.getElementById("transferRouteType").value = transferRouteType;
-          }
 
           // ✅ **Disable fields if the quotation is approved**
           const isQuotationApproved = quotationStatus === "Approved";
@@ -3979,9 +3935,6 @@
           document.getElementById("transferTo").disabled = !canEdit;
           document.getElementById("transferToT").disabled = !canEdit;
           document.getElementById("transferType").disabled = !canEdit;
-          if (document.getElementById("transferRouteType")) {
-            document.getElementById("transferRouteType").disabled = !canEdit;
-          }
           document.getElementById("updatedTransferPrice").disabled = !canEdit;
           document.getElementById("getTransferPriceBtn").disabled = !canEdit;
 
@@ -4020,9 +3973,6 @@
 
           const url = new URL(`${Endpoint}/api/v1/transfers`);
           url.searchParams.append("city", transfer.transferCity);
-          if (transferRouteType) {
-            url.searchParams.append("transfer_type", transferRouteType);
-          }
           fetch(url, {
             method: "GET",
             headers: {
@@ -8605,24 +8555,22 @@
                 const cells = row.querySelectorAll("td");
 
                 // Ensure correct ISO format for date fields
-                const transferDate = cells[0]?.textContent.trim();
+                const transferDate = row.dataset.transferDate || formatToYYYYMMDD(cells[0]?.textContent.trim().substring(0, 10));
                 // rowData["id"] = parseInt(row.dataset.transferId, 10) || 0; // Ensure ID
                 rowData["trip_item_id"] = 0; // This should be assigned dynamically if needed
-                rowData["transfer_id"] =
-                  parseInt(row.dataset.transferId, 10) || 0; // Ensure TransferID
-                rowData["transfer_description"] = cells[3]?.textContent.trim();
-                // rowData["supplier_id"] = null; // Default to null unless provided
-                rowData["city"] = cells[2]?.textContent.trim();
-                rowData["from_location"] = cells[5]?.textContent.trim();
-                rowData["to_location"] = cells[6]?.textContent.trim();
-                rowData["date"] = formatToYYYYMMDD(transferDate);
+                rowData["transfer_id"] = parseInt(row.dataset.transferId, 10) || 0; // Ensure TransferID
+                rowData["transfer_description"] = cells[2]?.textContent.trim();
+                rowData["city"] = cells[1]?.textContent.trim();
+                rowData["from_location"] = cells[4]?.textContent.trim();
+                rowData["to_location"] = cells[5]?.textContent.trim();
+                rowData["date"] = transferDate;
                 rowData["flight_time"] = row.dataset.flightTime || "";
                 rowData["pickup_time"] = row.dataset.pickupTime || "";
                 rowData["flight_number"] = row.dataset.transferFlight || "";
-                rowData["tot"] = cells[4]?.textContent.trim();
-                rowData["remarks"] = cells[7]?.textContent.trim() || "";
+                rowData["tot"] = cells[3]?.textContent.trim();
+                rowData["remarks"] = cells[6]?.textContent.trim() || "";
                 rowData["total_cost"] =
-                  parseFloat(cells[8]?.textContent.trim()) || 0.0;
+                  parseFloat(cells[7]?.textContent.trim()) || 0.0;
                 rowData["price"] = rowData["total_cost"];
                 rowData["discount"] = 0.0; // Default to 0
                 rowData["final_cost"] = rowData["total_cost"]; // Set default final cost

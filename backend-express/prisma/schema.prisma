@@ -798,3 +798,16 @@ model trips {
   transfer_trip_items              transfer_trip_items[]
   agents                           Agent?                 @relation(fields: [agent_id], references: [id], onUpdate: NoAction)
 }
+
+model CityInfo {
+  id          Int      @id @default(autoincrement())
+  cityName    String   @unique @map("city_name") @db.VarChar(100)
+  description String   @db.Text
+  highlights  String   @db.Text
+  bestTime    String?  @map("best_time") @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("city_info")
+}
+

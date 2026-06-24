@@ -2641,17 +2641,6 @@ function setupCityChangeListeners() {
       populateTransferDropdown(this.value);
     });
   }
-
-  // Transfer route type change
-  const transferRouteTypeDropdown = document.querySelector('.transfer-route-type');
-  if (transferRouteTypeDropdown) {
-    transferRouteTypeDropdown.addEventListener('change', function() {
-      const cityValue = document.querySelector('.city-dropdown-transfer')?.value;
-      if (cityValue) {
-        populateTransferDropdown(cityValue);
-      }
-    });
-  }
   
   // Hotel city change
   const hotelCityDropdown = document.querySelector('.city-dropdown-hotel');
@@ -2696,11 +2685,7 @@ function setupCityChangeListeners() {
 // Populate service dropdowns based on city
 async function populateTransferDropdown(cityName) {
   try {
-    const transferRouteType = document.getElementById("transferRouteType")?.value;
     let url = `${Endpoint}/api/v1/transfers?city=${encodeURIComponent(cityName)}`;
-    if (transferRouteType) {
-      url += `&transfer_type=${encodeURIComponent(transferRouteType)}`;
-    }
     const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`

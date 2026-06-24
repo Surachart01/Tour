@@ -41,7 +41,7 @@ function checkAndCalculateTransferPrice() {
   const transferDate = document.getElementById("transferDate").value;
   const transferToT = document.getElementById("transferToT").value;
 
-  if (transferCity && transferType && transferDate && transferToT) {
+  if (transferCity && transferDate && transferToT) {
     console.log("✅ All required fields are filled, calculating price...");
     calculateTransferPrice();
   }
@@ -185,9 +185,8 @@ document.getElementById("saveTransfer").addEventListener("click", function (even
   const transferFlight = document.getElementById("transferFlight").value || "";
   const remarks = document.getElementById("remarks").value;
   const transferPrice = document.getElementById("updatedTransferPrice").value || "N/A";
-  const transferRouteType = document.getElementById("transferRouteType")?.value || "";
 
-  if (!transferCity || !transferType || !transferDate || !transferFrom || !transferTo) {
+  if (!transferCity || !transferDate || !transferFrom || !transferTo) {
     alert("Please fill in all required fields.");
     return;
   }
@@ -198,7 +197,6 @@ document.getElementById("saveTransfer").addEventListener("click", function (even
   const newTransfer = {
     transferId, // ✅ Ensure ID is included
     transferCity,
-    transferRouteType, // ✅ Store Route Type (TIN/TOUT)
     transferType,
     transferDate,
     transferFrom,
@@ -234,7 +232,7 @@ function addTransferRow(transfer) {
   newRow.dataset.transferId = transfer.transferId || "";
   newRow.dataset.flightTime = transfer.flightTime || "";
   newRow.dataset.transferFlight = transfer.transferFlight || "";
-  newRow.dataset.transferRouteType = transfer.transferRouteType || "";
+  newRow.dataset.transferDate = formatToYYYYMMDD(transfer.transferDate) || "";
 
   let displayPickupTime = formatTimeToHHMM(transfer.transferPickupTime || transfer.flightTime || "");
   if (!displayPickupTime && transfer.transferFlight && typeof flightsArray !== "undefined") {
@@ -297,8 +295,8 @@ function updateTransferRow(row, transfer) {
   row.dataset.transferId = transfer.transferId;
   row.dataset.flightTime = transfer.flightTime || "";
   row.dataset.transferFlight = transfer.transferFlight || "";
-  row.dataset.transferRouteType = transfer.transferRouteType || "";
   row.dataset.pickupTime = displayPickupTime;
+  row.dataset.transferDate = formatToYYYYMMDD(transfer.transferDate) || "";
 }
 
 // Handle edit and delete button clicks
@@ -360,11 +358,6 @@ document.getElementById("transferTableBody").addEventListener("click", function 
 
     document.getElementById("remarks").value = rowData.remarks;
     document.getElementById("updatedTransferPrice").value = rowData.price || "N/A";
-
-    const routeTypeDropdown = document.getElementById("transferRouteType");
-    if (routeTypeDropdown) {
-      routeTypeDropdown.value = row.dataset.transferRouteType || "";
-    }
 
     editingTransferRow = row;
 
