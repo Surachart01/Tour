@@ -996,6 +996,7 @@
 
         // Clone transfer redirect
         function cloneTransfer(id) {
+          sessionStorage.removeItem("clone_ids");
           window.location.href = `edit_transfer.html?id=${id}&clone=true`;
         }
 
@@ -1141,84 +1142,16 @@
           }
         }
 
-        async function bulkCloneTransfers() {
-          const idsToClone = Array.from(selectedIds);
+        function bulkCloneTransfers() {
+          const idsToClone = filteredTransfers
+            .map(t => String(t.id))
+            .filter(id => selectedIds.has(id));
+          
           if (idsToClone.length === 0) return;
           
-          if (!confirm(`Are you sure you want to clone ${idsToClone.length} selected transfers?`)) {
-            return;
-          }
-          
-          const token = localStorage.getItem("token");
-          let clonedCount = 0;
-          let errorCount = 0;
-          
-          showProgressOverlay(`Cloning 0 of ${idsToClone.length}...`);
-          
-          for (let i = 0; i < idsToClone.length; i++) {
-            const id = idsToClone[i];
-            showProgressOverlay(`Cloning ${i + 1} of ${idsToClone.length}...`);
-            
-            try {
-              const response = await fetch(`${Endpoint}/api/v1/transfers/${id}?excludeMarkup=true`, {
-                headers: {
-                  Authorization: `Bearer ${token}`
-                }
-              });
-              
-              if (!response.ok) throw new Error("Failed to fetch transfer " + id);
-              
-              const detail = await response.json();
-              
-              const payload = {
-                transfer_type: detail.transfer_type,
-                city: detail.city,
-                description: detail.description,
-                departure: detail.departure,
-                arrival: detail.arrival,
-                sic_price_adult: detail.sic_price_adult,
-                sic_price_child: detail.sic_price_child,
-                supplier_id: detail.supplier_id,
-                display_order: detail.display_order,
-                country: detail.country || "Thailand",
-                prices: (detail.prices || []).map(p => ({
-                  start_date: p.start_date,
-                  end_date: p.end_date,
-                  pax: p.pax,
-                  price: p.price,
-                  cost: p.cost,
-                  currency_id: p.currency_id
-                }))
-              };
-              
-              const createResponse = await fetch(`${Endpoint}/api/v1/transfers`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-              });
-              
-              if (!createResponse.ok) throw new Error("Failed to clone transfer " + id);
-              
-              clonedCount++;
-            } catch (err) {
-              console.error(err);
-              errorCount++;
-            }
-          }
-          
-          hideProgressOverlay();
-          
-          if (errorCount === 0) {
-            alert(`Successfully cloned ${clonedCount} transfers!`);
-          } else {
-            alert(`Cloned ${clonedCount} transfers. Failed to clone ${errorCount} transfers.`);
-          }
-          
-          selectedIds.clear();
-          fetchTransfers();
+          sessionStorage.setItem("edit_queue", JSON.stringify(idsToClone));
+          sessionStorage.removeItem("clone_ids");
+          window.location.href = `edit_transfer.html?id=${idsToClone[0]}&clone=true&batch=true`;
         }
 
         async function bulkDeleteTransfers() {

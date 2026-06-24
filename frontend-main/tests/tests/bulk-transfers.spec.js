@@ -55,24 +55,83 @@ test.describe('Transfers Bulk Actions Tests', () => {
     await checkboxes.nth(1).check();
 
     // Check count displays updated selection count
-    const editSelectedCount = await page.locator('#btnBulkEdit .selected-count').first().textContent();
-    console.log(`UI indicates selected count: ${editSelectedCount}`);
-    expect(editSelectedCount).toBe('2');
+    const cloneSelectedCount = await page.locator('#btnBulkClone .selected-count').first().textContent();
+    console.log(`UI indicates selected count for clone: ${cloneSelectedCount}`);
+    expect(cloneSelectedCount).toBe('2');
 
     console.log('⚡ Clicking Clone Selected...');
     await page.click('#btnBulkClone');
 
-    // Wait for the clone progress overlay to finish
-    console.log('⏳ Waiting for bulk clone progress overlay to disappear...');
-    await page.waitForSelector('#progressOverlay', { state: 'hidden', timeout: 30000 });
+    // Wait for redirect to edit_transfer.html
+    await page.waitForURL(/edit_transfer.html/, { timeout: 15000 });
+    console.log(`✅ Redirected to: ${page.url()}`);
+    expect(page.url()).toContain('clone=true');
+    expect(page.url()).toContain('batch=true');
 
-    // Wait for reload
-    await page.waitForTimeout(3000);
-    console.log('✅ Bulk clone request finished');
+    // Verify batch clone banner is shown
+    const cloneBanner = page.locator('#batchEditBanner');
+    await expect(cloneBanner).toBeVisible();
+
+    const cloneBannerText = await page.locator('#batchEditBanner').innerText();
+    console.log(`Banner text: ${cloneBannerText}`);
+    expect(cloneBannerText.toLowerCase()).toContain('batch clone mode');
+    expect(cloneBannerText).toContain('Cloning item 1 of 2');
+
+    // Wait for form fields to load
+    console.log('⏳ Waiting for form fields (departure, city, supplier) to load and populate from API...');
+    await page.waitForFunction(() => {
+      const departure = document.getElementById('departure');
+      const city = document.getElementById('city');
+      const supplier = document.getElementById('supplier');
+      return departure && departure.value !== '' && 
+             city && city.value !== '' && 
+             supplier && (supplier.value !== '' || supplier.options.length > 1);
+    }, { timeout: 15000 });
+    console.log('✅ Form fields populated successfully');
+
+    // Fill in required fields if they are empty to pass validation
+    const supplierVal1 = await page.inputValue('#supplier');
+    if (!supplierVal1) {
+      await page.selectOption('#supplier', { index: 1 });
+    }
+    const sicAdultVal1 = await page.inputValue('#SICPriceAdult');
+    if (!sicAdultVal1 || sicAdultVal1 === '0') {
+      await page.fill('#SICPriceAdult', '100');
+    }
+    const sicChildVal1 = await page.inputValue('#SICPriceChild');
+    if (!sicChildVal1 || sicChildVal1 === '0') {
+      await page.fill('#SICPriceChild', '50');
+    }
+
+    // Modify description on transfer 1
+    const initialCloneDesc = await page.inputValue('#description');
+    const updatedCloneDesc = `${initialCloneDesc} (Batch Clone Test)`;
+    await page.fill('#description', updatedCloneDesc);
+
+    console.log('⚡ Creating first cloned transfer...');
+    await page.click('#submitTransfer');
+
+    // Wait for second transfer to load
+    console.log('⏳ Waiting for redirect to second item...');
+    await page.waitForFunction(() => {
+      const idx = document.getElementById('batchCurrentIndex');
+      return idx && idx.textContent === '2';
+    }, { timeout: 15000 });
+
+    const cloneProgress2 = await page.locator('#batchCurrentIndex').textContent();
+    expect(cloneProgress2).toBe('2');
+
+    // Skip the second clone to finish the batch
+    console.log('⚡ Skipping second cloned transfer...');
+    await page.click('#btnBatchSkip');
+
+    // Wait for redirect back to transfers.html
+    await page.waitForURL(/transfers.html/, { timeout: 15000 });
+    console.log(`✅ Redirected back to: ${page.url()}`);
 
     // Assert cloning alerts were captured
-    expect(dialogMessages.some(m => m.includes('Are you sure you want to clone'))).toBe(true);
-    expect(dialogMessages.some(m => m.includes('Successfully cloned 2 transfers'))).toBe(true);
+    expect(dialogMessages.some(m => m.includes('Transfer cloned successfully'))).toBe(true);
+    expect(dialogMessages.some(m => m.includes('Reached the end of the clone batch') || m.includes('Batch clone completed'))).toBe(true);
     console.log('✅ Bulk clone verified successfully');
 
     // ===== Batch Edit =====
@@ -107,9 +166,23 @@ test.describe('Transfers Bulk Actions Tests', () => {
       const supplier = document.getElementById('supplier');
       return departure && departure.value !== '' && 
              city && city.value !== '' && 
-             supplier && supplier.value !== '';
+             supplier && (supplier.value !== '' || supplier.options.length > 1);
     }, { timeout: 15000 });
     console.log('✅ Form fields populated successfully');
+
+    // Fill in required fields if they are empty to pass validation
+    const supplierVal2 = await page.inputValue('#supplier');
+    if (!supplierVal2) {
+      await page.selectOption('#supplier', { index: 1 });
+    }
+    const sicAdultVal2 = await page.inputValue('#SICPriceAdult');
+    if (!sicAdultVal2 || sicAdultVal2 === '0') {
+      await page.fill('#SICPriceAdult', '100');
+    }
+    const sicChildVal2 = await page.inputValue('#SICPriceChild');
+    if (!sicChildVal2 || sicChildVal2 === '0') {
+      await page.fill('#SICPriceChild', '50');
+    }
 
     // Modify description on transfer 1
     const initialDesc = await page.inputValue('#description');

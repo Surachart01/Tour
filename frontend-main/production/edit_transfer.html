@@ -1051,10 +1051,7 @@
         console.log(`Successfully loaded ${cities.length} cities into ${cityDropdowns.length} dropdown(s)`);
       }
 
-      // Initialize cities dropdown on page load
-      document.addEventListener("DOMContentLoaded", function() {
-        populateCitiesDropdown("city");
-      });
+
 
       function formatToDDMMYYYY(dateString) {
         const ddmmyyyyRegex = /^\d{2}-\d{2}-\d{4}$/;
@@ -1093,11 +1090,17 @@
       let currentRow = null; // Track the currently edited row
       let editingDateRange = null; // Track date range being edited
       const transferId = new URLSearchParams(window.location.search).get("id"); // Get the transfer ID from the URL
+      let activeId = transferId;
+      let isCloneModeOverride = new URLSearchParams(window.location.search).get("clone") === "true";
 
       // Load transfer data for editing from the backend
       document.addEventListener("DOMContentLoaded", async function () {
         const token = localStorage.getItem("token");
         const supplierDropdown = document.getElementById("supplier");
+        const urlParams = new URLSearchParams(window.location.search);
+        const isBatchMode = urlParams.get("batch") === "true";
+        const isCloneMode = urlParams.get("clone") === "true";
+
         if (!token) {
           alert("You are not authorized. Please log in first.");
           window.location.href = "login.html";
@@ -1179,11 +1182,36 @@
           }
         }
 
-        // Load suppliers
-        await populateSuppliersDropdown();
+        // Load cities and suppliers sequentially/synchronously before loading transfer details
+        try {
+          await populateCitiesDropdown("city");
+        } catch (e) {
+          console.error("Error populating cities dropdown:", e);
+        }
+        
+        try {
+          await populateSuppliersDropdown();
+        } catch (e) {
+          console.error("Error populating suppliers dropdown:", e);
+        }
 
-        if (transferId) {
-          fetch(`${Endpoint}/api/v1/transfers/${transferId}?excludeMarkup=true`, {
+        activeId = transferId;
+        isCloneModeOverride = isCloneMode;
+
+        if (isCloneMode && isBatchMode) {
+          let cloneIds = {};
+          try {
+            cloneIds = JSON.parse(sessionStorage.getItem("clone_ids")) || {};
+          } catch (e) {}
+          if (cloneIds[String(transferId)]) {
+            activeId = cloneIds[String(transferId)];
+            isCloneModeOverride = false; // Behave as Edit mode for this cloned item
+            console.log(`Found existing clone ID ${activeId} for original ID ${transferId}. Switching to Edit Mode.`);
+          }
+        }
+
+        if (activeId) {
+          fetch(`${Endpoint}/api/v1/transfers/${activeId}?excludeMarkup=true`, {
             headers: {
               method: "GET",
               Authorization: `Bearer ${token}`,
@@ -1217,31 +1245,27 @@
               // Handle city selection
               if (transfer.city) {
                 console.log("Setting city to:", transfer.city);
+                const citySelect = document.getElementById("city");
                 
-                // Wait for cities to be loaded, then set the city value
-                setTimeout(() => {
-                  const citySelect = document.getElementById("city");
-                  
-                  // Check if the city option exists
-                  const cityOption = Array.from(citySelect.options).find(
-                    (opt) => opt.value === transfer.city
-                  );
-                  if (cityOption) {
-                    citySelect.value = transfer.city;
-                    console.log("✅ City set successfully:", transfer.city);
-                  } else {
-                    // Add the city option if it doesn't exist
-                    const option = document.createElement("option");
-                    option.value = transfer.city;
-                    option.textContent = transfer.city;
-                    option.selected = true;
-                    citySelect.appendChild(option);
-                    console.log("✅ Added missing city option:", transfer.city);
-                  }
-                }, 1500); // Wait for cities to be loaded
+                // Check if the city option exists
+                const cityOption = Array.from(citySelect.options).find(
+                  (opt) => opt.value === transfer.city
+                );
+                if (cityOption) {
+                  citySelect.value = transfer.city;
+                  console.log("✅ City set successfully:", transfer.city);
+                } else {
+                  // Add the city option if it doesn't exist
+                  const option = document.createElement("option");
+                  option.value = transfer.city;
+                  option.textContent = transfer.city;
+                  option.selected = true;
+                  citySelect.appendChild(option);
+                  console.log("✅ Added missing city option:", transfer.city);
+                }
               }
 
-              const isClone = new URLSearchParams(window.location.search).get("clone") === "true";
+              const isClone = isCloneModeOverride;
               const userRole = localStorage.getItem("role") || "";
               const isAdmin = userRole.trim().toLowerCase() === "admin" || userRole.trim().toLowerCase() === "superadmin";
               const shouldPopulatePrice = !isClone || isAdmin;
@@ -1253,6 +1277,14 @@
                 const submitBtn = document.getElementById("submitTransfer");
                 if (submitBtn) {
                   submitBtn.innerHTML = '<i class="fas fa-save" style="margin-right: 8px"></i>Create Transfer';
+                }
+              } else {
+                document.title = "Edit Transfer";
+                const titleH1 = document.querySelector("h1");
+                if (titleH1) titleH1.textContent = "Edit Transfer";
+                const submitBtn = document.getElementById("submitTransfer");
+                if (submitBtn) {
+                  submitBtn.innerHTML = '<i class="fas fa-save" style="margin-right: 8px"></i>Save Transfer';
                 }
               }
 
@@ -1270,9 +1302,7 @@
 
               // Set the selected supplier
               if (transfer.supplier_id) {
-                setTimeout(() => {
-                  supplierDropdown.value = transfer.supplier_id;
-                }, 300);
+                supplierDropdown.value = transfer.supplier_id;
               }
 
               if (shouldPopulatePrice && transfer.prices && transfer.prices.length > 0) {
@@ -1286,9 +1316,7 @@
             });
         }
 
-        // Batch Edit Mode Initialization
-        const urlParams = new URLSearchParams(window.location.search);
-        const isBatchMode = urlParams.get("batch") === "true";
+        // Batch Edit/Clone Mode Initialization (using variables declared at DOMContentLoaded top level)
         if (isBatchMode && transferId) {
           let queue = [];
           try {
@@ -1298,7 +1326,36 @@
           }
           const currentIdIndex = queue.indexOf(String(transferId));
           if (currentIdIndex !== -1) {
-            document.getElementById("batchEditBanner").style.display = "flex";
+            const banner = document.getElementById("batchEditBanner");
+            if (banner) {
+              banner.style.display = "flex";
+              if (isCloneMode) {
+                // Style banner for batch clone mode (green/teal background)
+                banner.style.background = "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)";
+                
+                // Update header text to Batch Clone Mode
+                const titleDiv = banner.querySelector("div[style*='letter-spacing: 1px']");
+                if (titleDiv) titleDiv.textContent = "Batch Clone Mode";
+                
+                // Update icon to fa-copy
+                const icon = banner.querySelector(".fa-edit");
+                if (icon) {
+                  icon.classList.remove("fa-edit");
+                  icon.classList.add("fa-copy");
+                  icon.style.color = "#ffffff";
+                }
+                
+                // Update status text prefix to Cloning item
+                const statusSpan = banner.querySelector("div[style*='font-size: 16px'] > span");
+                if (statusSpan) {
+                  const textNode = Array.from(statusSpan.childNodes).find(node => node.nodeType === 3 && node.textContent.includes("Editing"));
+                  if (textNode) {
+                    textNode.textContent = "Cloning item ";
+                  }
+                }
+              }
+            }
+            
             document.getElementById("batchCurrentIndex").textContent = currentIdIndex + 1;
             document.getElementById("batchTotalCount").textContent = queue.length;
             const pct = ((currentIdIndex + 1) / queue.length) * 100;
@@ -1312,7 +1369,8 @@
                 btnPrev.addEventListener("click", function () {
                   const prevId = queue[currentIdIndex - 1];
                   if (prevId) {
-                    window.location.href = `edit_transfer.html?id=${prevId}&batch=true`;
+                    const cloneParam = isCloneMode ? "&clone=true" : "";
+                    window.location.href = `edit_transfer.html?id=${prevId}&batch=true${cloneParam}`;
                   }
                 });
               }
@@ -1321,9 +1379,10 @@
             document.getElementById("btnBatchSkip").addEventListener("click", function () {
               const nextId = queue[currentIdIndex + 1];
               if (nextId) {
-                window.location.href = `edit_transfer.html?id=${nextId}&batch=true`;
+                const cloneParam = isCloneMode ? "&clone=true" : "";
+                window.location.href = `edit_transfer.html?id=${nextId}&batch=true${cloneParam}`;
               } else {
-                alert("Reached the end of the batch!");
+                alert(isCloneMode ? "Reached the end of the clone batch!" : "Reached the end of the batch!");
                 sessionStorage.removeItem("edit_queue");
                 window.location.href = "transfers.html";
               }
@@ -1880,9 +1939,8 @@
 
           console.log("Sending transfer data:", transferData);
 
-          const isCloneMode = new URLSearchParams(window.location.search).get("clone") === "true";
-          const fetchUrl = isCloneMode ? `${Endpoint}/api/v1/transfers` : `${Endpoint}/api/v1/transfers/${transferId}`;
-          const fetchMethod = isCloneMode ? "POST" : "PUT";
+          const fetchUrl = isCloneModeOverride ? `${Endpoint}/api/v1/transfers` : `${Endpoint}/api/v1/transfers/${activeId}`;
+          const fetchMethod = isCloneModeOverride ? "POST" : "PUT";
 
           fetch(fetchUrl, {
             method: fetchMethod,
@@ -1892,13 +1950,25 @@
             },
             body: JSON.stringify(transferData),
           })
-            .then((response) => {
+            .then(async (response) => {
               console.log("API response status:", response.status);
               if (response.ok) {
-                console.log(isCloneMode ? "Transfer cloned successfully" : "Transfer updated successfully");
+                const resData = await response.json();
+                console.log(isCloneModeOverride ? "Transfer cloned successfully" : "Transfer updated successfully");
                 
+                // If clone mode, save the newly created clone's ID to clone_ids map
+                if (isCloneModeOverride && resData && resData.id) {
+                  let cloneIds = {};
+                  try {
+                    cloneIds = JSON.parse(sessionStorage.getItem("clone_ids")) || {};
+                  } catch (e) {}
+                  cloneIds[String(transferId)] = String(resData.id);
+                  sessionStorage.setItem("clone_ids", JSON.stringify(cloneIds));
+                }
+
                 const urlParams = new URLSearchParams(window.location.search);
                 const isBatchMode = urlParams.get("batch") === "true";
+                const isCloneMode = urlParams.get("clone") === "true";
                 if (isBatchMode) {
                   let queue = [];
                   try {
@@ -1906,12 +1976,14 @@
                   } catch (e) {}
                   const currentIdIndex = queue.indexOf(String(transferId));
                   const nextId = queue[currentIdIndex + 1];
+                  const cloneParam = isCloneMode ? "&clone=true" : "";
                   if (nextId) {
-                    alert("Transfer updated successfully! Proceeding to next transfer...");
-                    window.location.href = `edit_transfer.html?id=${nextId}&batch=true`;
+                    alert(isCloneMode ? "Transfer cloned successfully! Proceeding to next transfer..." : "Transfer updated successfully! Proceeding to next transfer...");
+                    window.location.href = `edit_transfer.html?id=${nextId}&batch=true${cloneParam}`;
                   } else {
-                    alert("Batch edit completed successfully!");
+                    alert(isCloneMode ? "Batch clone completed successfully!" : "Batch edit completed successfully!");
                     sessionStorage.removeItem("edit_queue");
+                    sessionStorage.removeItem("clone_ids"); // Clean up clone map
                     window.location.href = "transfers.html";
                   }
                 } else {

@@ -47,6 +47,20 @@ export function formatTransferResponse(transfer, markupGroup = '', markups = [])
   };
 }
 
+// Helper function to normalize date string to YYYY-MM-DD
+function normalizeDateStr(d) {
+  if (!d) return '';
+  const s = String(d).trim();
+  // Check for DD-MM-YYYY
+  const dmy = s.match(/^(\d{2})-(\d{2})-(\d{4})/);
+  if (dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+  // Extract YYYY-MM-DD prefix if present
+  const ymd = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (ymd) return ymd[1];
+  // Fallback
+  return s.split('T')[0].split(' ')[0];
+}
+
 export async function createTransfer(req, res, next) {
   try {
     const data = req.body;
@@ -69,8 +83,8 @@ export async function createTransfer(req, res, next) {
     const uniquePricingData = [];
     for (const p of pricingData) {
       if (!p.start_date || !p.end_date) continue;
-      const startStr = String(p.start_date).split('T')[0].trim();
-      const endStr = String(p.end_date).split('T')[0].trim();
+      const startStr = normalizeDateStr(p.start_date);
+      const endStr = normalizeDateStr(p.end_date);
       const paxVal = parseInt(p.pax, 10);
       const priceVal = parseFloat(p.price || 0);
       const costVal = parseFloat(p.cost || 0);
@@ -101,7 +115,7 @@ export async function createTransfer(req, res, next) {
                        (data.order !== undefined ? parseInt(data.order) : 0),
         transfer_pricing: uniquePricingData.length > 0 ? {
           create: uniquePricingData.map(p => ({
-            start_date: new Date(p.start_date), end_date: new Date(p.end_date),
+            start_date: new Date(normalizeDateStr(p.start_date)), end_date: new Date(normalizeDateStr(p.end_date)),
             pax: p.pax, price: p.price, cost: p.cost || 0, currency_id: p.currency_id || null
           }))
         } : undefined
@@ -264,8 +278,8 @@ export async function updateTransfer(req, res, next) {
     const uniquePricingData = [];
     for (const p of pricingData) {
       if (!p.start_date || !p.end_date) continue;
-      const startStr = String(p.start_date).split('T')[0].trim();
-      const endStr = String(p.end_date).split('T')[0].trim();
+      const startStr = normalizeDateStr(p.start_date);
+      const endStr = normalizeDateStr(p.end_date);
       const paxVal = parseInt(p.pax, 10);
       const priceVal = parseFloat(p.price || 0);
       const costVal = parseFloat(p.cost || 0);
@@ -298,7 +312,7 @@ export async function updateTransfer(req, res, next) {
                          (data.order !== undefined ? parseInt(data.order) : undefined),
           transfer_pricing: uniquePricingData.length > 0 ? {
             create: uniquePricingData.map(p => ({
-              start_date: new Date(p.start_date), end_date: new Date(p.end_date),
+              start_date: new Date(normalizeDateStr(p.start_date)), end_date: new Date(normalizeDateStr(p.end_date)),
               pax: p.pax, price: p.price, cost: p.cost || 0, currency_id: p.currency_id || null
             }))
           } : undefined

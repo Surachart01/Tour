@@ -2025,13 +2025,8 @@
             document.getElementById("transferTableBody");
           const row = document.createElement("tr");
 
-          if (!transfer.transfer_id) {
-            console.error("Error: Transfer ID is missing", transfer);
-            return;
-          }
-
           row.dataset.trip_transfer_id = transfer.id;
-          row.dataset.transferId = transfer.transfer_id;
+          row.dataset.transferId = transfer.transfer_id || 0;
           row.dataset.flightTime = transfer.flight_time || "";
           row.dataset.transferFlight = transfer.flight_number || "";
           row.dataset.pickupTime = transfer.pickup_time || "";
@@ -2158,13 +2153,7 @@
         function editTransfer(row) {
           console.log("Editing Transfer Row:", row);
 
-          const transferId = row.dataset.transferId;
-
-          if (!transferId) {
-            console.error("Error: Transfer ID missing in row dataset.");
-            alert("Error: Transfer ID is missing!");
-            return;
-          }
+          const transferId = row.dataset.transferId || 0;
 
           // ✅ Extract fresh data from the row (always up-to-date)
           let transfer = {

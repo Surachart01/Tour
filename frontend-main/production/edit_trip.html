@@ -828,6 +828,7 @@
                       <thead>
                         <tr>
                           <th>Date / Flight</th>
+                          <th>Transfer Type</th>
                           <th>City</th>
                           <th>Transfer Description</th>
                           <th>ToT</th>
@@ -1261,6 +1262,16 @@
                     required
                   />
                 </div>
+                <!-- Transfer Direction Type -->
+                <div class="form-group col-md-4">
+                  <label for="transferDirectionType">Transfer Type</label>
+                  <select class="form-control" id="transferDirectionType">
+                    <option value="">Select Type</option>
+                    <option value="TRF In">TRF In</option>
+                    <option value="TRF Out">TRF Out</option>
+                  </select>
+                </div>
+
                 <!-- Transfer Dropdown * -->
                 <div class="form-group col-md-4">
                   <label for="transferType">Transfer *</label>
@@ -1294,16 +1305,7 @@
                     required
                   />
                 </div>
-                <!-- Pickup Time -->
-                <div class="form-group col-md-4">
-                  <label for="transferPickupTime">Arrival Time</label>
-                  <input
-                    type="time"
-                    class="form-control"
-                    id="transferPickupTime"
-                    required
-                  />
-                </div>
+
                 <!-- From -->
                 <div class="form-group col-md-4">
                   <label for="transferFrom">From</label>
@@ -2267,6 +2269,79 @@
         let editingExcursionRow = null;
         let editingTourRow = null;
         let editingHotelRow = null;
+        let dbDiscount = 0;
+
+        function calculateBaseTotalCost() {
+          let sum = 0;
+          // sum flights
+          const flightsTable = document.getElementById("flightsTableBody");
+          if (flightsTable) {
+            flightsTable.querySelectorAll("tr").forEach(row => {
+              const cells = row.querySelectorAll("td");
+              if (cells[8]) sum += parseFloat(cells[8].textContent.trim()) || 0;
+            });
+          }
+          // sum transfers
+          const transfersTable = document.getElementById("transferTableBody");
+          if (transfersTable) {
+            transfersTable.querySelectorAll("tr").forEach(row => {
+              const cells = row.querySelectorAll("td");
+              if (cells[8]) sum += parseFloat(cells[8].textContent.trim()) || 0;
+            });
+          }
+          // sum hotels
+          const hotelsTable = document.getElementById("hotelsTableBody");
+          if (hotelsTable) {
+            hotelsTable.querySelectorAll("tr").forEach(row => {
+              const cells = row.querySelectorAll("td");
+              if (cells[9]) sum += parseFloat(cells[9].textContent.trim()) || 0;
+            });
+          }
+          // sum excursions
+          const excursionsTable = document.getElementById("excursionTableBody");
+          if (excursionsTable) {
+            excursionsTable.querySelectorAll("tr").forEach(row => {
+              const cells = row.querySelectorAll("td");
+              if (cells[7]) sum += parseFloat(cells[7].textContent.trim()) || 0;
+            });
+          }
+          // sum tours
+          const toursTable = document.getElementById("tourTableBody");
+          if (toursTable) {
+            toursTable.querySelectorAll("tr").forEach(row => {
+              const cells = row.querySelectorAll("td");
+              if (cells[6]) sum += parseFloat(cells[6].textContent.trim()) || 0;
+            });
+          }
+          // sum others
+          const othersTable = document.getElementById("othersTableBody");
+          if (othersTable) {
+            othersTable.querySelectorAll("tr").forEach(row => {
+              const cells = row.querySelectorAll("td");
+              if (cells[2]) sum += parseFloat(cells[2].textContent.trim()) || 0;
+            });
+          }
+          return sum;
+        }
+
+        function updateUIPriceFields() {
+          const includeAssistanceFee = document.getElementById("includeAssistanceFee");
+          const assistanceFeeAmount = document.getElementById("assistanceFeeAmount");
+          const totalPriceInput = document.getElementById("totalPrice");
+          const finalPriceInput = document.getElementById("finalPrice");
+          const discountInput = document.getElementById("discount");
+
+          const isChecked = includeAssistanceFee ? includeAssistanceFee.checked : false;
+          const fee = isChecked ? (parseFloat(assistanceFeeAmount.value) || 0) : 0;
+          const discount = discountInput ? (parseFloat(discountInput.value) || 0) : dbDiscount;
+
+          const baseTotalCost = calculateBaseTotalCost();
+          const newTotal = baseTotalCost + fee;
+          const newFinal = Math.max(0, newTotal - discount);
+
+          if (totalPriceInput) totalPriceInput.value = newTotal.toFixed(2);
+          if (finalPriceInput) finalPriceInput.value = newFinal.toFixed(2);
+        }
         const urlParams = new URLSearchParams(window.location.search);
         const tripId = urlParams.get("id");
         console.log(tripId);
@@ -2794,6 +2869,7 @@
             `;
 
           excursionTableBody.appendChild(row);
+          updateUIPriceFields();
         }
 
         function updateExcursion(excursion) {
@@ -2845,6 +2921,7 @@
           } else {
             excursionsArray.push(excursion);
           }
+          updateUIPriceFields();
         }
 
         function formatDateForInput(dateString) {
@@ -3111,6 +3188,7 @@
             (t) => t.excursion_id !== excursionId
           );
           row.remove();
+          updateUIPriceFields();
         }
 
         document
@@ -3322,9 +3400,6 @@
           const numberOfKids =
             parseInt(document.getElementById("child").value, 10) || 0;
           const travelDate = document.getElementById("transferDate").value;
-          const pickupTime = document
-            .getElementById("transferPickupTime")
-            .value.trim();
 
           const requestData = {
             agent_name: agentName,
@@ -3334,7 +3409,7 @@
             number_of_kids: numberOfKids,
             number_of_adults: numberOfAdults,
             travel_date: travelDate,
-            pickup_time: pickupTime || null,
+            pickup_time: null,
           };
 
           fetch(`${Endpoint}/api/v1/transfers/calculate-cost`, {
@@ -3376,14 +3451,11 @@
             document.getElementById("transferTableBody");
           const row = document.createElement("tr");
 
-          if (!transfer.transfer_id) {
-            console.error("Error: Transfer ID is missing", transfer);
-            return;
-          }
-
-          row.dataset.transferId = transfer.transfer_id; // ✅ Store transfer_id correctly
+          row.dataset.id = transfer.id || ""; // ✅ Store DB ID correctly
+          row.dataset.transferId = transfer.transfer_id || 0; // ✅ Store transfer_id correctly
           row.dataset.flightTime = transfer.flight_time || ""; // ✅ Store Flight Time
           row.dataset.transferFlight = transfer.flight_number || ""; // ✅ Store Flight Number
+          row.dataset.typeOfTransfer = transfer.type_of_transfer || ""; // ✅ Store TRF Type
           console.log(formatToYYYYMMDD(transfer.date));
           // ✅ Store the quotation status in the dataset
           row.dataset.quotationStatus = quotationStatus;
@@ -3402,6 +3474,7 @@
 
           row.innerHTML = `
                 <td>${transfer.date || ""}<br>${transfer.flight_number || ""}</td>
+                <td>${transfer.type_of_transfer || ""}</td>
                 <td>${transfer.city || ""}</td>
                 <td>${transfer.transfer_description || ""}</td>
                 <td>${transfer.tot || ""}</td>
@@ -3437,10 +3510,17 @@
             return;
           }
 
-          console.log(`Fetching transfers for city: ${selectedCity}`);
+          // Map UI value to DB transfer_type code
+          const directionVal = (document.getElementById("transferDirectionType")?.value || "");
+          const transferTypeCode = directionVal === "TRF In" ? "TIN" : directionVal === "TRF Out" ? "TOUT" : "";
+
+          console.log(`Fetching transfers for city: ${selectedCity}, type: ${transferTypeCode || "all"}`);
 
           const url = new URL(`${Endpoint}/api/v1/transfers`);
           url.searchParams.append("city", selectedCity);
+          if (transferTypeCode) {
+            url.searchParams.append("transfer_type", transferTypeCode);
+          }
 
           fetch(url, {
             method: "GET",
@@ -3497,6 +3577,18 @@
               searchTransfersByCity(cityDropdown, transferDropdown);
             });
           });
+
+        // Re-filter Transfer dropdown when Transfer Type (TRF In / TRF Out) changes
+        const directionTypeEl = document.getElementById("transferDirectionType");
+        if (directionTypeEl) {
+          directionTypeEl.addEventListener("change", function () {
+            const cityDropdown = document.getElementById("transferCity");
+            const transferDropdown = document.getElementById("transferType");
+            if (cityDropdown && cityDropdown.value && transferDropdown) {
+              searchTransfersByCity(cityDropdown, transferDropdown);
+            }
+          });
+        }
 
         // Event listener for the "Add Transfer" button
         document
@@ -3587,8 +3679,7 @@
 
               const option = document.createElement("option");
               option.value = combinedFlight;
-              option.textContent = `${combinedFlight} (${flightInOut}) ${route ? '- ' + route : ''}`;
-              
+              option.textContent = `${combinedFlight}${route ? ' - ' + route : ''}`;
               option.dataset.index = idx;
               option.dataset.flightNo = flightNo;
               option.dataset.airline = airline;
@@ -3615,24 +3706,28 @@
             const selectedOption = this.options[this.selectedIndex];
             if (!selectedOption || this.value === "") return;
 
-            const inout = selectedOption.dataset.inout || "";
             const departure = selectedOption.dataset.departure;
             const arrival = selectedOption.dataset.arrival;
             const route = selectedOption.dataset.route;
 
-            console.log(`Dropdown matched flight: ${this.value}, direction: ${inout}, dep: ${departure}, arr: ${arrival}`);
+            console.log(`Dropdown matched flight: ${this.value}, dep: ${departure}, arr: ${arrival}`);
 
-            // 1. Set Flight Time to ETD (departure)
-            if (flightTimeInput && departure) {
-              flightTimeInput.value = formatTimeToHHMM(departure);
+            // Fill Time input based on Transfer Type direction
+            const directionType = (document.getElementById("transferDirectionType")?.value || "").toLowerCase();
+            if (flightTimeInput) {
+              if (directionType === "trf in") {
+                // TRF In → use ETA (arrival)
+                if (arrival) flightTimeInput.value = formatTimeToHHMM(arrival);
+              } else if (directionType === "trf out") {
+                // TRF Out → use ETD (departure)
+                if (departure) flightTimeInput.value = formatTimeToHHMM(departure);
+              } else {
+                // No direction selected → default to ETD
+                if (departure) flightTimeInput.value = formatTimeToHHMM(departure);
+              }
             }
 
-            // 2. Set Pickup Time to ETA (arrival)
-            if (transferPickupTimeInput && arrival) {
-              transferPickupTimeInput.value = formatTimeToHHMM(arrival);
-            }
-
-            // 3. Pre-fill From / To based on route "DEP-ARR"
+            // Pre-fill From / To based on route "DEP-ARR"
             if (route && route.includes("-")) {
               const parts = route.split("-");
               if (parts.length === 2) {
@@ -3651,6 +3746,27 @@
               }
             }
           });
+
+          // When Transfer Type direction changes → re-apply time from the currently selected flight
+          const directionTypeSelect = document.getElementById("transferDirectionType");
+          if (directionTypeSelect) {
+            directionTypeSelect.addEventListener("change", function () {
+              const selectedOption = transferFlightSelect.options[transferFlightSelect.selectedIndex];
+              if (!selectedOption || transferFlightSelect.value === "") return;
+
+              const departure = selectedOption.dataset.departure;
+              const arrival = selectedOption.dataset.arrival;
+              const direction = this.value.toLowerCase();
+
+              if (flightTimeInput) {
+                if (direction === "trf in") {
+                  if (arrival) flightTimeInput.value = formatTimeToHHMM(arrival);
+                } else if (direction === "trf out") {
+                  if (departure) flightTimeInput.value = formatTimeToHHMM(departure);
+                }
+              }
+            });
+          }
 
           // Bind shown.bs.modal to refresh options whenever the modal opens
           $("#addTransferModal").on("shown.bs.modal", function () {
@@ -3691,8 +3807,8 @@
                 .value.trim(),
               transferTo: document.getElementById("transferTo").value.trim(),
               transferToT: document.getElementById("transferToT").value,
-              transferPickupTime:
-                document.getElementById("transferPickupTime").value,
+              typeOfTransfer: document.getElementById("transferDirectionType").value,
+              transferPickupTime: "",
               flightTime: document.getElementById("flightTime").value,
               transferFlight: document.getElementById("transferFlight").value,
               remarks: document.getElementById("remarks").value.trim(),
@@ -3734,9 +3850,11 @@
             document.getElementById("transferTableBody");
           const row = document.createElement("tr");
 
-          row.dataset.transferId = transfer.transfer_id;
+          row.dataset.id = transfer.id || "";
+          row.dataset.transferId = transfer.transfer_id || 0;
           row.dataset.flightTime = transfer.flightTime;
           row.dataset.transferFlight = transfer.transferFlight;
+          row.dataset.typeOfTransfer = transfer.typeOfTransfer || "";
 
           let displayPickupTime = formatTimeToHHMM(transfer.transferPickupTime || transfer.flightTime || "");
           if (!displayPickupTime && transfer.transferFlight && typeof flightsArray !== "undefined") {
@@ -3752,6 +3870,7 @@
 
           row.innerHTML = `
                     <td>${formatToDDMMYYYY(transfer.transferDate)}<br>${transfer.transferFlight || ""}</td>
+                    <td>${transfer.typeOfTransfer || ""}</td>
                     <td>${transfer.transferCity}</td>
                     <td>${transfer.transferType}</td>
                     <td>${transfer.transferToT || ""}</td>
@@ -3776,18 +3895,21 @@
                 `;
 
           transferTableBody.appendChild(row);
+          updateUIPriceFields();
         }
 
         function updateTransfer() {
           if (!editingTransferRow) return;
 
+          const id = editingTransferRow.dataset.id;
           const transferId = editingTransferRow.dataset.transferId;
           const transferDropdown = document.getElementById("transferType");
           const selectedTransferOption =
             transferDropdown.options[transferDropdown.selectedIndex];
 
           const updatedTransfer = {
-            transfer_id: transferId,
+            id: id || undefined,
+            transfer_id: transferId || 0,
             city: document.getElementById("transferCity").value,
             date: formatToDDMMYYYY(
               document.getElementById("transferDate").value
@@ -3796,6 +3918,7 @@
             from_location: document.getElementById("transferFrom").value,
             to_location: document.getElementById("transferTo").value,
             tot: document.getElementById("transferToT").value,
+            type_of_transfer: document.getElementById("transferDirectionType").value,
             pickup_time: document.getElementById("transferPickupTime").value,
             flight_time: document.getElementById("flightTime").value,
             flight_number: document.getElementById("transferFlight").value,
@@ -3807,10 +3930,14 @@
           console.log("Updating Transfer:", updatedTransfer);
 
           // ✅ Update `data-*` attributes to store latest values
+          editingTransferRow.dataset.id = id || "";
+          editingTransferRow.dataset.transferId = transferId || 0;
           editingTransferRow.dataset.flightTime =
             updatedTransfer.flight_time || "";
           editingTransferRow.dataset.transferFlight =
             updatedTransfer.flight_number || "";
+          editingTransferRow.dataset.typeOfTransfer =
+            updatedTransfer.type_of_transfer || "";
 
           let displayPickupTime = formatTimeToHHMM(updatedTransfer.pickup_time || updatedTransfer.flight_time || "");
           if (!displayPickupTime && updatedTransfer.flight_number && typeof flightsArray !== "undefined") {
@@ -3827,6 +3954,7 @@
           // ✅ Update row directly in the table
           editingTransferRow.innerHTML = `
                   <td>${updatedTransfer.date}<br>${updatedTransfer.flight_number || ""}</td>
+                  <td>${updatedTransfer.type_of_transfer || ""}</td>
                   <td>${updatedTransfer.city}</td>
                   <td>${updatedTransfer.transfer_description}</td>
                   <td>${updatedTransfer.tot}</td>
@@ -3851,41 +3979,41 @@
                 `;
 
           // ✅ Ensure `transfersArray` is updated
-          const index = transfersArray.findIndex(
-            (t) => t.transfer_id === transferId
-          );
+          const index = transfersArray.findIndex((t) => {
+            if (id && t.id === id) return true;
+            if (!id && !t.id && String(t.transfer_id) === String(transferId)) return true;
+            return false;
+          });
           if (index !== -1) {
-            transfersArray[index] = updatedTransfer;
+            transfersArray[index] = { ...transfersArray[index], ...updatedTransfer };
           }
 
           // ✅ Reset editing row and close modal
           editingTransferRow = null;
           $("#addTransferModal").modal("hide");
+          updateUIPriceFields();
         }
 
         function editTransfer(row) {
           console.log("Editing Transfer Row:", row);
 
-          const transferId = row.dataset.transferId;
-
-          if (!transferId) {
-            console.error("Error: Transfer ID missing in row dataset.");
-            alert("Error: Transfer ID is missing!");
-            return;
-          }
+          const id = row.dataset.id || "";
+          const transferId = row.dataset.transferId || 0;
 
           // ✅ Extract fresh data from the row (always up-to-date)
           let transfer = {
+            id: id,
             transfer_id: transferId,
             transferDate: row.dataset.transferDate || row.cells[0].textContent.trim().substring(0, 10),
-            transferCity: row.cells[1].textContent.trim(),
-            transferType: row.cells[2].textContent.trim(), // ✅ Transfer Description (Dropdown)
-            transferToT: row.cells[3].textContent.trim(),
-            transferFrom: row.cells[4].textContent.trim(),
-            transferTo: row.cells[5].textContent.trim(),
+            typeOfTransfer: row.dataset.typeOfTransfer || row.cells[1].textContent.trim(),
+            transferCity: row.cells[2].textContent.trim(),
+            transferType: row.cells[3].textContent.trim(), // ✅ Transfer Description (Dropdown)
+            transferToT: row.cells[4].textContent.trim(),
+            transferFrom: row.cells[5].textContent.trim(),
+            transferTo: row.cells[6].textContent.trim(),
             transferPickupTime: row.dataset.pickupTime || "",
-            remarks: row.cells[6].textContent.trim(),
-            final_cost: row.cells[7].textContent.trim(),
+            remarks: row.cells[7].textContent.trim(),
+            final_cost: row.cells[8].textContent.trim(),
             flightTime: row.dataset.flightTime || "", // ✅ Always get latest flight time
             transferFlight: row.dataset.transferFlight || "", // ✅ Always get latest flight number
           };
@@ -3920,6 +4048,8 @@
             transfer.transferTo || "";
           document.getElementById("transferToT").value =
             transfer.transferToT || "";
+          document.getElementById("transferDirectionType").value =
+            transfer.typeOfTransfer || "";
           document.getElementById("updatedTransferPrice").value =
             transfer.final_cost || "N/A";
 
@@ -3934,6 +4064,7 @@
           document.getElementById("transferFrom").disabled = !canEdit;
           document.getElementById("transferTo").disabled = !canEdit;
           document.getElementById("transferToT").disabled = !canEdit;
+          document.getElementById("transferDirectionType").disabled = !canEdit;
           document.getElementById("transferType").disabled = !canEdit;
           document.getElementById("updatedTransferPrice").disabled = !canEdit;
           document.getElementById("getTransferPriceBtn").disabled = !canEdit;
@@ -4031,11 +4162,15 @@
           if (!confirm("Are you sure you want to delete this transfer?"))
             return;
 
+          const id = row.dataset.id;
           const transferId = row.dataset.transferId;
-          transfersArray = transfersArray.filter(
-            (t) => t.transfer_id !== transferId
-          );
+          transfersArray = transfersArray.filter((t) => {
+            if (id && t.id === id) return false;
+            if (!id && !t.id && String(t.transfer_id) === String(transferId)) return false;
+            return true;
+          });
           row.remove();
+          updateUIPriceFields();
         }
 
         // Handle edit and delete button clicks
@@ -4072,17 +4207,6 @@
             const numberOfKids =
               parseInt(document.getElementById("child").value, 10) || 0;
             const travelDate = document.getElementById("transferDate").value;
-            const pickupTime =
-              document.getElementById("transferPickupTime").value;
-
-            // Validation
-            if (!transferCity || !transferType || !transferToT || !travelDate) {
-              alert(
-                "Please fill in all required fields before getting the price."
-              );
-              return;
-            }
-
             const requestData = {
               agent_name: agentName,
               city: transferCity,
@@ -4091,7 +4215,7 @@
               number_of_kids: numberOfKids,
               number_of_adults: numberOfAdults,
               travel_date: travelDate,
-              pickup_time: pickupTime,
+              pickup_time: null,
             };
 
             fetch(`${Endpoint}/api/v1/transfers/calculate-cost`, {
@@ -5410,6 +5534,7 @@
 
           editingHotelRow = null;
           $("#hotelModal").modal("hide");
+          updateUIPriceFields();
         }
 
         function addHotelRow(hotel) {
@@ -5513,6 +5638,7 @@
           `;
 
           hotelTableBody.appendChild(newRow);
+          updateUIPriceFields();
         }
 
         function deleteHotel(row) {
@@ -5530,6 +5656,7 @@
 
           // Remove row from the table
           row.remove();
+          updateUIPriceFields();
         }
 
         function populateRoomTypeBlock(block, rt) {
@@ -6976,6 +7103,7 @@
                   `;
 
           tourTableBody.appendChild(row);
+          updateUIPriceFields();
         }
 
         function updateTour() {
@@ -7053,6 +7181,19 @@
           // ✅ Reset editing row and close modal
           editingTourRow = null;
           $("#addTourModal").modal("hide");
+          updateUIPriceFields();
+        }
+
+        function deleteTour(row) {
+          if (!confirm("Are you sure you want to delete this tour?"))
+            return;
+
+          const tourId = row.dataset.tourId;
+          toursArray = toursArray.filter(
+            (t) => String(t.tour_id) !== String(tourId)
+          );
+          row.remove();
+          updateUIPriceFields();
         }
 
         function populateTourRow(tour) {
@@ -7654,6 +7795,7 @@
                 `;
 
           flightsTableBody.appendChild(row);
+          updateUIPriceFields();
         }
 
         document
@@ -7826,6 +7968,7 @@
 
           editingFlightRow = null;
           $("#flightModal").modal("hide");
+          updateUIPriceFields();
         }
 
         // ✅ Handle Edit and Delete Buttons
@@ -7930,6 +8073,7 @@
 
           // Remove row from the table
           row.remove();
+          updateUIPriceFields();
         }
 
         // Flight Section ends:
@@ -8119,32 +8263,8 @@
               }
             }
 
-            // Recalculate price fields locally based on assistance fee and discount changes
-            const dbTotalCost = data.total_cost !== undefined ? data.total_cost : (data.total_amount || 0);
-            const dbDiscount = data.discount !== undefined ? data.discount : (data.discount_amount || 0);
-            const dbIncludeFee = Boolean(data.include_assistance_fee);
-            const dbFeeAmount = data.assistance_fee_amount || 0;
-
-            // Base total cost of the quotation (excluding any assistance fee that might have been saved in the database)
-            const baseTotalCost = dbTotalCost - (dbIncludeFee ? dbFeeAmount : 0);
-
-            function updateUIPriceFields() {
-              const includeAssistanceFee = document.getElementById("includeAssistanceFee");
-              const assistanceFeeAmount = document.getElementById("assistanceFeeAmount");
-              const totalPriceInput = document.getElementById("totalPrice");
-              const finalPriceInput = document.getElementById("finalPrice");
-              const discountInput = document.getElementById("discount");
-
-              const isChecked = includeAssistanceFee ? includeAssistanceFee.checked : false;
-              const fee = isChecked ? (parseFloat(assistanceFeeAmount.value) || 0) : 0;
-              const discount = discountInput ? (parseFloat(discountInput.value) || 0) : dbDiscount;
-
-              const newTotal = baseTotalCost + fee;
-              const newFinal = Math.max(0, newTotal - discount);
-
-              if (totalPriceInput) totalPriceInput.value = newTotal.toFixed(2);
-              if (finalPriceInput) finalPriceInput.value = newFinal.toFixed(2);
-            }
+            // Set global discount value
+            dbDiscount = data.discount !== undefined ? data.discount : (data.discount_amount || 0);
 
             // Add event listener for assistance fee checkbox
             if (includeAssistanceFee) {
@@ -8380,8 +8500,11 @@
             // ✅ Populate Data for Transfers, Hotels, Excursions, Tours, Flights
             flightsArray = data.flights || [];
             if (data.transfers && data.transfers.length > 0) {
-              transfersArray = data.transfers;
-              data.transfers.forEach((transfer) =>
+              transfersArray = data.transfers.map(t => ({
+                ...t,
+                transfer_id: t.transfer_id || 0
+              }));
+              transfersArray.forEach((transfer) =>
                 populateTransferRow(transfer)
               );
             }
@@ -8559,18 +8682,19 @@
                 // rowData["id"] = parseInt(row.dataset.transferId, 10) || 0; // Ensure ID
                 rowData["trip_item_id"] = 0; // This should be assigned dynamically if needed
                 rowData["transfer_id"] = parseInt(row.dataset.transferId, 10) || 0; // Ensure TransferID
-                rowData["transfer_description"] = cells[2]?.textContent.trim();
-                rowData["city"] = cells[1]?.textContent.trim();
-                rowData["from_location"] = cells[4]?.textContent.trim();
-                rowData["to_location"] = cells[5]?.textContent.trim();
+                rowData["type_of_transfer"] = row.dataset.typeOfTransfer || cells[1]?.textContent.trim() || "";
+                rowData["city"] = cells[2]?.textContent.trim();
+                rowData["transfer_description"] = cells[3]?.textContent.trim();
+                rowData["tot"] = cells[4]?.textContent.trim();
+                rowData["from_location"] = cells[5]?.textContent.trim();
+                rowData["to_location"] = cells[6]?.textContent.trim();
                 rowData["date"] = transferDate;
                 rowData["flight_time"] = row.dataset.flightTime || "";
                 rowData["pickup_time"] = row.dataset.pickupTime || "";
                 rowData["flight_number"] = row.dataset.transferFlight || "";
-                rowData["tot"] = cells[3]?.textContent.trim();
-                rowData["remarks"] = cells[6]?.textContent.trim() || "";
+                rowData["remarks"] = cells[7]?.textContent.trim() || "";
                 rowData["total_cost"] =
-                  parseFloat(cells[7]?.textContent.trim()) || 0.0;
+                  parseFloat(cells[8]?.textContent.trim()) || 0.0;
                 rowData["price"] = rowData["total_cost"];
                 rowData["discount"] = 0.0; // Default to 0
                 rowData["final_cost"] = rowData["total_cost"]; // Set default final cost
@@ -9204,6 +9328,7 @@
           `;
 
           othersTableBody.appendChild(row);
+          updateUIPriceFields();
         }
 
         // Update Other Service Row
@@ -9237,6 +9362,7 @@
 
           editingOtherRow = null;
           $("#addOthersModal").modal("hide");
+          updateUIPriceFields();
         }
 
         // Handle Edit and Delete buttons for Others
@@ -9315,6 +9441,7 @@
               String(o.other_id) !== String(otherId)
           );
           row.remove();
+          updateUIPriceFields();
         }
 
         // Add Others Modal event listener
