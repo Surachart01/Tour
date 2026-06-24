@@ -1312,6 +1312,10 @@
           .then((response) => response.json())
           .then((tour) => {
             const isClone = new URLSearchParams(window.location.search).get("clone") === "true";
+            const userRole = localStorage.getItem("role") || "";
+            const isAdmin = userRole.trim().toLowerCase() === "admin" || userRole.trim().toLowerCase() === "superadmin";
+            const shouldPopulatePrice = !isClone || isAdmin;
+
             if (isClone) {
               document.title = "Add Tour (Clone)";
               const titleH1 = document.querySelector(".page-title");
@@ -1384,7 +1388,7 @@
               populateItinerary(uniqueDays);
             });
             
-            if (!isClone) {
+            if (shouldPopulatePrice) {
               populatePrices(tour.tour_pricings);
             }
           })

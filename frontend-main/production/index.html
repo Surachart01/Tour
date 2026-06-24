@@ -21,6 +21,9 @@
       href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css"
       rel="stylesheet"
     />
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Custom Theme Style -->
     <link href="../build/css/custom.min.css" rel="stylesheet" />
     <style>
@@ -234,6 +237,51 @@
         overflow-y: auto;
         border: 1px solid #ddd;
         padding: 5px;
+      }
+
+      /* Custom Tooltip for Leaflet Map */
+      .province-tooltip {
+        background-color: rgba(33, 37, 41, 0.9) !important;
+        border: none !important;
+        border-radius: 4px !important;
+        color: #fff !important;
+        font-weight: 600 !important;
+        font-size: 0.9rem !important;
+        padding: 6px 10px !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+      }
+      .province-tooltip:before {
+        border-top-color: rgba(33, 37, 41, 0.9) !important;
+      }
+      
+      /* Make Leaflet map zoom controls match the dashboard theme */
+      .leaflet-bar {
+        border: none !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+      }
+      .leaflet-bar a {
+        background-color: #ffffff !important;
+        color: #333 !important;
+        border-bottom: 1px solid #eee !important;
+        width: 36px !important;
+        height: 36px !important;
+        line-height: 36px !important;
+        font-size: 1.2rem !important;
+        font-weight: bold !important;
+        transition: background-color 0.2s, color 0.2s;
+      }
+      .leaflet-bar a:first-child {
+        border-top-left-radius: 6px !important;
+        border-top-right-radius: 6px !important;
+      }
+      .leaflet-bar a:last-child {
+        border-bottom-left-radius: 6px !important;
+        border-bottom-right-radius: 6px !important;
+        border-bottom: none !important;
+      }
+      .leaflet-bar a:hover {
+        background-color: #007bff !important;
+        color: #ffffff !important;
       }
     </style>
   </head>
@@ -838,6 +886,73 @@
                       <!-- Rows will be added dynamically here -->
                     </tbody>
                   </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Thailand Map Section -->
+            <div class="row mt-4 mb-4">
+              <div class="col-md-12">
+                <div class="card" style="border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden;">
+                  <div class="card-header bg-white" style="border-bottom: 1px solid #f0f0f0; padding: 15px 20px;">
+                    <h3 class="card-title mb-0" style="font-size: 1.4rem; font-weight: 600; color: #333;">
+                      <i class="fa fa-map-marker" style="color: #e74c3c; margin-right: 8px;"></i> Interactive Map of Thailand
+                    </h3>
+                  </div>
+                  <div class="card-body p-0">
+                    <div class="row no-gutters">
+                      <div class="col-md-8">
+                        <div id="thailand-map" style="height: 550px; background-color: #f4f6f9;"></div>
+                      </div>
+                      <div class="col-md-4" style="border-left: 1px solid #eee; background-color: #fafafa; min-height: 550px; display: flex; flex-direction: column;">
+                        <div id="map-info-panel" style="padding: 20px; flex-grow: 1; display: flex; flex-direction: column;">
+                          <!-- Searching / Filtering input for provinces -->
+                          <div class="form-group mb-3">
+                            <label for="provinceSearchInput" style="font-weight: 600; color: #555;">Find Province:</label>
+                            <div class="input-group">
+                              <input type="text" id="provinceSearchInput" class="form-control" placeholder="Search province..." style="border-radius: 6px 0 0 6px;" />
+                              <div class="input-group-append">
+                                <span class="input-group-text" style="border-radius: 0 6px 6px 0; background-color: #eee;"><i class="fa fa-search"></i></span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <!-- Initial state -->
+                          <div id="province-initial-info" style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: #888; padding: 20px;">
+                            <i class="fa fa-mouse-pointer mb-3" style="font-size: 3rem; color: #ccc;"></i>
+                            <p style="font-size: 1.1rem; margin-bottom: 0;">Click on a province on the map or search above to select it.</p>
+                          </div>
+                          
+                          <!-- Selection state (hidden by default) -->
+                          <div id="province-selected-info" style="display: none; flex-grow: 1; flex-direction: column;">
+                            <div style="border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 15px;">
+                              <h4 id="selected-province-name" style="font-weight: 700; color: #333; margin-bottom: 2px;">Province Name</h4>
+                              <span class="badge badge-primary">Thailand</span>
+                            </div>
+                            
+                            <p style="color: #666; font-size: 0.95rem; line-height: 1.5; margin-bottom: 20px;">
+                              You can search for Hotels, Tours, Excursions, and Transfers registered in <strong id="selected-province-label">this province</strong>.
+                            </p>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: auto;">
+                              <button type="button" class="btn btn-primary btn-block text-left" id="btn-search-hotels" style="padding: 12px 15px; border-radius: 8px; font-weight: 600; margin: 0 0 10px 0;">
+                                <i class="fa fa-hotel mr-2"></i> Search Hotels
+                              </button>
+                              <button type="button" class="btn btn-success btn-block text-left" id="btn-search-tours" style="padding: 12px 15px; border-radius: 8px; font-weight: 600; margin: 0 0 10px 0;">
+                                <i class="fa fa-map-signs mr-2"></i> Search Tours
+                              </button>
+                              <button type="button" class="btn btn-warning btn-block text-left text-white" id="btn-search-excursions" style="padding: 12px 15px; border-radius: 8px; font-weight: 600; margin: 0 0 10px 0;">
+                                <i class="fa fa-binoculars mr-2"></i> Search Excursions
+                              </button>
+                              <button type="button" class="btn btn-info btn-block text-left" id="btn-search-transfers" style="padding: 12px 15px; border-radius: 8px; font-weight: 600; margin: 0;">
+                                <i class="fa fa-bus mr-2"></i> Search Transfers
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2264,6 +2379,217 @@
 
             if (selectedData) {
               $(`#${modalId}`).modal("show");
+            }
+          }
+        });
+
+        // --- Leaflet Thailand Interactive Map ---
+        let map;
+        let geoJsonLayer;
+        let selectedLayer = null;
+        let provinceLayers = {}; // To store mapping from name to layer
+
+        // Initialize Leaflet map
+        function initThailandMap() {
+          map = L.map('thailand-map', {
+            zoomControl: true,
+            minZoom: 5,
+            maxZoom: 9,
+            attributionControl: false
+          });
+
+          // Custom styling for GeoJSON polygons
+          const defaultStyle = {
+            fillColor: '#ffffff',
+            weight: 1.5,
+            opacity: 1,
+            color: '#a0a0a0',
+            fillOpacity: 0.85
+          };
+
+          const hoverStyle = {
+            fillColor: '#3498db',
+            color: '#2980b9',
+            weight: 2,
+            fillOpacity: 0.9
+          };
+
+          // Fetch GeoJSON data from our local file
+          fetch('data/thailand.json')
+            .then(res => {
+              if (!res.ok) throw new Error("Failed to load map data");
+              return res.json();
+            })
+            .then(data => {
+              geoJsonLayer = L.geoJSON(data, {
+                style: defaultStyle,
+                onEachFeature: function(feature, layer) {
+                  const provinceName = feature.properties.name;
+                  
+                  // Map layer for quick lookup by name
+                  if (provinceName) {
+                    provinceLayers[provinceName.toLowerCase()] = layer;
+                  }
+
+                  // Bind tooltip
+                  layer.bindTooltip(provinceName, {
+                    sticky: true,
+                    direction: 'top',
+                    className: 'province-tooltip'
+                  });
+
+                  // Setup mouse events
+                  layer.on({
+                    mouseover: function(e) {
+                      if (layer !== selectedLayer) {
+                        layer.setStyle(hoverStyle);
+                      }
+                    },
+                    mouseout: function(e) {
+                      if (layer !== selectedLayer) {
+                        layer.setStyle(defaultStyle);
+                      }
+                    },
+                    click: function(e) {
+                      selectProvince(provinceName, layer);
+                    }
+                  });
+                }
+              }).addTo(map);
+
+              // Fit bounds of Thailand
+              map.fitBounds(geoJsonLayer.getBounds());
+            })
+            .catch(err => {
+              console.error("Error loading Thailand map:", err);
+              $('#thailand-map').html('<div class="d-flex h-100 justify-content-center align-items-center"><p class="text-danger">Failed to load interactive map.</p></div>');
+            });
+        }
+
+        // Handle selecting a province
+        function selectProvince(provinceName, layer) {
+          // Reset style of previously selected layer
+          if (selectedLayer) {
+            geoJsonLayer.resetStyle(selectedLayer);
+          }
+
+          selectedLayer = layer;
+
+          // Set active style on the selected layer
+          if (layer) {
+            layer.setStyle({
+              fillColor: '#2ecc71',
+              color: '#27ae60',
+              weight: 2.5,
+              fillOpacity: 0.95
+            });
+            
+            // Pan or zoom slightly to selected province
+            map.panTo(layer.getBounds().getCenter());
+          }
+
+          // Update Info Panel UI
+          $('#province-initial-info').hide();
+          $('#province-selected-info').show().css('display', 'flex');
+          $('#selected-province-name').text(provinceName);
+          $('#selected-province-label').text(provinceName);
+
+          // Update action button handlers
+          $('#btn-search-hotels').off('click').on('click', function() {
+            selectCityAndSearch('hotelsSection', 'hotelCountryDropdown', 'hotelCityDropdown', 'searchHotelButton', provinceName);
+          });
+
+          $('#btn-search-tours').off('click').on('click', function() {
+            selectCityAndSearch('toursSection', 'tourCountryDropdown', 'tourCityDropdown', 'searchTourButton', provinceName);
+          });
+
+          $('#btn-search-excursions').off('click').on('click', function() {
+            selectCityAndSearch('excursionsSection', 'excursionCountryDropdown', 'excursionCityDropdown', 'searchExcursionButton', provinceName);
+          });
+
+          $('#btn-search-transfers').off('click').on('click', function() {
+            selectCityAndSearch('transfersSection', 'transferCountryDropdown', 'transferCityDropdown', 'searchTransferButton', provinceName);
+          });
+        }
+
+        // Select city and trigger search in section
+        function selectCityAndSearch(sectionId, countryDropdownId, cityDropdownId, searchButtonId, cityName) {
+          // Expand the section
+          $(".collapse").collapse("hide"); // Hide others
+          $(`#${sectionId}`).collapse('show');
+
+          // Highlight button
+          $(".btn-group button").removeClass("active");
+          $(`button[data-target="#${sectionId}"]`).addClass("active");
+
+          const countryDropdown = document.getElementById(countryDropdownId);
+          const cityDropdown = document.getElementById(cityDropdownId);
+
+          if (countryDropdown && cityDropdown) {
+            // Find and select Thailand (TH) in country dropdown
+            let thOption = Array.from(countryDropdown.options).find(opt => opt.value === 'TH' || opt.text === 'Thailand');
+            if (thOption) {
+              countryDropdown.value = thOption.value;
+            }
+
+            // Function to select city and trigger click
+            const performSelection = () => {
+              // Find matching city option (case-insensitive)
+              const option = Array.from(cityDropdown.options).find(opt => 
+                opt.value.toLowerCase() === cityName.toLowerCase() || 
+                opt.text.toLowerCase() === cityName.toLowerCase()
+              );
+
+              if (option) {
+                cityDropdown.value = option.value;
+                setTimeout(() => {
+                  $(`#${searchButtonId}`).click();
+                  // Scroll to section smoothly
+                  document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth' });
+                }, 150);
+              } else {
+                console.warn(`City "${cityName}" not found in dropdown ${cityDropdownId}`);
+                // Try wildcard matching
+                const partialOption = Array.from(cityDropdown.options).find(opt => 
+                  opt.value.toLowerCase().includes(cityName.toLowerCase()) || 
+                  opt.text.toLowerCase().includes(cityName.toLowerCase())
+                );
+                if (partialOption) {
+                  cityDropdown.value = partialOption.value;
+                  setTimeout(() => {
+                    $(`#${searchButtonId}`).click();
+                    document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth' });
+                  }, 150);
+                }
+              }
+            };
+
+            // Load cities for country first, then trigger selection
+            if (thOption) {
+              LocationCache.populateCitiesDropdown(thOption.value, cityDropdownId).then(() => {
+                performSelection();
+              }).catch(() => {
+                performSelection();
+              });
+            } else {
+              performSelection();
+            }
+          }
+        }
+
+        // Initialize map
+        initThailandMap();
+
+        // Province Autocomplete / Search Input handler
+        $('#provinceSearchInput').on('input', function() {
+          const query = $(this).val().trim().toLowerCase();
+          if (query.length > 1) {
+            // Look for matching province layer
+            const matchedName = Object.keys(provinceLayers).find(name => name.includes(query));
+            if (matchedName) {
+              const layer = provinceLayers[matchedName];
+              const officialName = layer.feature.properties.name;
+              selectProvince(officialName, layer);
             }
           }
         });

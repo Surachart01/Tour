@@ -775,9 +775,11 @@ document.addEventListener("DOMContentLoaded", function () {
         hotel.fees.new_year_dinner_fee || "";
       document.getElementById("hotelnotesforagent").value = hotel.notes || "";
       const isCloneMode = new URLSearchParams(window.location.search).get("clone") === "true";
+      const userRole = localStorage.getItem("role") || "";
+      const isAdmin = userRole.trim().toLowerCase() === "admin" || userRole.trim().toLowerCase() === "superadmin";
       populateContactTable(hotel.contacts || []);
       populateRoomTypesTable(hotel.room_types || []);
-      populatePromotionsTable(isCloneMode ? [] : (hotel.promotions || []));
+      populatePromotionsTable((isCloneMode && !isAdmin) ? [] : (hotel.promotions || []));
     })
     .catch((error) => {
       console.error("Error loading hotel data:", error);
@@ -1275,22 +1277,25 @@ document.addEventListener("DOMContentLoaded", function () {
       );
 
       const isCloneMode = new URLSearchParams(window.location.search).get("clone") === "true";
+      const userRole = localStorage.getItem("role") || "";
+      const isAdmin = userRole.trim().toLowerCase() === "admin" || userRole.trim().toLowerCase() === "superadmin";
+      const shouldZeroPrices = isCloneMode && !isAdmin;
       const row = document.createElement("tr");
       row.setAttribute("data-room-type-id", isCloneMode ? "0" : roomType.id);
 
-      const singlePrice = isCloneMode ? 0 : (roomType.single_price || 0);
-      const doublePrice = isCloneMode ? 0 : (roomType.double_price || 0);
-      const extraBedAdult = isCloneMode ? 0 : (roomType.extra_bed_adult || 0);
-      const extraBedChild = isCloneMode ? 0 : (roomType.extra_bed_child || 0);
-      const extraBedShared = isCloneMode ? 0 : (roomType.extra_bed_shared || 0);
-      const foodAdultAbf = isCloneMode ? 0 : (roomType.food_adult_abf || 0);
-      const foodAdultLunch = isCloneMode ? 0 : (roomType.food_adult_lunch || 0);
-      const foodAdultDinner = isCloneMode ? 0 : (roomType.food_adult_dinner || 0);
-      const foodAdultAllInclusive = isCloneMode ? 0 : (roomType.food_adult_all_inclusive || 0);
-      const foodChildAbf = isCloneMode ? 0 : (roomType.food_child_abf || 0);
-      const foodChildLunch = isCloneMode ? 0 : (roomType.food_child_lunch || 0);
-      const foodChildDinner = isCloneMode ? 0 : (roomType.food_child_dinner || 0);
-      const foodChildAllInclusive = isCloneMode ? 0 : (roomType.food_child_all_inclusive || 0);
+      const singlePrice = shouldZeroPrices ? 0 : (roomType.single_price || 0);
+      const doublePrice = shouldZeroPrices ? 0 : (roomType.double_price || 0);
+      const extraBedAdult = shouldZeroPrices ? 0 : (roomType.extra_bed_adult || 0);
+      const extraBedChild = shouldZeroPrices ? 0 : (roomType.extra_bed_child || 0);
+      const extraBedShared = shouldZeroPrices ? 0 : (roomType.extra_bed_shared || 0);
+      const foodAdultAbf = shouldZeroPrices ? 0 : (roomType.food_adult_abf || 0);
+      const foodAdultLunch = shouldZeroPrices ? 0 : (roomType.food_adult_lunch || 0);
+      const foodAdultDinner = shouldZeroPrices ? 0 : (roomType.food_adult_dinner || 0);
+      const foodAdultAllInclusive = shouldZeroPrices ? 0 : (roomType.food_adult_all_inclusive || 0);
+      const foodChildAbf = shouldZeroPrices ? 0 : (roomType.food_child_abf || 0);
+      const foodChildLunch = shouldZeroPrices ? 0 : (roomType.food_child_lunch || 0);
+      const foodChildDinner = shouldZeroPrices ? 0 : (roomType.food_child_dinner || 0);
+      const foodChildAllInclusive = shouldZeroPrices ? 0 : (roomType.food_child_all_inclusive || 0);
 
       row.innerHTML = `
             <td><input type="checkbox" class="rowCheckbox" onchange="toggleEditButtonVisibility()" /></td>

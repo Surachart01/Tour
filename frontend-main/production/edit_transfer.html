@@ -1217,6 +1217,10 @@
               }
 
               const isClone = new URLSearchParams(window.location.search).get("clone") === "true";
+              const userRole = localStorage.getItem("role") || "";
+              const isAdmin = userRole.trim().toLowerCase() === "admin" || userRole.trim().toLowerCase() === "superadmin";
+              const shouldPopulatePrice = !isClone || isAdmin;
+
               if (isClone) {
                 document.title = "Add Transfer (Clone)";
                 const titleH1 = document.querySelector("h1");
@@ -1233,9 +1237,9 @@
                 transfer.departure || "";
               document.getElementById("arrival").value = transfer.arrival || "";
               document.getElementById("SICPriceAdult").value =
-                isClone ? 0 : (transfer.sic_price_adult || "");
+                shouldPopulatePrice ? (transfer.sic_price_adult || "") : 0;
               document.getElementById("SICPriceChild").value =
-                isClone ? 0 : (transfer.sic_price_child || "");
+                shouldPopulatePrice ? (transfer.sic_price_child || "") : 0;
               document.getElementById("displayOrder").value =
                 transfer.display_order ?? transfer.order ?? 0;
 
@@ -1246,7 +1250,7 @@
                 }, 300);
               }
 
-              if (!isClone && transfer.prices && transfer.prices.length > 0) {
+              if (shouldPopulatePrice && transfer.prices && transfer.prices.length > 0) {
                 transfer.prices.forEach((price) => {
                   addTransferPriceRow(price);
                 });

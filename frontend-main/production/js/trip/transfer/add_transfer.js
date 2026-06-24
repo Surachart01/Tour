@@ -248,8 +248,7 @@ function addTransferRow(transfer) {
   newRow.dataset.pickupTime = displayPickupTime;
 
   newRow.innerHTML = `
-    <td>${transfer.transferDate}</td>
-    <td>${transfer.transferFlight || ""}</td>
+    <td>${transfer.transferDate}<br>${transfer.transferFlight || ""}</td>
     <td>${transfer.transferCity}</td>
     <td>${transfer.transferType}</td>
     <td>${transfer.transferToT || ""}</td>
@@ -275,15 +274,14 @@ function addTransferRow(transfer) {
 
 // Update an existing row in the table
 function updateTransferRow(row, transfer) {
-  row.cells[0].textContent = transfer.transferDate;
-  row.cells[1].textContent = transfer.transferFlight || "";
-  row.cells[2].textContent = transfer.transferCity;
-  row.cells[3].textContent = transfer.transferType;
-  row.cells[4].textContent = transfer.transferToT || "";
-  row.cells[5].textContent = transfer.transferFrom;
-  row.cells[6].textContent = transfer.transferTo;
-  row.cells[7].textContent = transfer.remarks || "";
-  row.cells[8].textContent = transfer.price ? `${transfer.price}` : "N/A";
+  row.cells[0].innerHTML = `${transfer.transferDate}<br>${transfer.transferFlight || ""}`;
+  row.cells[1].textContent = transfer.transferCity;
+  row.cells[2].textContent = transfer.transferType;
+  row.cells[3].textContent = transfer.transferToT || "";
+  row.cells[4].textContent = transfer.transferFrom;
+  row.cells[5].textContent = transfer.transferTo;
+  row.cells[6].textContent = transfer.remarks || "";
+  row.cells[7].textContent = transfer.price ? `${transfer.price}` : "N/A";
 
   let displayPickupTime = formatTimeToHHMM(transfer.transferPickupTime || transfer.flightTime || "");
   if (!displayPickupTime && transfer.transferFlight && typeof flightsArray !== "undefined") {

@@ -1310,6 +1310,10 @@
               console.log("Loading excursion data:", excursion);
 
               const isClone = new URLSearchParams(window.location.search).get("clone") === "true";
+              const userRole = localStorage.getItem("role") || "";
+              const isAdmin = userRole.trim().toLowerCase() === "admin" || userRole.trim().toLowerCase() === "superadmin";
+              const shouldPopulatePrice = !isClone || isAdmin;
+
               if (isClone) {
                 document.title = "Add Excursion (Clone)";
                 const titleH1 = document.querySelector("h1");
@@ -1329,9 +1333,9 @@
               document.getElementById("description").value =
                 excursion.description || "";
               document.getElementById("SICPriceAdult").value =
-                isClone ? 0 : (excursion.sic_price_adult || "");
+                shouldPopulatePrice ? (excursion.sic_price_adult || "") : 0;
               document.getElementById("SICPriceChild").value =
-                isClone ? 0 : (excursion.sic_price_child || "");
+                shouldPopulatePrice ? (excursion.sic_price_child || "") : 0;
 
               // Handle city selection
               const citySelect = document.getElementById("city");
@@ -1380,7 +1384,7 @@
               }
 
               // Populate excursion prices
-              if (!isClone && excursion.prices) {
+              if (shouldPopulatePrice && excursion.prices) {
                 excursion.prices.forEach((price) => {
                   addExcursionPriceRow(price);
                 });

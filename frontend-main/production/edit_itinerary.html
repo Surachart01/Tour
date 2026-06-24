@@ -297,7 +297,6 @@
                         <th>ToT</th>
                         <th>From</th>
                         <th>To</th>
-                        <th>Arrival Time</th>
                         <th>Remarks</th>
                         <th>Price</th>
                         <th>View</th>
@@ -2055,6 +2054,7 @@
           row.dataset.flightTime = transfer.flight_time || "";
           row.dataset.transferFlight = transfer.flight_number || "";
           row.dataset.transferRouteType = transfer.transfers?.transfer_type || transfer.transfer_type || "";
+          row.dataset.pickupTime = transfer.pickup_time || "";
 
           let viewButton = `<button class="btn btn-sm btn-secondary edit-transfer fa fa-book" type="button"></button>`;
 
@@ -2065,7 +2065,6 @@
               <td>${transfer.tot || ""}</td>
               <td>${transfer.from_location || ""}</td>
               <td>${transfer.to_location || ""}</td>
-              <td>${transfer.pickup_time || ""}</td>
               <td>${transfer.remarks || ""}</td>
               <td class="transfer-price">${transfer.final_cost}</td>
               <td>${viewButton}</td>
@@ -2210,9 +2209,9 @@
             transferToT: row.cells[3].textContent.trim(),
             transferFrom: row.cells[4].textContent.trim(),
             transferTo: row.cells[5].textContent.trim(),
-            transferPickupTime: row.cells[6].textContent.trim(),
-            remarks: row.cells[7].textContent.trim(),
-            final_cost: row.cells[8].textContent.trim(),
+            transferPickupTime: row.dataset.pickupTime || "",
+            remarks: row.cells[6].textContent.trim(),
+            final_cost: row.cells[7].textContent.trim(),
             flightTime: row.dataset.flightTime || "", // ✅ Always get latest flight time
             transferFlight: row.dataset.transferFlight || "", // ✅ Always get latest flight number
             transferRouteType: transferRouteType,

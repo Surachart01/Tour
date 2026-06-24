@@ -827,8 +827,7 @@
                     <table class="table table-bordered" id="transferTable">
                       <thead>
                         <tr>
-                          <th>Date</th>
-                          <th>Flight</th>
+                          <th>Date / Flight</th>
                           <th>City</th>
                           <th>Transfer Description</th>
                           <th>ToT</th>
@@ -3418,10 +3417,10 @@
             }
           }
           row.dataset.pickupTime = displayPickupTime;
+          row.dataset.transferDate = formatToYYYYMMDD(transfer.date || "");
 
           row.innerHTML = `
-                <td>${transfer.date || ""}</td>
-                <td>${transfer.flight_number || ""}</td>
+                <td>${transfer.date || ""}<br>${transfer.flight_number || ""}</td>
                 <td>${transfer.city || ""}</td>
                 <td>${transfer.transfer_description || ""}</td>
                 <td>${transfer.tot || ""}</td>
@@ -3785,10 +3784,10 @@
             }
           }
           row.dataset.pickupTime = displayPickupTime;
+          row.dataset.transferDate = formatToYYYYMMDD(transfer.transferDate);
 
           row.innerHTML = `
-                    <td>${formatToDDMMYYYY(transfer.transferDate)}</td>
-                    <td>${transfer.transferFlight || ""}</td>
+                    <td>${formatToDDMMYYYY(transfer.transferDate)}<br>${transfer.transferFlight || ""}</td>
                     <td>${transfer.transferCity}</td>
                     <td>${transfer.transferType}</td>
                     <td>${transfer.transferToT || ""}</td>
@@ -3862,11 +3861,11 @@
             }
           }
           editingTransferRow.dataset.pickupTime = displayPickupTime;
+          editingTransferRow.dataset.transferDate = formatToYYYYMMDD(document.getElementById("transferDate").value);
 
           // ✅ Update row directly in the table
           editingTransferRow.innerHTML = `
-                  <td>${updatedTransfer.date}</td>
-                  <td>${updatedTransfer.flight_number || ""}</td>
+                  <td>${updatedTransfer.date}<br>${updatedTransfer.flight_number || ""}</td>
                   <td>${updatedTransfer.city}</td>
                   <td>${updatedTransfer.transfer_description}</td>
                   <td>${updatedTransfer.tot}</td>
