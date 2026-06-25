@@ -1031,10 +1031,11 @@
               <div class="form-group">
                 <label for="modalPax">SIC</label>
                 <input
-                  type="number"
+                  type="text"
                   id="modalPax"
                   class="form-control"
-                  placeholder="Enter Number of Passenegers"
+                  value="SIC"
+                  readonly
                 />
               </div>
               <div class="form-group">
@@ -1710,7 +1711,7 @@
         // Set values in the modal with the latest table data
         modalStartDate.value = data.startDate;
         modalEndDate.value = data.endDate;
-        modalPax.value = data.pax;
+        modalPax.value = "SIC";
         modalSinglePrice.value = data.singlePrice;
         modalDoublePrice.value = data.doublePrice;
         modalTriplePrice.value = data.triplePrice;
@@ -1734,7 +1735,7 @@
         row.innerHTML = `
       <td>${data.startDate}</td>
       <td>${data.endDate}</td>
-      <td>${data.pax}</td>
+      <td>SIC</td>
       <td>${data.singlePrice}</td>
       <td>${data.doublePrice}</td>
       <td>${data.triplePrice}</td>
@@ -2706,7 +2707,7 @@
             currentEditRow.cells[1].textContent = formatToDDMMYYYY(
               modalEndDate.value.trim()
             );
-            currentEditRow.cells[2].textContent = parseInt(modalPax.value) || 0;
+            currentEditRow.cells[2].textContent = "SIC";
             currentEditRow.cells[3].textContent =
               parseFloat(modalSinglePrice.value) || 0;
             currentEditRow.cells[4].textContent =
@@ -2720,7 +2721,7 @@
             addTourPriceRow({
               startDate: formatToDDMMYYYY(modalStartDate.value.trim()),
               endDate: formatToDDMMYYYY(modalEndDate.value.trim()),
-              pax: parseFloat(modalPax.value) || 0,
+              pax: 0,
               singlePrice: parseFloat(modalSinglePrice.value) || 0,
               doublePrice: parseFloat(modalDoublePrice.value) || 0,
               triplePrice: parseFloat(modalTriplePrice.value) || 0,

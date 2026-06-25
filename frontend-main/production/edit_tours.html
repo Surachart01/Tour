@@ -931,10 +931,11 @@
               <div class="form-group">
                 <label for="modalPax">SIC</label>
                 <input
-                  type="number"
+                  type="text"
                   id="modalPax"
                   class="form-control"
-                  placeholder="Enter Number of Passenegers"
+                  value="SIC"
+                  readonly
                 />
               </div>
               <div class="form-group">
@@ -1770,8 +1771,7 @@
 
               currentEditRow.cells[0].textContent = formattedStartDate;
               currentEditRow.cells[1].textContent = formattedEndDate;
-              currentEditRow.cells[2].textContent =
-                parseInt(modalPax.value) || 0;
+              currentEditRow.cells[2].textContent = "SIC";
               currentEditRow.cells[3].textContent =
                 parseFloat(modalSinglePrice.value) || 0;
               currentEditRow.cells[4].textContent =
@@ -1787,7 +1787,7 @@
                 tourPricings[rowIndex] = {
                   startDate: formattedStartDate,
                   endDate: formattedEndDate,
-                  pax: parseInt(modalPax.value) || 0,
+                  pax: 0,
                   singlePrice: parseFloat(modalSinglePrice.value) || 0,
                   doublePrice: parseFloat(modalDoublePrice.value) || 0,
                   triplePrice: parseFloat(modalTriplePrice.value) || 0,
@@ -1809,7 +1809,7 @@
                 row.innerHTML = `
                   <td>${pricing.startDate}</td>
                   <td>${pricing.endDate}</td>
-                  <td>${pricing.pax}</td>
+                  <td>SIC</td>
                   <td>${pricing.singlePrice}</td>
                   <td>${pricing.doublePrice}</td>
                   <td>${pricing.triplePrice}</td>
@@ -1847,7 +1847,7 @@
               addTourPriceRow({
                 startDate: formatToDDMMYYYY(modalStartDate.value.trim()),
                 endDate: formatToDDMMYYYY(modalEndDate.value.trim()),
-                pax: parseInt(modalPax.value) || 0,
+                pax: 0,
                 singlePrice: parseFloat(modalSinglePrice.value) || 0,
                 doublePrice: parseFloat(modalDoublePrice.value) || 0,
                 triplePrice: parseFloat(modalTriplePrice.value) || 0,
@@ -1879,7 +1879,7 @@
             row.innerHTML = `
               <td>${pricing.startDate}</td>
               <td>${pricing.endDate}</td>
-              <td>${pricing.pax}</td>
+              <td>SIC</td>
               <td>${pricing.singlePrice}</td>
               <td>${pricing.doublePrice}</td>
               <td>${pricing.triplePrice}</td>
@@ -3468,7 +3468,7 @@
         // Set values in the modal with the latest table data
         modalStartDate.value = data.startDate;
         modalEndDate.value = data.endDate;
-        modalPax.value = data.pax;
+        modalPax.value = "SIC";
         modalSinglePrice.value = data.singlePrice;
         modalDoublePrice.value = data.doublePrice;
         modalTriplePrice.value = data.triplePrice;
@@ -3510,7 +3510,7 @@
           row.innerHTML = `
               <td>${formattedStartDate}</td>
               <td>${formattedEndDate}</td>
-              <td>${price.pax}</td>
+              <td>SIC</td>
               <td>${price.single_price}</td>
               <td>${price.double_price}</td>
               <td>${price.triple_price}</td>
