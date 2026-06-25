@@ -868,7 +868,7 @@
                         <i class="fas fa-calendar-day mr-1"></i>Start Date
                       </th>
                       <th><i class="fas fa-calendar-day mr-1"></i>End Date</th>
-                      <th><i class="fas fa-users mr-1"></i>Pax</th>
+                      <th><i class="fas fa-users mr-1"></i>SIC</th>
                       <th><i class="fas fa-bed mr-1"></i>Single Price</th>
                       <th><i class="fas fa-bed mr-1"></i>Double Price</th>
                       <th><i class="fas fa-bed mr-1"></i>Triple Price</th>
@@ -929,7 +929,7 @@
                 />
               </div>
               <div class="form-group">
-                <label for="modalPax">Pax</label>
+                <label for="modalPax">SIC</label>
                 <input
                   type="number"
                   id="modalPax"
@@ -1417,6 +1417,7 @@
           // Update counters and duration
           updateTotalDaysCount();
           updateDurationInput();
+          updateTransferLabels();
         };
 
         // Function to remove a day - make global for onclick access
@@ -1447,7 +1448,37 @@
             const dayHeader = section.querySelector("h5");
             dayHeader.textContent = `Day ${newDayNumber}`;
           });
+          updateTransferLabels();
         }
+
+        // Function to update transfer time labels based on whether it is the last day
+        function updateTransferLabels() {
+          const daySections = document.querySelectorAll("#itineraryDetails .day-section");
+          const totalDays = daySections.length;
+          daySections.forEach((section, index) => {
+            const isLastDay = (index + 1) === totalDays;
+            const transferItems = section.querySelectorAll(".transfers-list .activity-item");
+            transferItems.forEach(item => {
+              const fromTimeInput = item.querySelector(".from-time");
+              const toTimeInput = item.querySelector(".to-time");
+              if (fromTimeInput) {
+                const label = fromTimeInput.closest("div").querySelector("label");
+                if (label) {
+                  label.textContent = isLastDay ? "Departure Time" : "Flight";
+                }
+                fromTimeInput.placeholder = isLastDay ? "Departure Time" : "Flight";
+              }
+              if (toTimeInput) {
+                const label = toTimeInput.closest("div").querySelector("label");
+                if (label) {
+                  label.textContent = isLastDay ? "Pickup Time" : "Arrival Time";
+                }
+                toTimeInput.placeholder = isLastDay ? "Pickup Time" : "Arrival Time";
+              }
+            });
+          });
+        }
+        window.updateTransferLabels = updateTransferLabels;
 
         // Function to update total days count
         function updateTotalDaysCount() {
@@ -1497,11 +1528,55 @@
               </button>
             </div>
             <div class="day-content expanded">
-              <div class="form-group">
+              <div class="form-group" style="display: none;">
                 <label>Itinerary Description</label>
                 <textarea class="form-control" rows="3" placeholder="Enter itinerary details"></textarea>
               </div>
 
+              <!-- Transfers first -->
+              <div class="activity-container">
+                <div class="activity-header">
+                  <h6><i class="fas fa-shuttle-van mr-2"></i>Transfers</h6>
+                  <button type="button" class="add-transfer-btn" onclick="addTransfer(this)">
+                    <i class="fas fa-plus mr-1"></i>Add More
+                  </button>
+                </div>
+                <div class="transfers-list">
+                  <div class="activity-item">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <label>City</label>
+                        <select class="form-control city-dropdown-transfer">
+                          <option value="">Select City</option>
+                        </select>
+                      </div>
+                      <div class="col-md-3">
+                        <label>Flight</label>
+                        <input type="text" class="form-control from-time" placeholder="Flight" />
+                      </div>
+                      <div class="col-md-3">
+                        <label>Arrival Time</label>
+                        <input type="text" class="form-control to-time" placeholder="Arrival Time" />
+                      </div>
+                    </div>
+                    <div class="row mt-2">
+                      <div class="col-md-10">
+                        <label>Transfer</label>
+                        <select class="form-control transfer-dropdown">
+                          <option value="">Select Transfer</option>
+                        </select>
+                      </div>
+                      <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="remove-transfer-btn" onclick="removeTransfer(this)" style="display: none;">
+                          <i class="fas fa-trash mr-1"></i>Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Hotels second -->
               <div class="activity-container">
                 <div class="activity-header">
                   <h6><i class="fas fa-bed mr-2"></i>Hotels</h6>
@@ -1540,6 +1615,7 @@
                 </div>
               </div>
 
+              <!-- Excursions third -->
               <div class="activity-container">
                 <div class="activity-header">
                   <h6><i class="fas fa-map-marked-alt mr-2"></i>Excursions</h6>
@@ -1574,48 +1650,6 @@
                       </div>
                       <div class="col-md-2 d-flex align-items-end">
                         <button type="button" class="remove-excursion-btn" onclick="removeExcursion(this)" style="display: none;">
-                          <i class="fas fa-trash mr-1"></i>Remove
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="activity-container">
-                <div class="activity-header">
-                  <h6><i class="fas fa-shuttle-van mr-2"></i>Transfers</h6>
-                  <button type="button" class="add-transfer-btn" onclick="addTransfer(this)">
-                    <i class="fas fa-plus mr-1"></i>Add More
-                  </button>
-                </div>
-                <div class="transfers-list">
-                  <div class="activity-item">
-                    <div class="row">
-                      <div class="col-md-6">
-                        <label>City</label>
-                        <select class="form-control city-dropdown-transfer">
-                          <option value="">Select City</option>
-                        </select>
-                      </div>
-                      <div class="col-md-3">
-                        <label>From Time</label>
-                        <input type="text" class="form-control from-time" placeholder="From Time" />
-                      </div>
-                      <div class="col-md-3">
-                        <label>To Time</label>
-                        <input type="text" class="form-control to-time" placeholder="To Time" />
-                      </div>
-                    </div>
-                    <div class="row mt-2">
-                      <div class="col-md-10">
-                        <label>Transfer</label>
-                        <select class="form-control transfer-dropdown">
-                          <option value="">Select Transfer</option>
-                        </select>
-                      </div>
-                      <div class="col-md-2 d-flex align-items-end">
-                        <button type="button" class="remove-transfer-btn" onclick="removeTransfer(this)" style="display: none;">
                           <i class="fas fa-trash mr-1"></i>Remove
                         </button>
                       </div>
@@ -2534,13 +2568,115 @@
                 </button>
               </div>
               <div class="day-content expanded">
-                <div class="form-group">
+                <div class="form-group" style="display: none;">
                   <label>Itinerary Description</label>
                   <textarea class="form-control" rows="3" placeholder="Enter itinerary details">${
                     day.itinerary || ""
                   }</textarea>
                 </div>
 
+                <!-- Transfers first -->
+                <div class="activity-container">
+                  <div class="activity-header">
+                    <h6><i class="fas fa-shuttle-van mr-2"></i>Transfers</h6>
+                    <button type="button" class="add-transfer-btn" onclick="addTransfer(this)">
+                      <i class="fas fa-plus mr-1"></i>Add More
+                    </button>
+                  </div>
+                  <div class="transfers-list">
+                    ${
+                      day.details
+                        .filter((detail) => detail.type_of_tour === "transfers")
+                        .map(
+                          (transferDetail, index) => `
+                      <div class="activity-item">
+                        <div class="row">
+                          <div class="col-md-6">
+                            <label>City</label>
+                            <select class="form-control city-dropdown-transfer">
+                              <option value="${transferDetail.city}" selected>${
+                            transferDetail.city || "Select City"
+                          }</option>
+                            </select>
+                          </div>
+                          <div class="col-md-3">
+                            <label>Flight</label>
+                            <input type="text" class="form-control from-time" placeholder="Flight" value="${
+                              transferDetail.from_time || ""
+                            }" />
+                          </div>
+                          <div class="col-md-3">
+                            <label>Arrival Time</label>
+                            <input type="text" class="form-control to-time" placeholder="Arrival Time" value="${
+                              transferDetail.to_time || ""
+                            }" />
+                          </div>
+                        </div>
+                        <div class="row mt-2">
+                          <div class="col-md-10">
+                            <label>Transfer</label>
+                            <select class="form-control transfer-dropdown">
+                              <option value="${
+                                transferDetail.transfer_id
+                              }" selected>${
+                            transferDetail.transfer_name || "Select Transfer"
+                          }</option>
+                            </select>
+                          </div>
+                          <div class="col-md-2 d-flex align-items-end">
+                            <button type="button" class="remove-transfer-btn" onclick="removeTransfer(this)" style="display: ${
+                              day.details.filter(
+                                (detail) => detail.type_of_tour === "transfers"
+                              ).length > 1
+                                ? "block"
+                                : "none"
+                            };">
+                              <i class="fas fa-trash mr-1"></i>Remove
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    `
+                        )
+                        .join("") ||
+                      `
+                      <div class="activity-item">
+                        <div class="row">
+                          <div class="col-md-6">
+                            <label>City</label>
+                            <select class="form-control city-dropdown-transfer">
+                              <option value="">Select City</option>
+                            </select>
+                          </div>
+                          <div class="col-md-3">
+                            <label>Flight</label>
+                            <input type="text" class="form-control from-time" placeholder="Flight" />
+                          </div>
+                          <div class="col-md-3">
+                            <label>Arrival Time</label>
+                            <input type="text" class="form-control to-time" placeholder="Arrival Time" />
+                          </div>
+                        </div>
+                        <div class="row mt-2">
+                          <div class="col-md-10">
+                            <label>Transfer</label>
+                            <select class="form-control transfer-dropdown">
+                              <option value="">Select Transfer</option>
+                            </select>
+                          </div>
+                          <div class="col-md-2 d-flex align-items-end">
+                            <button type="button" class="remove-transfer-btn" onclick="removeTransfer(this)" style="display: none;">
+                              <i class="fas fa-trash mr-1"></i>Remove
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    `
+                    }
+                  </div>
+                </div>
+
+                <!-- Hotels second -->
                 <div class="activity-container">
                   <div class="activity-header">
                     <h6><i class="fas fa-bed mr-2"></i>Hotels</h6>
@@ -2591,6 +2727,7 @@
                   </div>
                 </div>
 
+                <!-- Excursions third -->
                 <div class="activity-container">
                   <div class="activity-header">
                     <h6><i class="fas fa-map-marked-alt mr-2"></i>Excursions</h6>
@@ -2694,106 +2831,6 @@
                     }
                   </div>
                 </div>
-
-                <div class="activity-container">
-                  <div class="activity-header">
-                    <h6><i class="fas fa-shuttle-van mr-2"></i>Transfers</h6>
-                    <button type="button" class="add-transfer-btn" onclick="addTransfer(this)">
-                      <i class="fas fa-plus mr-1"></i>Add More
-                    </button>
-                  </div>
-                  <div class="transfers-list">
-                    ${
-                      day.details
-                        .filter((detail) => detail.type_of_tour === "transfers")
-                        .map(
-                          (transferDetail, index) => `
-                      <div class="activity-item">
-                        <div class="row">
-                          <div class="col-md-6">
-                            <label>City</label>
-                            <select class="form-control city-dropdown-transfer">
-                              <option value="${transferDetail.city}" selected>${
-                            transferDetail.city || "Select City"
-                          }</option>
-                            </select>
-                          </div>
-                          <div class="col-md-3">
-                            <label>From Time</label>
-                            <input type="text" class="form-control from-time" placeholder="From Time" value="${
-                              transferDetail.from_time || ""
-                            }" />
-                          </div>
-                          <div class="col-md-3">
-                            <label>To Time</label>
-                            <input type="text" class="form-control to-time" placeholder="To Time" value="${
-                              transferDetail.to_time || ""
-                            }" />
-                          </div>
-                        </div>
-                        <div class="row mt-2">
-                          <div class="col-md-10">
-                            <label>Transfer</label>
-                            <select class="form-control transfer-dropdown">
-                              <option value="${
-                                transferDetail.transfer_id
-                              }" selected>${
-                            transferDetail.transfer_name || "Select Transfer"
-                          }</option>
-                            </select>
-                          </div>
-                          <div class="col-md-2 d-flex align-items-end">
-                            <button type="button" class="remove-transfer-btn" onclick="removeTransfer(this)" style="display: ${
-                              day.details.filter(
-                                (detail) => detail.type_of_tour === "transfers"
-                              ).length > 1
-                                ? "block"
-                                : "none"
-                            };">
-                              <i class="fas fa-trash mr-1"></i>Remove
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    `
-                        )
-                        .join("") ||
-                      `
-                      <div class="activity-item">
-                        <div class="row">
-                          <div class="col-md-6">
-                            <label>City</label>
-                            <select class="form-control city-dropdown-transfer">
-                              <option value="">Select City</option>
-                            </select>
-                          </div>
-                          <div class="col-md-3">
-                            <label>From Time</label>
-                            <input type="text" class="form-control from-time" placeholder="From Time" />
-                          </div>
-                          <div class="col-md-3">
-                            <label>To Time</label>
-                            <input type="text" class="form-control to-time" placeholder="To Time" />
-                          </div>
-                        </div>
-                        <div class="row mt-2">
-                          <div class="col-md-10">
-                            <label>Transfer</label>
-                            <select class="form-control transfer-dropdown">
-                              <option value="">Select Transfer</option>
-                            </select>
-                          </div>
-                          <div class="col-md-2 d-flex align-items-end">
-                            <button type="button" class="remove-transfer-btn" onclick="removeTransfer(this)" style="display: none;">
-                              <i class="fas fa-trash mr-1"></i>Remove
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    `
-                    }
-                  </div>
-                </div>
               </div>
             `;
 
@@ -2815,6 +2852,7 @@
           loadExistingItineraryData(tourDays);
           
           updateTotalDaysCount();
+          updateTransferLabels();
         }
 
         // Function to populate itinerary cities with country filtering while preserving selections
@@ -3286,12 +3324,12 @@
               </select>
             </div>
             <div class="col-md-3">
-              <label>From Time</label>
-              <input type="text" class="form-control from-time" placeholder="From Time" />
+              <label>Flight</label>
+              <input type="text" class="form-control from-time" placeholder="Flight" />
             </div>
             <div class="col-md-3">
-              <label>To Time</label>
-              <input type="text" class="form-control to-time" placeholder="To Time" />
+              <label>Arrival Time</label>
+              <input type="text" class="form-control to-time" placeholder="Arrival Time" />
             </div>
           </div>
           <div class="row mt-2">
@@ -3322,6 +3360,9 @@
           transfersContainer,
           ".remove-transfer-btn"
         );
+        
+        // Update labels for the new transfer item
+        updateTransferLabels();
       };
 
       window.removeTransfer = function (button) {
@@ -3336,6 +3377,7 @@
             transfersContainer,
             ".remove-transfer-btn"
           );
+          updateTransferLabels();
         } else {
           console.error(
             "Could not find transfers container or only one transfer remaining"

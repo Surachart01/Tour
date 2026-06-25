@@ -969,7 +969,7 @@
                   <tr>
                     <th>Start Date</th>
                     <th>End Date</th>
-                    <th>Pax</th>
+                    <th>SIC</th>
                     <th>Single Price</th>
                     <th>Double Price</th>
                     <th>Triple Price</th>
@@ -1029,7 +1029,7 @@
                 />
               </div>
               <div class="form-group">
-                <label for="modalPax">Pax</label>
+                <label for="modalPax">SIC</label>
                 <input
                   type="number"
                   id="modalPax"
@@ -2191,11 +2191,55 @@
               </button>
             </div>
             <div class="day-content expanded">
-              <div class="form-group">
+              <div class="form-group" style="display: none;">
                 <label>Itinerary Description</label>
                 <textarea class="form-control" rows="3" placeholder="Enter itinerary details"></textarea>
               </div>
 
+              <!-- Transfers first -->
+              <div class="activity-container">
+                <div class="activity-header">
+                  <h6><i class="fas fa-shuttle-van mr-2"></i>Transfers</h6>
+                  <button type="button" class="btn btn-sm btn-success add-transfer-btn" title="Add Another Transfer">
+                    <i class="fas fa-plus mr-1"></i>Add More
+                  </button>
+                </div>
+                <div class="transfers-list">
+                  <div class="activity-item">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <label>City</label>
+                        <select class="form-control city-dropdown-transfer">
+                          <option value="">Select City</option>
+                        </select>
+                      </div>
+                      <div class="col-md-3">
+                        <label>Flight</label>
+                        <input type="text" class="form-control from-time" placeholder="Flight" />
+                      </div>
+                      <div class="col-md-3">
+                        <label>Arrival Time</label>
+                        <input type="text" class="form-control to-time" placeholder="Arrival Time" />
+                      </div>
+                    </div>
+                    <div class="row mt-2">
+                      <div class="col-md-10">
+                        <label>Transfer</label>
+                        <select class="form-control transfer-dropdown">
+                          <option value="">Select Transfer</option>
+                        </select>
+                      </div>
+                      <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-sm btn-danger remove-transfer-btn" title="Remove Transfer" style="display: none;">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Hotels second -->
               <div class="activity-container">
                 <div class="activity-header">
                   <h6><i class="fas fa-bed mr-2"></i>Hotels</h6>
@@ -2234,6 +2278,7 @@
                 </div>
               </div>
 
+              <!-- Excursions third -->
               <div class="activity-container">
                 <div class="activity-header">
                   <h6><i class="fas fa-map-marked-alt mr-2"></i>Excursions</h6>
@@ -2275,48 +2320,6 @@
                   </div>
                 </div>
               </div>
-
-              <div class="activity-container">
-                <div class="activity-header">
-                  <h6><i class="fas fa-shuttle-van mr-2"></i>Transfers</h6>
-                  <button type="button" class="btn btn-sm btn-success add-transfer-btn" title="Add Another Transfer">
-                    <i class="fas fa-plus mr-1"></i>Add More
-                  </button>
-                </div>
-                <div class="transfers-list">
-                  <div class="activity-item">
-                    <div class="row">
-                      <div class="col-md-6">
-                        <label>City</label>
-                        <select class="form-control city-dropdown-transfer">
-                          <option value="">Select City</option>
-                        </select>
-                      </div>
-                      <div class="col-md-3">
-                        <label>From Time</label>
-                        <input type="text" class="form-control from-time" placeholder="From Time" />
-                      </div>
-                      <div class="col-md-3">
-                        <label>To Time</label>
-                        <input type="text" class="form-control to-time" placeholder="To Time" />
-                      </div>
-                    </div>
-                    <div class="row mt-2">
-                      <div class="col-md-10">
-                        <label>Transfer</label>
-                        <select class="form-control transfer-dropdown">
-                          <option value="">Select Transfer</option>
-                        </select>
-                      </div>
-                      <div class="col-md-2 d-flex align-items-end">
-                        <button type="button" class="btn btn-sm btn-danger remove-transfer-btn" title="Remove Transfer" style="display: none;">
-                          <i class="fas fa-trash"></i>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           `;
 
@@ -2351,11 +2354,13 @@
           // Force immediate update of counters and duration
           updateTotalDaysCount();
           updateDurationInput();
+          updateTransferLabels();
           
           // Also trigger a delayed update to ensure it works
           setTimeout(() => {
             updateTotalDaysCount();
             updateDurationInput();
+            updateTransferLabels();
           }, 100);
         }
 
@@ -2387,7 +2392,37 @@
             const dayHeader = section.querySelector("h5");
             dayHeader.textContent = `Day ${newDayNumber}`;
           });
+          updateTransferLabels();
         }
+
+        // Function to update transfer time labels based on whether it is the last day
+        function updateTransferLabels() {
+          const daySections = document.querySelectorAll("#itineraryDetails .day-section");
+          const totalDays = daySections.length;
+          daySections.forEach((section, index) => {
+            const isLastDay = (index + 1) === totalDays;
+            const transferItems = section.querySelectorAll(".transfers-list .activity-item");
+            transferItems.forEach(item => {
+              const fromTimeInput = item.querySelector(".from-time");
+              const toTimeInput = item.querySelector(".to-time");
+              if (fromTimeInput) {
+                const label = fromTimeInput.closest("div").querySelector("label");
+                if (label) {
+                  label.textContent = isLastDay ? "Departure Time" : "Flight";
+                }
+                fromTimeInput.placeholder = isLastDay ? "Departure Time" : "Flight";
+              }
+              if (toTimeInput) {
+                const label = toTimeInput.closest("div").querySelector("label");
+                if (label) {
+                  label.textContent = isLastDay ? "Pickup Time" : "Arrival Time";
+                }
+                toTimeInput.placeholder = isLastDay ? "Pickup Time" : "Arrival Time";
+              }
+            });
+          });
+        }
+        window.updateTransferLabels = updateTransferLabels;
 
         // Function to update total days count
         function updateTotalDaysCount() {
@@ -2521,6 +2556,9 @@
         
         // Update remove button visibility
         updateRemoveButtonsVisibility(transfersList, '.remove-transfer-btn');
+        
+        // Update transfer labels for the newly added item
+        updateTransferLabels();
       }
       
       function removeExcursion(button) {
@@ -2540,6 +2578,7 @@
         if (transfersList.querySelectorAll('.activity-item').length > 1) {
           activityItem.remove();
           updateRemoveButtonsVisibility(transfersList, '.remove-transfer-btn');
+          updateTransferLabels();
         }
       }
       
