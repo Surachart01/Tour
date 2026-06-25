@@ -268,7 +268,7 @@ model excursions {
   excursion_pricing    excursion_pricing[]
   excursion_trip_items excursion_trip_items[]
   currencies           currencies?            @relation(fields: [currency_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  suppliers            suppliers?             @relation(fields: [supplier_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  suppliers            suppliers?             @relation(fields: [supplier_id], references: [id], onUpdate: NoAction)
 }
 
 model flight_trip_items {
@@ -576,18 +576,18 @@ model suppliers {
   offers_tours                     Boolean?               @default(false)
   created_at                       DateTime?              @default(now()) @db.Timestamp(6)
   updated_at                       DateTime?              @default(now()) @db.Timestamp(6)
+  cancellation_allowed_before_days Int?                   @default(1) @map("cancellation_allowed_before_days")
+  currency_id                      Int?                   @default(4)
+  excursions_price                 Decimal?               @default(0) @map("excursions_price") @db.Decimal(10, 2)
+  organization_id                  Int?
+  payment_deadline_before_days     Int?                   @default(1) @map("payment_deadline_before_days")
+  score                            BigInt?                @default(0)
+  tours_price                      Decimal?               @default(0) @map("tours_price") @db.Decimal(10, 2)
+  transfer_price                   Decimal?               @default(0) @map("transfer_price") @db.Decimal(10, 2)
   excursion_trip_items             excursion_trip_items[]
   excursions                       excursions[]
   tour_trip_items                  tour_trip_items[]
   transfer_trip_items              transfer_trip_items[]
-  cancellation_allowed_before_days Int?                   @default(1) @map("cancellation_allowed_before_days")
-  payment_deadline_before_days     Int?                   @default(1) @map("payment_deadline_before_days")
-  transfer_price                   Decimal?               @default(0) @map("transfer_price") @db.Decimal(10, 2)
-  excursions_price                 Decimal?               @default(0) @map("excursions_price") @db.Decimal(10, 2)
-  tours_price                      Decimal?               @default(0) @map("tours_price") @db.Decimal(10, 2)
-  score                            BigInt?                @default(0)
-  currency_id                      Int?                   @default(4)
-  organization_id                  Int?
 }
 
 model tour_pricing {
@@ -652,6 +652,7 @@ model tours {
   valid_days      String?           @db.VarChar(255)
   country         String?           @default("Thailand") @db.VarChar(100)
   display_order   Int?              @default(0) @map("display_order")
+  tour_days       tour_days[]
   tour_pricing    tour_pricing[]
   tour_trip_items tour_trip_items[]
 }
@@ -673,34 +674,34 @@ model transfer_pricing {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model transfer_trip_items {
-  id            Int         @id @default(autoincrement())
-  trip_item_id  Int?
-  transfer_id   Int?
-  from_location String?     @db.VarChar(255)
-  to_location   String?     @db.VarChar(255)
-  from_date     DateTime    @db.Timestamp(6)
-  to_date       DateTime    @db.Timestamp(6)
-  flight_number String?     @db.VarChar(50)
-  tot           String      @db.VarChar(10)
-  supplier_id   Int?
-  guide_name    String?     @db.VarChar(255)
-  guide_contact String?     @db.VarChar(20)
-  approved      Boolean?    @default(false)
-  declined      Boolean?    @default(false)
-  price         Decimal?    @db.Decimal(10, 2)
-  currency_id   Int?
-  remarks       String?
-  created_at    DateTime?   @default(now()) @db.Timestamp(6)
-  updated_at    DateTime?   @default(now()) @db.Timestamp(6)
+  id                   Int         @id @default(autoincrement())
+  trip_item_id         Int?
+  transfer_id          Int?
+  from_location        String?     @db.VarChar(255)
+  to_location          String?     @db.VarChar(255)
+  from_date            DateTime    @db.Timestamp(6)
+  to_date              DateTime    @db.Timestamp(6)
+  flight_number        String?     @db.VarChar(50)
+  tot                  String      @db.VarChar(10)
+  supplier_id          Int?
+  guide_name           String?     @db.VarChar(255)
+  guide_contact        String?     @db.VarChar(20)
+  approved             Boolean?    @default(false)
+  declined             Boolean?    @default(false)
+  price                Decimal?    @db.Decimal(10, 2)
+  currency_id          Int?
+  remarks              String?
+  created_at           DateTime?   @default(now()) @db.Timestamp(6)
+  updated_at           DateTime?   @default(now()) @db.Timestamp(6)
   city                 String?     @db.VarChar(255)
-  transfer_description String?     @db.VarChar(255)
-  pickup_time          String?     @db.VarChar(255)
   flight_time          String?     @db.VarChar(50)
+  pickup_time          String?     @db.VarChar(255)
+  transfer_description String?     @db.VarChar(255)
   type_of_transfer     String?     @db.VarChar(50)
-  currencies    currencies? @relation(fields: [currency_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  suppliers     suppliers?  @relation(fields: [supplier_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  transfers     transfers?  @relation(fields: [transfer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  trips         trips?      @relation(fields: [trip_item_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  currencies           currencies? @relation(fields: [currency_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  suppliers            suppliers?  @relation(fields: [supplier_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  transfers            transfers?  @relation(fields: [transfer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  trips                trips?      @relation(fields: [trip_item_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model transfers {
@@ -768,27 +769,27 @@ model trips {
   amount_paid                      Decimal?               @default(0) @db.Decimal(20, 2)
   penalty_cost                     Decimal?               @default(0) @db.Decimal(20, 2)
   status                           String?                @default("Pending") @db.VarChar(50)
-  include_assistance_fee           Boolean?               @default(true)
-  assistance_fee_amount            Decimal?               @default(1000) @db.Decimal(10, 2)
-  include_description_in_itinerary Boolean?               @default(false)
-  received_amount                  Decimal?               @default(0) @db.Decimal(20, 2)
-  balance                          Decimal?               @default(0) @db.Decimal(20, 2)
-  payment_date                     DateTime?              @db.Timestamp(6)
-  payment_reference                String?                @db.VarChar(255)
-  payment_deadline                 DateTime?              @db.Timestamp(6)
-  cancellation_deadline            DateTime?              @db.Timestamp(6)
-  affiliate_coupon_code            String?                @db.VarChar(50)
-  affiliate_partner_id             Int?
-  affiliate_commission_rate        Decimal?               @default(0) @db.Decimal(10, 2)
   affiliate_commission_amount      Decimal?               @default(0) @db.Decimal(10, 2)
+  affiliate_commission_rate        Decimal?               @default(0) @db.Decimal(10, 2)
   affiliate_commission_status      String?                @default("none") @db.VarChar(20)
+  affiliate_coupon_code            String?                @db.VarChar(50)
   affiliate_discount_applied       Decimal?               @default(0) @db.Decimal(10, 2)
-  utm_source                       String?                @db.VarChar(100)
-  utm_medium                       String?                @db.VarChar(100)
+  affiliate_partner_id             Int?
+  assistance_fee_amount            Decimal?               @default(1000) @db.Decimal(10, 2)
+  balance                          Decimal?               @default(0) @db.Decimal(20, 2)
+  cancellation_deadline            DateTime?              @db.Timestamp(6)
+  include_assistance_fee           Boolean?               @default(true)
+  include_description_in_itinerary Boolean?               @default(false)
+  payment_date                     DateTime?              @db.Timestamp(6)
+  payment_deadline                 DateTime?              @db.Timestamp(6)
+  payment_reference                String?                @db.VarChar(255)
+  received_amount                  Decimal?               @default(0) @db.Decimal(20, 2)
+  referral_source                  String?                @db.VarChar(100)
   utm_campaign                     String?                @db.VarChar(100)
   utm_content                      String?                @db.VarChar(100)
+  utm_medium                       String?                @db.VarChar(100)
+  utm_source                       String?                @db.VarChar(100)
   utm_term                         String?                @db.VarChar(100)
-  referral_source                  String?                @db.VarChar(100)
   excursion_trip_items             excursion_trip_items[]
   flight_trip_items                flight_trip_items[]
   hotel_trip_items                 hotel_trip_items[]
@@ -802,8 +803,8 @@ model trips {
 model CityInfo {
   id          Int      @id @default(autoincrement())
   cityName    String   @unique @map("city_name") @db.VarChar(100)
-  description String   @db.Text
-  highlights  String   @db.Text
+  description String
+  highlights  String
   bestTime    String?  @map("best_time") @db.VarChar(255)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
@@ -811,3 +812,33 @@ model CityInfo {
   @@map("city_info")
 }
 
+model tour_days {
+  id           Int            @id @default(autoincrement())
+  tour_id      Int
+  day          Int
+  itinerary    String?
+  created_at   DateTime?      @default(now()) @db.Timestamp(6)
+  updated_at   DateTime?      @default(now()) @db.Timestamp(6)
+  tours        tours          @relation(fields: [tour_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tour_details tour_details[]
+}
+
+model tour_details {
+  id             Int       @id @default(autoincrement())
+  tour_day_id    Int
+  from_time      String?   @db.VarChar
+  to_time        String?   @db.VarChar
+  city           String?   @db.VarChar
+  type_of_tour   String?   @db.VarChar
+  hotel_id       Int?
+  hotel_name     String?   @db.VarChar
+  room_type_id   Int?
+  room_type      String?   @db.VarChar
+  excursion_id   Int?
+  excursion_name String?   @db.VarChar
+  transfer_id    Int?
+  transfer_name  String?   @db.VarChar
+  created_at     DateTime? @default(now()) @db.Timestamp(6)
+  updated_at     DateTime? @default(now()) @db.Timestamp(6)
+  tour_days      tour_days @relation(fields: [tour_day_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}

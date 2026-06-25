@@ -27,9 +27,54 @@ export function formatTourResponse(tour, markupGroup = '', markups = []) {
     };
   });
 
-  const available_days = (tour.valid_days || '').split(',').filter(x => x).map(x => ({
-    day_of_week: parseInt(x)
-  }));
+  let available_days = [];
+  if (tour.valid_days) {
+    if (tour.valid_days.trim().startsWith('{')) {
+      try {
+        const parsed = JSON.parse(tour.valid_days);
+        const daysMap = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+        Object.keys(parsed).forEach(dayName => {
+          const lowerName = dayName.toLowerCase();
+          if (parsed[dayName] === true && daysMap[lowerName] !== undefined) {
+            available_days.push({ day_of_week: daysMap[lowerName] });
+          }
+        });
+      } catch (e) {
+        console.error("Error parsing valid_days JSON:", e);
+      }
+    } else {
+      available_days = tour.valid_days.split(',').map(x => x.trim()).filter(x => x).map(x => ({
+        day_of_week: parseInt(x)
+      })).filter(x => !isNaN(x.day_of_week));
+    }
+  }
+
+  const tour_days = (tour.tour_days || []).map(day => {
+    return {
+      id: day.id,
+      tour_id: day.tour_id,
+      day: day.day,
+      itinerary: day.itinerary,
+      details: (day.tour_details || []).map(detail => {
+        return {
+          id: detail.id,
+          tour_day_id: detail.tour_day_id,
+          from_time: detail.from_time || '',
+          to_time: detail.to_time || '',
+          city: detail.city || '',
+          type_of_tour: detail.type_of_tour || '',
+          hotel_id: detail.hotel_id,
+          hotel_name: detail.hotel_name || '',
+          room_type_id: detail.room_type_id,
+          room_type: detail.room_type || '',
+          excursion_id: detail.excursion_id,
+          excursion_name: detail.excursion_name || '',
+          transfer_id: detail.transfer_id,
+          transfer_name: detail.transfer_name || ''
+        };
+      })
+    };
+  });
 
   return {
     id: tour.id,
@@ -46,7 +91,8 @@ export function formatTourResponse(tour, markupGroup = '', markups = []) {
     display_order: tour.display_order,
     order: (tour.display_order === 0 || tour.display_order === null || tour.display_order === undefined) ? 100000 : tour.display_order,
     tour_pricings,
-    available_days
+    available_days,
+    tour_days
   };
 }
 
@@ -61,6 +107,7 @@ export async function createTour(req, res, next) {
 
     // Accept both 'tour_pricings' (frontend) and 'pricing' (legacy)
     const pricings = data.tour_pricings || data.pricing || [];
+    const tour_days = data.tour_days || [];
 
     const tour = await prisma.tours.create({
       data: {
@@ -85,9 +132,38 @@ export async function createTour(req, res, next) {
             triple_room_price: parseFloat(p.triple_price ?? p.triple_room_price ?? 0),
             currency_id: p.currency_id || null
           }))
+        } : undefined,
+        tour_days: tour_days.length > 0 ? {
+          create: tour_days.map(d => ({
+            day: parseInt(d.day),
+            itinerary: d.itinerary || '',
+            tour_details: d.details && d.details.length > 0 ? {
+              create: d.details.map(detail => ({
+                from_time: detail.from_time || '',
+                to_time: detail.to_time || '',
+                city: detail.city || '',
+                type_of_tour: detail.type_of_tour || '',
+                hotel_id: detail.hotel_id ? parseInt(detail.hotel_id) : null,
+                hotel_name: detail.hotel_name || '',
+                room_type_id: detail.room_type_id ? parseInt(detail.room_type_id) : null,
+                room_type: detail.room_type || '',
+                excursion_id: detail.excursion_id ? parseInt(detail.excursion_id) : null,
+                excursion_name: detail.excursion_name || '',
+                transfer_id: detail.transfer_id ? parseInt(detail.transfer_id) : null,
+                transfer_name: detail.transfer_name || ''
+              }))
+            } : undefined
+          }))
         } : undefined
       },
-      include: { tour_pricing: true }
+      include: {
+        tour_pricing: true,
+        tour_days: {
+          include: {
+            tour_details: true
+          }
+        }
+      }
     });
     return res.status(201).json(formatTourResponse(tour));
   } catch (err) { next(err); }
@@ -109,7 +185,14 @@ export async function getTourByID(req, res, next) {
 
     const tour = await prisma.tours.findUnique({
       where: { id },
-      include: { tour_pricing: { include: { currencies: true } } }
+      include: {
+        tour_pricing: { include: { currencies: true } },
+        tour_days: {
+          include: {
+            tour_details: true
+          }
+        }
+      }
     });
     if (!tour) return res.status(404).send('Tour not found');
     return res.json(formatTourResponse(tour, markupGroup, markups));
@@ -128,7 +211,14 @@ export async function getAllTours(req, res, next) {
     });
 
     const tours = await prisma.tours.findMany({
-      include: { tour_pricing: { include: { currencies: true } } }
+      include: {
+        tour_pricing: { include: { currencies: true } },
+        tour_days: {
+          include: {
+            tour_details: true
+          }
+        }
+      }
     });
     const formatted = tours.map(t => formatTourResponse(t, markupGroup, markups));
     formatted.sort((a, b) => {
@@ -154,7 +244,14 @@ export async function listToursByCity(req, res, next) {
     });
 
     const tours = await prisma.tours.findMany({
-      include: { tour_pricing: { include: { currencies: true } } }
+      include: {
+        tour_pricing: { include: { currencies: true } },
+        tour_days: {
+          include: {
+            tour_details: true
+          }
+        }
+      }
     });
     const formatted = tours.map(t => formatTourResponse(t, markupGroup, markups));
     formatted.sort((a, b) => {
@@ -192,7 +289,12 @@ export async function listAvailableToursByCity(req, res, next) {
             end_date: { gte: new Date(from_date) }
           },
           include: { currencies: true }
-        } : { include: { currencies: true } }
+        } : { include: { currencies: true } },
+        tour_days: {
+          include: {
+            tour_details: true
+          }
+        }
       }
     });
 
@@ -203,6 +305,26 @@ export async function listAvailableToursByCity(req, res, next) {
       filtered = tours.filter(tour => {
         // If valid_days not set, tour is available every day
         if (!tour.valid_days) return true;
+
+        // Handle both format "1,2,3" and JSON "{"mon":false,...}"
+        try {
+          if (tour.valid_days.trim().startsWith('{')) {
+            const parsed = JSON.parse(tour.valid_days);
+            const daysMap = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+            // Find key in parsed case-insensitively
+            const parsedKeys = Object.keys(parsed);
+            const daysMapKeys = Object.keys(daysMap);
+            const dayName = daysMapKeys.find(k => daysMap[k] === requestedDayOfWeek);
+            if (dayName) {
+              const matchedKey = parsedKeys.find(k => k.toLowerCase() === dayName);
+              if (matchedKey) return parsed[matchedKey] === true;
+            }
+            return false;
+          }
+        } catch (e) {
+          console.error("Error parsing valid_days JSON:", e);
+        }
+
         const validDays = tour.valid_days.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d));
         if (validDays.length === 0) return true;
         return validDays.includes(requestedDayOfWeek);
@@ -223,7 +345,6 @@ export async function listAvailableToursByCity(req, res, next) {
   } catch (err) { next(err); }
 }
 
-
 export async function updateTour(req, res, next) {
   try {
     const id = parseInt(req.params.id);
@@ -237,9 +358,19 @@ export async function updateTour(req, res, next) {
 
     // Accept both 'tour_pricings' (frontend) and 'pricing' (legacy)
     const pricings = data.tour_pricings || data.pricing || [];
+    const tour_days = data.tour_days || [];
 
     await prisma.$transaction(async (tx) => {
       await tx.tour_pricing.deleteMany({ where: { tour_id: id } });
+      await tx.tour_details.deleteMany({
+        where: {
+          tour_days: {
+            tour_id: id
+          }
+        }
+      });
+      await tx.tour_days.deleteMany({ where: { tour_id: id } });
+
       await tx.tours.update({
         where: { id },
         data: {
@@ -263,6 +394,28 @@ export async function updateTour(req, res, next) {
               double_room_price: parseFloat(p.double_price ?? p.double_room_price ?? 0),
               triple_room_price: parseFloat(p.triple_price ?? p.triple_room_price ?? 0),
               currency_id: p.currency_id || null
+            }))
+          } : undefined,
+          tour_days: tour_days.length > 0 ? {
+            create: tour_days.map(d => ({
+              day: parseInt(d.day),
+              itinerary: d.itinerary || '',
+              tour_details: d.details && d.details.length > 0 ? {
+                create: d.details.map(detail => ({
+                  from_time: detail.from_time || '',
+                  to_time: detail.to_time || '',
+                  city: detail.city || '',
+                  type_of_tour: detail.type_of_tour || '',
+                  hotel_id: detail.hotel_id ? parseInt(detail.hotel_id) : null,
+                  hotel_name: detail.hotel_name || '',
+                  room_type_id: detail.room_type_id ? parseInt(detail.room_type_id) : null,
+                  room_type: detail.room_type || '',
+                  excursion_id: detail.excursion_id ? parseInt(detail.excursion_id) : null,
+                  excursion_name: detail.excursion_name || '',
+                  transfer_id: detail.transfer_id ? parseInt(detail.transfer_id) : null,
+                  transfer_name: detail.transfer_name || ''
+                }))
+              } : undefined
             }))
           } : undefined
         }
