@@ -146,57 +146,23 @@ export function calculateTourCostLogic(tour, request, markupGroup, markups) {
 
   const travelDate = new Date(request.travel_date);
 
-  if (request.tot && request.tot.toLowerCase() === 'sic') {
-    const applicablePricing = (tour.tour_pricings || tour.tour_pricing || []).find(pricing => {
-      const startDate = new Date(pricing.start_date);
-      const endDate = new Date(pricing.end_date);
-      return travelDate >= startDate && travelDate <= endDate;
-    });
+  // Tour pricing is always calculated using the SIC method (matched by date range only, ignoring pax count)
+  const applicablePricing = (tour.tour_pricings || tour.tour_pricing || []).find(pricing => {
+    const startDate = new Date(pricing.start_date);
+    const endDate = new Date(pricing.end_date);
+    return travelDate >= startDate && travelDate <= endDate;
+  });
 
-    if (!applicablePricing) {
-      throw new Error('no SIC pricing available for the requested date range');
-    }
-
-    const baseCost = (parseFloat(applicablePricing.single_room_price || applicablePricing.single_price || 0) * (parseInt(request.single_rooms) || 0)) +
-                     (parseFloat(applicablePricing.double_room_price || applicablePricing.double_price || 0) * (parseInt(request.double_rooms) || 0) * 2) +
-                     (parseFloat(applicablePricing.triple_room_price || applicablePricing.triple_price || 0) * (parseInt(request.triple_rooms) || 0) * 3);
-    const perPersonCost = baseCost / actualPax;
-    const markedUpPerPersonCost = calculateMarkedUpPrice(perPersonCost, markupGroup, 'tour', markups);
-    return markedUpPerPersonCost * actualPax;
-  } else if (request.tot && request.tot.toLowerCase() === 'pvt') {
-    const applicablePricing = (tour.tour_pricings || tour.tour_pricing || []).find(pricing => {
-      const startDate = new Date(pricing.start_date);
-      const endDate = new Date(pricing.end_date);
-      return actualPax === parseInt(pricing.pax) && travelDate >= startDate && travelDate <= endDate;
-    });
-
-    if (!applicablePricing) {
-      throw new Error('no tour pricing available for the requested date range');
-    }
-
-    const singlePrice = parseFloat(applicablePricing.single_room_price || applicablePricing.single_price || 0);
-    const doublePrice = parseFloat(applicablePricing.double_room_price || applicablePricing.double_price || 0);
-    const triplePrice = parseFloat(applicablePricing.triple_room_price || applicablePricing.triple_price || 0);
-
-    if (singlePrice <= 0 && (parseInt(request.single_rooms) || 0) > 0) {
-      throw new Error('single rooms are not available for PVT');
-    }
-    if (doublePrice <= 0 && (parseInt(request.double_rooms) || 0) > 0) {
-      throw new Error('double rooms are not available for PVT');
-    }
-    if (triplePrice <= 0 && (parseInt(request.triple_rooms) || 0) > 0) {
-      throw new Error('triple rooms are not available for PVT');
-    }
-
-    const baseCostPerPerson = ((singlePrice * (parseInt(request.single_rooms) || 0)) +
-                               (doublePrice * (parseInt(request.double_rooms) || 0) * 2) +
-                               (triplePrice * (parseInt(request.triple_rooms) || 0) * 3)) / actualPax;
-
-    const markedUpPerPersonCost = calculateMarkedUpPrice(baseCostPerPerson, markupGroup, 'tour', markups);
-    return markedUpPerPersonCost * actualPax;
+  if (!applicablePricing) {
+    throw new Error('no SIC pricing available for the requested date range');
   }
 
-  throw new Error(`invalid TOT value: ${request.tot}, must be 'SIC' or 'PVT'`);
+  const baseCost = (parseFloat(applicablePricing.single_room_price || applicablePricing.single_price || 0) * (parseInt(request.single_rooms) || 0)) +
+                   (parseFloat(applicablePricing.double_room_price || applicablePricing.double_price || 0) * (parseInt(request.double_rooms) || 0) * 2) +
+                   (parseFloat(applicablePricing.triple_room_price || applicablePricing.triple_price || 0) * (parseInt(request.triple_rooms) || 0) * 3);
+  const perPersonCost = baseCost / actualPax;
+  const markedUpPerPersonCost = calculateMarkedUpPrice(perPersonCost, markupGroup, 'tour', markups);
+  return markedUpPerPersonCost * actualPax;
 }
 
 export function calculateMarkupRoomType(roomType, markupGroup, markups) {

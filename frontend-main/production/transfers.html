@@ -1142,16 +1142,91 @@
           }
         }
 
-        function bulkCloneTransfers() {
+        async function bulkCloneTransfers() {
           const idsToClone = filteredTransfers
             .map(t => String(t.id))
             .filter(id => selectedIds.has(id));
           
           if (idsToClone.length === 0) return;
-          
-          sessionStorage.setItem("edit_queue", JSON.stringify(idsToClone));
+
+          if (!confirm(`Clone ${idsToClone.length} selected transfer(s)? You will be taken to edit each cloned transfer after cloning.`)) return;
+
+          const token = localStorage.getItem("token");
+          const clonedIds = [];
+          let errorCount = 0;
+
+          showProgressOverlay(`Cloning 0 of ${idsToClone.length}...`);
+
+          for (let i = 0; i < idsToClone.length; i++) {
+            const id = idsToClone[i];
+            showProgressOverlay(`Cloning ${i + 1} of ${idsToClone.length}...`);
+
+            try {
+              // Step 1: Fetch source transfer data (exclude markup so we get raw prices)
+              const getRes = await fetch(`${Endpoint}/api/v1/transfers/${id}?excludeMarkup=true`, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              if (!getRes.ok) throw new Error(`Failed to fetch transfer ${id}`);
+              const transfer = await getRes.json();
+
+              // Step 2: Build the clone payload (strip ID so backend creates a new record)
+              const clonePayload = {
+                transfer_type: transfer.transfer_type,
+                city: transfer.city,
+                description: transfer.description,
+                departure: transfer.departure,
+                arrival: transfer.arrival,
+                sic_price_adult: transfer.sic_price_adult,
+                sic_price_child: transfer.sic_price_child,
+                supplier_id: transfer.supplier_id,
+                display_order: transfer.display_order,
+                prices: (transfer.prices || []).map(p => ({
+                  start_date: p.start_date,
+                  end_date: p.end_date,
+                  pax: p.pax,
+                  price: p.price,
+                  cost: p.cost || 0
+                }))
+              };
+
+              // Step 3: POST to create the clone
+              const postRes = await fetch(`${Endpoint}/api/v1/transfers`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify(clonePayload)
+              });
+
+              if (!postRes.ok) throw new Error(`Failed to clone transfer ${id}`);
+              const newTransfer = await postRes.json();
+
+              // Collect the new clone's ID for batch editing
+              if (newTransfer && newTransfer.id) {
+                clonedIds.push(String(newTransfer.id));
+              }
+            } catch (err) {
+              console.error(err);
+              errorCount++;
+            }
+          }
+
+          hideProgressOverlay();
+
+          if (clonedIds.length === 0) {
+            alert(`Failed to clone any transfers. Please try again.`);
+            return;
+          }
+
+          if (errorCount > 0) {
+            alert(`Cloned ${clonedIds.length} transfer(s). Failed to clone ${errorCount} transfer(s).\n\nYou will now be taken to edit the cloned transfers.`);
+          }
+
+          // Navigate to edit mode for all cloned transfers (batch edit)
+          sessionStorage.setItem("edit_queue", JSON.stringify(clonedIds));
           sessionStorage.removeItem("clone_ids");
-          window.location.href = `edit_transfer.html?id=${idsToClone[0]}&clone=true&batch=true`;
+          window.location.href = `edit_transfer.html?id=${clonedIds[0]}&batch=true`;
         }
 
         async function bulkDeleteTransfers() {

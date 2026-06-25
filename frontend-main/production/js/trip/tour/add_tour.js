@@ -288,7 +288,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
   function validateRoomCounts() {
-    const pax = parseInt(document.getElementById("pax").value || 0, 10);
+    let pax = parseInt(document.getElementById("pax").value || 0, 10);
+    if (pax === 0) {
+      const adult = parseInt(document.getElementById("adult")?.value || 0, 10);
+      const child = parseInt(document.getElementById("child")?.value || 0, 10);
+      pax = adult + child;
+      const paxField = document.getElementById("pax");
+      if (paxField && pax > 0) {
+        paxField.value = pax;
+      }
+    }
 
     const singleRoomCount = parseInt(document.getElementById("singleRoomCount").value || 0, 10);
     const doubleRoomCount = parseInt(document.getElementById("doubleRoomCount").value || 0, 10);
