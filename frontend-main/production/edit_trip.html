@@ -3445,6 +3445,19 @@
             });
         }
 
+        // Helper to normalize transfer direction types (handles legacy DB values)
+        function normalizeTransferDirection(type) {
+          if (!type) return "";
+          const t = type.trim().toLowerCase();
+          if (t === "tin" || t === "t in" || t === "transfer in" || t === "trf in") {
+            return "TRF In";
+          }
+          if (t === "tout" || t === "t out" || t === "transfer out" || t === "trf out") {
+            return "TRF Out";
+          }
+          return type;
+        }
+
         // ✅ **2. Populate Transfer Table**
         function populateTransferRow(transfer) {
           const transferTableBody =
@@ -3455,7 +3468,8 @@
           row.dataset.transferId = transfer.transfer_id || 0; // ✅ Store transfer_id correctly
           row.dataset.flightTime = transfer.flight_time || ""; // ✅ Store Flight Time
           row.dataset.transferFlight = transfer.flight_number || ""; // ✅ Store Flight Number
-          row.dataset.typeOfTransfer = transfer.type_of_transfer || ""; // ✅ Store TRF Type
+          const normalizedType = normalizeTransferDirection(transfer.type_of_transfer || "");
+          row.dataset.typeOfTransfer = normalizedType; // ✅ Store TRF Type
           console.log(formatToYYYYMMDD(transfer.date));
           // ✅ Store the quotation status in the dataset
           row.dataset.quotationStatus = quotationStatus;
@@ -3474,7 +3488,7 @@
 
           row.innerHTML = `
                 <td>${transfer.date || ""}<br>${transfer.flight_number || ""}</td>
-                <td>${transfer.type_of_transfer || ""}</td>
+                <td>${normalizedType}</td>
                 <td>${transfer.city || ""}</td>
                 <td>${transfer.transfer_description || ""}</td>
                 <td>${transfer.tot || ""}</td>
@@ -3744,25 +3758,6 @@
                 if (departure) flightTimeInput.value = formatTimeToHHMM(departure);
               }
             }
-
-            // Pre-fill From / To based on route "DEP-ARR"
-            if (route && route.includes("-")) {
-              const parts = route.split("-");
-              if (parts.length === 2) {
-                const depLoc = parts[0].trim();
-                const arrLoc = parts[1].trim();
-                
-                const depAirport = getAirportName(depLoc);
-                const arrAirport = getAirportName(arrLoc);
-
-                if (transferFromInput) {
-                  transferFromInput.value = depAirport;
-                }
-                if (transferToInput) {
-                  transferToInput.value = arrAirport;
-                }
-              }
-            }
           });
 
           // When Transfer Type direction changes → re-apply time from the currently selected flight
@@ -3872,7 +3867,8 @@
           row.dataset.transferId = transfer.transfer_id || 0;
           row.dataset.flightTime = transfer.flightTime;
           row.dataset.transferFlight = transfer.transferFlight;
-          row.dataset.typeOfTransfer = transfer.typeOfTransfer || "";
+          const normalizedType = normalizeTransferDirection(transfer.typeOfTransfer || "");
+          row.dataset.typeOfTransfer = normalizedType;
 
           let displayPickupTime = formatTimeToHHMM(transfer.transferPickupTime || transfer.flightTime || "");
           if (!displayPickupTime && transfer.transferFlight && typeof flightsArray !== "undefined") {
@@ -3888,7 +3884,7 @@
 
           row.innerHTML = `
                     <td>${formatToDDMMYYYY(transfer.transferDate)}<br>${transfer.transferFlight || ""}</td>
-                    <td>${transfer.typeOfTransfer || ""}</td>
+                    <td>${normalizedType}</td>
                     <td>${transfer.transferCity}</td>
                     <td>${transfer.transferType}</td>
                     <td>${transfer.transferToT || ""}</td>
@@ -3924,6 +3920,7 @@
           const transferDropdown = document.getElementById("transferType");
           const selectedTransferOption =
             transferDropdown.options[transferDropdown.selectedIndex];
+          const normalizedType = normalizeTransferDirection(document.getElementById("transferDirectionType").value);
 
           const updatedTransfer = {
             id: id || undefined,
@@ -3936,7 +3933,7 @@
             from_location: document.getElementById("transferFrom").value,
             to_location: document.getElementById("transferTo").value,
             tot: document.getElementById("transferToT").value,
-            type_of_transfer: document.getElementById("transferDirectionType").value,
+            type_of_transfer: normalizedType,
             pickup_time: document.getElementById("transferPickupTime")?.value || "",
             flight_time: document.getElementById("flightTime").value,
             flight_number: document.getElementById("transferFlight").value,
@@ -3954,8 +3951,7 @@
             updatedTransfer.flight_time || "";
           editingTransferRow.dataset.transferFlight =
             updatedTransfer.flight_number || "";
-          editingTransferRow.dataset.typeOfTransfer =
-            updatedTransfer.type_of_transfer || "";
+          editingTransferRow.dataset.typeOfTransfer = normalizedType;
 
           let displayPickupTime = formatTimeToHHMM(updatedTransfer.pickup_time || updatedTransfer.flight_time || "");
           if (!displayPickupTime && updatedTransfer.flight_number && typeof flightsArray !== "undefined") {
@@ -3972,7 +3968,7 @@
           // ✅ Update row directly in the table
           editingTransferRow.innerHTML = `
                   <td>${updatedTransfer.date}<br>${updatedTransfer.flight_number || ""}</td>
-                  <td>${updatedTransfer.type_of_transfer || ""}</td>
+                  <td>${normalizedType}</td>
                   <td>${updatedTransfer.city}</td>
                   <td>${updatedTransfer.transfer_description}</td>
                   <td>${updatedTransfer.tot}</td>
@@ -4023,7 +4019,7 @@
             id: id,
             transfer_id: transferId,
             transferDate: row.dataset.transferDate || row.cells[0].textContent.trim().substring(0, 10),
-            typeOfTransfer: row.dataset.typeOfTransfer || row.cells[1].textContent.trim(),
+            typeOfTransfer: normalizeTransferDirection(row.dataset.typeOfTransfer || row.cells[1].textContent.trim()),
             transferCity: row.cells[2].textContent.trim(),
             transferType: row.cells[3].textContent.trim(), // ✅ Transfer Description (Dropdown)
             transferToT: row.cells[4].textContent.trim(),
@@ -4200,9 +4196,9 @@
             const row = event.target.closest("tr");
             if (!row) return;
 
-            if (event.target.classList.contains("edit-transfer")) {
+            if (event.target.classList.contains("edit-transfer") || event.target.closest(".edit-transfer")) {
               editTransfer(row);
-            } else if (event.target.classList.contains("delete-transfer")) {
+            } else if (event.target.classList.contains("delete-transfer") || event.target.closest(".delete-transfer")) {
               deleteTransfer(row);
             }
           });
@@ -8712,7 +8708,7 @@
                 // rowData["id"] = parseInt(row.dataset.transferId, 10) || 0; // Ensure ID
                 rowData["trip_item_id"] = 0; // This should be assigned dynamically if needed
                 rowData["transfer_id"] = parseInt(row.dataset.transferId, 10) || 0; // Ensure TransferID
-                rowData["type_of_transfer"] = row.dataset.typeOfTransfer || cells[1]?.textContent.trim() || "";
+                rowData["type_of_transfer"] = normalizeTransferDirection(row.dataset.typeOfTransfer || cells[1]?.textContent.trim() || "");
                 rowData["city"] = cells[2]?.textContent.trim();
                 rowData["transfer_description"] = cells[3]?.textContent.trim();
                 rowData["tot"] = cells[4]?.textContent.trim();

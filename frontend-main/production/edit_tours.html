@@ -1468,6 +1468,25 @@
                   label.textContent = isLastDay ? "Departure Time" : "Flight";
                 }
                 fromTimeInput.placeholder = isLastDay ? "Departure Time" : "Flight";
+                
+                // ✅ If it's a Flight input (not last day), destroy flatpickr instance if exists
+                if (!isLastDay) {
+                  if (fromTimeInput._flatpickr) {
+                    fromTimeInput._flatpickr.destroy();
+                  }
+                  fromTimeInput.removeAttribute("readonly");
+                } else {
+                  // ✅ If it's Departure Time (last day), initialize flatpickr if not already initialized
+                  if (!fromTimeInput._flatpickr) {
+                    flatpickr(fromTimeInput, {
+                      enableTime: true,
+                      noCalendar: true,
+                      dateFormat: "H:i",
+                      time_24hr: true,
+                      allowInput: true,
+                    });
+                  }
+                }
               }
               if (toTimeInput) {
                 const label = toTimeInput.closest("div").querySelector("label");
@@ -1508,6 +1527,7 @@
             noCalendar: true, // Disable the calendar
             dateFormat: "H:i", // 24-hour format (e.g., 20:00)
             time_24hr: true, // Use 24-hour time format
+            allowInput: true, // Allow manual typing
           });
         };
 
