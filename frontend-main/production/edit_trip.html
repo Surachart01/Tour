@@ -3549,8 +3549,26 @@
                 const option = document.createElement("option");
                 option.value = transfer.id;
                 option.textContent = transfer.description;
+                option.dataset.remark = transfer.remark || "";
+                option.dataset.departure = transfer.departure || "";
+                option.dataset.arrival = transfer.arrival || "";
                 transferDropdown.appendChild(option);
               });
+
+              // Auto-fill remarks textarea when a transfer is selected
+              const existingListener = transferDropdown._remarkListener;
+              if (existingListener) {
+                transferDropdown.removeEventListener("change", existingListener);
+              }
+              const remarkListener = function () {
+                const selectedOption = this.options[this.selectedIndex];
+                const remarksTextarea = document.getElementById("remarks");
+                if (remarksTextarea && selectedOption) {
+                  remarksTextarea.value = selectedOption.dataset.remark || "";
+                }
+              };
+              transferDropdown._remarkListener = remarkListener;
+              transferDropdown.addEventListener("change", remarkListener);
 
               console.log("Transfers loaded:", transfers);
             })

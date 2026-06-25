@@ -3719,18 +3719,16 @@
           // Log the constructed tourDays array
           console.log("Constructed tourDays:", tourDays);
 
-          // Collect Pricing Details
-          const pricingRows = document.querySelectorAll(
-            "#tourPriceTableBody tr"
-          );
-          const tourPricings = Array.from(pricingRows).map((row) => ({
-            start_date: formatToYYYYMMDD(row.cells[0].textContent.trim()),
-            end_date: formatToYYYYMMDD(row.cells[1].textContent.trim()),
-            pax: parseInt(row.cells[2].textContent.trim()),
-            single_price: parseFloat(row.cells[3].textContent.trim()),
-            double_price: parseFloat(row.cells[4].textContent.trim()),
-            triple_price: parseFloat(row.cells[5].textContent.trim()),
-            currency_id: 1, // Assuming default currency
+          // Collect Pricing Details directly from tourPricings array (not DOM)
+          // to avoid date parsing issues with DD/MM/YYYY text in table cells
+          const tourPricingPayload = tourPricings.map((p) => ({
+            start_date: formatToYYYYMMDD(p.startDate || p.start_date || ""),
+            end_date: formatToYYYYMMDD(p.endDate || p.end_date || ""),
+            pax: parseInt(p.pax) || 1,
+            single_price: parseFloat(p.singlePrice ?? p.single_price) || 0,
+            double_price: parseFloat(p.doublePrice ?? p.double_price) || 0,
+            triple_price: parseFloat(p.triplePrice ?? p.triple_price) || 0,
+            currency_id: 1,
           }));
 
           // Collect tour validity data and convert to available_days format
@@ -3756,7 +3754,7 @@
             date: new Date().toISOString(), // Use a specific date if required
             available_days: availableDays,
             tour_days: tourDays,
-            tour_pricings: tourPricings,
+            tour_pricings: tourPricingPayload,
           };
 
           const token = localStorage.getItem("token");

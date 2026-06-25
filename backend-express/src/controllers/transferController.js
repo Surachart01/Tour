@@ -43,6 +43,7 @@ export function formatTransferResponse(transfer, markupGroup = '', markups = [])
     supplier_id: transfer.supplier_id,
     display_order: transfer.display_order,
     order: (transfer.display_order === 0 || transfer.display_order === null || transfer.display_order === undefined) ? 100000 : transfer.display_order,
+    remark: transfer.remark || '',
     prices
   };
 }
@@ -113,6 +114,7 @@ export async function createTransfer(req, res, next) {
         supplier_id: data.supplier_id ? parseInt(data.supplier_id) : null,
         display_order: data.display_order !== undefined ? parseInt(data.display_order) :
                        (data.order !== undefined ? parseInt(data.order) : 0),
+        remark: data.remark || null,
         transfer_pricing: uniquePricingData.length > 0 ? {
           create: uniquePricingData.map(p => ({
             start_date: new Date(normalizeDateStr(p.start_date)), end_date: new Date(normalizeDateStr(p.end_date)),
@@ -310,6 +312,7 @@ export async function updateTransfer(req, res, next) {
           supplier_id: data.supplier_id !== undefined ? (data.supplier_id ? parseInt(data.supplier_id) : null) : undefined,
           display_order: data.display_order !== undefined ? parseInt(data.display_order) :
                          (data.order !== undefined ? parseInt(data.order) : undefined),
+          remark: data.remark !== undefined ? (data.remark || null) : undefined,
           transfer_pricing: uniquePricingData.length > 0 ? {
             create: uniquePricingData.map(p => ({
               start_date: new Date(normalizeDateStr(p.start_date)), end_date: new Date(normalizeDateStr(p.end_date)),

@@ -533,8 +533,25 @@
                     value="0"
                   />
                 </div>
+
+                <div class="col-md-12 form-group" style="margin-top: 8px">
+                  <label for="transferRemark">
+                    <i
+                      class="fas fa-sticky-note"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Remark
+                  </label>
+                  <textarea
+                    id="transferRemark"
+                    class="form-control"
+                    rows="3"
+                    placeholder="Enter remark (will be shown to agents when selecting this transfer)"
+                  ></textarea>
+                </div>
               </div>
             </form>
+
 
             <hr style="margin: 40px 0; border-color: #ecf0f1" />
 
@@ -1299,6 +1316,8 @@
                 shouldPopulatePrice ? (transfer.sic_price_child || "") : 0;
               document.getElementById("displayOrder").value =
                 transfer.display_order ?? transfer.order ?? 0;
+              document.getElementById("transferRemark").value =
+                transfer.remark || "";
 
               // Set the selected supplier
               if (transfer.supplier_id) {
@@ -1920,6 +1939,7 @@
               document.getElementById("SICPriceChild").value
             ),
             display_order: parseInt(document.getElementById("displayOrder").value) || 0,
+            remark: document.getElementById("transferRemark").value || null,
             supplier_id: parseInt(
               document.getElementById("supplier").value,
               10

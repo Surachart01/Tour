@@ -720,6 +720,7 @@ model transfers {
   sic_price_child     Decimal?              @default(0) @db.Decimal(10, 2)
   supplier_id         Int?
   display_order       Int?                  @default(0) @map("display_order")
+  remark              String?
   transfer_pricing    transfer_pricing[]
   transfer_trip_items transfer_trip_items[]
 }

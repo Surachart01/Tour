@@ -371,54 +371,60 @@ export async function updateTour(req, res, next) {
       });
       await tx.tour_days.deleteMany({ where: { tour_id: id } });
 
+      // Build update data object — only include fields that are defined to avoid Prisma undefined error
+      const updateData = {};
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.code !== undefined) updateData.code = data.code;
+      if (data.category !== undefined) updateData.category = data.category;
+      if (data.description !== undefined) updateData.description = data.description;
+      if (data.duration !== undefined) updateData.duration = data.duration;
+      if (data.route !== undefined) updateData.route = data.route;
+      if (data.tot !== undefined || data.departures !== undefined) updateData.departures = data.tot ?? data.departures;
+      if (data.city !== undefined) updateData.city = data.city;
+      if (data.country !== undefined) updateData.country = data.country;
+      if (valid_days !== undefined) updateData.valid_days = valid_days;
+      if (data.display_order !== undefined) updateData.display_order = data.display_order;
+      if (pricings.length > 0) {
+        updateData.tour_pricing = {
+          create: pricings.map(p => ({
+            start_date: new Date(p.start_date),
+            end_date: new Date(p.end_date),
+            pax: parseInt(p.pax) || 1,
+            single_room_price: parseFloat(p.single_price ?? p.single_room_price ?? 0),
+            double_room_price: parseFloat(p.double_price ?? p.double_room_price ?? 0),
+            triple_room_price: parseFloat(p.triple_price ?? p.triple_room_price ?? 0),
+            currency_id: p.currency_id || null
+          }))
+        };
+      }
+      if (tour_days.length > 0) {
+        updateData.tour_days = {
+          create: tour_days.map(d => ({
+            day: parseInt(d.day),
+            itinerary: d.itinerary || '',
+            tour_details: d.details && d.details.length > 0 ? {
+              create: d.details.map(detail => ({
+                from_time: detail.from_time || '',
+                to_time: detail.to_time || '',
+                city: detail.city || '',
+                type_of_tour: detail.type_of_tour || '',
+                hotel_id: detail.hotel_id ? parseInt(detail.hotel_id) : null,
+                hotel_name: detail.hotel_name || '',
+                room_type_id: detail.room_type_id ? parseInt(detail.room_type_id) : null,
+                room_type: detail.room_type || '',
+                excursion_id: detail.excursion_id ? parseInt(detail.excursion_id) : null,
+                excursion_name: detail.excursion_name || '',
+                transfer_id: detail.transfer_id ? parseInt(detail.transfer_id) : null,
+                transfer_name: detail.transfer_name || ''
+              }))
+            } : undefined
+          }))
+        };
+      }
+
       await tx.tours.update({
         where: { id },
-        data: {
-          name: data.name,
-          code: data.code,
-          category: data.category,
-          description: data.description,
-          duration: data.duration,
-          route: data.route,
-          departures: data.tot || data.departures,
-          city: data.city,
-          country: data.country,
-          valid_days: valid_days !== undefined ? valid_days : undefined,
-          display_order: data.display_order,
-          tour_pricing: pricings.length > 0 ? {
-            create: pricings.map(p => ({
-              start_date: new Date(p.start_date),
-              end_date: new Date(p.end_date),
-              pax: parseInt(p.pax) || 1,
-              single_room_price: parseFloat(p.single_price ?? p.single_room_price ?? 0),
-              double_room_price: parseFloat(p.double_price ?? p.double_room_price ?? 0),
-              triple_room_price: parseFloat(p.triple_price ?? p.triple_room_price ?? 0),
-              currency_id: p.currency_id || null
-            }))
-          } : undefined,
-          tour_days: tour_days.length > 0 ? {
-            create: tour_days.map(d => ({
-              day: parseInt(d.day),
-              itinerary: d.itinerary || '',
-              tour_details: d.details && d.details.length > 0 ? {
-                create: d.details.map(detail => ({
-                  from_time: detail.from_time || '',
-                  to_time: detail.to_time || '',
-                  city: detail.city || '',
-                  type_of_tour: detail.type_of_tour || '',
-                  hotel_id: detail.hotel_id ? parseInt(detail.hotel_id) : null,
-                  hotel_name: detail.hotel_name || '',
-                  room_type_id: detail.room_type_id ? parseInt(detail.room_type_id) : null,
-                  room_type: detail.room_type || '',
-                  excursion_id: detail.excursion_id ? parseInt(detail.excursion_id) : null,
-                  excursion_name: detail.excursion_name || '',
-                  transfer_id: detail.transfer_id ? parseInt(detail.transfer_id) : null,
-                  transfer_name: detail.transfer_name || ''
-                }))
-              } : undefined
-            }))
-          } : undefined
-        }
+        data: updateData
       });
     });
     return res.json({ status: 'success' });
