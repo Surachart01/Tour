@@ -3937,7 +3937,7 @@
             to_location: document.getElementById("transferTo").value,
             tot: document.getElementById("transferToT").value,
             type_of_transfer: document.getElementById("transferDirectionType").value,
-            pickup_time: document.getElementById("transferPickupTime").value,
+            pickup_time: document.getElementById("transferPickupTime")?.value || "",
             flight_time: document.getElementById("flightTime").value,
             flight_number: document.getElementById("transferFlight").value,
             remarks: document.getElementById("remarks").value,
@@ -4087,8 +4087,8 @@
           document.getElementById("updatedTransferPrice").disabled = !canEdit;
           document.getElementById("getTransferPriceBtn").disabled = !canEdit;
 
-          document.getElementById("transferPickupTime").value =
-            formatTimeToHHMM(transfer.transferPickupTime);
+          const pickupTimeInput = document.getElementById("transferPickupTime");
+          if (pickupTimeInput) pickupTimeInput.value = formatTimeToHHMM(transfer.transferPickupTime);
           document.getElementById("flightTime").value =
             formatTimeToHHMM(transfer.flightTime);
 
@@ -4109,8 +4109,10 @@
               if (departure && !document.getElementById("flightTime").value) {
                 document.getElementById("flightTime").value = formatTimeToHHMM(departure);
               }
-              if (arrival && !document.getElementById("transferPickupTime").value) {
-                document.getElementById("transferPickupTime").value = formatTimeToHHMM(arrival);
+              if (arrival && !document.getElementById("transferPickupTime")?.value) {
+                if (document.getElementById("transferPickupTime")) {
+                  document.getElementById("transferPickupTime").value = formatTimeToHHMM(arrival);
+                }
               }
             }
           }
