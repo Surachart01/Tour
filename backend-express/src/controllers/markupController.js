@@ -90,6 +90,9 @@ export async function updateMarkup(req, res, next) {
           } : undefined
         }
       });
+    }, {
+      maxWait: 15000,
+      timeout: 30000
     });
     return res.json({ status: 'success' });
   } catch (err) { next(err); }

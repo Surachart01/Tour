@@ -1330,7 +1330,7 @@
             document.getElementById("tourName").value = tour.name;
             document.getElementById("tourCategory").value = tour.category;
             document.getElementById("tourDuration").value = tour.duration;
-            document.getElementById("tourDeparture").value = tour.tot;
+            document.getElementById("tourDeparture").value = tour.departures || tour.tot || "";
             document.getElementById("tourDescription").value = tour.description;
             document.getElementById("tourRoute").value = tour.route;
             document.getElementById("displayOrder").value = tour.display_order ?? 0;

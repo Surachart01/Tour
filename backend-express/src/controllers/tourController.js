@@ -424,6 +424,9 @@ export async function updateTour(req, res, next) {
         where: { id },
         data: updateData
       });
+    }, {
+      maxWait: 15000,
+      timeout: 30000
     });
     return res.json({ status: 'success' });
   } catch (err) { next(err); }

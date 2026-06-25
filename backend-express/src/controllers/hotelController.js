@@ -395,6 +395,9 @@ export async function updateHotel(req, res, next) {
           } : undefined
         }
       });
+    }, {
+      maxWait: 15000,
+      timeout: 30000
     });
 
     const updatedHotel = await prisma.hotels.findUnique({

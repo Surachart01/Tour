@@ -732,25 +732,6 @@ function setupFlightDropdown() {
     if (transferPickupTimeInput && arrival) {
       transferPickupTimeInput.value = formatTimeToHHMM(arrival);
     }
-
-    // 3. Pre-fill From / To based on route "DEP-ARR"
-    if (route && route.includes("-")) {
-      const parts = route.split("-");
-      if (parts.length === 2) {
-        const depLoc = parts[0].trim();
-        const arrLoc = parts[1].trim();
-        
-        const depAirport = getAirportName(depLoc);
-        const arrAirport = getAirportName(arrLoc);
-
-        if (transferFromInput) {
-          transferFromInput.value = depAirport;
-        }
-        if (transferToInput) {
-          transferToInput.value = arrAirport;
-        }
-      }
-    }
   });
 
   // Bind shown.bs.modal to refresh options whenever the modal opens
