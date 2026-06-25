@@ -126,7 +126,6 @@ export async function createTour(req, res, next) {
           create: pricings.map(p => ({
             start_date: new Date(p.start_date),
             end_date: new Date(p.end_date),
-            pax: parseInt(p.pax) || 1,
             single_room_price: parseFloat(p.single_price ?? p.single_room_price ?? 0),
             double_room_price: parseFloat(p.double_price ?? p.double_room_price ?? 0),
             triple_room_price: parseFloat(p.triple_price ?? p.triple_room_price ?? 0),
@@ -389,7 +388,6 @@ export async function updateTour(req, res, next) {
           create: pricings.map(p => ({
             start_date: new Date(p.start_date),
             end_date: new Date(p.end_date),
-            pax: parseInt(p.pax) || 1,
             single_room_price: parseFloat(p.single_price ?? p.single_room_price ?? 0),
             double_room_price: parseFloat(p.double_price ?? p.double_room_price ?? 0),
             triple_room_price: parseFloat(p.triple_price ?? p.triple_room_price ?? 0),
