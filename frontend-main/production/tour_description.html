@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VeraThailandia! - Tour Description</title>
+    <meta name="description" content="Manage tour descriptions, attach brochures and documents, and send to agents or clients." />
+    <link href="../vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="../vendors/font-awesome/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      html, body {
+        height: 100%; margin: 0; padding: 0;
+        overflow-y: auto; overflow-x: hidden;
+        background-color: #f0f2f5;
+        font-family: 'Inter', sans-serif;
+      }
+
+      /* ── Page Header ─────────────────────────────── */
+      .page-header-custom {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        color: white; padding: 28px 32px; border-radius: 0;
+        display: flex; align-items: center; gap: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      }
+      .page-header-custom .icon-wrap {
+        width: 52px; height: 52px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 14px; display: flex;
+        align-items: center; justify-content: center;
+        font-size: 24px;
+      }
+      .page-header-custom h1 {
+        font-size: 1.7rem; font-weight: 700;
+        margin: 0; letter-spacing: -0.3px;
+      }
+      .page-header-custom p {
+        margin: 4px 0 0; font-size: 0.9rem;
+        opacity: 0.75;
+      }
+
+      /* ── Layout ───────────────────────────────────── */
+      .main-grid {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 20px;
+        padding: 24px;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      /* ── Tour List Panel ──────────────────────────── */
+      .tour-list-panel {
+        background: white; border-radius: 14px;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+        height: fit-content; overflow: hidden;
+      }
+      .panel-header {
+        padding: 16px 20px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        font-weight: 600; font-size: 0.9rem;
+        color: #495057; display: flex;
+        align-items: center; gap: 8px;
+      }
+      .search-wrap {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f0f0f0;
+      }
+      .search-wrap input {
+        width: 100%; padding: 8px 12px;
+        border: 1px solid #dee2e6; border-radius: 8px;
+        font-size: 0.875rem; outline: none;
+        transition: border-color 0.2s;
+      }
+      .search-wrap input:focus { border-color: #0f3460; }
+      .tour-list { max-height: 68vh; overflow-y: auto; }
+      .tour-item {
+        padding: 14px 18px; cursor: pointer;
+        border-bottom: 1px solid #f5f5f5;
+        transition: all 0.15s ease;
+        display: flex; flex-direction: column; gap: 4px;
+      }
+      .tour-item:hover { background: #f0f7ff; }
+      .tour-item.active {
+        background: linear-gradient(135deg, #0f3460, #1a1a2e);
+        color: white;
+      }
+      .tour-item .tour-name { font-weight: 600; font-size: 0.9rem; }
+      .tour-item .tour-meta { font-size: 0.78rem; opacity: 0.6; }
+      .tour-item.active .tour-meta { opacity: 0.75; }
+      .tour-item .has-desc-badge {
+        display: inline-block; padding: 2px 8px;
+        background: #28a745; color: white;
+        border-radius: 20px; font-size: 0.7rem;
+        width: fit-content;
+      }
+      .tour-item.active .has-desc-badge {
+        background: rgba(255,255,255,0.3);
+      }
+
+      /* ── Detail Panel ─────────────────────────────── */
+      .detail-panel {
+        background: white; border-radius: 14px;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+        overflow: hidden;
+      }
+      .detail-header {
+        padding: 20px 24px;
+        background: linear-gradient(135deg, #0f3460, #1a1a2e);
+        color: white; display: flex;
+        justify-content: space-between; align-items: center;
+      }
+      .detail-header h2 { font-size: 1.2rem; font-weight: 600; margin: 0; }
+      .detail-header .tour-code { font-size: 0.85rem; opacity: 0.75; margin-top: 2px; }
+      .detail-header-actions { display: flex; gap: 8px; }
+      .detail-body { padding: 24px; }
+
+      /* ── Section Labels ───────────────────────────── */
+      .section-label {
+        font-size: 0.78rem; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.8px;
+        color: #6c757d; margin-bottom: 10px;
+        display: flex; align-items: center; gap: 6px;
+      }
+
+      /* ── Rich Text Editor ─────────────────────────── */
+      .editor-toolbar {
+        display: flex; gap: 2px; flex-wrap: wrap;
+        padding: 8px 10px; background: #f8f9fa;
+        border: 1px solid #dee2e6; border-bottom: none;
+        border-radius: 8px 8px 0 0;
+      }
+      .editor-toolbar button {
+        width: 30px; height: 30px; border: none;
+        background: transparent; border-radius: 6px;
+        cursor: pointer; font-size: 0.85rem;
+        color: #495057; display: flex;
+        align-items: center; justify-content: center;
+        transition: background 0.15s;
+      }
+      .editor-toolbar button:hover { background: #e9ecef; }
+      .editor-toolbar .sep {
+        width: 1px; background: #dee2e6;
+        margin: 4px 4px;
+      }
+      #tourEditor {
+        min-height: 220px; padding: 16px;
+        border: 1px solid #dee2e6;
+        border-radius: 0 0 8px 8px;
+        outline: none; font-size: 0.9rem;
+        line-height: 1.7; color: #333;
+        background: white;
+      }
+      #tourEditor:empty::before {
+        content: attr(data-placeholder);
+        color: #aaa; pointer-events: none;
+      }
+
+      /* ── File Attachment ──────────────────────────── */
+      .file-upload-area {
+        border: 2px dashed #dee2e6; border-radius: 10px;
+        padding: 20px; text-align: center;
+        cursor: pointer; transition: all 0.2s;
+        background: #fafafa; margin-bottom: 14px;
+      }
+      .file-upload-area:hover, .file-upload-area.drag-over {
+        border-color: #0f3460; background: #f0f4ff;
+      }
+      .file-upload-area .upload-icon { font-size: 2rem; color: #adb5bd; margin-bottom: 8px; }
+      .file-upload-area p { margin: 0; font-size: 0.85rem; color: #6c757d; }
+      .file-upload-area .allowed-types { font-size: 0.75rem; color: #adb5bd; margin-top: 4px; }
+
+      .attached-files { display: flex; flex-direction: column; gap: 8px; }
+      .file-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 10px 14px; border: 1px solid #e9ecef;
+        border-radius: 8px; background: #fafafa;
+        transition: box-shadow 0.15s;
+      }
+      .file-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+      .file-icon { font-size: 1.5rem; width: 32px; text-align: center; }
+      .file-icon.pdf { color: #e74c3c; }
+      .file-icon.ppt, .file-icon.pptx { color: #e67e22; }
+      .file-icon.xls, .file-icon.xlsx { color: #27ae60; }
+      .file-icon.doc, .file-icon.docx { color: #2980b9; }
+      .file-info { flex: 1; min-width: 0; }
+      .file-info .file-name {
+        font-size: 0.875rem; font-weight: 500;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .file-info .file-meta { font-size: 0.75rem; color: #adb5bd; }
+      .file-actions { display: flex; gap: 4px; flex-shrink: 0; }
+      .file-actions button {
+        width: 30px; height: 30px; border: none;
+        border-radius: 6px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.8rem; transition: background 0.15s;
+      }
+      .btn-download { background: #e8f4f8; color: #0c6079; }
+      .btn-download:hover { background: #bee5eb; }
+      .btn-delete { background: #fde8e8; color: #c0392b; }
+      .btn-delete:hover { background: #f5b7b7; }
+
+      /* ── Email Modal ──────────────────────────────── */
+      .modal-header-custom {
+        background: linear-gradient(135deg, #0f3460, #1a1a2e);
+        color: white; border-radius: 8px 8px 0 0;
+      }
+      .modal-header-custom .modal-title { font-weight: 600; }
+      .modal-header-custom .close { color: white; opacity: 0.8; }
+
+      /* ── Action Buttons ───────────────────────────── */
+      .btn-save-desc {
+        background: linear-gradient(135deg, #0f3460, #1a1a2e);
+        color: white; border: none; border-radius: 8px;
+        padding: 10px 20px; font-weight: 600; font-size: 0.875rem;
+        cursor: pointer; transition: opacity 0.15s;
+        display: flex; align-items: center; gap: 6px;
+      }
+      .btn-save-desc:hover { opacity: 0.88; }
+      .btn-email-desc {
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        color: white; border: none; border-radius: 8px;
+        padding: 10px 20px; font-weight: 600; font-size: 0.875rem;
+        cursor: pointer; transition: opacity 0.15s;
+        display: flex; align-items: center; gap: 6px;
+      }
+      .btn-email-desc:hover { opacity: 0.88; }
+
+      /* ── Empty State ──────────────────────────────── */
+      .empty-state {
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        padding: 60px 20px; color: #adb5bd;
+      }
+      .empty-state i { font-size: 3.5rem; margin-bottom: 16px; }
+      .empty-state p { font-size: 1rem; }
+
+      /* ── Toast ────────────────────────────────────── */
+      .toast-container {
+        position: fixed; top: 20px; right: 20px;
+        z-index: 9999; display: flex; flex-direction: column; gap: 8px;
+      }
+      .toast-item {
+        padding: 12px 18px; border-radius: 8px;
+        color: white; font-size: 0.875rem;
+        display: flex; align-items: center; gap: 8px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        animation: slideIn 0.3s ease;
+      }
+      .toast-success { background: #27ae60; }
+      .toast-error   { background: #e74c3c; }
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to   { transform: translateX(0);   opacity: 1; }
+      }
+
+      .uploading-spinner { display: none; text-align: center; padding: 12px; color: #0f3460; }
+
+      /* Sidebar scroll */
+      .left_col.scroll-view { overflow-y: auto; max-height: 100vh; }
+      body.nav-sm .left_col.scroll-view { overflow-y: visible; max-height: none; }
+    </style>
+  </head>
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+
+        <!-- ════ Sidebar ═══════════════════════════════ -->
+        <div class="col-md-3 left_col menu_fixed">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border:0">
+              <a href="index.html" class="site_title" style="display:block;text-align:center;font-size:2rem;font-weight:bold;color:#007bff;text-decoration:none;">
+                <span style="font-size:1.5rem">VeraThailandia!</span>
+              </a>
+            </div>
+            <div class="clearfix"></div>
+            <div class="profile clearfix">
+              <div class="profile_pic">
+                <img src="images/verathailandlogo.png" alt="..." class="img-circle profile_img" />
+              </div>
+              <div class="profile_info">
+                <span>Welcome,</span>
+                <h2 id="profileName"></h2>
+              </div>
+            </div>
+            <br />
+            <div id="sidebar-menu" class="main_menu_side hidden-print main_menu">
+              <div class="menu_section">
+                <h3>General</h3>
+                <ul class="nav side-menu">
+                  <li><a href="index.html"><i class="fa fa-home"></i> Home <span class="label label-success pull-right"></span></a></li>
+                  <li id="controlPanelMenu">
+                    <a><i class="fa fa-edit"></i> Control-Panel <span class="fa fa-chevron-down"></span></a>
+                    <ul class="nav child_menu">
+                      <li><a href="activities.html">Activities</a></li>
+                      <li><a href="agents.html">Agents</a></li>
+                      <li><a href="booking.html">Bookings</a></li>
+                      <li><a href="city_info.html">City Information</a></li>
+                      <li><a href="excursion_description.html">Excursion Description</a></li>
+                      <li><a href="excursions.html">Excursions</a></li>
+                      <li><a href="hotels.html">Hotels</a></li>
+                      <li><a href="markup.html">Markups</a></li>
+                      <li><a href="othercharges.html">Other Charges</a></li>
+                      <li><a href="suppliers.html">Suppliers</a></li>
+                      <li><a href="tools.html">Tools</a></li>
+                      <li><a href="tour_description.html" class="active">Tour Description</a></li>
+                      <li><a href="tours.html">Tours</a></li>
+                      <li><a href="transfers.html">Transfers</a></li>
+                      <li><a href="users.html">Users</a></li>
+                    </ul>
+                  </li>
+                  <li><a href="trip.html"><i class="fa fa-book"></i> Quotation <span class="label label-success pull-right"></span></a></li>
+                  <li><a href="payment.html"><i class="fa fa-pencil-square-o"></i> Payment <span class="label label-success pull-right"></span></a></li>
+                  <li><a href="itinerary.html"><i class="fa fa-ticket"></i> Itinerary <span class="label label-success pull-right"></span></a></li>
+                  <li><a href="analytics.html"><i class="fa fa-bar-chart"></i> Analytics <span class="label label-success pull-right"></span></a></li>
+                </ul>
+              </div>
+            </div>
+            <div class="sidebar-footer hidden-small">
+              <a href="logout.html" data-toggle="tooltip" data-placement="top" title="Logout">
+                <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+              </a>
+            </div>
+          </div>
+        </div>
+        <!-- ════ /Sidebar ══════════════════════════════ -->
+
+        <!-- Top nav -->
+        <div class="top_nav">
+          <div class="nav_menu">
+            <div class="nav toggle"><a id="menu_toggle"><i class="fa fa-bars"></i></a></div>
+            <nav class="nav navbar-nav">
+              <ul class="navbar-right">
+                <li class="nav-item dropdown open" style="padding-left:15px">
+                  <a href="javascript:;" class="user-profile dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                    <img src="images/verathailandlogo.png" alt="" /><span id="navUsername">Admin</span>
+                  </a>
+                  <ul class="dropdown-menu dropdown-usermenu pull-right">
+                    <li><a href="profile.html"><i class="fa fa-fw fa-user"></i> Profile</a></li>
+                    <li><a href="logout.html"><i class="fa fa-sign-out pull-right"></i> Log Out</a></li>
+                  </ul>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+        <!-- /Top nav -->
+
+        <!-- ════ Page Content ══════════════════════════ -->
+        <div class="right_col" role="main" style="min-height:100vh;padding-top:0;">
+
+          <!-- Page Header -->
+          <div class="page-header-custom">
+            <div class="icon-wrap"><i class="fa fa-map"></i></div>
+            <div>
+              <h1>Tour Description</h1>
+              <p>Manage descriptions, attach brochures &amp; send to clients</p>
+            </div>
+          </div>
+
+          <div class="main-grid">
+            <!-- ── Tour List ── -->
+            <div class="tour-list-panel">
+              <div class="panel-header"><i class="fa fa-list"></i> All Tours (<span id="tourCount">0</span>)</div>
+              <div class="search-wrap">
+                <input type="text" id="tourSearchInput" placeholder="🔍 Search tours..." oninput="filterTours()" />
+              </div>
+              <div class="tour-list" id="tourListContainer">
+                <div class="empty-state"><i class="fa fa-spinner fa-spin"></i><p>Loading tours...</p></div>
+              </div>
+            </div>
+
+            <!-- ── Detail Panel ── -->
+            <div class="detail-panel" id="detailPanel">
+              <div class="empty-state" id="emptyState">
+                <i class="fa fa-hand-pointer-o"></i>
+                <p>Select a tour from the list to manage its description</p>
+              </div>
+
+              <div id="tourDetail" style="display:none;">
+                <div class="detail-header">
+                  <div>
+                    <h2 id="detailTourName">—</h2>
+                    <div class="tour-code" id="detailTourMeta">—</div>
+                  </div>
+                  <div class="detail-header-actions">
+                    <button class="btn btn-sm" style="background:rgba(255,255,255,0.15);color:white;border:none;border-radius:8px;" onclick="openEmailModal()">
+                      <i class="fa fa-envelope"></i> Send Email
+                    </button>
+                  </div>
+                </div>
+
+                <div class="detail-body">
+                  <!-- Description Editor -->
+                  <div class="section-label"><i class="fa fa-pencil-square-o"></i> Description</div>
+                  <div class="editor-toolbar">
+                    <button onclick="execCmd('bold')" title="Bold"><b>B</b></button>
+                    <button onclick="execCmd('italic')" title="Italic"><i>I</i></button>
+                    <button onclick="execCmd('underline')" title="Underline"><u>U</u></button>
+                    <div class="sep"></div>
+                    <button onclick="execCmd('insertUnorderedList')" title="Bullet List"><i class="fa fa-list-ul"></i></button>
+                    <button onclick="execCmd('insertOrderedList')" title="Numbered List"><i class="fa fa-list-ol"></i></button>
+                    <div class="sep"></div>
+                    <button onclick="execCmd('justifyLeft')" title="Align Left"><i class="fa fa-align-left"></i></button>
+                    <button onclick="execCmd('justifyCenter')" title="Center"><i class="fa fa-align-center"></i></button>
+                    <button onclick="execCmd('justifyRight')" title="Align Right"><i class="fa fa-align-right"></i></button>
+                    <div class="sep"></div>
+                    <button onclick="execCmd('removeFormat')" title="Clear Format"><i class="fa fa-eraser"></i></button>
+                  </div>
+                  <div id="tourEditor" contenteditable="true" data-placeholder="Write a description for this tour... (highlights, itinerary overview, inclusions, etc.)"></div>
+
+                  <div style="margin-top:12px;display:flex;gap:10px;">
+                    <button class="btn-save-desc" id="saveDescBtn" onclick="saveDescription()">
+                      <i class="fa fa-save"></i> Save Description
+                    </button>
+                    <button class="btn-email-desc" onclick="openEmailModal()">
+                      <i class="fa fa-envelope"></i> Email This Tour
+                    </button>
+                  </div>
+
+                  <hr style="margin:24px 0;border-color:#f0f0f0;" />
+
+                  <!-- File Attachments -->
+                  <div class="section-label" style="margin-top:0;"><i class="fa fa-paperclip"></i> Attached Files</div>
+
+                  <div class="file-upload-area" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon"><i class="fa fa-cloud-upload"></i></div>
+                    <p><strong>Click to upload</strong> or drag &amp; drop files here</p>
+                    <p class="allowed-types">Supported: PDF, PowerPoint (.ppt/.pptx), Excel (.xls/.xlsx), Word (.doc/.docx) — Max 30MB</p>
+                  </div>
+                  <input type="file" id="fileInput" style="display:none;"
+                    accept=".pdf,.ppt,.pptx,.xls,.xlsx,.doc,.docx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    onchange="handleFileUpload(this.files)" />
+                  <div class="uploading-spinner" id="uploadingSpinner">
+                    <i class="fa fa-spinner fa-spin"></i> Uploading...
+                  </div>
+                  <div class="attached-files" id="attachedFilesList"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- ════ /Page Content ═════════════════════════ -->
+
+      </div>
+    </div>
+
+    <!-- ════ Email Modal ═══════════════════════════════ -->
+    <div class="modal fade" id="emailModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header modal-header-custom">
+            <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            <h4 class="modal-title"><i class="fa fa-envelope"></i> Send Tour Description</h4>
+          </div>
+          <div class="modal-body" style="padding:24px;">
+            <div class="form-group">
+              <label style="font-weight:600;">To (Email Address)</label>
+              <input type="email" class="form-control" id="emailTo" placeholder="recipient@example.com" />
+            </div>
+            <div class="form-group">
+              <label style="font-weight:600;">CC <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+              <input type="email" class="form-control" id="emailCc" placeholder="cc@example.com" />
+            </div>
+            <div class="form-group">
+              <label style="font-weight:600;">Subject</label>
+              <input type="text" class="form-control" id="emailSubject" />
+            </div>
+            <div class="form-group">
+              <label style="font-weight:600;">Message Body</label>
+              <textarea class="form-control" id="emailBody" rows="6" style="resize:vertical;"></textarea>
+            </div>
+            <div id="emailAttachInfo" style="padding:10px;background:#f8f9fa;border-radius:8px;font-size:0.85rem;color:#6c757d;"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="sendEmailBtn" onclick="sendEmail()">
+              <i class="fa fa-send"></i> Send Email
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <script src="../vendors/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+    <script>
+      // ── State ──────────────────────────────────────
+      let allTours = [];
+      let currentTour = null;
+      let currentDocs = [];
+
+      // ── Init ───────────────────────────────────────
+      document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('token');
+        const role  = localStorage.getItem('role');
+        if (!token) { window.location.href = 'login.html'; return; }
+        if (role !== 'admin' && role !== 'superadmin') {
+          window.location.href = 'index.html'; return;
+        }
+        const username = localStorage.getItem('username') || localStorage.getItem('name') || 'Admin';
+        document.getElementById('profileName').textContent = username;
+        document.getElementById('navUsername').textContent = username;
+        await loadTours();
+        setupDragDrop();
+      });
+
+      // ── Load Tours ─────────────────────────────────
+      async function loadTours() {
+        try {
+          const res = await fetch(`${Endpoint}/api/v1/tours`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          });
+          const data = await res.json();
+          allTours = (data.tours || data || []).sort((a,b) => a.name.localeCompare(b.name));
+          document.getElementById('tourCount').textContent = allTours.length;
+          renderTourList(allTours);
+        } catch(e) {
+          showToast('Failed to load tours', 'error');
+        }
+      }
+
+      function renderTourList(tours) {
+        const container = document.getElementById('tourListContainer');
+        if (!tours.length) {
+          container.innerHTML = '<div class="empty-state"><i class="fa fa-search"></i><p>No tours found</p></div>';
+          return;
+        }
+        container.innerHTML = tours.map(t => `
+          <div class="tour-item ${currentTour?.id === t.id ? 'active' : ''}"
+               id="tour-item-${t.id}" onclick="selectTour(${t.id})">
+            <div class="tour-name">${t.name}</div>
+            <div class="tour-meta">${t.category || ''} · ${t.duration || 0}D · ${t.city || ''}</div>
+            ${t.description ? '<span class="has-desc-badge"><i class="fa fa-check"></i> Has Description</span>' : ''}
+          </div>
+        `).join('');
+      }
+
+      function filterTours() {
+        const q = document.getElementById('tourSearchInput').value.toLowerCase();
+        renderTourList(allTours.filter(t =>
+          t.name.toLowerCase().includes(q) || (t.city || '').toLowerCase().includes(q) || (t.category || '').toLowerCase().includes(q)
+        ));
+      }
+
+      // ── Select Tour ────────────────────────────────
+      async function selectTour(tourId) {
+        currentTour = allTours.find(t => t.id === tourId);
+        if (!currentTour) return;
+
+        // Update active state
+        document.querySelectorAll('.tour-item').forEach(el => el.classList.remove('active'));
+        const el = document.getElementById(`tour-item-${tourId}`);
+        if (el) el.classList.add('active');
+
+        // Show detail panel
+        document.getElementById('emptyState').style.display = 'none';
+        document.getElementById('tourDetail').style.display = 'block';
+
+        // Populate fields
+        document.getElementById('detailTourName').textContent = currentTour.name;
+        document.getElementById('detailTourMeta').textContent =
+          `${currentTour.category || '—'} · ${currentTour.duration || 0} days · ${currentTour.city || '—'}`;
+
+        // Load description
+        const editor = document.getElementById('tourEditor');
+        editor.innerHTML = currentTour.description || '';
+
+        // Load documents
+        await loadDocuments();
+
+        // Pre-fill email
+        document.getElementById('emailSubject').value = `Tour Information: ${currentTour.name}`;
+        document.getElementById('emailBody').value =
+          `Dear Valued Guest,\n\nPlease find the details for the following tour:\n\nTour: ${currentTour.name}\nDuration: ${currentTour.duration || '—'} days\nCity: ${currentTour.city || '—'}\n\n${stripHtml(editor.innerHTML)}\n\nPlease contact us if you have any questions.\n\nBest regards,\nVeraThailandia Team`;
+      }
+
+      // ── Load Documents ─────────────────────────────
+      async function loadDocuments() {
+        if (!currentTour) return;
+        try {
+          const res = await fetch(
+            `${Endpoint}/api/v1/service-documents?service_type=tour&service_id=${currentTour.id}`,
+            { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+          );
+          currentDocs = await res.json();
+          renderDocuments();
+          updateEmailAttachInfo();
+        } catch(e) { console.error(e); }
+      }
+
+      function renderDocuments() {
+        const container = document.getElementById('attachedFilesList');
+        if (!currentDocs.length) {
+          container.innerHTML = '<p style="color:#adb5bd;font-size:0.85rem;text-align:center;padding:12px 0;">No files attached yet</p>';
+          return;
+        }
+        container.innerHTML = currentDocs.map(doc => {
+          const ext = doc.file_type || 'file';
+          const iconClass = ['pdf','ppt','pptx','xls','xlsx','doc','docx'].includes(ext) ? ext : 'file';
+          const iconName = ext === 'pdf' ? 'fa-file-pdf-o' :
+                           ['ppt','pptx'].includes(ext) ? 'fa-file-powerpoint-o' :
+                           ['xls','xlsx'].includes(ext) ? 'fa-file-excel-o' :
+                           ['doc','docx'].includes(ext) ? 'fa-file-word-o' : 'fa-file-o';
+          const size = doc.file_size ? formatBytes(doc.file_size) : '—';
+          const date = doc.created_at ? new Date(doc.created_at).toLocaleDateString() : '';
+          return `
+            <div class="file-item" id="file-${doc.id}">
+              <div class="file-icon ${iconClass}"><i class="fa ${iconName}"></i></div>
+              <div class="file-info">
+                <div class="file-name" title="${doc.file_name}">${doc.file_name}</div>
+                <div class="file-meta">${ext.toUpperCase()} · ${size} · ${date}</div>
+              </div>
+              <div class="file-actions">
+                <button class="btn-download" onclick="downloadFile('${doc.file_path}','${doc.file_name}')" title="Download">
+                  <i class="fa fa-download"></i>
+                </button>
+                <button class="btn-delete" onclick="deleteDocument(${doc.id})" title="Delete">
+                  <i class="fa fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // ── Save Description ───────────────────────────
+      async function saveDescription() {
+        if (!currentTour) return;
+        const btn = document.getElementById('saveDescBtn');
+        const html = document.getElementById('tourEditor').innerHTML;
+        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving...';
+        btn.disabled = true;
+        try {
+          await fetch(`${Endpoint}/api/v1/tours/${currentTour.id}/description`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ description: html })
+          });
+          currentTour.description = html;
+          // Update list item badge
+          const item = document.getElementById(`tour-item-${currentTour.id}`);
+          if (item && !item.querySelector('.has-desc-badge')) {
+            item.insertAdjacentHTML('beforeend', '<span class="has-desc-badge"><i class="fa fa-check"></i> Has Description</span>');
+          }
+          showToast('Description saved successfully!', 'success');
+        } catch(e) {
+          showToast('Failed to save description', 'error');
+        } finally {
+          btn.innerHTML = '<i class="fa fa-save"></i> Save Description';
+          btn.disabled = false;
+        }
+      }
+
+      // ── File Upload ────────────────────────────────
+      function setupDragDrop() {
+        const zone = document.getElementById('dropZone');
+        zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+        zone.addEventListener('drop', e => {
+          e.preventDefault(); zone.classList.remove('drag-over');
+          handleFileUpload(e.dataTransfer.files);
+        });
+      }
+
+      async function handleFileUpload(files) {
+        if (!currentTour || !files.length) return;
+        const spinner = document.getElementById('uploadingSpinner');
+        spinner.style.display = 'block';
+        for (const file of files) {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('service_type', 'tour');
+          formData.append('service_id', currentTour.id);
+          try {
+            const res = await fetch(`${Endpoint}/api/v1/service-documents/upload`, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+              body: formData
+            });
+            if (!res.ok) throw new Error(await res.text());
+            showToast(`${file.name} uploaded!`, 'success');
+          } catch(e) {
+            showToast(`Failed to upload ${file.name}: ${e.message}`, 'error');
+          }
+        }
+        spinner.style.display = 'none';
+        document.getElementById('fileInput').value = '';
+        await loadDocuments();
+      }
+
+      // ── Delete Document ────────────────────────────
+      async function deleteDocument(docId) {
+        if (!confirm('Delete this file?')) return;
+        try {
+          await fetch(`${Endpoint}/api/v1/service-documents/${docId}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          });
+          showToast('File deleted', 'success');
+          await loadDocuments();
+        } catch(e) {
+          showToast('Failed to delete file', 'error');
+        }
+      }
+
+      // ── Download File ──────────────────────────────
+      function downloadFile(path, name) {
+        const a = document.createElement('a');
+        a.href = `${Endpoint}/uploads/service-docs/${path}`;
+        a.download = name; a.target = '_blank';
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+      }
+
+      // ── Email ──────────────────────────────────────
+      function openEmailModal() {
+        if (!currentTour) { showToast('Please select a tour first', 'error'); return; }
+        updateEmailAttachInfo();
+        $('#emailModal').modal('show');
+      }
+
+      function updateEmailAttachInfo() {
+        const info = document.getElementById('emailAttachInfo');
+        if (!currentDocs.length) {
+          info.innerHTML = '<i class="fa fa-info-circle"></i> No files attached to this tour.';
+        } else {
+          info.innerHTML = `<i class="fa fa-paperclip"></i> ${currentDocs.length} file(s) attached: ${currentDocs.map(d => d.file_name).join(', ')}`;
+        }
+      }
+
+      async function sendEmail() {
+        const to      = document.getElementById('emailTo').value.trim();
+        const subject = document.getElementById('emailSubject').value.trim();
+        const body    = document.getElementById('emailBody').value.trim();
+        if (!to || !subject) { showToast('Please fill in To and Subject', 'error'); return; }
+
+        const btn = document.getElementById('sendEmailBtn');
+        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending...';
+        btn.disabled = true;
+
+        const descHtml = document.getElementById('tourEditor').innerHTML;
+        const html = `
+          <h2>${currentTour.name}</h2>
+          <p><strong>Duration:</strong> ${currentTour.duration || '—'} days &nbsp;|&nbsp; <strong>City:</strong> ${currentTour.city || '—'}</p>
+          <hr/>
+          ${descHtml}
+          ${currentDocs.length ? `<hr/><p><strong>Attached files (${currentDocs.length}):</strong> ${currentDocs.map(d => d.file_name).join(', ')}</p>` : ''}
+          <br/><p>Best regards,<br/>VeraThailandia Team</p>
+        `;
+
+        try {
+          const res = await fetch(`${Endpoint}/api/v1/email/send`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ to, subject, body, html })
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast('Email sent successfully!', 'success');
+            $('#emailModal').modal('hide');
+          } else {
+            showToast(data.message || 'Failed to send email', 'error');
+          }
+        } catch(e) {
+          showToast('Failed to send email', 'error');
+        } finally {
+          btn.innerHTML = '<i class="fa fa-send"></i> Send Email';
+          btn.disabled = false;
+        }
+      }
+
+      // ── Utilities ──────────────────────────────────
+      function execCmd(cmd) { document.execCommand(cmd, false, null); document.getElementById('tourEditor').focus(); }
+      function stripHtml(html) { return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim(); }
+      function formatBytes(b) {
+        if (b < 1024) return b + ' B';
+        if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+        return (b/1048576).toFixed(1) + ' MB';
+      }
+      function showToast(msg, type) {
+        const c = document.getElementById('toastContainer');
+        const t = document.createElement('div');
+        t.className = `toast-item toast-${type}`;
+        t.innerHTML = `<i class="fa fa-${type==='success'?'check-circle':'exclamation-circle'}"></i> ${msg}`;
+        c.appendChild(t);
+        setTimeout(() => t.remove(), 4000);
+      }
+    </script>
+  </body>
+</html>

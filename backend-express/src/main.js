@@ -42,6 +42,7 @@ import tourHotelRoutes from './routes/tourHotelRoutes.js';
 import importExportRoutes from './routes/importExportRoutes.js';
 import emailRoutes from './routes/emailRoutes.js';
 import advancedRoutes from './routes/advancedRoutes.js';
+import serviceDocumentRoutes from './routes/serviceDocumentRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 8081;
@@ -92,6 +93,7 @@ app.use('/api/v1', tourHotelRoutes);
 app.use('/api/v1', importExportRoutes);
 app.use('/api/v1', emailRoutes);
 app.use('/api/v1', advancedRoutes);
+app.use('/api/v1', serviceDocumentRoutes);
 
 // Root test endpoint
 app.get('/', (req, res) => {

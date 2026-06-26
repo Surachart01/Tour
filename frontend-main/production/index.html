@@ -395,7 +395,7 @@
                       <li><a href="agents.html">Agents</a></li>
                       <li><a href="booking.html">Bookings</a></li>
                       <li><a href="city_info.html">City Information</a></li>
-                      <li><a href="excursions.html">Excursions</a></li>
+                      <li><a href="excursion_description.html">Excursion Description</a></li><li><a href="excursions.html">Excursions</a></li>
                       <li><a href="hotels.html">Hotels</a></li>
                       <li><a href="markup.html">Markups</a></li>
                       <!-- <li><a href="operations.html">Operations</a></li> -->
@@ -403,7 +403,7 @@
                       <li><a href="stop_sale.html">Stop Sale</a></li>
                       <li><a href="suppliers.html">Suppliers</a></li>
                       <li><a href="tools.html">Tools</a></li>
-                      <li><a href="tours.html">Tours</a></li>
+                      <li><a href="tour_description.html">Tour Description</a></li><li><a href="tours.html">Tours</a></li>
                       <li><a href="transfers.html">Transfers</a></li>
                       <li><a href="users.html">Users</a></li>
                     </ul>
@@ -1260,14 +1260,16 @@
               </div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-dismiss="modal"
-            >
-              Close
-            </button>
+          <div class="modal-footer" style="justify-content: space-between;">
+            <div style="display:flex;gap:8px;">
+              <button type="button" class="btn btn-info" id="printExcursionBtn" onclick="printModalContent('viewExcursionModal', 'Excursion')">
+                <i class="fa fa-print"></i> Print
+              </button>
+              <button type="button" class="btn btn-success" id="mailExcursionBtn" onclick="openServiceEmailModal('excursion')">
+                <i class="fa fa-envelope"></i> Send Mail
+              </button>
+            </div>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
           </div>
         </div>
       </div>
@@ -1395,14 +1397,16 @@
               </div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-dismiss="modal"
-            >
-              Close
-            </button>
+          <div class="modal-footer" style="justify-content: space-between;">
+            <div style="display:flex;gap:8px;">
+              <button type="button" class="btn btn-info" id="printTourBtn" onclick="printModalContent('viewTourModal', 'Tour')">
+                <i class="fa fa-print"></i> Print
+              </button>
+              <button type="button" class="btn btn-success" id="mailTourBtn" onclick="openServiceEmailModal('tour')">
+                <i class="fa fa-envelope"></i> Send Mail
+              </button>
+            </div>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
           </div>
         </div>
       </div>
@@ -1883,6 +1887,117 @@
         });
       }
 
+      // ── Globals for Print / Email ──────────────────────────────────────
+      window._currentTourData = null;
+      window._currentExcursionData = null;
+
+      // ── Print modal content ────────────────────────────────────────────
+      function printModalContent(modalId, title) {
+        const modalBody = document.querySelector('#' + modalId + ' .modal-body');
+        if (!modalBody) return;
+        const printArea = document.getElementById('printableArea');
+        printArea.innerHTML = `
+          <div style="font-family:Arial,sans-serif;">
+            <div style="text-align:center;margin-bottom:20px;">
+              <img src="images/verathailandlogo.png" style="height:50px;" alt="Logo"/>
+              <h2 style="margin:10px 0 4px;">${title} Information</h2>
+              <p style="color:#888;font-size:0.85rem;">VeraThailandia! &nbsp;|&nbsp; ${new Date().toLocaleDateString('en-GB')}</p>
+              <hr/>
+            </div>
+            ${modalBody.innerHTML}
+          </div>
+        `;
+        printArea.style.display = 'block';
+        window.print();
+        setTimeout(() => { printArea.style.display = 'none'; }, 1000);
+      }
+
+      // ── Open email modal for Tour or Excursion ─────────────────────────
+      async function openServiceEmailModal(serviceType) {
+        const data = serviceType === 'tour' ? window._currentTourData : window._currentExcursionData;
+        if (!data) { alert('No ' + serviceType + ' data loaded yet.'); return; }
+
+        const label = serviceType === 'tour' ? 'Tour' : 'Excursion';
+        document.getElementById('serviceEmailModalTitle').textContent = label;
+        document.getElementById('serviceEmailSubject').value = label + ' Information: ' + (data.name || '');
+        document.getElementById('serviceEmailTo').value = '';
+        document.getElementById('serviceEmailCc').value = '';
+
+        let bodyText = label + ': ' + (data.name || '') + '\n';
+        if (serviceType === 'tour') {
+          bodyText += 'Duration: ' + (data.duration || '—') + ' days\n';
+          bodyText += 'City: ' + (data.city || '—') + '\n';
+          bodyText += 'Category: ' + (data.category || '—') + '\n';
+          bodyText += 'Route: ' + (data.route || '—') + '\n';
+          if (data.description) bodyText += '\nDescription:\n' + data.description + '\n';
+        } else {
+          bodyText += 'City: ' + (data.city || '—') + '\n';
+          bodyText += 'SIC Price Adult: ' + (data.sic_price_adult || '—') + '\n';
+          bodyText += 'SIC Price Child: ' + (data.sic_price_child || '—') + '\n';
+          if (data.description) bodyText += '\nDescription:\n' + data.description + '\n';
+        }
+        bodyText += '\nBest regards,\nVeraThailandia Team';
+        document.getElementById('serviceEmailBody').textContent = bodyText;
+
+        // Fetch attached documents
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch(
+            Endpoint + '/api/v1/service-documents?service_type=' + serviceType + '&service_id=' + data.id,
+            { headers: { Authorization: 'Bearer ' + token } }
+          );
+          const docs = await res.json();
+          const docDiv = document.getElementById('serviceEmailDocInfo');
+          const docText = document.getElementById('serviceEmailDocText');
+          if (docs && docs.length > 0) {
+            docText.textContent = docs.length + ' file(s) attached: ' + docs.map(d => d.file_name).join(', ');
+            docDiv.style.display = 'block';
+          } else {
+            docDiv.style.display = 'none';
+          }
+        } catch(e) {
+          document.getElementById('serviceEmailDocInfo').style.display = 'none';
+        }
+
+        $('#serviceEmailModal').modal('show');
+      }
+
+
+      // ── Send email ───────────────────────────────────────────────────
+      async function sendServiceEmail() {
+        const to      = document.getElementById('serviceEmailTo').value.trim();
+        const subject = document.getElementById('serviceEmailSubject').value.trim();
+        const body    = document.getElementById('serviceEmailBody').value.trim();
+        if (!to || !subject) { alert('Please fill in the To and Subject fields.'); return; }
+
+        const btn = document.getElementById('sendServiceEmailBtn');
+        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending...';
+        btn.disabled = true;
+
+        try {
+          const res = await fetch(Endpoint + '/api/v1/email/send', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: 'Bearer ' + localStorage.getItem('token')
+            },
+            body: JSON.stringify({ to, subject, body, html: '<pre style="font-family:Arial;">' + body + '</pre>' })
+          });
+          const data = await res.json();
+          if (data.success) {
+            alert('Email sent successfully!');
+            $('#serviceEmailModal').modal('hide');
+          } else {
+            alert('Failed: ' + (data.message || 'Unknown error'));
+          }
+        } catch(e) {
+          alert('Failed to send email.');
+        } finally {
+          btn.innerHTML = '<i class="fa fa-send"></i> Send Email';
+          btn.disabled = false;
+        }
+      }
+
       function populateTourModal(tour) {
         console.log("Populating Tour Modal with data:", tour);
 
@@ -1904,6 +2019,10 @@
         populateTourPriceTable(tour.tour_pricings || []);
 
         populateTourDaysTable(tour.tour_days || []);
+        
+        // Store for print/email
+        window._currentTourData = tour;
+
         // Show the modal after populating data
         $("#viewTourModal").modal("show");
       }
@@ -1973,15 +2092,14 @@
         $("#viewCity").text(excursion.city || "N/A");
         $("#viewCode").text(excursion.code || "N/A");
         $("#viewDescription").text(excursion.description || "N/A");
-        $("#viewExcursionSICPriceAdult").text(
-          excursion.sic_price_adult || "N/A"
-        );
-        $("#viewExcursionSICPriceChild").text(
-          excursion.sic_price_child || "N/A"
-        );
+        $("#viewExcursionSICPriceAdult").text(excursion.sic_price_adult || "N/A");
+        $("#viewExcursionSICPriceChild").text(excursion.sic_price_child || "N/A");
 
         // ✅ Clear and Repopulate Excursion Prices Table
         populateExcursionPriceRow(excursion.prices || []);
+
+        // Store for print/email
+        window._currentExcursionData = excursion;
       }
 
       $(document).ready(function () {
@@ -2167,22 +2285,48 @@
               <td class="excursion-type-column">${row.name}</td>
               <td class="city-column">${row.city}</td>
               <td class="description-column">${row.description || "N/A"}</td>
-              <td class="view-column">
-                  <button class="btn btn-primary btn-sm view-excursion"
-                  data-index="${index}"
-                  data-toggle="modal"
-                  data-target="#viewExcursionModal">
-                  View</button>
+              <td class="view-column" style="white-space:nowrap;">
+                  <div class="btn-group btn-group-sm" role="group">
+                    <button class="btn btn-primary view-excursion"
+                    data-index="${index}"
+                    data-toggle="modal"
+                    data-target="#viewExcursionModal"
+                    title="View Details">View</button>
+                    <button class="btn btn-default print-excursion"
+                    data-index="${index}"
+                    title="Print">
+                    <i class="fa fa-print"></i></button>
+                    <button class="btn btn-success mail-excursion"
+                    data-index="${index}"
+                    title="Send Mail">
+                    <i class="fa fa-envelope"></i></button>
+                  </div>
               </td>
             `;
             tableBody.appendChild(tr);
           });
 
-          // Fix the event listener
+          // View buttons
           document.querySelectorAll(".view-excursion").forEach((button) => {
             button.addEventListener("click", (event) => {
               const index = event.currentTarget.getAttribute("data-index");
               populateExcursionModal(tableData[index]);
+            });
+          });
+          // Print buttons
+          document.querySelectorAll(".print-excursion").forEach((button) => {
+            button.addEventListener("click", (event) => {
+              const index = event.currentTarget.getAttribute("data-index");
+              window._currentExcursionData = tableData[index];
+              printModalContent('viewExcursionModal', 'Excursion');
+            });
+          });
+          // Mail buttons
+          document.querySelectorAll(".mail-excursion").forEach((button) => {
+            button.addEventListener("click", (event) => {
+              const index = event.currentTarget.getAttribute("data-index");
+              window._currentExcursionData = tableData[index];
+              openServiceEmailModal('excursion');
             });
           });
         }
@@ -2228,22 +2372,48 @@
               <td class="tour-name-column">${row.name}</td>
               <td class="city-column">${row.city}</td>
               <td class="description-column">${row.description || "N/A"}</td>
-              <td class="view-column">
-                  <button class="btn btn-primary btn-sm view-tour"
-                  data-index="${index}"
-                  data-toggle="modal"
-                  data-target="#viewTourModal">
-                  View</button>
+              <td class="view-column" style="white-space:nowrap;">
+                  <div class="btn-group btn-group-sm" role="group">
+                    <button class="btn btn-primary view-tour"
+                    data-index="${index}"
+                    data-toggle="modal"
+                    data-target="#viewTourModal"
+                    title="View Details">View</button>
+                    <button class="btn btn-default print-tour"
+                    data-index="${index}"
+                    title="Print">
+                    <i class="fa fa-print"></i></button>
+                    <button class="btn btn-success mail-tour"
+                    data-index="${index}"
+                    title="Send Mail">
+                    <i class="fa fa-envelope"></i></button>
+                  </div>
               </td>
             `;
             tableBody.appendChild(tr);
           });
 
-          // Attach event listeners to "View" buttons
+          // View buttons
           document.querySelectorAll(".view-tour").forEach((button) => {
             button.addEventListener("click", (event) => {
               const index = event.currentTarget.getAttribute("data-index");
               populateTourModal(tableData[index]);
+            });
+          });
+          // Print buttons
+          document.querySelectorAll(".print-tour").forEach((button) => {
+            button.addEventListener("click", (event) => {
+              const index = event.currentTarget.getAttribute("data-index");
+              window._currentTourData = tableData[index];
+              printModalContent('viewTourModal', 'Tour');
+            });
+          });
+          // Mail buttons
+          document.querySelectorAll(".mail-tour").forEach((button) => {
+            button.addEventListener("click", (event) => {
+              const index = event.currentTarget.getAttribute("data-index");
+              window._currentTourData = tableData[index];
+              openServiceEmailModal('tour');
             });
           });
         }
@@ -2848,5 +3018,57 @@
         });
       });
     </script>
+
+    <!-- ── Service Email Modal (Tour / Excursion) ── -->
+    <div class="modal fade" id="serviceEmailModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header" style="background:linear-gradient(135deg,#0f3460,#1a1a2e);color:white;">
+            <h5 class="modal-title"><i class="fa fa-envelope"></i> Send <span id="serviceEmailModalTitle">Info</span> by Email</h5>
+            <button type="button" class="close" data-dismiss="modal" style="color:white;"><span>&times;</span></button>
+          </div>
+          <div class="modal-body" style="padding:24px;">
+            <div class="form-group">
+              <label style="font-weight:600;">To <span style="color:#e74c3c;">*</span></label>
+              <input type="email" class="form-control" id="serviceEmailTo" placeholder="recipient@example.com" />
+            </div>
+            <div class="form-group">
+              <label style="font-weight:600;">CC <span style="font-weight:400;color:#999;">(optional)</span></label>
+              <input type="email" class="form-control" id="serviceEmailCc" placeholder="cc@example.com" />
+            </div>
+            <div class="form-group">
+              <label style="font-weight:600;">Subject</label>
+              <input type="text" class="form-control" id="serviceEmailSubject" />
+            </div>
+            <div class="form-group">
+              <label style="font-weight:600;">Message</label>
+              <textarea class="form-control" id="serviceEmailBody" rows="5" style="resize:vertical;"></textarea>
+            </div>
+            <div id="serviceEmailDocInfo" style="padding:10px;background:#f8f9fa;border-radius:8px;font-size:0.85rem;color:#6c757d;display:none;">
+              <i class="fa fa-paperclip"></i> <span id="serviceEmailDocText"></span>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-success" id="sendServiceEmailBtn" onclick="sendServiceEmail()">
+              <i class="fa fa-send"></i> Send Email
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Print Area + Styles -->
+    <style>
+      @media print {
+        body * { visibility: hidden !important; }
+        #printableArea, #printableArea * { visibility: visible !important; }
+        #printableArea {
+          position: fixed; top: 0; left: 0; width: 100%;
+          background: white; padding: 20px; z-index: 99999;
+        }
+      }
+    </style>
+    <div id="printableArea" style="display:none;"></div>
   </body>
 </html>
