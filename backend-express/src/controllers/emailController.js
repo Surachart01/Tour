@@ -9,11 +9,11 @@ const transporter = nodemailer.createTransport({
 
 export async function sendEmail(req, res, next) {
   try {
-    const { to, subject, body, html } = req.body;
+    const { to, cc, subject, body, html } = req.body;
     if (!to || !subject) return res.status(400).send('to and subject are required');
     if (!process.env.SMTP_USER) return res.json({ success: true, message: 'Email service not configured (SMTP_USER not set)' });
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || process.env.SMTP_USER, to, subject,
+      from: process.env.SMTP_FROM || process.env.SMTP_USER, to, cc, subject,
       text: body || '', html: html || body || ''
     });
     return res.json({ success: true, message: 'Email sent successfully' });

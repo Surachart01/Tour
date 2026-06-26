@@ -239,6 +239,94 @@
         padding: 5px;
       }
 
+      /* Beautiful View Modal Enhancements */
+      .info-card-item {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 12px 16px;
+        transition: all 0.15s ease-in-out;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .info-card-item:hover {
+        background: #f1f3f5;
+        border-color: #ced4da;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      }
+      .info-card-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #6c757d;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .info-card-value {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: #212529;
+        line-height: 1.4;
+      }
+      .modal-body-section-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #0f3460;
+        margin-top: 24px;
+        margin-bottom: 14px;
+        border-bottom: 2px solid #dee2e6;
+        padding-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .modal-description-box {
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 16px;
+        max-height: 250px;
+        overflow-y: auto;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        color: #495057;
+        width: 100%;
+      }
+      .premium-modal-table {
+        border-radius: 8px !important;
+        overflow: hidden !important;
+        border: 1px solid #e9ecef !important;
+      }
+      .premium-modal-table thead th {
+        background-color: #f1f3f5 !important;
+        color: #495057 !important;
+        font-weight: 700 !important;
+        border-bottom: 2px solid #dee2e6 !important;
+        text-transform: uppercase !important;
+        font-size: 0.78rem !important;
+        letter-spacing: 0.5px !important;
+      }
+      .premium-modal-table tbody td {
+        font-size: 0.88rem !important;
+        color: #495057 !important;
+        vertical-align: middle !important;
+      }
+      .modal-btn-pill {
+        border-radius: 50px !important;
+        padding: 8px 20px !important;
+        font-weight: 600 !important;
+        transition: all 0.15s ease-in-out !important;
+      }
+      .modal-btn-pill:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      }
+
       /* Custom Tooltip for Leaflet Map */
       .province-tooltip {
         background-color: rgba(33, 37, 41, 0.9) !important;
@@ -1191,58 +1279,74 @@
         class="modal-dialog modal-dialog-scrollable modal-lg"
         role="document"
       >
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="viewExcursionModalLabel">
-              View Excursion
+        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+          <div class="modal-header" style="background: linear-gradient(135deg, #0f3460, #1a1a2e); color: white; border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 18px 24px;">
+            <h5 class="modal-title" id="viewExcursionModalLabel" style="font-weight: 700; letter-spacing: -0.2px; font-size: 1.25rem;">
+              <i class="fa fa-binoculars" style="margin-right: 8px;"></i> View Excursion Details
             </h5>
             <button
               type="button"
               class="close"
               data-dismiss="modal"
               aria-label="Close"
+              style="color: white; opacity: 0.8; font-size: 1.5rem; outline: none; margin-top: -3px;"
             >
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
-          <div class="modal-body">
+          <div class="modal-body" style="padding: 24px;">
             <div class="container-fluid">
               <div class="row">
                 <!-- Excursion Information -->
                 <div class="col-md-6 mb-3">
-                  <strong>Name</strong> <span id="viewExcursionName">N/A</span>
+                  <div class="info-card-item">
+                    <div class="info-card-label"><i class="fa fa-tag"></i> Name</div>
+                    <div class="info-card-value" id="viewExcursionName">N/A</div>
+                  </div>
                 </div>
-                <div class="col-md-6 mb-3">
-                  <strong>City</strong> <span id="viewCity">N/A</span>
+                <div class="col-md-3 mb-3">
+                  <div class="info-card-item">
+                    <div class="info-card-label"><i class="fa fa-map-marker"></i> City</div>
+                    <div class="info-card-value" id="viewCity">N/A</div>
+                  </div>
                 </div>
-                <div class="col-md-6 mb-3">
-                  <strong>Code</strong> <span id="viewCode">N/A</span>
+                <div class="col-md-3 mb-3">
+                  <div class="info-card-item">
+                    <div class="info-card-label"><i class="fa fa-barcode"></i> Code</div>
+                    <div class="info-card-value" id="viewCode">N/A</div>
+                  </div>
                 </div>
                 <div class="col-md-12 mb-3">
-                  <strong>Description:</strong>
-                  <div
-                    id="viewDescription"
-                    class="border p-2"
-                    style="max-height: 150px; overflow-y: auto"
-                  >
-                    N/A
+                  <div class="info-card-item">
+                    <div class="info-card-label"><i class="fa fa-align-left"></i> Description</div>
+                    <div id="viewDescription" class="modal-description-box mt-2">N/A</div>
+                  </div>
+                </div>
+                <div class="col-md-12 mb-3" id="viewExcursionDocsSection" style="display:none;">
+                  <div class="info-card-item" style="border-left: 4px solid #0f3460;">
+                    <div class="info-card-label" style="color: #0f3460;"><i class="fa fa-paperclip"></i> Attached Brochures & Files</div>
+                    <div id="viewExcursionDocsList" class="attached-files mt-2" style="display:flex; flex-direction:column; gap:6px;"></div>
                   </div>
                 </div>
                 <div class="col-md-6 mb-3">
-                  <strong>SIC Price for Adult</strong>
-                  <span id="viewExcursionSICPriceAdult">0</span>
+                  <div class="info-card-item" style="background: #f1f8ff; border-color: #c8e1ff;">
+                    <div class="info-card-label" style="color:#0366d6;"><i class="fa fa-user"></i> SIC Price for Adult</div>
+                    <div class="info-card-value" style="font-size: 1.1rem; color:#0366d6;"><span id="viewExcursionSICPriceAdult">0</span> THB</div>
+                  </div>
                 </div>
                 <div class="col-md-6 mb-3">
-                  <strong>SIC Price for Child</strong>
-                  <span id="viewExcursionSICPriceChild">0</span>
+                  <div class="info-card-item" style="background: #f1f8ff; border-color: #c8e1ff;">
+                    <div class="info-card-label" style="color:#0366d6;"><i class="fa fa-child"></i> SIC Price for Child</div>
+                    <div class="info-card-value" style="font-size: 1.1rem; color:#0366d6;"><span id="viewExcursionSICPriceChild">0</span> THB</div>
+                  </div>
                 </div>
               </div>
 
               <!-- Excursion Prices Table -->
               <div class="table-responsive mt-3">
-                <h5>Excursion Prices</h5>
+                <div class="modal-body-section-title"><i class="fa fa-tags"></i> Excursion Prices</div>
                 <table
-                  class="table table-striped table-bordered"
+                  class="table table-striped table-bordered premium-modal-table"
                   id="excursionPriceTable"
                 >
                   <thead>
@@ -1260,16 +1364,16 @@
               </div>
             </div>
           </div>
-          <div class="modal-footer" style="justify-content: space-between;">
+          <div class="modal-footer" style="justify-content: space-between; padding: 16px 24px; background-color: #f8f9fa; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
             <div style="display:flex;gap:8px;">
-              <button type="button" class="btn btn-info" id="printExcursionBtn" onclick="printModalContent('viewExcursionModal', 'Excursion')">
+              <button type="button" class="btn btn-info modal-btn-pill" id="printExcursionBtn" onclick="printModalContent('viewExcursionModal', 'Excursion')">
                 <i class="fa fa-print"></i> Print
               </button>
-              <button type="button" class="btn btn-success" id="mailExcursionBtn" onclick="openServiceEmailModal('excursion')">
+              <button type="button" class="btn btn-success modal-btn-pill" id="mailExcursionBtn" onclick="openServiceEmailModal('excursion')">
                 <i class="fa fa-envelope"></i> Send Mail
               </button>
             </div>
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-secondary modal-btn-pill" data-dismiss="modal">Close</button>
           </div>
         </div>
       </div>
@@ -1288,76 +1392,99 @@
         class="modal-dialog modal-dialog-scrollable modal-lg"
         role="document"
       >
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="viewTourModalLabel">View Tour</h5>
+        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+          <div class="modal-header" style="background: linear-gradient(135deg, #0f3460, #1a1a2e); color: white; border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 18px 24px;">
+            <h5 class="modal-title" id="viewTourModalLabel" style="font-weight: 700; letter-spacing: -0.2px; font-size: 1.25rem;">
+              <i class="fa fa-map-o" style="margin-right: 8px;"></i> View Tour Details
+            </h5>
             <button
               type="button"
               class="close"
               data-dismiss="modal"
               aria-label="Close"
+              style="color: white; opacity: 0.8; font-size: 1.5rem; outline: none; margin-top: -3px;"
             >
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
-          <div class="modal-body">
+          <div class="modal-body" style="padding: 24px;">
             <div class="container-fluid">
               <div class="row">
                 <!-- Tour Information -->
                 <div class="col-md-6 mb-3">
-                  <strong>Tour Name</strong>
-                  <span id="viewTourName">N/A</span>
+                  <div class="info-card-item">
+                    <div class="info-card-label"><i class="fa fa-tag"></i> Tour Name</div>
+                    <div class="info-card-value" id="viewTourName">N/A</div>
+                  </div>
                 </div>
-                <div class="col-md-6 mb-3">
-                  <strong>Start City</strong>
-                  <span id="viewTourCity">N/A</span>
+                <div class="col-md-3 mb-3">
+                  <div class="info-card-item">
+                    <div class="info-card-label"><i class="fa fa-map-marker"></i> Start City</div>
+                    <div class="info-card-value" id="viewTourCity">N/A</div>
+                  </div>
                 </div>
-                <div class="col-md-6 mb-3">
-                  <strong>Category</strong>
-                  <span id="viewTourCategory">N/A</span>
+                <div class="col-md-3 mb-3">
+                  <div class="info-card-item">
+                    <div class="info-card-label"><i class="fa fa-folder-open-o"></i> Category</div>
+                    <div class="info-card-value" id="viewTourCategory">N/A</div>
+                  </div>
                 </div>
-                <div class="col-md-6 mb-3">
-                  <strong>Duration (Days)</strong>
-                  <span id="viewTourDuration">N/A</span>
+                <div class="col-md-4 mb-3">
+                  <div class="info-card-item">
+                    <div class="info-card-label"><i class="fa fa-clock-o"></i> Duration (Days)</div>
+                    <div class="info-card-value" id="viewTourDuration">N/A</div>
+                  </div>
                 </div>
-                <div class="col-md-6 mb-3">
-                  <strong>Departure Type</strong>
-                  <span id="viewTourDeparture">N/A</span>
+                <div class="col-md-4 mb-3">
+                  <div class="info-card-item">
+                    <div class="info-card-label"><i class="fa fa-plane"></i> Departure Type</div>
+                    <div class="info-card-value" id="viewTourDeparture">N/A</div>
+                  </div>
                 </div>
-                <div class="col-md-6 mb-3">
-                  <strong>Route</strong>
-                  <span id="viewTourRoute">N/A</span>
+                <div class="col-md-4 mb-3">
+                  <div class="info-card-item">
+                    <div class="info-card-label"><i class="fa fa-road"></i> Route</div>
+                    <div class="info-card-value" id="viewTourRoute">N/A</div>
+                  </div>
                 </div>
                 <div class="col-md-12 mb-3">
-                  <strong>Description:</strong>
-                  <div
-                    id="viewTourDescription"
-                    class="border p-2"
-                    style="max-height: 150px; overflow-y: auto"
-                  >
-                    N/A
+                  <div class="info-card-item">
+                    <div class="info-card-label"><i class="fa fa-align-left"></i> Description</div>
+                    <div id="viewTourDescription" class="modal-description-box mt-2">N/A</div>
+                  </div>
+                </div>
+                <div class="col-md-12 mb-3" id="viewTourDocsSection" style="display:none;">
+                  <div class="info-card-item" style="border-left: 4px solid #0f3460;">
+                    <div class="info-card-label" style="color: #0f3460;"><i class="fa fa-paperclip"></i> Attached Brochures & Files</div>
+                    <div id="viewTourDocsList" class="attached-files mt-2" style="display:flex; flex-direction:column; gap:6px;"></div>
                   </div>
                 </div>
 
                 <!-- SIC Prices -->
                 <div class="col-md-4 mb-3">
-                  <strong>SIC Price for Single Room</strong>
-                  <span id="viewTourSICPriceSingle">0</span>
+                  <div class="info-card-item" style="background: #f1f8ff; border-color: #c8e1ff;">
+                    <div class="info-card-label" style="color:#0366d6;"><i class="fa fa-user"></i> SIC Single Room Price</div>
+                    <div class="info-card-value" style="font-size: 1.1rem; color:#0366d6;"><span id="viewTourSICPriceSingle">0</span> THB</div>
+                  </div>
                 </div>
                 <div class="col-md-4 mb-3">
-                  <strong>SIC Price for Double Room</strong>
-                  <span id="viewTourSICPriceDouble">0</span>
+                  <div class="info-card-item" style="background: #f1f8ff; border-color: #c8e1ff;">
+                    <div class="info-card-label" style="color:#0366d6;"><i class="fa fa-users"></i> SIC Double Room Price</div>
+                    <div class="info-card-value" style="font-size: 1.1rem; color:#0366d6;"><span id="viewTourSICPriceDouble">0</span> THB</div>
+                  </div>
                 </div>
                 <div class="col-md-4 mb-3">
-                  <strong>SIC Price for Triple Room</strong>
-                  <span id="viewTourSICPriceTriple">0</span>
+                  <div class="info-card-item" style="background: #f1f8ff; border-color: #c8e1ff;">
+                    <div class="info-card-label" style="color:#0366d6;"><i class="fa fa-users"></i> SIC Triple Room Price</div>
+                    <div class="info-card-value" style="font-size: 1.1rem; color:#0366d6;"><span id="viewTourSICPriceTriple">0</span> THB</div>
+                  </div>
                 </div>
               </div>
 
               <div class="table-responsive mt-3">
-                <h5>Tour Days</h5>
+                <div class="modal-body-section-title"><i class="fa fa-calendar"></i> Tour Days</div>
                 <table
-                  class="table table-striped table-bordered"
+                  class="table table-striped table-bordered premium-modal-table"
                   id="tourDaysTable"
                 >
                   <thead>
@@ -1376,9 +1503,9 @@
 
               <!-- Tour Prices Table -->
               <div class="table-responsive mt-3">
-                <h5>Tour Prices</h5>
+                <div class="modal-body-section-title"><i class="fa fa-tags"></i> Tour Prices</div>
                 <table
-                  class="table table-striped table-bordered"
+                  class="table table-striped table-bordered premium-modal-table"
                   id="tourPriceTable"
                 >
                   <thead>
@@ -1397,16 +1524,16 @@
               </div>
             </div>
           </div>
-          <div class="modal-footer" style="justify-content: space-between;">
+          <div class="modal-footer" style="justify-content: space-between; padding: 16px 24px; background-color: #f8f9fa; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
             <div style="display:flex;gap:8px;">
-              <button type="button" class="btn btn-info" id="printTourBtn" onclick="printModalContent('viewTourModal', 'Tour')">
+              <button type="button" class="btn btn-info modal-btn-pill" id="printTourBtn" onclick="printModalContent('viewTourModal', 'Tour')">
                 <i class="fa fa-print"></i> Print
               </button>
-              <button type="button" class="btn btn-success" id="mailTourBtn" onclick="openServiceEmailModal('tour')">
+              <button type="button" class="btn btn-success modal-btn-pill" id="mailTourBtn" onclick="openServiceEmailModal('tour')">
                 <i class="fa fa-envelope"></i> Send Mail
               </button>
             </div>
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-secondary modal-btn-pill" data-dismiss="modal">Close</button>
           </div>
         </div>
       </div>
@@ -1912,10 +2039,59 @@
         setTimeout(() => { printArea.style.display = 'none'; }, 1000);
       }
 
+      // ── Load documents for tour/excursion modal view ────────────────────
+      async function loadDocsForModal(serviceType, serviceId, containerListId, containerSectionId) {
+        const listDiv = document.getElementById(containerListId);
+        const sectionDiv = document.getElementById(containerSectionId);
+        if (!listDiv || !sectionDiv) return;
+        
+        listDiv.innerHTML = '';
+        sectionDiv.style.display = 'none';
+        
+        try {
+          const res = await fetch(`${Endpoint}/api/v1/service-documents?service_type=${serviceType}&service_id=${serviceId}`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          });
+          const docs = await res.json();
+          if (docs && docs.length > 0) {
+            sectionDiv.style.display = 'block';
+            listDiv.innerHTML = docs.map(doc => {
+              const ext = doc.file_type || 'file';
+              const iconName = ext === 'pdf' ? 'fa-file-pdf-o' :
+                               ['ppt','pptx'].includes(ext) ? 'fa-file-powerpoint-o' :
+                               ['xls','xlsx'].includes(ext) ? 'fa-file-excel-o' :
+                               ['doc','docx'].includes(ext) ? 'fa-file-word-o' : 'fa-file-o';
+              return `
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; background:#f8f9fa; border:1px solid #dee2e6; border-radius:6px; margin-bottom:4px;">
+                  <span style="font-size:12px; font-weight:500;"><i class="fa ${iconName}" style="margin-right:8px; color:#555;"></i>${doc.file_name}</span>
+                  <button type="button" class="btn btn-xs btn-primary" onclick="downloadServiceFile('${doc.file_path}','${doc.file_name}')" style="margin:0; padding:2px 6px; font-size:11px;">
+                    <i class="fa fa-download"></i> Download
+                  </button>
+                </div>
+              `;
+            }).join('');
+          }
+        } catch(e) {
+          console.error('Error loading documents for modal:', e);
+        }
+      }
+
+      function downloadServiceFile(path, name) {
+        const a = document.createElement('a');
+        a.href = `${Endpoint}/uploads/service-docs/${path}`;
+        a.download = name; a.target = '_blank';
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+      }
+
       // ── Open email modal for Tour or Excursion ─────────────────────────
       async function openServiceEmailModal(serviceType) {
         const data = serviceType === 'tour' ? window._currentTourData : window._currentExcursionData;
         if (!data) { alert('No ' + serviceType + ' data loaded yet.'); return; }
+
+        window._activeEmailServiceType = serviceType;
+        window._activeEmailServiceData = data;
+        window._activeEmailDocs = [];
 
         const label = serviceType === 'tour' ? 'Tour' : 'Excursion';
         document.getElementById('serviceEmailModalTitle').textContent = label;
@@ -1929,15 +2105,19 @@
           bodyText += 'City: ' + (data.city || '—') + '\n';
           bodyText += 'Category: ' + (data.category || '—') + '\n';
           bodyText += 'Route: ' + (data.route || '—') + '\n';
-          if (data.description) bodyText += '\nDescription:\n' + data.description + '\n';
         } else {
           bodyText += 'City: ' + (data.city || '—') + '\n';
-          bodyText += 'SIC Price Adult: ' + (data.sic_price_adult || '—') + '\n';
-          bodyText += 'SIC Price Child: ' + (data.sic_price_child || '—') + '\n';
-          if (data.description) bodyText += '\nDescription:\n' + data.description + '\n';
+          bodyText += 'Code: ' + (data.code || '—') + '\n';
+          bodyText += 'SIC Price Adult: ' + (data.sic_price_adult || '—') + ' THB\n';
+          bodyText += 'SIC Price Child: ' + (data.sic_price_child || '—') + ' THB\n';
+        }
+        
+        if (data.description) {
+          const cleanDesc = data.description.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
+          bodyText += '\nDescription:\n' + cleanDesc + '\n';
         }
         bodyText += '\nBest regards,\nVeraThailandia Team';
-        document.getElementById('serviceEmailBody').textContent = bodyText;
+        document.getElementById('serviceEmailBody').value = bodyText;
 
         // Fetch attached documents
         try {
@@ -1947,6 +2127,7 @@
             { headers: { Authorization: 'Bearer ' + token } }
           );
           const docs = await res.json();
+          window._activeEmailDocs = docs || [];
           const docDiv = document.getElementById('serviceEmailDocInfo');
           const docText = document.getElementById('serviceEmailDocText');
           if (docs && docs.length > 0) {
@@ -1966,6 +2147,7 @@
       // ── Send email ───────────────────────────────────────────────────
       async function sendServiceEmail() {
         const to      = document.getElementById('serviceEmailTo').value.trim();
+        const cc      = document.getElementById('serviceEmailCc').value.trim();
         const subject = document.getElementById('serviceEmailSubject').value.trim();
         const body    = document.getElementById('serviceEmailBody').value.trim();
         if (!to || !subject) { alert('Please fill in the To and Subject fields.'); return; }
@@ -1974,6 +2156,76 @@
         btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending...';
         btn.disabled = true;
 
+        const serviceType = window._activeEmailServiceType;
+        const data = window._activeEmailServiceData;
+        const docs = window._activeEmailDocs || [];
+
+        // Build a beautiful rich HTML body
+        let htmlContent = `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+            <div style="background: linear-gradient(135deg, #0f3460, #1a1a2e); color: white; padding: 24px; text-align: center;">
+              <h2 style="margin: 0; font-size: 20px;">VeraThailandia!</h2>
+              <p style="margin: 4px 0 0; opacity: 0.8; font-size: 14px;">Travel Program Details</p>
+            </div>
+            <div style="padding: 24px;">
+              <h3 style="margin-top: 0; color: #0f3460; font-size: 18px; border-bottom: 2px solid #0f3460; padding-bottom: 8px;">
+                ${serviceType === 'tour' ? 'Tour' : 'Excursion'}: ${data.name || ''}
+              </h3>
+        `;
+
+        if (serviceType === 'tour') {
+          htmlContent += `
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px;">
+              <tr style="border-bottom: 1px solid #eee;"><td style="padding: 8px 0; font-weight: bold; width: 120px; color:#555;">City:</td><td style="padding: 8px 0;">${data.city || '—'}</td></tr>
+              <tr style="border-bottom: 1px solid #eee;"><td style="padding: 8px 0; font-weight: bold; color:#555;">Duration:</td><td style="padding: 8px 0;">${data.duration || '—'} Days</td></tr>
+              <tr style="border-bottom: 1px solid #eee;"><td style="padding: 8px 0; font-weight: bold; color:#555;">Category:</td><td style="padding: 8px 0;">${data.category || '—'}</td></tr>
+              <tr style="border-bottom: 1px solid #eee;"><td style="padding: 8px 0; font-weight: bold; color:#555;">Route:</td><td style="padding: 8px 0;">${data.route || '—'}</td></tr>
+            </table>
+          `;
+        } else {
+          htmlContent += `
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px;">
+              <tr style="border-bottom: 1px solid #eee;"><td style="padding: 8px 0; font-weight: bold; width: 120px; color:#555;">City:</td><td style="padding: 8px 0;">${data.city || '—'}</td></tr>
+              <tr style="border-bottom: 1px solid #eee;"><td style="padding: 8px 0; font-weight: bold; color:#555;">Code:</td><td style="padding: 8px 0;">${data.code || '—'}</td></tr>
+              <tr style="border-bottom: 1px solid #eee;"><td style="padding: 8px 0; font-weight: bold; color:#555;">SIC Adult Price:</td><td style="padding: 8px 0;">${data.sic_price_adult || '—'} THB</td></tr>
+              <tr style="border-bottom: 1px solid #eee;"><td style="padding: 8px 0; font-weight: bold; color:#555;">SIC Child Price:</td><td style="padding: 8px 0;">${data.sic_price_child || '—'} THB</td></tr>
+            </table>
+          `;
+        }
+
+        if (data.description) {
+          htmlContent += `
+            <h4 style="color: #0f3460; margin-top: 24px; margin-bottom: 10px; border-bottom: 1px solid #dee2e6; padding-bottom: 6px;">Description / Details</h4>
+            <div style="margin-bottom: 20px; font-size: 14px; color:#444;">${data.description}</div>
+          `;
+        }
+
+        if (docs && docs.length > 0) {
+          htmlContent += `
+            <h4 style="color: #0f3460; margin-top: 24px; margin-bottom: 10px; border-bottom: 1px solid #dee2e6; padding-bottom: 6px;">Attached Brochures & Documents</h4>
+            <div style="margin-bottom: 20px;">
+          `;
+          docs.forEach(doc => {
+            const downloadUrl = `${Endpoint}/uploads/service-docs/${doc.file_path}`;
+            htmlContent += `
+              <div style="margin-bottom: 8px; background: #f8f9fa; padding: 10px 14px; border-radius: 6px; border: 1px solid #dee2e6; display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 13px; color: #333;">📁 <strong>${doc.file_name}</strong></span>
+                <a href="${downloadUrl}" target="_blank" style="background-color: #0275d8; color: white; text-decoration: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; display: inline-block;">Download</a>
+              </div>
+            `;
+          });
+          htmlContent += `</div>`;
+        }
+
+        htmlContent += `
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 24px 0;" />
+            <div style="font-size: 12px; color: #888; text-align: center;">
+              <p>This email was sent to you by VeraThailandia! travel agent system.</p>
+            </div>
+          </div>
+        </div>
+        `;
+
         try {
           const res = await fetch(Endpoint + '/api/v1/email/send', {
             method: 'POST',
@@ -1981,7 +2233,7 @@
               'Content-Type': 'application/json',
               Authorization: 'Bearer ' + localStorage.getItem('token')
             },
-            body: JSON.stringify({ to, subject, body, html: '<pre style="font-family:Arial;">' + body + '</pre>' })
+            body: JSON.stringify({ to, cc, subject, body, html: htmlContent })
           });
           const data = await res.json();
           if (data.success) {
@@ -2008,7 +2260,7 @@
         $("#viewTourDuration").text(tour.duration || "N/A");
         $("#viewTourDeparture").text(tour.tot || "N/A");
         $("#viewTourRoute").text(tour.route || "N/A");
-        $("#viewTourDescription").text(tour.description || "N/A");
+        $("#viewTourDescription").html(tour.description || "N/A");
 
         // SIC Prices
         $("#viewTourSICPriceSingle").text(tour.sic_price_single_room || "0");
@@ -2022,6 +2274,9 @@
         
         // Store for print/email
         window._currentTourData = tour;
+
+        // Load documents
+        loadDocsForModal('tour', tour.id, 'viewTourDocsList', 'viewTourDocsSection');
 
         // Show the modal after populating data
         $("#viewTourModal").modal("show");
@@ -2091,7 +2346,7 @@
         $("#viewExcursionName").text(excursion.name || "N/A");
         $("#viewCity").text(excursion.city || "N/A");
         $("#viewCode").text(excursion.code || "N/A");
-        $("#viewDescription").text(excursion.description || "N/A");
+        $("#viewDescription").html(excursion.description || "N/A");
         $("#viewExcursionSICPriceAdult").text(excursion.sic_price_adult || "N/A");
         $("#viewExcursionSICPriceChild").text(excursion.sic_price_child || "N/A");
 
@@ -2100,6 +2355,9 @@
 
         // Store for print/email
         window._currentExcursionData = excursion;
+
+        // Load documents
+        loadDocsForModal('excursion', excursion.id, 'viewExcursionDocsList', 'viewExcursionDocsSection');
       }
 
       $(document).ready(function () {

@@ -515,52 +515,52 @@
         setupDragDrop();
       });
 
-      // ── Load Tours ─────────────────────────────────
+      // ── Load Excursions ───────────────────────────────
       async function loadExcursions() {
         try {
-          const res = await fetch(`${Endpoint}/api/v1/tours`, {
+          const res = await fetch(`${Endpoint}/api/v1/excursions`, {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
           });
           const data = await res.json();
           allExcursions = (data.excursions || data || []).sort((a,b) => a.name.localeCompare(b.name));
           document.getElementById('excursionCount').textContent = allExcursions.length;
-          renderTourList(allExcursions);
+          renderExcursionList(allExcursions);
         } catch(e) {
-          showToast('Failed to load tours', 'error');
+          showToast('Failed to load excursions', 'error');
         }
       }
 
-      function renderTourList(tours) {
+      function renderExcursionList(excursions) {
         const container = document.getElementById('excursionListContainer');
-        if (!tours.length) {
-          container.innerHTML = '<div class="empty-state"><i class="fa fa-search"></i><p>No tours found</p></div>';
+        if (!excursions.length) {
+          container.innerHTML = '<div class="empty-state"><i class="fa fa-search"></i><p>No excursions found</p></div>';
           return;
         }
-        container.innerHTML = tours.map(t => `
-          <div class="excursion-item ${currentExcursion?.id === t.id ? 'active' : ''}"
-               id="excursion-item-${t.id}" onclick="selectExcursion(${t.id})">
-            <div class="tour-name">${t.name}</div>
-            <div class="tour-meta">${t.category || ''} · ${t.duration || 0}D · ${t.city || ''}</div>
-            ${t.description ? '<span class="has-desc-badge"><i class="fa fa-check"></i> Has Description</span>' : ''}
+        container.innerHTML = excursions.map(e => `
+          <div class="excursion-item ${currentExcursion?.id === e.id ? 'active' : ''}"
+               id="excursion-item-${e.id}" onclick="selectExcursion(${e.id})">
+            <div class="tour-name">${e.name}</div>
+            <div class="tour-meta">${e.code || ''} · ${e.city || ''}</div>
+            ${e.description ? '<span class="has-desc-badge"><i class="fa fa-check"></i> Has Description</span>' : ''}
           </div>
         `).join('');
       }
 
       function filterExcursions() {
         const q = document.getElementById('excursionSearchInput').value.toLowerCase();
-        renderTourList(allExcursions.filter(t =>
-          t.name.toLowerCase().includes(q) || (t.city || '').toLowerCase().includes(q) || (t.category || '').toLowerCase().includes(q)
+        renderExcursionList(allExcursions.filter(e =>
+          e.name.toLowerCase().includes(q) || (e.city || '').toLowerCase().includes(q) || (e.code || '').toLowerCase().includes(q)
         ));
       }
 
-      // ── Select Tour ────────────────────────────────
-      async function selectExcursion(tourId) {
-        currentExcursion = allExcursions.find(t => t.id === tourId);
+      // ── Select Excursion ──────────────────────────────
+      async function selectExcursion(excursionId) {
+        currentExcursion = allExcursions.find(e => e.id === excursionId);
         if (!currentExcursion) return;
 
         // Update active state
         document.querySelectorAll('.excursion-item').forEach(el => el.classList.remove('active'));
-        const el = document.getElementById(`excursion-item-${tourId}`);
+        const el = document.getElementById(`excursion-item-${excursionId}`);
         if (el) el.classList.add('active');
 
         // Show detail panel
@@ -570,7 +570,7 @@
         // Populate fields
         document.getElementById('detailExcursionName').textContent = currentExcursion.name;
         document.getElementById('detailExcursionMeta').textContent =
-          `${currentExcursion.category || '—'} · ${currentExcursion.duration || 0} days · ${currentExcursion.city || '—'}`;
+          `${currentExcursion.code || '—'} · ${currentExcursion.city || '—'}`;
 
         // Load description
         const editor = document.getElementById('excursionEditor');
@@ -582,7 +582,7 @@
         // Pre-fill email
         document.getElementById('emailSubject').value = `Excursion Information: ${currentExcursion.name}`;
         document.getElementById('emailBody').value =
-          `Dear Valued Guest,\n\nPlease find the details for the following tour:\n\nExcursion:  ${currentExcursion.name}\nDuration: ${currentExcursion.duration || '—'} days\nCity: ${currentExcursion.city || '—'}\n\n${stripHtml(editor.innerHTML)}\n\nPlease contact us if you have any questions.\n\nBest regards,\nVeraThailandia Team`;
+          `Dear Valued Guest,\n\nPlease find the details for the following excursion:\n\nExcursion:  ${currentExcursion.name}\nCode: ${currentExcursion.code || '—'}\nCity: ${currentExcursion.city || '—'}\n\n${stripHtml(editor.innerHTML)}\n\nPlease contact us if you have any questions.\n\nBest regards,\nVeraThailandia Team`;
       }
 
       // ── Load Documents ─────────────────────────────
