@@ -47,9 +47,11 @@ const TourHotelsAPI = {
    * @param {number} tripId - The trip ID
    * @param {number} tourItemId - The tour trip item ID
    * @param {Array} hotels - Array of hotel objects
+   * @param {string} [transfer_in] - Arrival transfer description
+   * @param {string} [transfer_out] - Departure transfer description
    * @returns {Promise<Object>} Updated tour hotels data
    */
-  async updateTourHotels(tripId, tourItemId, hotels) {
+  async updateTourHotels(tripId, tourItemId, hotels, transfer_in = '', transfer_out = '') {
     try {
       const url = `${Endpoint}/api/v1/trips/${tripId}/tour-items/${tourItemId}/hotels`;
       
@@ -59,7 +61,7 @@ const TourHotelsAPI = {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ hotels }),
+        body: JSON.stringify({ hotels, transfer_in, transfer_out }),
       });
 
       if (!response.ok) {
@@ -72,6 +74,7 @@ const TourHotelsAPI = {
       throw error;
     }
   },
+
 
   /**
    * Revert tour hotels to defaults

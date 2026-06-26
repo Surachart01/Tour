@@ -31,9 +31,24 @@ function formatDateToDDMMYYYY(date) {
   return `${dayVal}-${monthVal}-${yearVal}`;
 }
 
+// Format a transfer_trip_items record into a readable string
+function formatTransferItem(t) {
+  if (!t) return '';
+  const parts = [];
+  const dateStr = formatDateToDDMMYYYY(t.from_date);
+  if (dateStr) parts.push(dateStr);
+  if (t.pickup_time) parts.push(`Pickup: ${t.pickup_time}`);
+  const route = [t.from_location, t.to_location].filter(Boolean).join(' → ');
+  if (route) parts.push(route);
+  if (t.transfer_description) parts.push(`(${t.transfer_description})`);
+  return parts.join(' | ');
+}
+
+
 export async function getTourHotels(req, res, next) {
   try {
     const tourItemId = parseInt(req.params.tour_item_id);
+    const tripId = parseInt(req.params.trip_id);
     if (isNaN(tourItemId)) return res.status(400).send('Invalid tour item ID');
 
     const tourItem = await prisma.tour_trip_items.findUnique({
@@ -41,6 +56,20 @@ export async function getTourHotels(req, res, next) {
       include: { tours: true }
     });
     if (!tourItem) return res.status(404).send('Tour trip item not found');
+
+    // Auto-fetch Transfer In (first transfer of the trip) and Transfer Out (last transfer)
+    let transfer_in = '';
+    let transfer_out = '';
+    if (!isNaN(tripId)) {
+      const tripTransfers = await prisma.transfer_trip_items.findMany({
+        where: { trip_item_id: tripId },
+        orderBy: { from_date: 'asc' }
+      });
+      if (tripTransfers.length > 0) {
+        transfer_in = formatTransferItem(tripTransfers[0]);
+        transfer_out = formatTransferItem(tripTransfers[tripTransfers.length - 1]);
+      }
+    }
 
     // Get hotel overrides
     const overrides = await prisma.tour_trip_item_hotels.findMany({
@@ -55,8 +84,11 @@ export async function getTourHotels(req, res, next) {
       tour_start_date: formatDateToDDMMYYYY(tourItem.from_date),
       tour_end_date: formatDateToDDMMYYYY(tourItem.to_date),
       has_overrides: overrides.length > 0,
+      transfer_in,
+      transfer_out,
       hotels: []
     };
+
 
     if (overrides.length > 0) {
       // Deduplicate by day — keep only the last entry per day to fix existing duplicate DB rows
@@ -134,8 +166,8 @@ export async function updateTourHotels(req, res, next) {
     const tourItemId = parseInt(req.params.tour_item_id);
     if (isNaN(tourItemId)) return res.status(400).send('Invalid tour item ID');
 
-    const { hotels } = req.body;
-    console.log('--- updateTourHotels called --- hotels length:', hotels.length, 'body:', JSON.stringify(hotels));
+    const { hotels, transfer_in, transfer_out } = req.body;
+    console.log('--- updateTourHotels called --- hotels length:', hotels?.length, 'transfer_in:', transfer_in, 'transfer_out:', transfer_out);
     if (!Array.isArray(hotels)) {
       return res.status(400).send('hotels must be an array');
     }
@@ -191,7 +223,16 @@ export async function updateTourHotels(req, res, next) {
     }
 
     await prisma.$transaction(async (tx) => {
-      // Delete existing overrides
+      // Update transfer_in and transfer_out on tour_trip_items
+      await tx.tour_trip_items.update({
+        where: { id: tourItemId },
+        data: {
+          transfer_in: transfer_in !== undefined ? transfer_in : undefined,
+          transfer_out: transfer_out !== undefined ? transfer_out : undefined,
+        }
+      });
+
+      // Delete existing hotel overrides
       await tx.tour_trip_item_hotels.deleteMany({
         where: { tour_trip_item_id: tourItemId }
       });
@@ -225,6 +266,8 @@ export async function updateTourHotels(req, res, next) {
       tour_start_date: formatDateToDDMMYYYY(tourItem.from_date),
       tour_end_date: formatDateToDDMMYYYY(tourItem.to_date),
       has_overrides: overrides.length > 0,
+      transfer_in: tourItem.transfer_in || '',
+      transfer_out: tourItem.transfer_out || '',
       hotels: overrides.map(override => {
         const { checkIn, checkOut } = calculateHotelDates(tourItem.from_date, override.day);
         return {

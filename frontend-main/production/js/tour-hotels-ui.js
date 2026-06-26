@@ -149,6 +149,19 @@ const TourHotelsUI = {
     header.appendChild(badgeContainer);
     container.appendChild(header);
 
+    // ─── Transfer In (top) ───────────────────────────────────────────
+    const transferInBox = document.createElement("div");
+    transferInBox.className = "transfer-in-box";
+    transferInBox.style.cssText = "display: flex; align-items: flex-start; gap: 8px; padding: 8px 12px; margin-bottom: 10px; background: #e8f4f8; border: 1px solid #bee5eb; border-radius: 6px;";
+    transferInBox.innerHTML = `
+      <span style="color:#0c6079; font-size:1.1em; margin-top:2px;"><i class="fa fa-arrow-circle-down"></i></span>
+      <div style="flex:1;">
+        <strong style="color:#0c6079; font-size:0.85em; text-transform:uppercase; letter-spacing:0.5px;">Transfer In</strong>
+        <div style="color:#333; margin-top:2px; font-size:0.95em;">${hotelData.transfer_in || '<span style="color:#999; font-style:italic;">— Not specified —</span>'}</div>
+      </div>
+    `;
+    container.appendChild(transferInBox);
+
     // Hotels list
     if (hotelData.hotels && hotelData.hotels.length > 0) {
       const hotelsList = document.createElement("div");
@@ -167,6 +180,19 @@ const TourHotelsUI = {
       noHotels.textContent = "No accommodation information available for this tour.";
       container.appendChild(noHotels);
     }
+
+    // ─── Transfer Out (bottom) ───────────────────────────────────────
+    const transferOutBox = document.createElement("div");
+    transferOutBox.className = "transfer-out-box";
+    transferOutBox.style.cssText = "display: flex; align-items: flex-start; gap: 8px; padding: 8px 12px; margin-top: 10px; background: #fff8e8; border: 1px solid #ffd27d; border-radius: 6px;";
+    transferOutBox.innerHTML = `
+      <span style="color:#b05e00; font-size:1.1em; margin-top:2px;"><i class="fa fa-arrow-circle-up"></i></span>
+      <div style="flex:1;">
+        <strong style="color:#b05e00; font-size:0.85em; text-transform:uppercase; letter-spacing:0.5px;">Transfer Out</strong>
+        <div style="color:#333; margin-top:2px; font-size:0.95em;">${hotelData.transfer_out || '<span style="color:#999; font-style:italic;">— Not specified —</span>'}</div>
+      </div>
+    `;
+    container.appendChild(transferOutBox);
 
     return container;
   },
@@ -343,15 +369,41 @@ const TourHotelsUI = {
     form.dataset.tourItemId = tourItemId;
     form.dataset.isBooking = isBooking;
 
+    // ─── Transfer In (read-only, auto from trip's first transfer) ────
+    const transferInSection = document.createElement("div");
+    transferInSection.style.cssText = "margin-bottom: 20px; padding: 12px; background: #e8f4f8; border: 1px solid #bee5eb; border-radius: 6px;";
+    transferInSection.innerHTML = `
+      <div style="font-weight:600; color:#0c6079; margin-bottom:4px;">
+        <i class="fa fa-arrow-circle-down"></i> Transfer In
+        <small class="text-muted" style="font-weight:normal;"> — auto from first trip transfer</small>
+      </div>
+      <div style="color:#333; font-size:0.95em; padding: 6px 0;">${hotelData.transfer_in || '<span style="color:#999; font-style:italic;">No transfer found for this trip</span>'}</div>
+    `;
+    form.appendChild(transferInSection);
+
     if (!hotelData.hotels || hotelData.hotels.length === 0) {
-      form.innerHTML = '<p class="text-muted">No hotels defined for this tour.</p>';
-      return;
+      const noHotels = document.createElement('p');
+      noHotels.className = 'text-muted';
+      noHotels.textContent = 'No hotels defined for this tour.';
+      form.appendChild(noHotels);
+    } else {
+      hotelData.hotels.forEach((hotel, index) => {
+        const hotelForm = this.createHotelEditForm(hotel, index);
+        form.appendChild(hotelForm);
+      });
     }
 
-    hotelData.hotels.forEach((hotel, index) => {
-      const hotelForm = this.createHotelEditForm(hotel, index);
-      form.appendChild(hotelForm);
-    });
+    // ─── Transfer Out (read-only, auto from trip's last transfer) ────
+    const transferOutSection = document.createElement("div");
+    transferOutSection.style.cssText = "margin-top: 20px; padding: 12px; background: #fff8e8; border: 1px solid #ffd27d; border-radius: 6px;";
+    transferOutSection.innerHTML = `
+      <div style="font-weight:600; color:#b05e00; margin-bottom:4px;">
+        <i class="fa fa-arrow-circle-up"></i> Transfer Out
+        <small class="text-muted" style="font-weight:normal;"> — auto from last trip transfer</small>
+      </div>
+      <div style="color:#333; font-size:0.95em; padding: 6px 0;">${hotelData.transfer_out || '<span style="color:#999; font-style:italic;">No transfer found for this trip</span>'}</div>
+    `;
+    form.appendChild(transferOutSection);
 
     // Setup save button
     const saveBtn = document.getElementById("saveHotelsBtn");
@@ -753,7 +805,7 @@ const TourHotelsUI = {
       saveBtn.disabled = true;
       saveBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving...';
 
-      // Save hotels
+      // Save hotels (transfer_in/out are auto-derived from trip transfers, not sent)
       await TourHotelsAPI.updateTourHotels(tripId, tourItemId, hotels);
 
       // Success
