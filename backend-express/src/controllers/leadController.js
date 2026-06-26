@@ -5,10 +5,10 @@ export async function createLead(req, res, next) {
   try { const data = req.body; const trip = await prisma.trips.create({ data: { agent_id: data.agent_id || req.user.agent_id, client_name: data.client_name, client_phone: data.client_phone || '', number_of_adults: data.number_of_adults || 0, number_of_kids: data.number_of_kids || 0, remarks: data.remarks || null, booking_reference: data.booking_reference || null, file_reference: data.file_reference || null, approved: false, declined: false } }); return res.status(201).json(trip); } catch (e) { next(e); }
 }
 export async function listLeads(req, res, next) {
-  try { const leads = await prisma.trips.findMany({ include: { agents: true }, orderBy: { created_at: 'desc' } }); return res.json(leads); } catch (e) { next(e); }
+  try { const leads = await prisma.trips.findMany({ include: { agents: true }, orderBy: { created_at: 'desc' } }); return res.json(leads.map(l => ({ ...l, agent: l.agents || null }))); } catch (e) { next(e); }
 }
 export async function getLead(req, res, next) {
-  try { const id = parseInt(req.params.id); const lead = await prisma.trips.findUnique({ where: { id }, include: { agents: true, hotel_trip_items: { include: { hotels: true } }, excursion_trip_items: { include: { excursions: true } }, tour_trip_items: { include: { tours: true } }, transfer_trip_items: { include: { transfers: true } }, flight_trip_items: true } }); if (!lead) return res.status(404).send('Not found'); return res.json(lead); } catch (e) { next(e); }
+  try { const id = parseInt(req.params.id); const lead = await prisma.trips.findUnique({ where: { id }, include: { agents: true, hotel_trip_items: { include: { hotels: true } }, excursion_trip_items: { include: { excursions: true } }, tour_trip_items: { include: { tours: true } }, transfer_trip_items: { include: { transfers: true } }, flight_trip_items: true } }); if (!lead) return res.status(404).send('Not found'); return res.json({ ...lead, agent: lead.agents || null }); } catch (e) { next(e); }
 }
 export async function updateLead(req, res, next) {
   try { const id = parseInt(req.params.id); const data = req.body; const lead = await prisma.trips.update({ where: { id }, data: { client_name: data.client_name, client_phone: data.client_phone, number_of_adults: data.number_of_adults, number_of_kids: data.number_of_kids, remarks: data.remarks } }); return res.json(lead); } catch (e) { next(e); }

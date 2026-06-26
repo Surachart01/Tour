@@ -178,6 +178,7 @@ function mapTripResponse(trip) {
   return {
     ...trip,
     // top-level field aliases
+    agent: trip.agents || null,
     quotation_reference: trip.booking_reference || '',
     client_booking: trip.booking_reference || '',
     total_cost: toFloat(trip.total_amount),

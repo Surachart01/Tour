@@ -727,8 +727,8 @@ function createLeadTableRow(lead) {
     <tr data-lead-id="${lead.id}" class="${rowClass}">
       <td>
         <strong>${lead.lead_reference}</strong>
-        ${lead.agent?.name ? `
-          <br><small class="text-muted">by ${lead.agent.name}</small>
+        ${(lead.agent?.name || lead.agents?.name) ? `
+          <br><small class="text-muted">by ${lead.agent?.name || lead.agents?.name}</small>
         ` : ''}
       </td>
       <td>

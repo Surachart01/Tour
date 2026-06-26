@@ -344,7 +344,7 @@ function renderTable() {
     // Extract data from new structure
     const invoiceNumber = invoice.invoice_number || 'N/A';
     const tripId = invoice.trip_id || 'N/A';
-    const agentName = invoice.trip?.agent?.name || 'Unknown Agent';
+    const agentName = invoice.trip?.agent?.name || invoice.trip?.agents?.name || 'Unknown Agent';
     const totalCost = invoice.total_cost || 0;
     const taxAmount = invoice.total_tax_price || 0;
     const finalAmount = invoice.final_cost || 0;
@@ -445,7 +445,7 @@ function viewTaxInvoiceDetails(invoiceId) {
               </div>
               <div class="col-md-6">
                 <h6>Client & Agent Information</h6>
-                <p><strong>Agent:</strong> ${invoice.trip?.agent?.name || 'N/A'}</p>
+                <p><strong>Agent:</strong> ${invoice.trip?.agent?.name || invoice.trip?.agents?.name || 'N/A'}</p>
                 <p><strong>Client:</strong> ${invoice.trip?.client_name || 'N/A'}</p>
                 <p><strong>Client Email:</strong> ${invoice.trip?.client_email || 'N/A'}</p>
               </div>
@@ -657,7 +657,8 @@ function filterTable() {
       return (
         (invoice.invoice_number && invoice.invoice_number.toLowerCase().includes(searchTerm)) ||
         (invoice.trip_id && invoice.trip_id.toString().includes(searchTerm)) ||
-        (invoice.trip?.agent?.name && invoice.trip.agent.name.toLowerCase().includes(searchTerm)) ||
+        ((invoice.trip?.agent?.name && invoice.trip.agent.name.toLowerCase().includes(searchTerm)) ||
+         (invoice.trip?.agents?.name && invoice.trip.agents.name.toLowerCase().includes(searchTerm))) ||
         (invoice.trip?.client_name && invoice.trip.client_name.toLowerCase().includes(searchTerm))
       );
     });

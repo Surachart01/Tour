@@ -127,8 +127,8 @@ const TourHotelsUI = {
       badgeContainer.appendChild(badge);
     }
     
-    // Add edit button for admin in quotations (not bookings - bookings are locked)
-    if (isAdmin && !isBooking) {
+    // Add edit button for admin in quotations & bookings
+    if (isAdmin) {
       const editBtn = document.createElement("button");
       editBtn.type = "button"; // Prevent form submission
       editBtn.className = "btn btn-sm btn-primary";
@@ -139,7 +139,7 @@ const TourHotelsUI = {
           event.preventDefault();
           event.stopPropagation();
         }
-        this.openEditModal(tripId, tourItemId, hotelData);
+        this.openEditModal(tripId, tourItemId, hotelData, isBooking);
         return false;
       };
       badgeContainer.appendChild(editBtn);
@@ -255,7 +255,7 @@ const TourHotelsUI = {
    * @param {number} tourItemId - Tour item ID
    * @param {Object} currentHotelData - Current hotel data
    */
-  openEditModal(tripId, tourItemId, currentHotelData) {
+  openEditModal(tripId, tourItemId, currentHotelData, isBooking) {
     // Create modal if it doesn't exist
     let modal = document.getElementById("editTourHotelsModal");
     if (!modal) {
@@ -264,7 +264,7 @@ const TourHotelsUI = {
     }
 
     // Populate modal with current data
-    this.populateEditModal(tripId, tourItemId, currentHotelData);
+    this.populateEditModal(tripId, tourItemId, currentHotelData, isBooking);
     
     // Show modal
     try {
@@ -334,13 +334,14 @@ const TourHotelsUI = {
    * @param {number} tourItemId - Tour item ID
    * @param {Object} hotelData - Hotel data
    */
-  populateEditModal(tripId, tourItemId, hotelData) {
+  populateEditModal(tripId, tourItemId, hotelData, isBooking) {
     const form = document.getElementById("editHotelsForm");
     form.innerHTML = "";
 
     // Store trip and tour item IDs
     form.dataset.tripId = tripId;
     form.dataset.tourItemId = tourItemId;
+    form.dataset.isBooking = isBooking;
 
     if (!hotelData.hotels || hotelData.hotels.length === 0) {
       form.innerHTML = '<p class="text-muted">No hotels defined for this tour.</p>';
@@ -394,8 +395,22 @@ const TourHotelsUI = {
     try {
       const url = new URL(`${Endpoint}/api/v1/hotels`);
       url.searchParams.append('city', city);
-      if (fromDate) url.searchParams.append('from_date', fromDate);
-      if (toDate) url.searchParams.append('to_date', toDate);
+      // Convert DD-MM-YYYY to YYYY-MM-DD for backend query parsing compatibility
+      const formatDateForAPI = (dateStr) => {
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+          if (parts[0].length === 4) return dateStr; // Already YYYY-MM-DD
+          return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+        return dateStr;
+      };
+
+      const formattedFrom = formatDateForAPI(fromDate);
+      const formattedTo = formatDateForAPI(toDate);
+
+      if (formattedFrom) url.searchParams.append('from_date', formattedFrom);
+      if (formattedTo) url.searchParams.append('to_date', formattedTo);
       url.searchParams.append('keyword', '');
 
       const response = await fetch(url, {
@@ -751,11 +766,11 @@ const TourHotelsUI = {
       // Close modal
       $("#editTourHotelsModal").modal("hide");
       
-      // Refresh display - maintain current context (admin, not booking since we're in edit mode)
+      // Refresh display - maintain current context
       const tourItem = { id: tourItemId };
       const userRole = localStorage.getItem("role");
       const isAdmin = userRole === "admin" || userRole === "superadmin";
-      const isBooking = false; // We're in edit_trip.html (quotation)
+      const isBooking = form.dataset.isBooking === "true";
       await this.displayTourHotels(tripId, tourItem, isAdmin, isBooking);
 
     } catch (error) {
@@ -803,7 +818,8 @@ const TourHotelsUI = {
       const tourItem = { id: tourItemId };
       const userRole = localStorage.getItem("role");
       const isAdmin = userRole === "admin" || userRole === "superadmin";
-      const isBooking = false; // We're in edit_trip.html (quotation)
+      const form = document.getElementById("editHotelsForm");
+      const isBooking = form ? form.dataset.isBooking === "true" : false;
       await this.displayTourHotels(tripId, tourItem, isAdmin, isBooking);
 
     } catch (error) {

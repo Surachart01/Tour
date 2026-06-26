@@ -3637,7 +3637,10 @@
         // Event listener for hotel dropdown change
         document.addEventListener("change", function (event) {
           if (event.target.classList.contains("hotel-dropdown")) {
-            populateRoomTypeAndPromotionDropdown(event.target);
+            const formRow = event.target.closest(".form-row");
+            if (formRow) {
+              populateRoomTypeAndPromotionDropdown(event.target);
+            }
           }
         });
 
@@ -3846,6 +3849,7 @@
 
           row.dataset.tourId = tour.tour_id;
           row.dataset.trip_tour_id = tour.id;
+          row.dataset.tourItemId = tour.id; // Store tour trip item ID for hotel display
           row.dataset.flightIn = tour.flight_in || "";
           row.dataset.flightOut = tour.flight_out || "";
           row.dataset.singleRooms = tour.single_rooms || 0;

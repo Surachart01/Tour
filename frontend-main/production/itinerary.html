@@ -778,7 +778,7 @@
             row.style.backgroundColor = "#A2D9A5"; // Green for approved trips
 
             row.innerHTML = `
-                <td>${trip.agent.name}</td>
+                <td>${(trip.agent && trip.agent.name) || (trip.agents && trip.agents.name) || "N/A"}</td>
                 <td>${trip.quotation_reference}</td>
                 <td>${trip.client_name}</td>
                 <td>${formatDateForDisplay(trip.start_date)}</td>
@@ -822,9 +822,12 @@
               (trip.client_phone && trip.client_phone.includes(searchValue)) ||
               (trip.booking_reference &&
                 trip.booking_reference.toLowerCase().includes(searchValue)) ||
-              (trip.agent &&
+              ((trip.agent &&
                 trip.agent.name &&
-                trip.agent.name.toLowerCase().includes(searchValue))
+                trip.agent.name.toLowerCase().includes(searchValue)) ||
+               (trip.agents &&
+                trip.agents.name &&
+                trip.agents.name.toLowerCase().includes(searchValue)))
             );
           });
 
