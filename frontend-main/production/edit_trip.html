@@ -9535,7 +9535,14 @@
           const adultPrice = parseFloat(currentSpecialPackage.price_per_adult) || 0;
           const childPrice = parseFloat(currentSpecialPackage.price_per_child) || 0;
           
-          const total = (adultPrice * adults) + (childPrice * children);
+          const baseTotal = (adultPrice * adults) + (childPrice * children);
+          
+          const includeAssistanceFee = document.getElementById("includeAssistanceFee");
+          const assistanceFeeAmount = document.getElementById("assistanceFeeAmount");
+          const isChecked = includeAssistanceFee ? includeAssistanceFee.checked : false;
+          const fee = isChecked ? (parseFloat(assistanceFeeAmount.value) || 0) : 0;
+
+          const total = baseTotal + fee;
           const discount = parseFloat(document.getElementById("discount").value) || 0;
           const final = Math.max(0, total - discount);
 
@@ -9580,6 +9587,12 @@
           if (currentSpecialPackage) updateSpecialPackagePrice();
         });
         document.getElementById("discount").addEventListener("input", function() {
+          if (currentSpecialPackage) updateSpecialPackagePrice();
+        });
+        document.getElementById("includeAssistanceFee").addEventListener("change", function() {
+          if (currentSpecialPackage) updateSpecialPackagePrice();
+        });
+        document.getElementById("assistanceFeeAmount").addEventListener("input", function() {
           if (currentSpecialPackage) updateSpecialPackagePrice();
         });
 

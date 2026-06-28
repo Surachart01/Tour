@@ -349,17 +349,11 @@
                     <input type="text" id="pkgCategory" class="form-control" placeholder="e.g. Deluxe, Standard" />
                   </div>
                   <div class="col-md-3 form-group">
-                    <label style="display: flex; justify-content: space-between; align-items: center;">
-                      <span>Adult Price</span>
-                      <button type="button" class="btn btn-link btn-xs p-0 m-0" onclick="autoFillAdultPrice()" style="text-decoration: underline; color: #1abb9c; font-size: 0.75rem;">Use Itinerary Sum</button>
-                    </label>
+                    <label>Adult Price</label>
                     <input type="number" id="pkgPriceAdult" class="form-control" step="0.01" />
                   </div>
                   <div class="col-md-3 form-group">
-                    <label style="display: flex; justify-content: space-between; align-items: center;">
-                      <span>Child Price</span>
-                      <button type="button" class="btn btn-link btn-xs p-0 m-0" onclick="autoFillChildPrice()" style="text-decoration: underline; color: #1abb9c; font-size: 0.75rem;">Use Itinerary Sum</button>
-                    </label>
+                    <label>Child Price</label>
                     <input type="number" id="pkgPriceChild" class="form-control" step="0.01" />
                   </div>
                 </div>
@@ -441,7 +435,6 @@
                 <h2>Day-by-Day Itinerary Planner</h2>
                 <div>
                   <span class="badge badge-info" style="font-size: 0.9rem; margin-right: 10px;">Total Days: <span id="totalDaysCount">0</span></span>
-                  <span class="badge badge-success" style="font-size: 0.9rem; margin-right: 10px;">Itinerary Sum: <span id="itineraryTotalSum">0.00</span></span>
                   <button type="button" class="btn btn-success btn-sm" onclick="addNewDay()"><i class="fa fa-plus"></i> Add Day</button>
                 </div>
               </div>
@@ -692,45 +685,41 @@
           item.className = "activity-item hotel-row mb-3";
           
           item.innerHTML = `
-            <div class="row">
-              <div class="col-md-3">
-                <label>City</label>
-                <select class="form-control city-select" onchange="filterHotelsByCity(this)">
-                  <option value="">Select City</option>
-                  ${uniqueCities.map(c => `<option value="${c}">${c}</option>`).join("")}
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label>Hotel</label>
-                <select class="form-control hotel-select" onchange="filterRoomsByHotel(this)">
-                  <option value="">Select Hotel</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label>Room Type</label>
-                <select class="form-control room-type-select">
-                  <option value="">Select Room Type</option>
-                </select>
-              </div>
-              <div class="col-md-1">
-                <label>Nights</label>
-                <input type="number" class="form-control nights-input" min="1" value="1" />
-              </div>
-              <div class="col-md-1">
-                <label>Price</label>
-                <input type="number" class="form-control price-input" step="0.01" value="0" />
-              </div>
-              <div class="col-md-1 d-flex align-items-end justify-content-end">
-                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove(); if(typeof calculateItinerarySum==='function') calculateItinerarySum();"><i class="fa fa-trash"></i></button>
-              </div>
-            </div>
-            <div class="row mt-2">
-              <div class="col-md-12">
-                <label>Remarks</label>
-                <input type="text" class="form-control remarks-input" placeholder="Remarks..." />
-              </div>
-            </div>
-          `;
+             <div class="row">
+               <div class="col-md-3">
+                 <label>City</label>
+                 <select class="form-control city-select" onchange="filterHotelsByCity(this)">
+                   <option value="">Select City</option>
+                   ${uniqueCities.map(c => `<option value="${c}">${c}</option>`).join("")}
+                 </select>
+               </div>
+               <div class="col-md-4">
+                 <label>Hotel</label>
+                 <select class="form-control hotel-select" onchange="filterRoomsByHotel(this)">
+                   <option value="">Select Hotel</option>
+                 </select>
+               </div>
+               <div class="col-md-3">
+                 <label>Room Type</label>
+                 <select class="form-control room-type-select">
+                   <option value="">Select Room Type</option>
+                 </select>
+               </div>
+               <div class="col-md-1">
+                 <label>Nights</label>
+                 <input type="number" class="form-control nights-input" min="1" value="1" />
+               </div>
+               <div class="col-md-1 d-flex align-items-end justify-content-end">
+                 <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove()"><i class="fa fa-trash"></i></button>
+               </div>
+             </div>
+             <div class="row mt-2">
+               <div class="col-md-12">
+                 <label>Remarks</label>
+                 <input type="text" class="form-control remarks-input" placeholder="Remarks..." />
+               </div>
+             </div>
+           `;
 
           list.appendChild(item);
 
@@ -744,7 +733,6 @@
 
             item.querySelector(".room-type-select").value = initData.room_type || "";
             item.querySelector(".nights-input").value = initData.nights || 1;
-            item.querySelector(".price-input").value = initData.price || 0;
             item.querySelector(".remarks-input").value = initData.remarks || "";
           }
         };
@@ -807,21 +795,17 @@
                   <option value="">Select Transfer</option>
                 </select>
               </div>
-              <div class="col-md-2">
+              <div class="col-md-2.5" style="flex: 0 0 20.833%; max-width: 20.833%;">
                 <label>From</label>
                 <input type="text" class="form-control from-input" placeholder="From..." />
               </div>
-              <div class="col-md-2">
+              <div class="col-md-2.5" style="flex: 0 0 20.833%; max-width: 20.833%;">
                 <label>To</label>
                 <input type="text" class="form-control to-input" placeholder="To..." />
               </div>
               <div class="col-md-1">
                 <label>Time</label>
                 <input type="text" class="form-control pickup-time-input" placeholder="e.g. 09:00" />
-              </div>
-              <div class="col-md-1">
-                <label>Price</label>
-                <input type="number" class="form-control price-input" step="0.01" value="0" />
               </div>
             </div>
             <div class="row mt-2">
@@ -830,7 +814,7 @@
                 <input type="text" class="form-control remarks-input" placeholder="Remarks..." />
               </div>
               <div class="col-md-1 d-flex align-items-end justify-content-end">
-                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove(); if(typeof calculateItinerarySum==='function') calculateItinerarySum();"><i class="fa fa-trash"></i></button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove()"><i class="fa fa-trash"></i></button>
               </div>
             </div>
           `;
@@ -845,7 +829,6 @@
             item.querySelector(".from-input").value = initData.from_location || "";
             item.querySelector(".to-input").value = initData.to_location || "";
             item.querySelector(".pickup-time-input").value = initData.pickup_time || "";
-            item.querySelector(".price-input").value = initData.price || 0;
             item.querySelector(".remarks-input").value = initData.remarks || "";
           }
         };
@@ -882,38 +865,33 @@
                   ${uniqueCities.map(c => `<option value="${c}">${c}</option>`).join("")}
                 </select>
               </div>
-              <div class="col-md-6">
-                <label>Excursion</label>
-                <select class="form-control excursion-select">
-                  <option value="">Select Excursion</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label>Price</label>
-                <input type="number" class="form-control price-input" step="0.01" value="0" />
-              </div>
-              <div class="col-md-1 d-flex align-items-end justify-content-end">
-                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove(); if(typeof calculateItinerarySum==='function') calculateItinerarySum();"><i class="fa fa-trash"></i></button>
-              </div>
-            </div>
-            <div class="row mt-2">
-              <div class="col-md-12">
-                <label>Remarks</label>
-                <input type="text" class="form-control remarks-input" placeholder="Remarks..." />
-              </div>
-            </div>
-          `;
+               <div class="col-md-8">
+                 <label>Excursion</label>
+                 <select class="form-control excursion-select">
+                   <option value="">Select Excursion</option>
+                 </select>
+               </div>
+               <div class="col-md-1 d-flex align-items-end justify-content-end">
+                 <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove()"><i class="fa fa-trash"></i></button>
+               </div>
+             </div>
+             <div class="row mt-2">
+               <div class="col-md-12">
+                 <label>Remarks</label>
+                 <input type="text" class="form-control remarks-input" placeholder="Remarks..." />
+               </div>
+             </div>
+           `;
 
-          list.appendChild(item);
+           list.appendChild(item);
 
-          if (initData) {
-            item.querySelector(".city-select").value = initData.city || "";
-            filterExcursionsByCity(item.querySelector(".city-select"));
+           if (initData) {
+             item.querySelector(".city-select").value = initData.city || "";
+             filterExcursionsByCity(item.querySelector(".city-select"));
 
-            item.querySelector(".excursion-select").value = initData.excursion_id || "";
-            item.querySelector(".price-input").value = initData.price || 0;
-            item.querySelector(".remarks-input").value = initData.remarks || "";
-          }
+             item.querySelector(".excursion-select").value = initData.excursion_id || "";
+             item.querySelector(".remarks-input").value = initData.remarks || "";
+           }
         };
 
         window.filterExcursionsByCity = function (citySelect) {
@@ -949,7 +927,7 @@
                 <label>Flight No</label>
                 <input type="text" class="form-control flight-no-input" placeholder="TG123..." />
               </div>
-              <div class="col-md-3">
+              <div class="col-md-4">
                 <label>Route</label>
                 <input type="text" class="form-control route-input" placeholder="e.g. BKK - HKT" />
               </div>
@@ -961,12 +939,8 @@
                 <label>Arr. Time</label>
                 <input type="text" class="form-control arr-time-input" placeholder="11:30" />
               </div>
-              <div class="col-md-1">
-                <label>Price</label>
-                <input type="number" class="form-control price-input" step="0.01" value="0" />
-              </div>
               <div class="col-md-1 d-flex align-items-end justify-content-end">
-                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove(); if(typeof calculateItinerarySum==='function') calculateItinerarySum();"><i class="fa fa-trash"></i></button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove()"><i class="fa fa-trash"></i></button>
               </div>
             </div>
             <div class="row mt-2">
@@ -985,7 +959,6 @@
             item.querySelector(".route-input").value = initData.flight_route || "";
             item.querySelector(".dep-time-input").value = initData.departure_time || "";
             item.querySelector(".arr-time-input").value = initData.arrival_time || "";
-            item.querySelector(".price-input").value = initData.price || 0;
             item.querySelector(".remarks-input").value = initData.remarks || "";
           }
         };
@@ -998,16 +971,12 @@
 
           item.innerHTML = `
             <div class="row">
-              <div class="col-md-8">
+              <div class="col-md-11">
                 <label>Description</label>
                 <input type="text" class="form-control description-input" placeholder="Description..." />
               </div>
-              <div class="col-md-3">
-                <label>Price</label>
-                <input type="number" class="form-control price-input" step="0.01" value="0" />
-              </div>
               <div class="col-md-1 d-flex align-items-end justify-content-end">
-                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove(); if(typeof calculateItinerarySum==='function') calculateItinerarySum();"><i class="fa fa-trash"></i></button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove()"><i class="fa fa-trash"></i></button>
               </div>
             </div>
             <div class="row mt-2">
@@ -1022,7 +991,6 @@
 
           if (initData) {
             item.querySelector(".description-input").value = initData.other_description || initData.description || "";
-            item.querySelector(".price-input").value = initData.price || 0;
             item.querySelector(".remarks-input").value = initData.remarks || "";
           }
         };
@@ -1149,7 +1117,7 @@
                   hotel_name: hotelName.trim(),
                   room_type: roomType || null,
                   nights: parseInt(row.querySelector(".nights-input").value) || 1,
-                  price: parseFloat(row.querySelector(".price-input").value) || 0,
+                  price: null,
                   remarks: row.querySelector(".remarks-input").value || null
                 });
               }
@@ -1169,7 +1137,7 @@
                   from_location: row.querySelector(".from-input").value || null,
                   to_location: row.querySelector(".to-input").value || null,
                   pickup_time: row.querySelector(".pickup-time-input").value || null,
-                  price: parseFloat(row.querySelector(".price-input").value) || 0,
+                  price: null,
                   remarks: row.querySelector(".remarks-input").value || null
                 });
               }
@@ -1187,7 +1155,7 @@
                   city: row.querySelector(".city-select").value || null,
                   excursion_id: parseInt(excursionId),
                   excursion_name: excursionName.trim(),
-                  price: parseFloat(row.querySelector(".price-input").value) || 0,
+                  price: null,
                   remarks: row.querySelector(".remarks-input").value || null
                 });
               }
@@ -1206,7 +1174,7 @@
                   flight_route: row.querySelector(".route-input").value || null,
                   departure_time: row.querySelector(".dep-time-input").value || null,
                   arrival_time: row.querySelector(".arr-time-input").value || null,
-                  price: parseFloat(row.querySelector(".price-input").value) || 0,
+                  price: null,
                   remarks: row.querySelector(".remarks-input").value || null
                 });
               }
@@ -1221,7 +1189,7 @@
                   item_type: "other",
                   day_number: dayNum,
                   other_description: desc,
-                  price: parseFloat(row.querySelector(".price-input").value) || 0,
+                  price: null,
                   remarks: row.querySelector(".remarks-input").value || null
                 });
               }
@@ -1284,41 +1252,6 @@
           } catch (err) {
             console.error(err);
             alert(`Error: ${err.message}`);
-          }
-        });
-
-        // ============================================================
-        // AUTOMATION HELPERS
-        // ============================================================
-        window.calculateItinerarySum = function () {
-          let total = 0;
-          const priceInputs = document.querySelectorAll("#dayCardsContainer .price-input");
-          priceInputs.forEach(input => {
-            const val = parseFloat(input.value) || 0;
-            total += val;
-          });
-          const sumEl = document.getElementById("itineraryTotalSum");
-          if (sumEl) {
-            sumEl.textContent = total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-          }
-          return total;
-        };
-
-        window.autoFillAdultPrice = function () {
-          const total = calculateItinerarySum();
-          document.getElementById("pkgPriceAdult").value = total.toFixed(2);
-        };
-
-        window.autoFillChildPrice = function () {
-          const total = calculateItinerarySum();
-          // By default, child price could be set to 70% of itinerary sum or the same sum
-          document.getElementById("pkgPriceChild").value = (total * 0.7).toFixed(2);
-        };
-
-        // Event listener to dynamically update Itinerary Sum on input changes
-        document.getElementById("dayCardsContainer").addEventListener("input", function (e) {
-          if (e.target.classList.contains("price-input")) {
-            calculateItinerarySum();
           }
         });
 
