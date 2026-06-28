@@ -43,6 +43,8 @@ import importExportRoutes from './routes/importExportRoutes.js';
 import emailRoutes from './routes/emailRoutes.js';
 import advancedRoutes from './routes/advancedRoutes.js';
 import serviceDocumentRoutes from './routes/serviceDocumentRoutes.js';
+import specialPackageRoutes from './routes/specialPackageRoutes.js';
+
 
 const app = express();
 const PORT = process.env.PORT || 8081;
@@ -94,6 +96,8 @@ app.use('/api/v1', importExportRoutes);
 app.use('/api/v1', emailRoutes);
 app.use('/api/v1', advancedRoutes);
 app.use('/api/v1', serviceDocumentRoutes);
+app.use('/api/v1', specialPackageRoutes);
+
 
 // Root test endpoint
 app.get('/', (req, res) => {

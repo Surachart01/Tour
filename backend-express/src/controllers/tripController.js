@@ -261,6 +261,112 @@ export async function createQuotation(req, res, next) {
     const data = req.body;
     const claims = req.user;
 
+    const trip_start_date = data.trip_start_date
+      ? parseOptionalDate(data.trip_start_date)
+      : (data.start_date ? parseOptionalDate(data.start_date) : null);
+    const tripFallbackDate = trip_start_date && !isNaN(trip_start_date.getTime()) ? trip_start_date : new Date();
+
+    let finalSpecialPackageId = null;
+    if (data.special_package_id) {
+      finalSpecialPackageId = parseInt(data.special_package_id);
+      const pkg = await prisma.special_packages.findUnique({
+        where: { id: finalSpecialPackageId },
+        include: { items: true }
+      });
+      if (pkg) {
+        const baseDate = trip_start_date && !isNaN(trip_start_date.getTime()) ? trip_start_date : new Date();
+        const pkgHotels = [];
+        const pkgExcursions = [];
+        const pkgTransfers = [];
+        const pkgFlights = [];
+        const pkgOthers = [];
+
+        pkg.items.forEach(item => {
+          const dayOffset = (item.day_number || 1) - 1;
+          const itemDate = new Date(baseDate.getTime() + dayOffset * 24 * 60 * 60 * 1000);
+          const dateStr = itemDate.toISOString().substring(0, 10);
+
+          if (item.item_type === 'hotel') {
+            const checkoutDate = new Date(itemDate.getTime() + (item.nights || 1) * 24 * 60 * 60 * 1000);
+            pkgHotels.push({
+              hotel_id: item.hotel_id,
+              hotel_name: item.hotel_name,
+              room_type: item.room_type,
+              nights: item.nights || 1,
+              city: item.city || "",
+              from_date: dateStr,
+              to_date: checkoutDate.toISOString().substring(0, 10),
+              price: item.price ? parseFloat(item.price) : 0,
+              total_price: item.price ? (parseFloat(item.price) * (item.nights || 1)) : 0,
+              remarks: item.remarks,
+              room_types_json: null
+            });
+          } else if (item.item_type === 'transfer') {
+            pkgTransfers.push({
+              transfer_id: item.transfer_id,
+              transfer_type: item.transfer_type || "Private",
+              from_location: item.from_location,
+              to_location: item.to_location,
+              pickup_time: item.pickup_time,
+              from_date: dateStr,
+              to_date: dateStr,
+              city: item.city || "",
+              price: item.price ? parseFloat(item.price) : 0,
+              remarks: item.remarks,
+              tot: "PVT"
+            });
+          } else if (item.item_type === 'excursion') {
+            pkgExcursions.push({
+              excursion_id: item.excursion_id,
+              excursion_name: item.excursion_name,
+              from_date: dateStr,
+              to_date: dateStr,
+              city: item.city || "",
+              toe: "PVT",
+              price: item.price ? parseFloat(item.price) : 0,
+              remarks: item.remarks
+            });
+          } else if (item.item_type === 'flight') {
+            pkgFlights.push({
+              flight_airline: item.flight_airline,
+              flight_number: item.flight_number,
+              route: item.flight_route,
+              departure_time: item.departure_time,
+              arrival_time: item.arrival_time,
+              from_date: dateStr,
+              to_date: dateStr,
+              price: item.price ? parseFloat(item.price) : 0,
+              remarks: item.remarks
+            });
+          } else if (item.item_type === 'other') {
+            pkgOthers.push({
+              description: item.other_description || item.description,
+              from_date: dateStr,
+              to_date: dateStr,
+              price: item.price ? parseFloat(item.price) : 0,
+              remarks: item.remarks
+            });
+          }
+        });
+
+        data.hotel_items = pkgHotels;
+        data.excursion_items = pkgExcursions;
+        data.transfer_items = pkgTransfers;
+        data.flight_items = pkgFlights;
+        data.other_items = pkgOthers;
+        data.tour_items = [];
+
+        if (data.total_amount === undefined && data.total_cost === undefined) {
+          const adults = parseInt(data.number_of_adults) || 1;
+          const kids = parseInt(data.number_of_kids) || 0;
+          const pkgAdultPrice = pkg.price_per_adult ? parseFloat(pkg.price_per_adult) : 0;
+          const pkgChildPrice = pkg.price_per_child ? parseFloat(pkg.price_per_child) : 0;
+          data.total_amount = (pkgAdultPrice * adults) + (pkgChildPrice * kids);
+          data.final_amount = data.total_amount;
+        }
+      }
+    }
+
     const hotelItems = data.hotel_items || data.hotels || [];
     const excursionItems = data.excursion_items || data.excursions || [];
     const tourItems = data.tour_items || data.tours || [];
@@ -273,12 +379,9 @@ export async function createQuotation(req, res, next) {
     const discount_amount = data.discount_amount !== undefined ? parseFloat(data.discount_amount) : (data.discount !== undefined ? parseFloat(data.discount) : calculated.discount_amount);
     const final_amount = data.final_amount !== undefined ? parseFloat(data.final_amount) : (data.final_cost !== undefined ? parseFloat(data.final_cost) : calculated.final_amount);
 
-    const trip_start_date = data.trip_start_date
-      ? parseOptionalDate(data.trip_start_date)
-      : (data.start_date ? parseOptionalDate(data.start_date) : null);
-    const tripFallbackDate = trip_start_date && !isNaN(trip_start_date.getTime()) ? trip_start_date : new Date();
     let payment_deadline = data.payment_deadline ? parseOptionalDate(data.payment_deadline) : null;
     let cancellation_deadline = data.cancellation_deadline ? parseOptionalDate(data.cancellation_deadline) : null;
+
 
     if (trip_start_date) {
       if (!payment_deadline) {
@@ -333,7 +436,8 @@ export async function createQuotation(req, res, next) {
           utm_campaign: data.utm_campaign || null,
           utm_content: data.utm_content || null,
           utm_term: data.utm_term || null,
-          referral_source: data.referral_source || null
+          referral_source: data.referral_source || null,
+          special_package_id: finalSpecialPackageId
         }
       });
 
@@ -616,6 +720,116 @@ export async function updateQuotation(req, res, next) {
       }
     }
 
+    const trip_start_date = data.trip_start_date !== undefined
+      ? parseOptionalDate(data.trip_start_date)
+      : (data.start_date !== undefined ? parseOptionalDate(data.start_date) : undefined);
+    
+    let finalSpecialPackageId = undefined;
+    if (data.special_package_id !== undefined) {
+      if (data.special_package_id === null) {
+        finalSpecialPackageId = null;
+      } else {
+        finalSpecialPackageId = parseInt(data.special_package_id);
+        const pkg = await prisma.special_packages.findUnique({
+          where: { id: finalSpecialPackageId },
+          include: { items: true }
+        });
+        if (pkg) {
+          const baseDate = trip_start_date ? trip_start_date : (existing.trip_start_date ? new Date(existing.trip_start_date) : new Date());
+          const dateStrBase = baseDate.toISOString().substring(0, 10);
+          const pkgHotels = [];
+          const pkgExcursions = [];
+          const pkgTransfers = [];
+          const pkgFlights = [];
+          const pkgOthers = [];
+
+          pkg.items.forEach(item => {
+            const dayOffset = (item.day_number || 1) - 1;
+            const itemDate = new Date(baseDate.getTime() + dayOffset * 24 * 60 * 60 * 1000);
+            const dateStr = itemDate.toISOString().substring(0, 10);
+
+            if (item.item_type === 'hotel') {
+              const checkoutDate = new Date(itemDate.getTime() + (item.nights || 1) * 24 * 60 * 60 * 1000);
+              pkgHotels.push({
+                hotel_id: item.hotel_id,
+                hotel_name: item.hotel_name,
+                room_type: item.room_type,
+                nights: item.nights || 1,
+                city: item.city || "",
+                from_date: dateStr,
+                to_date: checkoutDate.toISOString().substring(0, 10),
+                price: item.price ? parseFloat(item.price) : 0,
+                total_price: item.price ? (parseFloat(item.price) * (item.nights || 1)) : 0,
+                remarks: item.remarks,
+                room_types_json: null
+              });
+            } else if (item.item_type === 'transfer') {
+              pkgTransfers.push({
+                transfer_id: item.transfer_id,
+                transfer_type: item.transfer_type || "Private",
+                from_location: item.from_location,
+                to_location: item.to_location,
+                pickup_time: item.pickup_time,
+                from_date: dateStr,
+                to_date: dateStr,
+                city: item.city || "",
+                price: item.price ? parseFloat(item.price) : 0,
+                remarks: item.remarks,
+                tot: "PVT"
+              });
+            } else if (item.item_type === 'excursion') {
+              pkgExcursions.push({
+                excursion_id: item.excursion_id,
+                excursion_name: item.excursion_name,
+                from_date: dateStr,
+                to_date: dateStr,
+                city: item.city || "",
+                toe: "PVT",
+                price: item.price ? parseFloat(item.price) : 0,
+                remarks: item.remarks
+              });
+            } else if (item.item_type === 'flight') {
+              pkgFlights.push({
+                flight_airline: item.flight_airline,
+                flight_number: item.flight_number,
+                route: item.flight_route,
+                departure_time: item.departure_time,
+                arrival_time: item.arrival_time,
+                from_date: dateStr,
+                to_date: dateStr,
+                price: item.price ? parseFloat(item.price) : 0,
+                remarks: item.remarks
+              });
+            } else if (item.item_type === 'other') {
+              pkgOthers.push({
+                description: item.other_description || item.description,
+                from_date: dateStr,
+                to_date: dateStr,
+                price: item.price ? parseFloat(item.price) : 0,
+                remarks: item.remarks
+              });
+            }
+          });
+
+          data.hotel_items = pkgHotels;
+          data.excursion_items = pkgExcursions;
+          data.transfer_items = pkgTransfers;
+          data.flight_items = pkgFlights;
+          data.other_items = pkgOthers;
+          data.tour_items = [];
+
+          if (data.total_amount === undefined && data.total_cost === undefined) {
+            const adults = parseInt(data.number_of_adults) || parseInt(existing.number_of_adults) || 1;
+            const kids = parseInt(data.number_of_kids) || parseInt(existing.number_of_kids) || 0;
+            const pkgAdultPrice = pkg.price_per_adult ? parseFloat(pkg.price_per_adult) : 0;
+            const pkgChildPrice = pkg.price_per_child ? parseFloat(pkg.price_per_child) : 0;
+            data.total_amount = (pkgAdultPrice * adults) + (pkgChildPrice * kids);
+            data.final_amount = data.total_amount;
+          }
+        }
+      }
+    }
+
     const hotelItems = data.hotel_items || data.hotels || [];
     const excursionItems = data.excursion_items || data.excursions || [];
     const tourItems = data.tour_items || data.tours || [];
@@ -628,9 +842,6 @@ export async function updateQuotation(req, res, next) {
     const discount_amount = data.discount_amount !== undefined ? parseFloat(data.discount_amount) : (data.discount !== undefined ? parseFloat(data.discount) : calculated.discount_amount);
     const final_amount = data.final_amount !== undefined ? parseFloat(data.final_amount) : (data.final_cost !== undefined ? parseFloat(data.final_cost) : calculated.final_amount);
 
-    const trip_start_date = data.trip_start_date !== undefined
-      ? parseOptionalDate(data.trip_start_date)
-      : (data.start_date !== undefined ? parseOptionalDate(data.start_date) : undefined);
     
     let payment_deadline = undefined;
     let cancellation_deadline = undefined;
@@ -716,7 +927,8 @@ export async function updateQuotation(req, res, next) {
           utm_campaign: data.utm_campaign || undefined,
           utm_content: data.utm_content || undefined,
           utm_term: data.utm_term || undefined,
-          referral_source: data.referral_source || undefined
+          referral_source: data.referral_source || undefined,
+          special_package_id: finalSpecialPackageId
         }
       });
 

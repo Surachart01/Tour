@@ -25,7 +25,7 @@
         max-width: 90% !important;
       }
     </style>
-  </head>
+</head>
 
   <body class="nav-md">
     <div class="container mt-5">
@@ -507,12 +507,20 @@
             <div class="mt-4 text-center">
               <button
                 type="button"
+                class="btn btn-success mr-2"
+                id="saveBookingBtn"
+              >
+                <i class="fa fa-save"></i> Save Booking
+              </button>
+              <button
+                type="button"
                 class="btn btn-secondary"
                 onclick="window.location.href='booking.html'"
               >
                 Cancel
               </button>
             </div>
+
           </form>
         </div>
       </div>
@@ -3188,6 +3196,277 @@
           editingHotelRow = row;
           $("#hotelModal").modal("show");
         }
+
+        // Save Hotel Booking Modal Button Listener
+        document.getElementById("saveHotelBooking").addEventListener("click", function(event) {
+          event.preventDefault();
+          if (!editingHotelRow) return;
+
+          const checkInDate = document.getElementById("checkInDate").value;
+          const checkOutDate = document.getElementById("checkOutDate").value;
+          const city = document.getElementById("hotelCity").value;
+          const hotelSelect = document.getElementById("hotelType");
+          const hotelId = hotelSelect.value;
+          const hotelName = hotelSelect.options[hotelSelect.selectedIndex]?.text || "";
+          
+          if (!checkInDate || !checkOutDate || !city || !hotelId) {
+            alert("Please fill in all required fields.");
+            return;
+          }
+
+          // Extract room types from inputs
+          const roomTypes = [];
+          const blocks = document.querySelectorAll("#roomTypesWrapper .room-type-block");
+          blocks.forEach(block => {
+            const rtSelect = block.querySelector(".roomtype-dropdown");
+            const rtId = parseInt(rtSelect.value);
+            const rtName = rtSelect.options[rtSelect.selectedIndex]?.text || "";
+            const adults = parseInt(block.querySelector(".adults").value) || 0;
+            const children = parseInt(block.querySelector(".children").value) || 0;
+            
+            const getCheck = (selector) => {
+              const cb = block.querySelector(selector);
+              return cb ? cb.checked : false;
+            };
+
+            if (rtId) {
+              roomTypes.push({
+                room_type_id: rtId,
+                room_type: rtName,
+                adults,
+                children,
+                complimentary_abf: getCheck(".option-checkbox[data-type='complimentary_abf']"),
+                extra_adult_bed: getCheck(".option-checkbox[data-type='extra_adult_bed']"),
+                extra_child_bed: getCheck(".option-checkbox[data-type='extra_child_bed']"),
+                sharing_bed: getCheck(".option-checkbox[data-type='sharing_bed']")
+              });
+            }
+          });
+
+          // Update dataset on the row
+          editingHotelRow.dataset.hotelId = hotelId;
+          editingHotelRow.dataset.hotelName = hotelName;
+          editingHotelRow.dataset.singleRooms = document.getElementById("singleRooms").value;
+          editingHotelRow.dataset.doubleRooms = document.getElementById("doubleRooms").value;
+          editingHotelRow.dataset.mealAbf = document.getElementById("mealAbf").checked ? "true" : "false";
+          editingHotelRow.dataset.mealLunch = document.getElementById("mealLunch").checked ? "true" : "false";
+          editingHotelRow.dataset.mealDinner = document.getElementById("mealDinner").checked ? "true" : "false";
+          editingHotelRow.dataset.mealAllInclusive = document.getElementById("mealAllInclusive").checked ? "true" : "false";
+          editingHotelRow.dataset.earlyCheckIn = document.getElementById("earlyCheckIn").checked ? "true" : "false";
+          editingHotelRow.dataset.lateCheckOut = document.getElementById("lateCheckOut").checked ? "true" : "false";
+          editingHotelRow.dataset.abfDays = document.getElementById("abfDays").value;
+          editingHotelRow.dataset.lunchDays = document.getElementById("lunchDays").value;
+          editingHotelRow.dataset.dinnerDays = document.getElementById("dinnerDays").value;
+          editingHotelRow.dataset.allInclusiveDays = document.getElementById("allInclusiveDays").value;
+          editingHotelRow.dataset.flightIn = document.getElementById("flightIn").value;
+          editingHotelRow.dataset.flightOut = document.getElementById("flightOut").value;
+          editingHotelRow.dataset.flightInfo = document.getElementById("flightInfo").value;
+          editingHotelRow.dataset.abfNotes = document.getElementById("abfNotes").value;
+          editingHotelRow.dataset.lunchNotes = document.getElementById("lunchNotes").value;
+          editingHotelRow.dataset.dinnerNotes = document.getElementById("dinnerNotes").value;
+          editingHotelRow.dataset.allInclusiveNotes = document.getElementById("allInclusiveNotes").value;
+          editingHotelRow.dataset.discount = document.getElementById("updatedHotelDiscount").value;
+          editingHotelRow.dataset.roomTypes = JSON.stringify(roomTypes);
+
+          // Update UI cells
+          editingHotelRow.cells[0].textContent = checkInDate;
+          editingHotelRow.cells[1].textContent = checkOutDate;
+          editingHotelRow.cells[2].textContent = city;
+          editingHotelRow.cells[3].textContent = hotelName;
+          
+          const roomTypeSummary = roomTypes
+            .map((rt) => `${rt.room_type} (${rt.adults}A ${rt.children}C)`)
+            .join(", ");
+          editingHotelRow.cells[4].textContent = roomTypeSummary;
+          
+          editingHotelRow.cells[5].textContent = document.getElementById("numberOfNights").value;
+          editingHotelRow.cells[6].textContent = document.getElementById("singleRooms").value;
+          editingHotelRow.cells[7].textContent = document.getElementById("doubleRooms").value;
+          
+          const promoSelect = document.getElementById("promotion");
+          editingHotelRow.cells[8].textContent = promoSelect.options[promoSelect.selectedIndex]?.text || "";
+          editingHotelRow.cells[9].textContent = document.getElementById("updatedHotelPrice").value;
+
+          $("#hotelModal").modal("hide");
+          editingHotelRow = null;
+        });
+
+        // Save Booking Button Listener
+        async function saveBookingData() {
+          const saveBtn = document.getElementById("saveBookingBtn");
+          saveBtn.disabled = true;
+          saveBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i> Saving...';
+
+          try {
+            // 1. Hotels
+            const hotelItems = [];
+            document.querySelectorAll("#hotelsTableBody tr").forEach(row => {
+              const hotelId = row.dataset.hotelId;
+              if (hotelId) {
+                const roomTypes = JSON.parse(row.dataset.roomTypes || "[]");
+                hotelItems.push({
+                  hotel_id: parseInt(hotelId),
+                  from_date: row.cells[0].textContent.trim(),
+                  to_date: row.cells[1].textContent.trim(),
+                  city: row.cells[2].textContent.trim(),
+                  hotel_name: row.cells[3].textContent.trim(),
+                  room_type: row.cells[4].textContent.trim(),
+                  nights: parseInt(row.cells[5].textContent.trim()) || 1,
+                  single_price: 0,
+                  double_price: 0,
+                  room_types_json: JSON.stringify(roomTypes),
+                  early_check_in: row.dataset.earlyCheckIn === "true",
+                  late_check_out: row.dataset.lateCheckOut === "true",
+                  flight_in: row.dataset.flightIn || null,
+                  flight_out: row.dataset.flightOut || null,
+                  flight_info: row.dataset.flightInfo || null,
+                  notes: row.dataset.abfNotes || null,
+                  discount: parseFloat(row.dataset.discount) || 0,
+                  total_price: parseFloat(row.cells[9].textContent.trim()) || 0,
+                  meals: JSON.stringify({
+                    mealAbf: row.dataset.mealAbf === "true",
+                    mealLunch: row.dataset.mealLunch === "true",
+                    mealDinner: row.dataset.mealDinner === "true",
+                    mealAllInclusive: row.dataset.mealAllInclusive === "true",
+                    abfDays: parseInt(row.dataset.abfDays) || 0,
+                    lunchDays: parseInt(row.dataset.lunchDays) || 0,
+                    dinnerDays: parseInt(row.dataset.dinnerDays) || 0,
+                    allInclusiveDays: parseInt(row.dataset.allInclusiveDays) || 0
+                  })
+                });
+              }
+            });
+
+            // 2. Transfers
+            const transferItems = [];
+            document.querySelectorAll("#transferTableBody tr").forEach(row => {
+              const transId = row.dataset.transferId;
+              if (transId) {
+                transferItems.push({
+                  transfer_id: parseInt(transId),
+                  from_date: row.cells[0].textContent.trim(),
+                  to_date: row.cells[0].textContent.trim(),
+                  city: row.cells[1].textContent.trim(),
+                  transfer_type: row.cells[2].textContent.trim(),
+                  tot: row.cells[3].textContent.trim(),
+                  from_location: row.cells[4].textContent.trim(),
+                  to_location: row.cells[5].textContent.trim(),
+                  pickup_time: row.cells[6].textContent.trim(),
+                  remarks: row.cells[7].textContent.trim() || null,
+                  price: parseFloat(row.cells[8].textContent.trim()) || 0
+                });
+              }
+            });
+
+            // 3. Excursions
+            const excursionItems = [];
+            document.querySelectorAll("#excursionTableBody tr").forEach(row => {
+              const excId = row.dataset.excursionId;
+              if (excId) {
+                excursionItems.push({
+                  excursion_id: parseInt(excId),
+                  from_date: row.cells[0].textContent.trim(),
+                  to_date: row.cells[0].textContent.trim(),
+                  city: row.cells[1].textContent.trim(),
+                  excursion_name: row.cells[2].textContent.trim(),
+                  toe: row.cells[6].textContent.trim(),
+                  remarks: row.cells[5].textContent.trim() || null,
+                  price: parseFloat(row.cells[7].textContent.trim()) || 0
+                });
+              }
+            });
+
+            // 4. Flights
+            const flightItems = [];
+            document.querySelectorAll("#flightsTableBody tr").forEach(row => {
+              flightItems.push({
+                flight_airline: row.cells[1].textContent.trim(),
+                flight_number: row.cells[2].textContent.trim(),
+                route: row.cells[4].textContent.trim(),
+                departure_time: row.cells[5].textContent.trim(),
+                arrival_time: row.cells[6].textContent.trim(),
+                from_date: row.cells[0].textContent.trim(),
+                to_date: row.cells[0].textContent.trim(),
+                price: parseFloat(row.cells[8].textContent.trim()) || 0,
+                remarks: row.cells[9].textContent.trim() || null
+              });
+            });
+
+            // 5. Tours
+            const tourItems = [];
+            document.querySelectorAll("#tourTableBody tr").forEach(row => {
+              const tId = row.dataset.tourId;
+              if (tId) {
+                tourItems.push({
+                  tour_id: parseInt(tId),
+                  tour_name: row.cells[1].textContent.trim(),
+                  city: row.cells[0].textContent.trim(),
+                  from_date: row.cells[0].textContent.trim(), // tours don't have explicit date cell in the header, default to trip start
+                  to_date: row.cells[0].textContent.trim(),
+                  price: parseFloat(row.cells[6].textContent.trim()) || 0,
+                  remarks: row.cells[5].textContent.trim() || null
+                });
+              }
+            });
+
+            // 6. Others
+            const otherItems = [];
+            document.querySelectorAll("#otherChargesTableBody tr").forEach(row => {
+              otherItems.push({
+                from_date: row.cells[0].textContent.trim(),
+                to_date: row.cells[0].textContent.trim(),
+                description: row.cells[1].textContent.trim(),
+                price: parseFloat(row.cells[2].textContent.trim()) || 0
+              });
+            });
+
+            const payload = {
+              client_name: document.getElementById("clientName").value,
+              client_phone: document.getElementById("mobileNumber").value,
+              client_email: document.getElementById("clientEmail").value,
+              number_of_adults: parseInt(document.getElementById("adult").value) || 1,
+              number_of_kids: parseInt(document.getElementById("child").value) || 0,
+              booking_reference: document.getElementById("bookingReference").value,
+              remarks: document.getElementById("remark").value,
+              total_amount: parseFloat(document.getElementById("totalPrice").value) || 0,
+              discount_amount: parseFloat(document.getElementById("discount").value) || 0,
+              final_amount: parseFloat(document.getElementById("finalPrice").value) || 0,
+              trip_start_date: document.getElementById("tripStartDate").value,
+              booking_date: document.getElementById("bookingDate").value,
+              hotel_items: hotelItems,
+              transfer_items: transferItems,
+              excursion_items: excursionItems,
+              flight_items: flightItems,
+              tour_items: tourItems,
+              other_items: otherItems
+            };
+
+            const res = await fetch(`${Endpoint}/api/v1/bookings/${tripId}`, {
+              method: "PUT",
+              headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+              const errorText = await res.text();
+              throw new Error(errorText || "Failed to save booking updates");
+            }
+
+            alert("Booking details saved successfully!");
+            window.location.reload();
+          } catch (err) {
+            console.error(err);
+            alert(`Error: ${err.message}`);
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fa fa-save"></i> Save Booking';
+          }
+        }
+
+        document.getElementById("saveBookingBtn").addEventListener("click", saveBookingData);
+
 
         function populateLoadedRoomTypeAndPromotionDropdown(
           hotelDropdown,

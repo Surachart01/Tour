@@ -201,6 +201,7 @@ model currencies {
   tour_trip_items      tour_trip_items[]
   transfer_pricing     transfer_pricing[]
   transfer_trip_items  transfer_trip_items[]
+  special_packages     special_packages[]
 }
 
 model excursion_pricing {
@@ -802,6 +803,8 @@ model trips {
   other_trip_items                 other_trip_items[]
   tour_trip_items                  tour_trip_items[]
   transfer_trip_items              transfer_trip_items[]
+  special_package_id               Int?
+  special_packages                 special_packages?      @relation(fields: [special_package_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
   agents                           Agent?                 @relation(fields: [agent_id], references: [id], onUpdate: NoAction)
 }
 
@@ -875,5 +878,68 @@ model service_documents {
   description  String?
   created_at   DateTime? @default(now()) @db.Timestamp(6)
   updated_at   DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model special_packages {
+  id              Int                     @id @default(autoincrement())
+  name            String                  @db.VarChar(255)
+  code            String?                 @unique @db.VarChar(50)
+  description     String?
+  duration        Int                     @default(1)
+  city            String?                 @db.VarChar(100)
+  category        String?                 @db.VarChar(50)
+  price_per_adult Decimal?                @db.Decimal(10, 2)
+  price_per_child Decimal?                @db.Decimal(10, 2)
+  currency_id     Int?
+  max_pax         Int?                    @default(20)
+  min_pax         Int?                    @default(1)
+  valid_from      DateTime?               @db.Date
+  valid_to        DateTime?               @db.Date
+  is_active       Boolean                 @default(true)
+  cover_image     String?                 @db.VarChar(500)
+  highlights      String?
+  inclusions      String?
+  exclusions      String?
+  terms           String?
+  created_by      Int?
+  created_at      DateTime?               @default(now()) @db.Timestamp(6)
+  updated_at      DateTime?               @default(now()) @db.Timestamp(6)
+
+  items           special_package_items[]
+  currencies      currencies?             @relation(fields: [currency_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  trips           trips[]
+}
+
+model special_package_items {
+  id                 Int              @id @default(autoincrement())
+  package_id         Int
+  item_type          String           @db.VarChar(20)
+  day_number         Int?             @default(1)
+  sort_order         Int?             @default(0)
+  hotel_id           Int?
+  hotel_name         String?          @db.VarChar(255)
+  room_type          String?          @db.VarChar(100)
+  nights             Int?
+  city               String?          @db.VarChar(100)
+  transfer_id        Int?
+  transfer_type      String?          @db.VarChar(50)
+  from_location      String?          @db.VarChar(255)
+  to_location        String?          @db.VarChar(255)
+  pickup_time        String?          @db.VarChar(50)
+  excursion_id       Int?
+  excursion_name     String?          @db.VarChar(255)
+  flight_number      String?          @db.VarChar(50)
+  flight_airline     String?          @db.VarChar(100)
+  flight_route       String?          @db.VarChar(100)
+  departure_time     String?          @db.VarChar(50)
+  arrival_time       String?          @db.VarChar(50)
+  other_description  String?          @db.VarChar(500)
+  description        String?          @db.VarChar(500)
+  price              Decimal?         @db.Decimal(10, 2)
+  remarks            String?
+  created_at         DateTime?        @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?        @default(now()) @db.Timestamp(6)
+
+  package            special_packages @relation(fields: [package_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 

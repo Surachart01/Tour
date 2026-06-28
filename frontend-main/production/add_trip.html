@@ -226,7 +226,7 @@
         }
       }
     </style>
-  </head>
+</head>
 
   <body
     style="
@@ -302,7 +302,7 @@
           <div style="padding: 40px">
             <form id="addTripForm" class="form-label-left input_mask">
               <div class="row">
-                <div class="col-md-4 col-sm-4 form-group">
+                <div class="col-md-3 col-sm-3 form-group">
                   <label for="agentName">
                     <i
                       class="fas fa-user-tie"
@@ -313,7 +313,7 @@
                   <p id="agentName" class="form-control-static"></p>
                 </div>
 
-                <div class="col-md-4 col-sm-4 form-group">
+                <div class="col-md-3 col-sm-3 form-group">
                   <label for="bookingDate">
                     <i
                       class="fas fa-calendar-plus"
@@ -329,7 +329,7 @@
                   />
                 </div>
 
-                <div class="col-md-4 col-sm-4 form-group">
+                <div class="col-md-3 col-sm-3 form-group">
                   <label for="tripStartDate">
                     <i
                       class="fas fa-calendar-check"
@@ -343,6 +343,19 @@
                     class="form-control"
                     required
                   />
+                </div>
+
+                <div class="col-md-3 col-sm-3 form-group">
+                  <label for="specialPackageSelect">
+                    <i
+                      class="fas fa-gift"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Special Package (Optional)
+                  </label>
+                  <select id="specialPackageSelect" class="form-control">
+                    <option value="">-- None (Custom Quotation) --</option>
+                  </select>
                 </div>
               </div>
 
@@ -5339,6 +5352,7 @@
               flights: flights,
               tours: tours,
               others: others,
+              special_package_id: document.getElementById("specialPackageSelect").value ? parseInt(document.getElementById("specialPackageSelect").value) : null
             };
 
             console.log("Submitting Quotation:", quotationRequest); // Debugging Log
@@ -5402,8 +5416,228 @@
               });
           });
 
+        // ============================================================
+        // SPECIAL PACKAGE SELECTION MANAGEMENT
+        // ============================================================
+        async function loadSpecialPackagesDropdown() {
+          try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`${Endpoint}/api/v1/special-packages`, {
+              headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (res.ok) {
+              const packages = await res.json();
+              const select = document.getElementById("specialPackageSelect");
+              if (select) {
+                packages.forEach(pkg => {
+                  const opt = document.createElement("option");
+                  opt.value = pkg.id;
+                  opt.textContent = `${pkg.code ? `[${pkg.code}] ` : ""}${pkg.name} (${pkg.duration} Days)`;
+                  select.appendChild(opt);
+                });
+              }
+            }
+          } catch (e) {
+            console.error("Error loading special packages dropdown", e);
+          }
+        }
+
+        let currentSpecialPackage = null;
+
+        function updateSpecialPackagePrice() {
+          if (!currentSpecialPackage) return;
+          const adults = parseInt(document.getElementById("adult").value) || 0;
+          const children = parseInt(document.getElementById("child").value) || 0;
+          
+          const adultPrice = parseFloat(currentSpecialPackage.price_per_adult) || 0;
+          const childPrice = parseFloat(currentSpecialPackage.price_per_child) || 0;
+          
+          const total = (adultPrice * adults) + (childPrice * children);
+          const discount = parseFloat(document.getElementById("discount").value) || 0;
+          const final = Math.max(0, total - discount);
+
+          document.getElementById("totalPrice").value = total.toFixed(2);
+          document.getElementById("finalPrice").value = final.toFixed(2);
+        }
+
+        async function handleSpecialPackageChange() {
+          const pkgId = document.getElementById("specialPackageSelect").value;
+          const token = localStorage.getItem("token");
+          
+          if (!pkgId) {
+            currentSpecialPackage = null;
+            enableQuotationItemEditing(true);
+            clearAllTables();
+            document.getElementById("totalPrice").value = "";
+            document.getElementById("finalPrice").value = "";
+            return;
+          }
+
+          try {
+            const res = await fetch(`${Endpoint}/api/v1/special-packages/${pkgId}`, {
+              headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error("Failed to load package details");
+            const pkg = await res.json();
+
+            currentSpecialPackage = pkg;
+            populateTablesFromPackage(pkg);
+            enableQuotationItemEditing(false);
+            updateSpecialPackagePrice();
+          } catch (e) {
+            console.error(e);
+            alert("Error loading package details");
+          }
+        }
+
+        document.getElementById("adult").addEventListener("input", function() {
+          if (currentSpecialPackage) updateSpecialPackagePrice();
+        });
+        document.getElementById("child").addEventListener("input", function() {
+          if (currentSpecialPackage) updateSpecialPackagePrice();
+        });
+        document.getElementById("discount").addEventListener("input", function() {
+          if (currentSpecialPackage) updateSpecialPackagePrice();
+        });
+
+
+        function populateTablesFromPackage(pkg) {
+          clearAllTables();
+
+          const baseDateStr = document.getElementById("tripStartDate").value;
+          const baseDate = baseDateStr ? new Date(baseDateStr) : new Date();
+
+          pkg.items.forEach(item => {
+            const dayOffset = (item.day_number || 1) - 1;
+            const itemDate = new Date(baseDate.getTime() + dayOffset * 24 * 60 * 60 * 1000);
+            const dateStr = itemDate.toLocaleDateString("en-GB").replace(/\//g, "-");
+
+            if (item.item_type === 'hotel') {
+              const checkoutDate = new Date(itemDate.getTime() + (item.nights || 1) * 24 * 60 * 60 * 1000);
+              const checkoutStr = checkoutDate.toLocaleDateString("en-GB").replace(/\//g, "-");
+
+              const tbody = document.getElementById("hotelsTableBody");
+              const tr = document.createElement("tr");
+              tr.innerHTML = `
+                <td>${dateStr}</td>
+                <td>${checkoutStr}</td>
+                <td>${item.city || "-"}</td>
+                <td>${item.hotel_name || "TBD"}</td>
+                <td>${item.room_type || "-"}</td>
+                <td>${item.nights || 1}</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>${item.price || "-"}</td>
+                <td></td>
+              `;
+              tbody.appendChild(tr);
+            } else if (item.item_type === 'transfer') {
+              const tbody = document.getElementById("transferTableBody");
+              const tr = document.createElement("tr");
+              tr.innerHTML = `
+                <td>${dateStr}</td>
+                <td>${item.transfer_type || "Private"}</td>
+                <td>${item.city || "-"}</td>
+                <td>-</td>
+                <td>PVT</td>
+                <td>${item.from_location || "-"}</td>
+                <td>${item.to_location || "-"}</td>
+                <td><small>${item.remarks || ""}</small></td>
+                <td>${item.price || "-"}</td>
+                <td></td>
+              `;
+              tbody.appendChild(tr);
+            } else if (item.item_type === 'excursion') {
+              const tbody = document.getElementById("excursionTableBody");
+              const tr = document.createElement("tr");
+              tr.innerHTML = `
+                <td>${dateStr}</td>
+                <td>${item.city || "-"}</td>
+                <td>${item.excursion_name || "TBD"}</td>
+                <td>-</td>
+                <td>-</td>
+                <td><small>${item.remarks || ""}</small></td>
+                <td>PVT</td>
+                <td>${item.price || "-"}</td>
+                <td></td>
+              `;
+              tbody.appendChild(tr);
+            } else if (item.item_type === 'flight') {
+              const tbody = document.getElementById("flightsTableBody");
+              const tr = document.createElement("tr");
+              tr.innerHTML = `
+                <td>${dateStr}</td>
+                <td>${item.flight_airline || "-"}</td>
+                <td>${item.flight_number || "TBD"}</td>
+                <td>-</td>
+                <td>${item.flight_route || "-"}</td>
+                <td>${item.departure_time || "-"}</td>
+                <td>${item.arrival_time || "-"}</td>
+                <td>-</td>
+                <td>${item.price || "-"}</td>
+                <td><small>${item.remarks || ""}</small></td>
+                <td></td>
+              `;
+              tbody.appendChild(tr);
+            } else if (item.item_type === 'other') {
+              const tbody = document.getElementById("othersTableBody");
+              const tr = document.createElement("tr");
+              tr.innerHTML = `
+                <td>${item.other_description || item.description || "TBD"}</td>
+                <td>${dateStr}</td>
+                <td>${item.price || "-"}</td>
+                <td></td>
+              `;
+              tbody.appendChild(tr);
+            }
+          });
+        }
+
+        function clearAllTables() {
+          const ids = ["hotelsTableBody", "transferTableBody", "excursionTableBody", "flightsTableBody", "othersTableBody", "tourTableBody"];
+          ids.forEach(id => {
+            const body = document.getElementById(id);
+            if (body) body.innerHTML = "";
+          });
+        }
+
+        function enableQuotationItemEditing(enabled) {
+          const btnIds = ["addFlightBtn", "addTransferBtn", "addExcursionBtn", "addtourBtn", "addOtherBtn", "addHotelBtn"];
+          btnIds.forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+              btn.disabled = !enabled;
+              btn.style.display = enabled ? "" : "none";
+            }
+          });
+
+          const tables = ["hotelsTableBody", "transferTableBody", "excursionTableBody", "flightsTableBody", "othersTableBody", "tourTableBody"];
+          tables.forEach(id => {
+            const tbody = document.getElementById(id);
+            if (tbody) {
+              const buttons = tbody.querySelectorAll("button, a");
+              buttons.forEach(b => {
+                b.disabled = !enabled;
+                b.style.display = enabled ? "" : "none";
+              });
+            }
+          });
+        }
+
+        document.getElementById("specialPackageSelect").addEventListener("change", handleSpecialPackageChange);
+        document.getElementById("tripStartDate").addEventListener("change", function() {
+          if (document.getElementById("specialPackageSelect").value) {
+            handleSpecialPackageChange();
+          }
+        });
+
+        // Initialize packages
+        loadSpecialPackagesDropdown();
+
         // Initialize location cache when DOM is ready
         if (typeof LocationCache !== "undefined") {
+
           console.log("Initializing LocationCache...");
           LocationCache.initializeLocationCache();
 

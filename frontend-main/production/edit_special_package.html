@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Special Package</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- FontAwesome 5 for modern icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <!-- Custom Theme Style -->
+    <link rel="stylesheet" href="../build/css/custom.min.css" />
+
+    <style>
+      .nav_title span,
+      .profile_info span,
+      .profile_info h2,
+      .side-menu a,
+      .navbar-right a {
+        font-size: 1rem;
+      }
+      .left_col.scroll-view {
+        overflow-y: auto;
+        max-height: 100vh;
+      }
+      body.nav-sm .left_col.scroll-view {
+        overflow-y: visible;
+        max-height: none;
+      }
+
+      /* Day Planner CSS adapted from add_tours.html */
+      .activity-container {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        background-color: #f8f9fa;
+      }
+
+      .activity-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .activity-header h6 {
+        margin: 0;
+        color: #495057;
+        font-weight: 600;
+      }
+
+      .activity-item {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 10px;
+        position: relative;
+      }
+
+      .day-section {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background-color: #ffffff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .day-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+      }
+
+      .day-header h5 {
+        margin: 0;
+        color: #495057;
+        font-weight: 600;
+      }
+
+      .remove-day-btn {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        border: none;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .remove-day-btn:hover {
+        background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+        transform: translateY(-1px);
+      }
+
+      .day-toggle-btn {
+        background: linear-gradient(135deg, #1abb9c 0%, #16a085 100%);
+        border: none;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-right: 10px;
+      }
+
+      .day-toggle-btn:hover {
+        background: linear-gradient(135deg, #16a085 0%, #138d75 100%);
+      }
+
+      .day-content {
+        transition: all 0.3s ease;
+      }
+      .day-content.collapsed {
+        display: none;
+      }
+      .day-content.expanded {
+        display: block;
+      }
+
+      .toggle-icon {
+        transition: transform 0.3s ease;
+      }
+      .toggle-icon.rotated {
+        transform: rotate(180deg);
+      }
+    </style>
+    
+</head>
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+        <!-- Sidebar -->
+        <div class="col-md-3 left_col menu_fixed">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border: 0">
+              <a href="index.html" class="site_title" style="display: block; text-align: center; font-size: 2rem; font-weight: bold; color: #007bff; text-decoration: none;">
+                <span style="font-size: 1.5rem">VeraThailandia!</span>
+              </a>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- Profile Info -->
+            <div class="profile clearfix">
+              <div class="profile_pic">
+                <img src="images/verathailandlogo.png" alt="..." class="img-circle profile_img" />
+              </div>
+              <div class="profile_info">
+                <span>Welcome,</span>
+                <h2 id="profileName"></h2>
+              </div>
+            </div>
+
+            <br />
+
+            <!-- Sidebar menu -->
+            <div
+              id="sidebar-menu"
+              class="main_menu_side hidden-print main_menu"
+            >
+              <div class="menu_section">
+                <h3>General</h3>
+                <ul class="nav side-menu">
+                  <li>
+                    <a href="index.html"
+                      ><i class="fa fa-home"></i> Home
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li id="controlPanelMenu">
+                    <a>
+                      <i class="fa fa-edit"></i> Control-Panel
+                      <span class="fa fa-chevron-down"></span>
+                    </a>
+                                        <ul class="nav child_menu">
+                      <li><a href="activities.html">Activities</a></li>
+                      <li><a href="agents.html">Agents</a></li>
+                      <li><a href="booking.html">Bookings</a></li>
+                      <li><a href="city_info.html">City Information</a></li>
+                      <li><a href="excursion_description.html">Excursion Description</a></li>
+                      <li><a href="excursions.html">Excursions</a></li>
+                      <li><a href="hotels.html">Hotels</a></li>
+                      <li><a href="markup.html">Markups</a></li>
+                      <li><a href="othercharges.html">Other Charges</a></li>
+                      <li><a href="special_packages.html">Special Packages</a></li>
+                      <li><a href="stop_sale.html">Stop Sale</a></li>
+                      <li><a href="suppliers.html">Suppliers</a></li>
+                      <li><a href="tools.html">Tools</a></li>
+                      <li><a href="tour_description.html">Tour Description</a></li>
+                      <li><a href="tours.html">Tours</a></li>
+                      <li><a href="transfers.html">Transfers</a></li>
+                      <li><a href="users.html">Users</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="trip.html"
+                      ><i class="fa fa-book"></i> Quotation
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li>
+                    <a href="payment.html"
+                      ><i class="fa fa-pencil-square-o"></i> Payment
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <!--<li>
+                    <a href="tax_invoices.html"
+                      ><i class="fa fa-file-text-o"></i> Tax Invoices
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li> -->
+                  <!-- <li>
+                    <a href="invoice_management.html"
+                      ><i class="fa fa-table"></i> Invoice Management
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li> -->
+                  <li>
+                    <a href="itinerary.html"
+                      ><i class="fa fa-ticket"></i> Itinerary
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <!--<li>
+                    <a href="leads.html"
+                      ><i class="fa fa-ticket"></i> Leads
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li> -->
+                  <li>
+                    <a href="analytics.html"
+                      ><i class="fa fa-bar-chart"></i> Analytics
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <!--<li>
+                    <a href="about.html"
+                      ><i class="fa fa-info-circle"></i> About Us
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li> -->
+                </ul>
+              </div>
+            </div>
+
+            <!-- Footer buttons -->
+            <div class="sidebar-footer hidden-small">
+              <a data-toggle="tooltip" data-placement="top" title="Settings">
+                <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="FullScreen">
+                <span class="glyphicon glyphicon-fullscreen" aria-hidden="true"></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="Lock">
+                <span class="glyphicon glyphicon-eye-close" aria-hidden="true"></span>
+              </a>
+              <a data-toggle="tooltip" data-placement="top" title="Logout" href="logout.html">
+                <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top navigation -->
+        <div class="top_nav">
+          <div class="nav_menu">
+            <div class="nav toggle">
+              <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+            </div>
+            <nav class="nav navbar-nav">
+              <ul class="navbar-right">
+                <li class="nav-item dropdown open" style="padding-left: 15px">
+                  <a href="javascript:;" class="user-profile dropdown-toggle" aria-haspopup="true" id="navbarDropdown" data-toggle="dropdown" aria-expanded="false">
+                    <img id="navProfileImage" src="images/verathailandlogo.png" alt="" />
+                    <span id="navProfileName"></span>
+                  </a>
+                  <div class="dropdown-menu dropdown-usermenu pull-right" aria-labelledby="navbarDropdown">
+                    <a class="dropdown-item" href="profile.html"><i class="fa fa-user pull-right"></i> Profile</a>
+                    <a class="dropdown-item" href="logout.html"><i class="fa fa-sign-out pull-right"></i> Log Out</a>
+                  </div>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+
+        <!-- Page content -->
+        <div class="right_col" role="main">
+          <div class="page-title">
+            <div class="title_left">
+              <h3 id="pageTitle">Create Special Package</h3>
+            </div>
+          </div>
+
+          <div class="clearfix"></div>
+
+          <form id="packageForm">
+            <!-- General Info Panel -->
+            <div class="x_panel">
+              <div class="x_title">
+                <h2>General Information</h2>
+                <div class="clearfix"></div>
+              </div>
+              <div class="x_content">
+                <div class="row">
+                  <div class="col-md-6 form-group">
+                    <label>Package Name *</label>
+                    <input type="text" id="pkgName" class="form-control" required placeholder="e.g. Bangkok & Pattaya Highlights 5D4N" />
+                  </div>
+                  <div class="col-md-3 form-group">
+                    <label>Package Code *</label>
+                    <input type="text" id="pkgCode" class="form-control" required placeholder="e.g. BKK-PTY-5D" />
+                  </div>
+                  <div class="col-md-3 form-group">
+                    <label>Duration (Days) *</label>
+                    <input type="number" id="pkgDuration" class="form-control" required min="1" value="0" readonly />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-3 form-group">
+                    <label>Primary City</label>
+                    <input type="text" id="pkgCity" class="form-control" placeholder="e.g. Bangkok" />
+                  </div>
+                  <div class="col-md-3 form-group">
+                    <label>Category</label>
+                    <input type="text" id="pkgCategory" class="form-control" placeholder="e.g. Deluxe, Standard" />
+                  </div>
+                  <div class="col-md-3 form-group">
+                    <label>Adult Price</label>
+                    <input type="number" id="pkgPriceAdult" class="form-control" step="0.01" />
+                  </div>
+                  <div class="col-md-3 form-group">
+                    <label>Child Price</label>
+                    <input type="number" id="pkgPriceChild" class="form-control" step="0.01" />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-3 form-group">
+                    <label>Currency</label>
+                    <select id="pkgCurrency" class="form-control">
+                      <!-- Populated dynamically -->
+                    </select>
+                  </div>
+                  <div class="col-md-3 form-group">
+                    <label>Min Pax</label>
+                    <input type="number" id="pkgMinPax" class="form-control" value="1" />
+                  </div>
+                  <div class="col-md-3 form-group">
+                    <label>Max Pax</label>
+                    <input type="number" id="pkgMaxPax" class="form-control" value="20" />
+                  </div>
+                  <div class="col-md-3 form-group">
+                    <label>Cover Image URL</label>
+                    <input type="text" id="pkgCoverImage" class="form-control" placeholder="https://example.com/image.jpg" />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-3 form-group">
+                    <label>Valid From</label>
+                    <input type="date" id="pkgValidFrom" class="form-control" />
+                  </div>
+                  <div class="col-md-3 form-group">
+                    <label>Valid To</label>
+                    <input type="date" id="pkgValidTo" class="form-control" />
+                  </div>
+                  <div class="col-md-6 form-group">
+                    <label>Status</label>
+                    <div class="checkbox">
+                      <label>
+                        <input type="checkbox" id="pkgActive" checked /> Active (visible to Agents)
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-12 form-group">
+                    <label>HTML Description / Program Outline</label>
+                    <textarea id="pkgDescription" class="form-control" rows="4" placeholder="Use simple text or HTML content..."></textarea>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-4 form-group">
+                    <label>Highlights (One per line)</label>
+                    <textarea id="pkgHighlights" class="form-control" rows="4" placeholder="Visit Grand Palace&#10;Speedboat to Coral Island"></textarea>
+                  </div>
+                  <div class="col-md-4 form-group">
+                    <label>Inclusions (One per line)</label>
+                    <textarea id="pkgInclusions" class="form-control" rows="4" placeholder="4 Nights accommodation&#10;Private transfers as per program"></textarea>
+                  </div>
+                  <div class="col-md-4 form-group">
+                    <label>Exclusions (One per line)</label>
+                    <textarea id="pkgExclusions" class="form-control" rows="4" placeholder="Personal expenses&#10;Tips for guides"></textarea>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-12 form-group">
+                    <label>Terms & Conditions</label>
+                    <textarea id="pkgTerms" class="form-control" rows="3" placeholder="Cancellation policy, payment schedules, etc."></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Day-by-Day Services Panel -->
+            <div class="x_panel">
+              <div class="x_title" style="display: flex; align-items: center; justify-content: space-between;">
+                <h2>Day-by-Day Itinerary Planner</h2>
+                <div>
+                  <span class="badge badge-info" style="font-size: 0.9rem; margin-right: 10px;">Total Days: <span id="totalDaysCount">0</span></span>
+                  <button type="button" class="btn btn-success btn-sm" onclick="addNewDay()"><i class="fa fa-plus"></i> Add Day</button>
+                </div>
+              </div>
+              <div class="x_content">
+                <div id="dayCardsContainer">
+                  <!-- Generated dynamically -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="x_panel">
+              <div class="x_content text-right">
+                <a href="special_packages.html" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-success">Save Package</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/config.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const token = localStorage.getItem("token");
+        const role = localStorage.getItem("role");
+        const isAdmin = role === "admin" || role === "superadmin";
+
+        if (!token) {
+          alert("You are not authorized. Please log in first.");
+          window.location.href = "login.html";
+          return;
+        }
+        if (!isAdmin) {
+          alert("Access denied. Admin role required.");
+          window.location.href = "special_packages.html";
+          return;
+        }
+
+        const username = localStorage.getItem("username") || "Guest";
+        document.getElementById("profileName").innerText = username;
+        document.getElementById("navProfileName").innerText = username;
+
+        // Get Package ID if editing
+        const urlParams = new URLSearchParams(window.location.search);
+        const packageId = urlParams.get("id");
+
+        // Master records lists loaded from database
+        let dbHotels = [];
+        let dbTransfers = [];
+        let dbExcursions = [];
+        let uniqueCities = [];
+
+        // Load reference lists
+        async function loadMasterLists() {
+          try {
+            // Currencies
+            const currRes = await fetch(`${Endpoint}/api/v1/currencies`, { headers: { "Authorization": `Bearer ${token}` } });
+            const currencies = await currRes.json();
+            const currSelect = document.getElementById("pkgCurrency");
+            currSelect.innerHTML = currencies.map(c => `<option value="${c.id}">${c.currency_code} (${c.currency_name})</option>`).join("");
+
+            // Hotels
+            const hotelRes = await fetch(`${Endpoint}/api/v1/hotels`, { headers: { "Authorization": `Bearer ${token}` } });
+            dbHotels = await hotelRes.json();
+
+            // Transfers
+            const transRes = await fetch(`${Endpoint}/api/v1/transfers`, { headers: { "Authorization": `Bearer ${token}` } });
+            dbTransfers = await transRes.json();
+
+            // Excursions
+            const excRes = await fetch(`${Endpoint}/api/v1/excursions`, { headers: { "Authorization": `Bearer ${token}` } });
+            dbExcursions = await excRes.json();
+
+            // Get unique cities list from all master tables to populate city selects
+            uniqueCities = [...new Set([
+              ...dbHotels.map(h => h.city),
+              ...dbTransfers.map(t => t.city),
+              ...dbExcursions.map(e => e.city)
+            ])].filter(Boolean).sort();
+
+            // If editing, load package details now
+            if (packageId) {
+              await loadPackageForEdit();
+            } else {
+              addNewDay(); // Default to Day 1
+            }
+          } catch (err) {
+            console.error(err);
+            alert("Error loading standard tables data");
+          }
+        }
+
+        // Add a new Day section
+        window.addNewDay = function () {
+          const container = document.getElementById("dayCardsContainer");
+          const currentDays = container.children.length;
+          const newDayNumber = currentDays + 1;
+
+          const daySection = document.createElement("div");
+          daySection.className = "day-section mb-4";
+          daySection.dataset.day = newDayNumber;
+
+          daySection.innerHTML = `
+            <div class="day-header">
+              <div class="d-flex align-items-center">
+                <button type="button" class="day-toggle-btn" onclick="toggleDayContent(this)" title="Toggle Day Details">
+                  <i class="fa fa-chevron-down toggle-icon"></i>
+                </button>
+                <h5 class="mb-0">Day ${newDayNumber}</h5>
+              </div>
+              <button type="button" class="remove-day-btn" onclick="removeDay(this)" title="Remove Day">
+                <i class="fa fa-trash mr-1"></i>Remove Day
+              </button>
+            </div>
+            <div class="day-content expanded">
+              <!-- Hotels Section -->
+              <div class="activity-container">
+                <div class="activity-header">
+                  <h6><i class="fa fa-hotel text-primary"></i> Hotels</h6>
+                  <button type="button" class="btn btn-sm btn-success" onclick="addHotelRow(this)">
+                    <i class="fa fa-plus"></i> Add Hotel
+                  </button>
+                </div>
+                <div class="hotels-list"></div>
+              </div>
+
+              <!-- Transfers Section -->
+              <div class="activity-container">
+                <div class="activity-header">
+                  <h6><i class="fa fa-car text-success"></i> Transfers</h6>
+                  <button type="button" class="btn btn-sm btn-success" onclick="addTransferRow(this)">
+                    <i class="fa fa-plus"></i> Add Transfer
+                  </button>
+                </div>
+                <div class="transfers-list"></div>
+              </div>
+
+              <!-- Excursions Section -->
+              <div class="activity-container">
+                <div class="activity-header">
+                  <h6><i class="fa fa-binoculars text-warning"></i> Excursions</h6>
+                  <button type="button" class="btn btn-sm btn-success" onclick="addExcursionRow(this)">
+                    <i class="fa fa-plus"></i> Add Excursion
+                  </button>
+                </div>
+                <div class="excursions-list"></div>
+              </div>
+
+              <!-- Flights Section -->
+              <div class="activity-container">
+                <div class="activity-header">
+                  <h6><i class="fa fa-plane text-info"></i> Flights</h6>
+                  <button type="button" class="btn btn-sm btn-success" onclick="addFlightRow(this)">
+                    <i class="fa fa-plus"></i> Add Flight
+                  </button>
+                </div>
+                <div class="flights-list"></div>
+              </div>
+
+              <!-- Others Section -->
+              <div class="activity-container">
+                <div class="activity-header">
+                  <h6><i class="fa fa-plus-circle text-dark"></i> Others</h6>
+                  <button type="button" class="btn btn-sm btn-success" onclick="addOtherRow(this)">
+                    <i class="fa fa-plus"></i> Add Other
+                  </button>
+                </div>
+                <div class="others-list"></div>
+              </div>
+            </div>
+          `;
+
+          container.appendChild(daySection);
+          updateTotalDaysCount();
+        };
+
+        // Remove a Day section
+        window.removeDay = function (button) {
+          const daySection = button.closest(".day-section");
+          const dayNum = daySection.dataset.day;
+
+          if (confirm(`Are you sure you want to remove Day ${dayNum}? All items under this day will be deleted.`)) {
+            daySection.remove();
+            updateDayNumbers();
+            updateTotalDaysCount();
+          }
+        };
+
+        // Toggle Expand/Collapse Day
+        window.toggleDayContent = function (button) {
+          const daySection = button.closest(".day-section");
+          const content = daySection.querySelector(".day-content");
+          const icon = button.querySelector(".toggle-icon");
+
+          if (content.classList.contains("expanded")) {
+            content.classList.remove("expanded");
+            content.classList.add("collapsed");
+            icon.classList.add("rotated");
+          } else {
+            content.classList.remove("collapsed");
+            content.classList.add("expanded");
+            icon.classList.remove("rotated");
+          }
+        };
+
+        // Update sequential numbers after deletion
+        function updateDayNumbers() {
+          const daySections = document.querySelectorAll("#dayCardsContainer .day-section");
+          daySections.forEach((section, index) => {
+            const newDay = index + 1;
+            section.dataset.day = newDay;
+            section.querySelector(".day-header h5").textContent = `Day ${newDay}`;
+          });
+        }
+
+        function updateTotalDaysCount() {
+          const count = document.querySelectorAll("#dayCardsContainer .day-section").length;
+          document.getElementById("totalDaysCount").textContent = count;
+          document.getElementById("pkgDuration").value = count;
+        }
+
+        // ============================================================
+        // ROW ADDITION AND INTERACTION LOGIC
+        // ============================================================
+
+        // 1. HOTEL ROW
+        window.addHotelRow = function (btn, initData = null) {
+          const list = btn.closest(".activity-container").querySelector(".hotels-list");
+          const item = document.createElement("div");
+          item.className = "activity-item hotel-row mb-3";
+          
+          item.innerHTML = `
+            <div class="row">
+              <div class="col-md-3">
+                <label>City</label>
+                <select class="form-control city-select" onchange="filterHotelsByCity(this)">
+                  <option value="">Select City</option>
+                  ${uniqueCities.map(c => `<option value="${c}">${c}</option>`).join("")}
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label>Hotel</label>
+                <select class="form-control hotel-select" onchange="filterRoomsByHotel(this)">
+                  <option value="">Select Hotel</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label>Room Type</label>
+                <select class="form-control room-type-select">
+                  <option value="">Select Room Type</option>
+                </select>
+              </div>
+              <div class="col-md-1">
+                <label>Nights</label>
+                <input type="number" class="form-control nights-input" min="1" value="1" />
+              </div>
+              <div class="col-md-1">
+                <label>Price</label>
+                <input type="number" class="form-control price-input" step="0.01" value="0" />
+              </div>
+              <div class="col-md-1 d-flex align-items-end justify-content-end">
+                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove()"><i class="fa fa-trash"></i></button>
+              </div>
+            </div>
+            <div class="row mt-2">
+              <div class="col-md-12">
+                <label>Remarks</label>
+                <input type="text" class="form-control remarks-input" placeholder="Remarks..." />
+              </div>
+            </div>
+          `;
+
+          list.appendChild(item);
+
+          // Populate if loading from db
+          if (initData) {
+            item.querySelector(".city-select").value = initData.city || "";
+            filterHotelsByCity(item.querySelector(".city-select"));
+            
+            item.querySelector(".hotel-select").value = initData.hotel_id || "";
+            filterRoomsByHotel(item.querySelector(".hotel-select"));
+
+            item.querySelector(".room-type-select").value = initData.room_type || "";
+            item.querySelector(".nights-input").value = initData.nights || 1;
+            item.querySelector(".price-input").value = initData.price || 0;
+            item.querySelector(".remarks-input").value = initData.remarks || "";
+          }
+        };
+
+        window.filterHotelsByCity = function (citySelect) {
+          const row = citySelect.closest(".hotel-row");
+          const selectedCity = citySelect.value;
+          const hotelSelect = row.querySelector(".hotel-select");
+          
+          hotelSelect.innerHTML = '<option value="">Select Hotel</option>';
+          row.querySelector(".room-type-select").innerHTML = '<option value="">Select Room Type</option>';
+
+          if (!selectedCity) return;
+
+          const filtered = dbHotels.filter(h => h.city === selectedCity);
+          filtered.forEach(h => {
+            const opt = document.createElement("option");
+            opt.value = h.id;
+            opt.textContent = h.name;
+            opt.setAttribute("data-roomtypes", JSON.stringify(h.room_types || []));
+            hotelSelect.appendChild(opt);
+          });
+        };
+
+        window.filterRoomsByHotel = function (hotelSelect) {
+          const row = hotelSelect.closest(".hotel-row");
+          const roomTypeSelect = row.querySelector(".room-type-select");
+          const selectedOpt = hotelSelect.selectedOptions[0];
+
+          roomTypeSelect.innerHTML = '<option value="">Select Room Type</option>';
+          if (!selectedOpt || !selectedOpt.value) return;
+
+          const roomTypes = JSON.parse(selectedOpt.getAttribute("data-roomtypes") || "[]");
+          roomTypes.forEach(rt => {
+            const opt = document.createElement("option");
+            opt.value = rt.name; // Keep room name as value
+            opt.textContent = rt.name;
+            roomTypeSelect.appendChild(opt);
+          });
+        };
+
+        // 2. TRANSFER ROW
+        window.addTransferRow = function (btn, initData = null) {
+          const list = btn.closest(".activity-container").querySelector(".transfers-list");
+          const item = document.createElement("div");
+          item.className = "activity-item transfer-row mb-3";
+
+          item.innerHTML = `
+            <div class="row">
+              <div class="col-md-3">
+                <label>City</label>
+                <select class="form-control city-select" onchange="filterTransfersByCity(this)">
+                  <option value="">Select City</option>
+                  ${uniqueCities.map(c => `<option value="${c}">${c}</option>`).join("")}
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label>Transfer</label>
+                <select class="form-control transfer-select">
+                  <option value="">Select Transfer</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label>From</label>
+                <input type="text" class="form-control from-input" placeholder="From..." />
+              </div>
+              <div class="col-md-2">
+                <label>To</label>
+                <input type="text" class="form-control to-input" placeholder="To..." />
+              </div>
+              <div class="col-md-1">
+                <label>Time</label>
+                <input type="text" class="form-control pickup-time-input" placeholder="e.g. 09:00" />
+              </div>
+              <div class="col-md-1">
+                <label>Price</label>
+                <input type="number" class="form-control price-input" step="0.01" value="0" />
+              </div>
+            </div>
+            <div class="row mt-2">
+              <div class="col-md-11">
+                <label>Remarks</label>
+                <input type="text" class="form-control remarks-input" placeholder="Remarks..." />
+              </div>
+              <div class="col-md-1 d-flex align-items-end justify-content-end">
+                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove()"><i class="fa fa-trash"></i></button>
+              </div>
+            </div>
+          `;
+
+          list.appendChild(item);
+
+          if (initData) {
+            item.querySelector(".city-select").value = initData.city || "";
+            filterTransfersByCity(item.querySelector(".city-select"));
+
+            item.querySelector(".transfer-select").value = initData.transfer_id || "";
+            item.querySelector(".from-input").value = initData.from_location || "";
+            item.querySelector(".to-input").value = initData.to_location || "";
+            item.querySelector(".pickup-time-input").value = initData.pickup_time || "";
+            item.querySelector(".price-input").value = initData.price || 0;
+            item.querySelector(".remarks-input").value = initData.remarks || "";
+          }
+        };
+
+        window.filterTransfersByCity = function (citySelect) {
+          const row = citySelect.closest(".transfer-row");
+          const selectedCity = citySelect.value;
+          const transferSelect = row.querySelector(".transfer-select");
+
+          transferSelect.innerHTML = '<option value="">Select Transfer</option>';
+          if (!selectedCity) return;
+
+          const filtered = dbTransfers.filter(t => t.city === selectedCity);
+          filtered.forEach(t => {
+            const opt = document.createElement("option");
+            opt.value = t.id;
+            opt.textContent = `${t.transfer_type} - ${t.departure} to ${t.arrival}`;
+            transferSelect.appendChild(opt);
+          });
+        };
+
+        // 3. EXCURSION ROW
+        window.addExcursionRow = function (btn, initData = null) {
+          const list = btn.closest(".activity-container").querySelector(".excursions-list");
+          const item = document.createElement("div");
+          item.className = "activity-item excursion-row mb-3";
+
+          item.innerHTML = `
+            <div class="row">
+              <div class="col-md-3">
+                <label>City</label>
+                <select class="form-control city-select" onchange="filterExcursionsByCity(this)">
+                  <option value="">Select City</option>
+                  ${uniqueCities.map(c => `<option value="${c}">${c}</option>`).join("")}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label>Excursion</label>
+                <select class="form-control excursion-select">
+                  <option value="">Select Excursion</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label>Price</label>
+                <input type="number" class="form-control price-input" step="0.01" value="0" />
+              </div>
+              <div class="col-md-1 d-flex align-items-end justify-content-end">
+                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove()"><i class="fa fa-trash"></i></button>
+              </div>
+            </div>
+            <div class="row mt-2">
+              <div class="col-md-12">
+                <label>Remarks</label>
+                <input type="text" class="form-control remarks-input" placeholder="Remarks..." />
+              </div>
+            </div>
+          `;
+
+          list.appendChild(item);
+
+          if (initData) {
+            item.querySelector(".city-select").value = initData.city || "";
+            filterExcursionsByCity(item.querySelector(".city-select"));
+
+            item.querySelector(".excursion-select").value = initData.excursion_id || "";
+            item.querySelector(".price-input").value = initData.price || 0;
+            item.querySelector(".remarks-input").value = initData.remarks || "";
+          }
+        };
+
+        window.filterExcursionsByCity = function (citySelect) {
+          const row = citySelect.closest(".excursion-row");
+          const selectedCity = citySelect.value;
+          const excursionSelect = row.querySelector(".excursion-select");
+
+          excursionSelect.innerHTML = '<option value="">Select Excursion</option>';
+          if (!selectedCity) return;
+
+          const filtered = dbExcursions.filter(e => e.city === selectedCity);
+          filtered.forEach(e => {
+            const opt = document.createElement("option");
+            opt.value = e.id;
+            opt.textContent = e.name;
+            excursionSelect.appendChild(opt);
+          });
+        };
+
+        // 4. FLIGHT ROW
+        window.addFlightRow = function (btn, initData = null) {
+          const list = btn.closest(".activity-container").querySelector(".flights-list");
+          const item = document.createElement("div");
+          item.className = "activity-item flight-row mb-3";
+
+          item.innerHTML = `
+            <div class="row">
+              <div class="col-md-3">
+                <label>Airline</label>
+                <input type="text" class="form-control airline-input" placeholder="Airline..." />
+              </div>
+              <div class="col-md-2">
+                <label>Flight No</label>
+                <input type="text" class="form-control flight-no-input" placeholder="TG123..." />
+              </div>
+              <div class="col-md-3">
+                <label>Route</label>
+                <input type="text" class="form-control route-input" placeholder="e.g. BKK - HKT" />
+              </div>
+              <div class="col-md-1">
+                <label>Dep. Time</label>
+                <input type="text" class="form-control dep-time-input" placeholder="10:00" />
+              </div>
+              <div class="col-md-1">
+                <label>Arr. Time</label>
+                <input type="text" class="form-control arr-time-input" placeholder="11:30" />
+              </div>
+              <div class="col-md-1">
+                <label>Price</label>
+                <input type="number" class="form-control price-input" step="0.01" value="0" />
+              </div>
+              <div class="col-md-1 d-flex align-items-end justify-content-end">
+                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove()"><i class="fa fa-trash"></i></button>
+              </div>
+            </div>
+            <div class="row mt-2">
+              <div class="col-md-12">
+                <label>Remarks</label>
+                <input type="text" class="form-control remarks-input" placeholder="Remarks..." />
+              </div>
+            </div>
+          `;
+
+          list.appendChild(item);
+
+          if (initData) {
+            item.querySelector(".airline-input").value = initData.flight_airline || "";
+            item.querySelector(".flight-no-input").value = initData.flight_number || "";
+            item.querySelector(".route-input").value = initData.flight_route || "";
+            item.querySelector(".dep-time-input").value = initData.departure_time || "";
+            item.querySelector(".arr-time-input").value = initData.arrival_time || "";
+            item.querySelector(".price-input").value = initData.price || 0;
+            item.querySelector(".remarks-input").value = initData.remarks || "";
+          }
+        };
+
+        // 5. OTHER ROW
+        window.addOtherRow = function (btn, initData = null) {
+          const list = btn.closest(".activity-container").querySelector(".others-list");
+          const item = document.createElement("div");
+          item.className = "activity-item other-row mb-3";
+
+          item.innerHTML = `
+            <div class="row">
+              <div class="col-md-8">
+                <label>Description</label>
+                <input type="text" class="form-control description-input" placeholder="Description..." />
+              </div>
+              <div class="col-md-3">
+                <label>Price</label>
+                <input type="number" class="form-control price-input" step="0.01" value="0" />
+              </div>
+              <div class="col-md-1 d-flex align-items-end justify-content-end">
+                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove()"><i class="fa fa-trash"></i></button>
+              </div>
+            </div>
+            <div class="row mt-2">
+              <div class="col-md-12">
+                <label>Remarks</label>
+                <input type="text" class="form-control remarks-input" placeholder="Remarks..." />
+              </div>
+            </div>
+          `;
+
+          list.appendChild(item);
+
+          if (initData) {
+            item.querySelector(".description-input").value = initData.other_description || initData.description || "";
+            item.querySelector(".price-input").value = initData.price || 0;
+            item.querySelector(".remarks-input").value = initData.remarks || "";
+          }
+        };
+
+        // ============================================================
+        // LOAD AND SAVE SPECIAL PACKAGES
+        // ============================================================
+
+        // Load existing package for editing
+        async function loadPackageForEdit() {
+          document.getElementById("pageTitle").innerText = "Edit Special Package";
+          try {
+            const res = await fetch(`${Endpoint}/api/v1/special-packages/${packageId}`, {
+              headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error("Failed to load package");
+            const pkg = await res.json();
+
+            // Populate general info
+            document.getElementById("pkgName").value = pkg.name;
+            document.getElementById("pkgCode").value = pkg.code || "";
+            document.getElementById("pkgCity").value = pkg.city || "";
+            document.getElementById("pkgCategory").value = pkg.category || "";
+            document.getElementById("pkgPriceAdult").value = pkg.price_per_adult || "";
+            document.getElementById("pkgPriceChild").value = pkg.price_per_child || "";
+            document.getElementById("pkgCurrency").value = pkg.currency_id || "";
+            document.getElementById("pkgMinPax").value = pkg.min_pax || 1;
+            document.getElementById("pkgMaxPax").value = pkg.max_pax || 20;
+            document.getElementById("pkgCoverImage").value = pkg.cover_image || "";
+            if (pkg.valid_from) document.getElementById("pkgValidFrom").value = pkg.valid_from.substring(0, 10);
+            if (pkg.valid_to) document.getElementById("pkgValidTo").value = pkg.valid_to.substring(0, 10);
+            document.getElementById("pkgActive").checked = pkg.is_active;
+            document.getElementById("pkgDescription").value = pkg.description || "";
+
+            // Highlights
+            try {
+              const hl = JSON.parse(pkg.highlights);
+              document.getElementById("pkgHighlights").value = Array.isArray(hl) ? hl.join("\n") : pkg.highlights;
+            } catch (e) {
+              document.getElementById("pkgHighlights").value = pkg.highlights || "";
+            }
+
+            // Inclusions
+            try {
+              const inc = JSON.parse(pkg.inclusions);
+              document.getElementById("pkgInclusions").value = Array.isArray(inc) ? inc.join("\n") : pkg.inclusions;
+            } catch (e) {
+              document.getElementById("pkgInclusions").value = pkg.inclusions || "";
+            }
+
+            // Exclusions
+            try {
+              const exc = JSON.parse(pkg.exclusions);
+              document.getElementById("pkgExclusions").value = Array.isArray(exc) ? exc.join("\n") : pkg.exclusions;
+            } catch (e) {
+              document.getElementById("pkgExclusions").value = pkg.exclusions || "";
+            }
+
+            document.getElementById("pkgTerms").value = pkg.terms || "";
+
+            // Build Day Sections based on package duration
+            const container = document.getElementById("dayCardsContainer");
+            container.innerHTML = "";
+
+            for (let d = 1; d <= pkg.duration; d++) {
+              addNewDay();
+            }
+
+            // Populate Itinerary items into Day sections
+            pkg.items.forEach(item => {
+              const dayNum = item.day_number || 1;
+              const daySection = document.querySelector(`.day-section[data-day="${dayNum}"]`);
+              if (!daySection) return;
+
+              if (item.item_type === "hotel") {
+                const addBtn = daySection.querySelector(".add-hotel-row-btn") || daySection.querySelectorAll(".activity-container button")[0];
+                addHotelRow(addBtn, item);
+              } else if (item.item_type === "transfer") {
+                const addBtn = daySection.querySelector(".add-transfer-row-btn") || daySection.querySelectorAll(".activity-container button")[1];
+                addTransferRow(addBtn, item);
+              } else if (item.item_type === "excursion") {
+                const addBtn = daySection.querySelector(".add-excursion-row-btn") || daySection.querySelectorAll(".activity-container button")[2];
+                addExcursionRow(addBtn, item);
+              } else if (item.item_type === "flight") {
+                const addBtn = daySection.querySelector(".add-flight-row-btn") || daySection.querySelectorAll(".activity-container button")[3];
+                addFlightRow(addBtn, item);
+              } else if (item.item_type === "other") {
+                const addBtn = daySection.querySelector(".add-other-row-btn") || daySection.querySelectorAll(".activity-container button")[4];
+                addOtherRow(addBtn, item);
+              }
+            });
+
+            updateTotalDaysCount();
+          } catch (err) {
+            console.error(err);
+            alert("Error loading package details for edit");
+          }
+        }
+
+        // Handle Form Submission (Save)
+        document.getElementById("packageForm").addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          // Compile Itinerary items from DOM
+          const itineraryItems = [];
+          const daySections = document.querySelectorAll("#dayCardsContainer .day-section");
+
+          daySections.forEach((section, index) => {
+            const dayNum = index + 1;
+
+            // 1. Extract Hotels
+            const hotelRows = section.querySelectorAll(".hotel-row");
+            hotelRows.forEach(row => {
+              const hotelId = row.querySelector(".hotel-select").value;
+              const hotelName = row.querySelector(".hotel-select").selectedOptions[0]?.text || "";
+              const roomType = row.querySelector(".room-type-select").value;
+
+              if (hotelId) {
+                itineraryItems.push({
+                  item_type: "hotel",
+                  day_number: dayNum,
+                  city: row.querySelector(".city-select").value || null,
+                  hotel_id: parseInt(hotelId),
+                  hotel_name: hotelName.trim(),
+                  room_type: roomType || null,
+                  nights: parseInt(row.querySelector(".nights-input").value) || 1,
+                  price: parseFloat(row.querySelector(".price-input").value) || 0,
+                  remarks: row.querySelector(".remarks-input").value || null
+                });
+              }
+            });
+
+            // 2. Extract Transfers
+            const transferRows = section.querySelectorAll(".transfer-row");
+            transferRows.forEach(row => {
+              const transferId = row.querySelector(".transfer-select").value;
+              if (transferId) {
+                itineraryItems.push({
+                  item_type: "transfer",
+                  day_number: dayNum,
+                  city: row.querySelector(".city-select").value || null,
+                  transfer_id: parseInt(transferId),
+                  transfer_type: "Private", // default
+                  from_location: row.querySelector(".from-input").value || null,
+                  to_location: row.querySelector(".to-input").value || null,
+                  pickup_time: row.querySelector(".pickup-time-input").value || null,
+                  price: parseFloat(row.querySelector(".price-input").value) || 0,
+                  remarks: row.querySelector(".remarks-input").value || null
+                });
+              }
+            });
+
+            // 3. Extract Excursions
+            const excursionRows = section.querySelectorAll(".excursion-row");
+            excursionRows.forEach(row => {
+              const excursionId = row.querySelector(".excursion-select").value;
+              const excursionName = row.querySelector(".excursion-select").selectedOptions[0]?.text || "";
+              if (excursionId) {
+                itineraryItems.push({
+                  item_type: "excursion",
+                  day_number: dayNum,
+                  city: row.querySelector(".city-select").value || null,
+                  excursion_id: parseInt(excursionId),
+                  excursion_name: excursionName.trim(),
+                  price: parseFloat(row.querySelector(".price-input").value) || 0,
+                  remarks: row.querySelector(".remarks-input").value || null
+                });
+              }
+            });
+
+            // 4. Extract Flights
+            const flightRows = section.querySelectorAll(".flight-row");
+            flightRows.forEach(row => {
+              const flightNo = row.querySelector(".flight-no-input").value;
+              if (flightNo) {
+                itineraryItems.push({
+                  item_type: "flight",
+                  day_number: dayNum,
+                  flight_airline: row.querySelector(".airline-input").value || null,
+                  flight_number: flightNo,
+                  flight_route: row.querySelector(".route-input").value || null,
+                  departure_time: row.querySelector(".dep-time-input").value || null,
+                  arrival_time: row.querySelector(".arr-time-input").value || null,
+                  price: parseFloat(row.querySelector(".price-input").value) || 0,
+                  remarks: row.querySelector(".remarks-input").value || null
+                });
+              }
+            });
+
+            // 5. Extract Others
+            const otherRows = section.querySelectorAll(".other-row");
+            otherRows.forEach(row => {
+              const desc = row.querySelector(".description-input").value;
+              if (desc) {
+                itineraryItems.push({
+                  item_type: "other",
+                  day_number: dayNum,
+                  other_description: desc,
+                  price: parseFloat(row.querySelector(".price-input").value) || 0,
+                  remarks: row.querySelector(".remarks-input").value || null
+                });
+              }
+            });
+          });
+
+          // Prepare payload
+          const highlightsStr = document.getElementById("pkgHighlights").value;
+          const highlights = JSON.stringify(highlightsStr.split("\n").filter(x => x.trim() !== ""));
+
+          const inclusionsStr = document.getElementById("pkgInclusions").value;
+          const inclusions = JSON.stringify(inclusionsStr.split("\n").filter(x => x.trim() !== ""));
+
+          const exclusionsStr = document.getElementById("pkgExclusions").value;
+          const exclusions = JSON.stringify(exclusionsStr.split("\n").filter(x => x.trim() !== ""));
+
+          const payload = {
+            name: document.getElementById("pkgName").value,
+            code: document.getElementById("pkgCode").value || null,
+            duration: daySections.length,
+            city: document.getElementById("pkgCity").value || null,
+            category: document.getElementById("pkgCategory").value || null,
+            price_per_adult: document.getElementById("pkgPriceAdult").value ? parseFloat(document.getElementById("pkgPriceAdult").value) : null,
+            price_per_child: document.getElementById("pkgPriceChild").value ? parseFloat(document.getElementById("pkgPriceChild").value) : null,
+            currency_id: document.getElementById("pkgCurrency").value ? parseInt(document.getElementById("pkgCurrency").value) : null,
+            min_pax: parseInt(document.getElementById("pkgMinPax").value) || 1,
+            max_pax: parseInt(document.getElementById("pkgMaxPax").value) || 20,
+            cover_image: document.getElementById("pkgCoverImage").value || null,
+            valid_from: document.getElementById("pkgValidFrom").value || null,
+            valid_to: document.getElementById("pkgValidTo").value || null,
+            is_active: document.getElementById("pkgActive").checked,
+            description: document.getElementById("pkgDescription").value || null,
+            highlights,
+            inclusions,
+            exclusions,
+            terms: document.getElementById("pkgTerms").value || null,
+            items: itineraryItems
+          };
+
+          const method = packageId ? "PUT" : "POST";
+          const url = packageId ? `${Endpoint}/api/v1/special-packages/${packageId}` : `${Endpoint}/api/v1/special-packages`;
+
+          try {
+            const res = await fetch(url, {
+              method,
+              headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+              const errData = await res.json();
+              throw new Error(errData.error || "Failed to save special package");
+            }
+
+            alert("Special Package saved successfully!");
+            window.location.href = "special_packages.html";
+          } catch (err) {
+            console.error(err);
+            alert(`Error: ${err.message}`);
+          }
+        });
+
+        // Initialize master options list
+        loadMasterLists();
+      });
+    </script>
+  </body>
+</html>
