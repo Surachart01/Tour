@@ -348,12 +348,16 @@
                     <label>Category</label>
                     <input type="text" id="pkgCategory" class="form-control" placeholder="e.g. Deluxe, Standard" />
                   </div>
-                  <div class="col-md-3 form-group">
-                    <label>Adult Price</label>
+                  <div class="col-md-2 form-group">
+                    <label>SGL Price</label>
                     <input type="number" id="pkgPriceAdult" class="form-control" step="0.01" />
                   </div>
-                  <div class="col-md-3 form-group">
-                    <label>Child Price</label>
+                  <div class="col-md-2 form-group">
+                    <label>DBL Price</label>
+                    <input type="number" id="pkgPriceDbl" class="form-control" step="0.01" />
+                  </div>
+                  <div class="col-md-2 form-group">
+                    <label>TPL Price</label>
                     <input type="number" id="pkgPriceChild" class="form-control" step="0.01" />
                   </div>
                 </div>
@@ -494,6 +498,7 @@
         let dbHotels = [];
         let dbTransfers = [];
         let dbExcursions = [];
+        let dbTours = [];
         let uniqueCities = [];
 
         // Load reference lists
@@ -526,11 +531,16 @@
             const excRes = await fetch(`${Endpoint}/api/v1/excursions`, { headers: { "Authorization": `Bearer ${token}` } });
             dbExcursions = await excRes.json();
 
+            // Tours
+            const tourRes = await fetch(`${Endpoint}/api/v1/tours`, { headers: { "Authorization": `Bearer ${token}` } });
+            dbTours = await tourRes.json();
+
             // Get unique cities list from all master tables to populate city selects
             uniqueCities = [...new Set([
               ...dbHotels.map(h => h.city),
               ...dbTransfers.map(t => t.city),
-              ...dbExcursions.map(e => e.city)
+              ...dbExcursions.map(e => e.city),
+              ...dbTours.map(t => t.city)
             ])].filter(Boolean).sort();
 
             // If editing, load package details now
@@ -567,61 +577,72 @@
                 <i class="fa fa-trash mr-1"></i>Remove Day
               </button>
             </div>
-            <div class="day-content expanded">
-              <!-- Hotels Section -->
-              <div class="activity-container">
-                <div class="activity-header">
-                  <h6><i class="fa fa-hotel text-primary"></i> Hotels</h6>
-                  <button type="button" class="btn btn-sm btn-success" onclick="addHotelRow(this)">
-                    <i class="fa fa-plus"></i> Add Hotel
-                  </button>
-                </div>
-                <div class="hotels-list"></div>
-              </div>
+             <div class="day-content expanded">
+               <!-- Flights Section -->
+               <div class="activity-container">
+                 <div class="activity-header">
+                   <h6><i class="fa fa-plane text-info"></i> Flights</h6>
+                   <button type="button" class="btn btn-sm btn-success add-flight-row-btn" onclick="addFlightRow(this)">
+                     <i class="fa fa-plus"></i> Add Flight
+                   </button>
+                 </div>
+                 <div class="flights-list"></div>
+               </div>
 
-              <!-- Transfers Section -->
-              <div class="activity-container">
-                <div class="activity-header">
-                  <h6><i class="fa fa-car text-success"></i> Transfers</h6>
-                  <button type="button" class="btn btn-sm btn-success" onclick="addTransferRow(this)">
-                    <i class="fa fa-plus"></i> Add Transfer
-                  </button>
-                </div>
-                <div class="transfers-list"></div>
-              </div>
+               <!-- Transfers Section -->
+               <div class="activity-container">
+                 <div class="activity-header">
+                   <h6><i class="fa fa-car text-success"></i> Transfers</h6>
+                   <button type="button" class="btn btn-sm btn-success add-transfer-row-btn" onclick="addTransferRow(this)">
+                     <i class="fa fa-plus"></i> Add Transfer
+                   </button>
+                 </div>
+                 <div class="transfers-list"></div>
+               </div>
 
-              <!-- Excursions Section -->
-              <div class="activity-container">
-                <div class="activity-header">
-                  <h6><i class="fa fa-binoculars text-warning"></i> Excursions</h6>
-                  <button type="button" class="btn btn-sm btn-success" onclick="addExcursionRow(this)">
-                    <i class="fa fa-plus"></i> Add Excursion
-                  </button>
-                </div>
-                <div class="excursions-list"></div>
-              </div>
+               <!-- Hotels Section -->
+               <div class="activity-container">
+                 <div class="activity-header">
+                   <h6><i class="fa fa-hotel text-primary"></i> Hotels</h6>
+                   <button type="button" class="btn btn-sm btn-success add-hotel-row-btn" onclick="addHotelRow(this)">
+                     <i class="fa fa-plus"></i> Add Hotel
+                   </button>
+                 </div>
+                 <div class="hotels-list"></div>
+               </div>
 
-              <!-- Flights Section -->
-              <div class="activity-container">
-                <div class="activity-header">
-                  <h6><i class="fa fa-plane text-info"></i> Flights</h6>
-                  <button type="button" class="btn btn-sm btn-success" onclick="addFlightRow(this)">
-                    <i class="fa fa-plus"></i> Add Flight
-                  </button>
-                </div>
-                <div class="flights-list"></div>
-              </div>
+               <!-- Excursions Section -->
+               <div class="activity-container">
+                 <div class="activity-header">
+                   <h6><i class="fa fa-binoculars text-warning"></i> Excursions</h6>
+                   <button type="button" class="btn btn-sm btn-success add-excursion-row-btn" onclick="addExcursionRow(this)">
+                     <i class="fa fa-plus"></i> Add Excursion
+                   </button>
+                 </div>
+                 <div class="excursions-list"></div>
+               </div>
 
-              <!-- Others Section -->
-              <div class="activity-container">
-                <div class="activity-header">
-                  <h6><i class="fa fa-plus-circle text-dark"></i> Others</h6>
-                  <button type="button" class="btn btn-sm btn-success" onclick="addOtherRow(this)">
-                    <i class="fa fa-plus"></i> Add Other
-                  </button>
-                </div>
-                <div class="others-list"></div>
-              </div>
+               <!-- Tours Section -->
+               <div class="activity-container">
+                 <div class="activity-header">
+                   <h6><i class="fa fa-suitcase text-success"></i> Tours</h6>
+                   <button type="button" class="btn btn-sm btn-success add-tour-row-btn" onclick="addTourRow(this)">
+                     <i class="fa fa-plus"></i> Add Tour
+                   </button>
+                 </div>
+                 <div class="tours-list"></div>
+               </div>
+
+               <!-- Others Section -->
+               <div class="activity-container">
+                 <div class="activity-header">
+                   <h6><i class="fa fa-plus-circle text-dark"></i> Others</h6>
+                   <button type="button" class="btn btn-sm btn-success add-other-row-btn" onclick="addOtherRow(this)">
+                     <i class="fa fa-plus"></i> Add Other
+                   </button>
+                 </div>
+                 <div class="others-list"></div>
+               </div>
             </div>
           `;
 
@@ -911,6 +932,67 @@
           });
         };
 
+        // 3.5. TOUR ROW
+        window.addTourRow = function (btn, initData = null) {
+          const list = btn.closest(".activity-container").querySelector(".tours-list");
+          const item = document.createElement("div");
+          item.className = "activity-item tour-row mb-3";
+
+          item.innerHTML = `
+            <div class="row">
+              <div class="col-md-3">
+                <label>City</label>
+                <select class="form-control city-select" onchange="filterToursByCity(this)">
+                  <option value="">Select City</option>
+                  ${uniqueCities.map(c => `<option value="${c}">${c}</option>`).join("")}
+                </select>
+              </div>
+               <div class="col-md-8">
+                 <label>Tour</label>
+                 <select class="form-control tour-select">
+                   <option value="">Select Tour</option>
+                 </select>
+               </div>
+               <div class="col-md-1 d-flex align-items-end justify-content-end">
+                 <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove()"><i class="fa fa-trash"></i></button>
+               </div>
+             </div>
+             <div class="row mt-2">
+               <div class="col-md-12">
+                 <label>Remarks</label>
+                 <input type="text" class="form-control remarks-input" placeholder="Remarks..." />
+               </div>
+             </div>
+           `;
+
+           list.appendChild(item);
+
+           if (initData) {
+             item.querySelector(".city-select").value = initData.city || "";
+             filterToursByCity(item.querySelector(".city-select"));
+
+             item.querySelector(".tour-select").value = initData.tour_id || "";
+             item.querySelector(".remarks-input").value = initData.remarks || "";
+           }
+        };
+
+        window.filterToursByCity = function (citySelect) {
+          const row = citySelect.closest(".tour-row");
+          const selectedCity = citySelect.value;
+          const tourSelect = row.querySelector(".tour-select");
+
+          tourSelect.innerHTML = '<option value="">Select Tour</option>';
+          if (!selectedCity) return;
+
+          const filtered = dbTours.filter(t => t.city === selectedCity);
+          filtered.forEach(t => {
+            const opt = document.createElement("option");
+            opt.value = t.id;
+            opt.textContent = t.name;
+            tourSelect.appendChild(opt);
+          });
+        };
+
         // 4. FLIGHT ROW
         window.addFlightRow = function (btn, initData = null) {
           const list = btn.closest(".activity-container").querySelector(".flights-list");
@@ -1015,6 +1097,7 @@
             document.getElementById("pkgCity").value = pkg.city || "";
             document.getElementById("pkgCategory").value = pkg.category || "";
             document.getElementById("pkgPriceAdult").value = pkg.price_per_adult || "";
+            document.getElementById("pkgPriceDbl").value = pkg.price_dbl || "";
             document.getElementById("pkgPriceChild").value = pkg.price_per_child || "";
             document.getElementById("pkgCurrency").value = pkg.currency_id || "";
             document.getElementById("pkgMinPax").value = pkg.min_pax || 1;
@@ -1065,20 +1148,23 @@
               const daySection = document.querySelector(`.day-section[data-day="${dayNum}"]`);
               if (!daySection) return;
 
-              if (item.item_type === "hotel") {
-                const addBtn = daySection.querySelector(".add-hotel-row-btn") || daySection.querySelectorAll(".activity-container button")[0];
-                addHotelRow(addBtn, item);
+              if (item.item_type === "flight") {
+                const addBtn = daySection.querySelector(".add-flight-row-btn") || daySection.querySelectorAll(".activity-container button")[0];
+                addFlightRow(addBtn, item);
               } else if (item.item_type === "transfer") {
                 const addBtn = daySection.querySelector(".add-transfer-row-btn") || daySection.querySelectorAll(".activity-container button")[1];
                 addTransferRow(addBtn, item);
+              } else if (item.item_type === "hotel") {
+                const addBtn = daySection.querySelector(".add-hotel-row-btn") || daySection.querySelectorAll(".activity-container button")[2];
+                addHotelRow(addBtn, item);
               } else if (item.item_type === "excursion") {
-                const addBtn = daySection.querySelector(".add-excursion-row-btn") || daySection.querySelectorAll(".activity-container button")[2];
+                const addBtn = daySection.querySelector(".add-excursion-row-btn") || daySection.querySelectorAll(".activity-container button")[3];
                 addExcursionRow(addBtn, item);
-              } else if (item.item_type === "flight") {
-                const addBtn = daySection.querySelector(".add-flight-row-btn") || daySection.querySelectorAll(".activity-container button")[3];
-                addFlightRow(addBtn, item);
+              } else if (item.item_type === "tour") {
+                const addBtn = daySection.querySelector(".add-tour-row-btn") || daySection.querySelectorAll(".activity-container button")[4];
+                addTourRow(addBtn, item);
               } else if (item.item_type === "other") {
-                const addBtn = daySection.querySelector(".add-other-row-btn") || daySection.querySelectorAll(".activity-container button")[4];
+                const addBtn = daySection.querySelector(".add-other-row-btn") || daySection.querySelectorAll(".activity-container button")[5];
                 addOtherRow(addBtn, item);
               }
             });
@@ -1161,6 +1247,24 @@
               }
             });
 
+            // 3.5. Extract Tours
+            const tourRows = section.querySelectorAll(".tour-row");
+            tourRows.forEach(row => {
+              const tourId = row.querySelector(".tour-select").value;
+              const tourName = row.querySelector(".tour-select").selectedOptions[0]?.text || "";
+              if (tourId) {
+                itineraryItems.push({
+                  item_type: "tour",
+                  day_number: dayNum,
+                  city: row.querySelector(".city-select").value || null,
+                  tour_id: parseInt(tourId),
+                  tour_name: tourName.trim(),
+                  price: null,
+                  remarks: row.querySelector(".remarks-input").value || null
+                });
+              }
+            });
+
             // 4. Extract Flights
             const flightRows = section.querySelectorAll(".flight-row");
             flightRows.forEach(row => {
@@ -1213,6 +1317,7 @@
             city: document.getElementById("pkgCity").value || null,
             category: document.getElementById("pkgCategory").value || null,
             price_per_adult: document.getElementById("pkgPriceAdult").value ? parseFloat(document.getElementById("pkgPriceAdult").value) : null,
+            price_dbl: document.getElementById("pkgPriceDbl").value ? parseFloat(document.getElementById("pkgPriceDbl").value) : null,
             price_per_child: document.getElementById("pkgPriceChild").value ? parseFloat(document.getElementById("pkgPriceChild").value) : null,
             currency_id: document.getElementById("pkgCurrency").value ? parseInt(document.getElementById("pkgCurrency").value) : null,
             min_pax: parseInt(document.getElementById("pkgMinPax").value) || 1,

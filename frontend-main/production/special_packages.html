@@ -283,8 +283,9 @@
                           <th>Duration (Days)</th>
                           <th>City</th>
                           <th>Category</th>
-                          <th>Adult Price</th>
-                          <th>Child Price</th>
+                          <th>SGL</th>
+                          <th>DBL</th>
+                          <th>TPL</th>
                           <th id="statusHeader">Status</th>
                           <th>Actions</th>
                         </tr>
@@ -322,8 +323,9 @@
                 <strong>Main City:</strong> <span id="modalPackageCity"></span>
               </div>
               <div class="col-md-6">
-                <strong>Adult Price:</strong> <span id="modalPackageAdultPrice"></span><br/>
-                <strong>Child Price:</strong> <span id="modalPackageChildPrice"></span><br/>
+                <strong>SGL Price:</strong> <span id="modalPackageAdultPrice"></span><br/>
+                <strong>DBL Price:</strong> <span id="modalPackageDblPrice"></span><br/>
+                <strong>TPL Price:</strong> <span id="modalPackageChildPrice"></span><br/>
                 <strong>Max Pax:</strong> <span id="modalPackageMaxPax"></span><br/>
                 <strong>Min Pax:</strong> <span id="modalPackageMinPax"></span>
               </div>
@@ -434,7 +436,7 @@
           tbody.innerHTML = "";
 
           if (packages.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="${isAdmin ? 9 : 8}" class="text-center">No special packages found.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="${isAdmin ? 10 : 9}" class="text-center">No special packages found.</td></tr>`;
             return;
           }
 
@@ -442,8 +444,9 @@
             const tr = document.createElement("tr");
 
             const currencyCode = pkg.currencies ? pkg.currencies.currency_code : "THB";
-            const adultPrice = pkg.price_per_adult ? `${pkg.price_per_adult} ${currencyCode}` : "-";
-            const childPrice = pkg.price_per_child ? `${pkg.price_per_child} ${currencyCode}` : "-";
+            const sglPrice = pkg.price_per_adult ? `${pkg.price_per_adult} ${currencyCode}` : "-";
+            const dblPrice = pkg.price_dbl ? `${pkg.price_dbl} ${currencyCode}` : "-";
+            const tplPrice = pkg.price_per_child ? `${pkg.price_per_child} ${currencyCode}` : "-";
 
             let statusCell = "";
             let actionButtons = "";
@@ -485,8 +488,9 @@
               <td>${pkg.duration}</td>
               <td>${pkg.city || '-'}</td>
               <td>${pkg.category || '-'}</td>
-              <td>${adultPrice}</td>
-              <td>${childPrice}</td>
+              <td>${sglPrice}</td>
+              <td>${dblPrice}</td>
+              <td>${tplPrice}</td>
               ${statusCell}
               <td>${actionButtons}</td>
             `;
@@ -566,6 +570,7 @@
 
             const currencyCode = pkg.currencies ? pkg.currencies.currency_code : "THB";
             document.getElementById("modalPackageAdultPrice").innerText = pkg.price_per_adult ? `${pkg.price_per_adult} ${currencyCode}` : "-";
+            document.getElementById("modalPackageDblPrice").innerText = pkg.price_dbl ? `${pkg.price_dbl} ${currencyCode}` : "-";
             document.getElementById("modalPackageChildPrice").innerText = pkg.price_per_child ? `${pkg.price_per_child} ${currencyCode}` : "-";
             document.getElementById("modalPackageMaxPax").innerText = pkg.max_pax || "-";
             document.getElementById("modalPackageMinPax").innerText = pkg.min_pax || "-";

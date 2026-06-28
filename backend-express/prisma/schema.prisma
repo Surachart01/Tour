@@ -236,6 +236,7 @@ model excursion_trip_items {
   price         Decimal?    @db.Decimal(10, 2)
   approved      Boolean?    @default(false)
   declined      Boolean?    @default(false)
+  email_sent    Boolean?    @default(false)
   currency_id   Int?
   remarks       String?
   created_at    DateTime?   @default(now()) @db.Timestamp(6)
@@ -418,6 +419,7 @@ model hotel_trip_items {
   flight_info           String?
   discount              Decimal?                @default(0) @db.Decimal(10, 2)
   booking_status        String?
+  email_sent            Boolean?                @default(false)
   booking_remark        String?
   promotion_id          Int?
   total_price           Decimal?                @default(0) @db.Decimal(10, 2)
@@ -627,6 +629,7 @@ model tour_trip_items {
   payment_service  String?     @db.VarChar(50)
   approved         Boolean?    @default(false)
   declined         Boolean?    @default(false)
+  email_sent       Boolean?    @default(false)
   price            Decimal?    @db.Decimal(10, 2)
   currency_id      Int?
   remarks          String?
@@ -693,6 +696,7 @@ model transfer_trip_items {
   guide_contact        String?     @db.VarChar(20)
   approved             Boolean?    @default(false)
   declined             Boolean?    @default(false)
+  email_sent           Boolean?    @default(false)
   price                Decimal?    @db.Decimal(10, 2)
   currency_id          Int?
   remarks              String?
@@ -889,6 +893,7 @@ model special_packages {
   city            String?                 @db.VarChar(100)
   category        String?                 @db.VarChar(50)
   price_per_adult Decimal?                @db.Decimal(10, 2)
+  price_dbl       Decimal?                @db.Decimal(10, 2)
   price_per_child Decimal?                @db.Decimal(10, 2)
   currency_id     Int?
   max_pax         Int?                    @default(20)
@@ -928,6 +933,8 @@ model special_package_items {
   pickup_time        String?          @db.VarChar(50)
   excursion_id       Int?
   excursion_name     String?          @db.VarChar(255)
+  tour_id            Int?
+  tour_name          String?          @db.VarChar(255)
   flight_number      String?          @db.VarChar(50)
   flight_airline     String?          @db.VarChar(100)
   flight_route       String?          @db.VarChar(100)

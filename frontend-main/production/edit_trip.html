@@ -9676,6 +9676,21 @@
                 <td></td>
               `;
               tbody.appendChild(tr);
+            } else if (item.item_type === 'tour') {
+              const tbody = document.getElementById("tourTableBody");
+              const tr = document.createElement("tr");
+              tr.dataset.tourId = item.tour_id || "";
+              tr.innerHTML = `
+                <td>${item.city || "-"}</td>
+                <td>${item.tour_name || "TBD"}</td>
+                <td>PVT</td>
+                <td>-</td>
+                <td>-</td>
+                <td><small>${item.remarks || ""}</small></td>
+                <td>${item.price || "-"}</td>
+                <td></td>
+              `;
+              tbody.appendChild(tr);
             } else if (item.item_type === 'other') {
               const tbody = document.getElementById("othersTableBody");
               const tr = document.createElement("tr");
