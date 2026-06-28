@@ -349,11 +349,17 @@
                     <input type="text" id="pkgCategory" class="form-control" placeholder="e.g. Deluxe, Standard" />
                   </div>
                   <div class="col-md-3 form-group">
-                    <label>Adult Price</label>
+                    <label style="display: flex; justify-content: space-between; align-items: center;">
+                      <span>Adult Price</span>
+                      <button type="button" class="btn btn-link btn-xs p-0 m-0" onclick="autoFillAdultPrice()" style="text-decoration: underline; color: #1abb9c; font-size: 0.75rem;">Use Itinerary Sum</button>
+                    </label>
                     <input type="number" id="pkgPriceAdult" class="form-control" step="0.01" />
                   </div>
                   <div class="col-md-3 form-group">
-                    <label>Child Price</label>
+                    <label style="display: flex; justify-content: space-between; align-items: center;">
+                      <span>Child Price</span>
+                      <button type="button" class="btn btn-link btn-xs p-0 m-0" onclick="autoFillChildPrice()" style="text-decoration: underline; color: #1abb9c; font-size: 0.75rem;">Use Itinerary Sum</button>
+                    </label>
                     <input type="number" id="pkgPriceChild" class="form-control" step="0.01" />
                   </div>
                 </div>
@@ -435,6 +441,7 @@
                 <h2>Day-by-Day Itinerary Planner</h2>
                 <div>
                   <span class="badge badge-info" style="font-size: 0.9rem; margin-right: 10px;">Total Days: <span id="totalDaysCount">0</span></span>
+                  <span class="badge badge-success" style="font-size: 0.9rem; margin-right: 10px;">Itinerary Sum: <span id="itineraryTotalSum">0.00</span></span>
                   <button type="button" class="btn btn-success btn-sm" onclick="addNewDay()"><i class="fa fa-plus"></i> Add Day</button>
                 </div>
               </div>
@@ -502,8 +509,17 @@
             // Currencies
             const currRes = await fetch(`${Endpoint}/api/v1/currencies`, { headers: { "Authorization": `Bearer ${token}` } });
             const currencies = await currRes.json();
+            const seenCodes = new Set();
+            const uniqueCurrencies = [];
+            currencies.forEach(c => {
+              if (c.currency_code && !seenCodes.has(c.currency_code)) {
+                seenCodes.add(c.currency_code);
+                uniqueCurrencies.push(c);
+              }
+            });
             const currSelect = document.getElementById("pkgCurrency");
-            currSelect.innerHTML = currencies.map(c => `<option value="${c.id}">${c.currency_code} (${c.currency_name})</option>`).join("");
+            currSelect.innerHTML = uniqueCurrencies.map(c => `<option value="${c.id}">${c.currency_code} (${c.currency_name || ''})</option>`).join("");
+
 
             // Hotels
             const hotelRes = await fetch(`${Endpoint}/api/v1/hotels`, { headers: { "Authorization": `Bearer ${token}` } });
@@ -705,7 +721,7 @@
                 <input type="number" class="form-control price-input" step="0.01" value="0" />
               </div>
               <div class="col-md-1 d-flex align-items-end justify-content-end">
-                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove()"><i class="fa fa-trash"></i></button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove(); if(typeof calculateItinerarySum==='function') calculateItinerarySum();"><i class="fa fa-trash"></i></button>
               </div>
             </div>
             <div class="row mt-2">
@@ -748,7 +764,7 @@
             const opt = document.createElement("option");
             opt.value = h.id;
             opt.textContent = h.name;
-            opt.setAttribute("data-roomtypes", JSON.stringify(h.room_types || []));
+            opt.setAttribute("data-roomtypes", JSON.stringify(h.roomTypes || h.room_types || []));
             hotelSelect.appendChild(opt);
           });
         };
@@ -814,7 +830,7 @@
                 <input type="text" class="form-control remarks-input" placeholder="Remarks..." />
               </div>
               <div class="col-md-1 d-flex align-items-end justify-content-end">
-                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove()"><i class="fa fa-trash"></i></button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove(); if(typeof calculateItinerarySum==='function') calculateItinerarySum();"><i class="fa fa-trash"></i></button>
               </div>
             </div>
           `;
@@ -877,7 +893,7 @@
                 <input type="number" class="form-control price-input" step="0.01" value="0" />
               </div>
               <div class="col-md-1 d-flex align-items-end justify-content-end">
-                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove()"><i class="fa fa-trash"></i></button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove(); if(typeof calculateItinerarySum==='function') calculateItinerarySum();"><i class="fa fa-trash"></i></button>
               </div>
             </div>
             <div class="row mt-2">
@@ -950,7 +966,7 @@
                 <input type="number" class="form-control price-input" step="0.01" value="0" />
               </div>
               <div class="col-md-1 d-flex align-items-end justify-content-end">
-                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove()"><i class="fa fa-trash"></i></button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove(); if(typeof calculateItinerarySum==='function') calculateItinerarySum();"><i class="fa fa-trash"></i></button>
               </div>
             </div>
             <div class="row mt-2">
@@ -991,7 +1007,7 @@
                 <input type="number" class="form-control price-input" step="0.01" value="0" />
               </div>
               <div class="col-md-1 d-flex align-items-end justify-content-end">
-                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove()"><i class="fa fa-trash"></i></button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.activity-item').remove(); if(typeof calculateItinerarySum==='function') calculateItinerarySum();"><i class="fa fa-trash"></i></button>
               </div>
             </div>
             <div class="row mt-2">
@@ -1260,7 +1276,7 @@
 
             if (!res.ok) {
               const errData = await res.json();
-              throw new Error(errData.error || "Failed to save special package");
+              throw new Error(errData.message || errData.error || "Failed to save special package");
             }
 
             alert("Special Package saved successfully!");
@@ -1269,6 +1285,60 @@
             console.error(err);
             alert(`Error: ${err.message}`);
           }
+        });
+
+        // ============================================================
+        // AUTOMATION HELPERS
+        // ============================================================
+        window.calculateItinerarySum = function () {
+          let total = 0;
+          const priceInputs = document.querySelectorAll("#dayCardsContainer .price-input");
+          priceInputs.forEach(input => {
+            const val = parseFloat(input.value) || 0;
+            total += val;
+          });
+          const sumEl = document.getElementById("itineraryTotalSum");
+          if (sumEl) {
+            sumEl.textContent = total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          }
+          return total;
+        };
+
+        window.autoFillAdultPrice = function () {
+          const total = calculateItinerarySum();
+          document.getElementById("pkgPriceAdult").value = total.toFixed(2);
+        };
+
+        window.autoFillChildPrice = function () {
+          const total = calculateItinerarySum();
+          // By default, child price could be set to 70% of itinerary sum or the same sum
+          document.getElementById("pkgPriceChild").value = (total * 0.7).toFixed(2);
+        };
+
+        // Event listener to dynamically update Itinerary Sum on input changes
+        document.getElementById("dayCardsContainer").addEventListener("input", function (e) {
+          if (e.target.classList.contains("price-input")) {
+            calculateItinerarySum();
+          }
+        });
+
+        // Package Code Auto-generator suggestion from Package Name
+        document.getElementById("pkgName").addEventListener("input", function (e) {
+          const codeInput = document.getElementById("pkgCode");
+          if (!codeInput.value || codeInput.dataset.autoGenerated === "true") {
+            const name = e.target.value;
+            const code = name
+              .toUpperCase()
+              .replace(/[^A-Z0-9]+/g, "-")
+              .replace(/^-+|-+$/g, "")
+              .substring(0, 15);
+            codeInput.value = code;
+            codeInput.dataset.autoGenerated = "true";
+          }
+        });
+
+        document.getElementById("pkgCode").addEventListener("input", function (e) {
+          e.target.dataset.autoGenerated = "false";
         });
 
         // Initialize master options list
