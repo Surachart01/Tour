@@ -24,9 +24,231 @@
     <!-- Leaflet CSS & JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Google Font Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <!-- Custom Theme Style -->
     <link href="../build/css/custom.min.css" rel="stylesheet" />
     <style>
+      /* Google Font Typography Integration */
+      body, html, .right_col, h1, h2, h3, h4, h5, h6, p, label, table, button, input, select {
+        font-family: 'Outfit', sans-serif !important;
+      }
+      
+      /* Dashboard Banner / Hero Header */
+      .dashboard-hero-banner {
+        background: linear-gradient(135deg, #0d3460, #24b99a, #ff9f05);
+        color: white;
+        padding: 30px 25px;
+        border-radius: 16px;
+        margin-bottom: 25px;
+        box-shadow: 0 8px 24px rgba(36, 185, 154, 0.15);
+        position: relative;
+        overflow: hidden;
+      }
+      .dashboard-hero-banner::after {
+        content: '';
+        position: absolute;
+        width: 300px;
+        height: 300px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 50%;
+        top: -100px;
+        right: -100px;
+        pointer-events: none;
+      }
+      .dashboard-hero-banner h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 6px;
+        color: white !important;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .dashboard-hero-banner p {
+        font-size: 1rem;
+        opacity: 0.9;
+        margin-bottom: 0;
+      }
+
+      /* Premium Service Selector Cards Grid */
+      .service-selector-row {
+        margin-top: 5px;
+        margin-bottom: 25px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        justify-content: center;
+      }
+      .service-card-wrapper {
+        flex: 1 1 200px;
+        max-width: 250px;
+      }
+      .service-card {
+        background: #ffffff;
+        border: 1px solid #eef2f7;
+        border-radius: 16px;
+        padding: 20px 22px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        border-left: 5px solid #eaeaea;
+        height: 100%;
+      }
+      .service-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+      }
+      .service-icon-wrapper {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        transition: all 0.3s ease;
+      }
+      .service-card-info h4 {
+        margin: 0 0 2px;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #2c3e50;
+        transition: color 0.3s ease;
+      }
+      .service-card-info p {
+        margin: 0;
+        font-size: 0.82rem;
+        color: #7f8c8d;
+        line-height: 1.3;
+        transition: color 0.3s ease;
+      }
+
+      /* Specific Card Designs (Theme Colors) */
+      /* Hotels: Blue Theme */
+      .service-card.card-hotels {
+        border-left-color: #007bff;
+      }
+      .service-card.card-hotels .service-icon-wrapper {
+        background-color: #eaf2ff;
+        color: #007bff;
+      }
+      .service-card.card-hotels.active {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        border-left-color: #004085;
+        color: #ffffff;
+      }
+      /* Tours: Green Theme */
+      .service-card.card-tours {
+        border-left-color: #28a745;
+      }
+      .service-card.card-tours .service-icon-wrapper {
+        background-color: #e8f7ec;
+        color: #28a745;
+      }
+      .service-card.card-tours.active {
+        background: linear-gradient(135deg, #28a745, #1e7e34);
+        border-left-color: #155724;
+        color: #ffffff;
+      }
+      /* Excursions: Orange Theme */
+      .service-card.card-excursions {
+        border-left-color: #ffc107;
+      }
+      .service-card.card-excursions .service-icon-wrapper {
+        background-color: #fffbeb;
+        color: #ff9f05;
+      }
+      .service-card.card-excursions.active {
+        background: linear-gradient(135deg, #ffc107, #d39e00);
+        border-left-color: #9b7300;
+        color: #ffffff;
+      }
+      /* Transfers: Teal Theme */
+      .service-card.card-transfers {
+        border-left-color: #17a2b8;
+      }
+      .service-card.card-transfers .service-icon-wrapper {
+        background-color: #e8f6f8;
+        color: #17a2b8;
+      }
+      .service-card.card-transfers.active {
+        background: linear-gradient(135deg, #17a2b8, #117a8b);
+        border-left-color: #0c5460;
+        color: #ffffff;
+      }
+      /* Special Packages: Purple Theme */
+      .service-card.card-special-packages {
+        border-left-color: #9b59b6;
+      }
+      .service-card.card-special-packages .service-icon-wrapper {
+        background-color: #f7ebfc;
+        color: #9b59b6;
+      }
+      .service-card.card-special-packages.active {
+        background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        border-left-color: #6d2c80;
+        color: #ffffff;
+      }
+
+      /* Active Card Text Styling overrides */
+      .service-card.active .service-icon-wrapper {
+        background-color: rgba(255, 255, 255, 0.2) !important;
+        color: #ffffff !important;
+        transform: scale(1.08);
+      }
+      .service-card.active .service-card-info h4 {
+        color: #ffffff !important;
+      }
+      .service-card.active .service-card-info p {
+        color: rgba(255, 255, 255, 0.8) !important;
+      }
+
+      /* Dynamic Section Cards & Form Controls */
+      .collapse.show .card-body {
+        border: none !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+        border-radius: 16px;
+      }
+      .form-control, select.form-control {
+        border-radius: 8px !important;
+        border: 1px solid #ced4da;
+        padding: 8px 12px;
+        height: auto;
+        font-size: 0.9rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      .form-control:focus {
+        border-color: #24b99a;
+        box-shadow: 0 0 0 3px rgba(36, 185, 154, 0.15);
+      }
+      .input-group-append button {
+        border-radius: 0 8px 8px 0 !important;
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      /* Interactive Map Province Info Panel design upgrades */
+      #province-selected-info {
+        padding: 10px;
+      }
+      #selected-province-name {
+        font-size: 1.5rem;
+        color: #2c3e50;
+      }
+      #province-selected-info button {
+        transition: all 0.25s ease;
+        border: none;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+      }
+      #province-selected-info button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+      }
+
       /* Ensure the body and html elements allow full-page scrolling */
       html,
       body {
@@ -626,80 +848,72 @@
 
         <!-- Page content -->
         <div class="right_col" role="main">
-          <!-- Horizontal Bar with Buttons -->
+          <!-- Premium Hero Header Banner -->
           <div class="container col-md-12 mt-3">
-            <div
-              class="btn-group btn-group-toggle d-flex justify-content-center"
-              data-toggle="buttons"
-            >
-              <button
-                class="btn btn-primary btn-lg"
-                type="button"
-                data-toggle="collapse"
-                data-target="#hotelsSection"
-                aria-expanded="false"
-                aria-controls="hotelsSection"
-                style="
-                  background-color: #007bff;
-                  color: white;
-                  width: 220px;
-                  height: 60px;
-                  font-size: 22px;
-                "
-              >
-                <i class="fa fa-hotel" aria-hidden="true"></i> Hotels
-              </button>
-              <button
-                class="btn btn-success btn-lg"
-                type="button"
-                data-toggle="collapse"
-                data-target="#toursSection"
-                aria-expanded="false"
-                aria-controls="toursSection"
-                style="
-                  background-color: #28a745;
-                  color: white;
-                  width: 220px;
-                  height: 60px;
-                  font-size: 22px;
-                "
-              >
-                <i class="fa fa-map-signs" aria-hidden="true"></i> Tours
-              </button>
-              <button
-                class="btn btn-warning btn-lg"
-                type="button"
-                data-toggle="collapse"
-                data-target="#excursionsSection"
-                aria-expanded="false"
-                aria-controls="excursionsSection"
-                style="
-                  background-color: #ffc107;
-                  color: white;
-                  width: 220px;
-                  height: 60px;
-                  font-size: 22px;
-                "
-              >
-                <i class="fa fa-binoculars" aria-hidden="true"></i> Excursions
-              </button>
-              <button
-                class="btn btn-info btn-lg"
-                type="button"
-                data-toggle="collapse"
-                data-target="#transfersSection"
-                aria-expanded="false"
-                aria-controls="transfersSection"
-                style="
-                  background-color: #17a2b8;
-                  color: white;
-                  width: 220px;
-                  height: 60px;
-                  font-size: 22px;
-                "
-              >
-                <i class="fa fa-bus" aria-hidden="true"></i> Transfers
-              </button>
+            <div class="dashboard-hero-banner">
+              <h1>VeraThailandia Dashboard</h1>
+              <p>Explore luxury hotels, culture tours, active excursions, and reliable transfers in Thailand.</p>
+            </div>
+          </div>
+
+          <!-- Service Selector Hero Cards -->
+          <div class="container col-md-12">
+            <div class="row service-selector-row">
+              <div class="service-card-wrapper">
+                <div class="service-card card-hotels" data-target="#hotelsSection">
+                  <div class="service-icon-wrapper">
+                    <i class="fa fa-hotel"></i>
+                  </div>
+                  <div class="service-card-info">
+                    <h4>Hotels</h4>
+                    <p>Find luxury stays</p>
+                  </div>
+                </div>
+              </div>
+              <div class="service-card-wrapper">
+                <div class="service-card card-tours" data-target="#toursSection">
+                  <div class="service-icon-wrapper">
+                    <i class="fa fa-map-signs"></i>
+                  </div>
+                  <div class="service-card-info">
+                    <h4>Tours</h4>
+                    <p>Explore packages</p>
+                  </div>
+                </div>
+              </div>
+              <div class="service-card-wrapper">
+                <div class="service-card card-excursions" data-target="#excursionsSection">
+                  <div class="service-icon-wrapper">
+                    <i class="fa fa-binoculars"></i>
+                  </div>
+                  <div class="service-card-info">
+                    <h4>Excursions</h4>
+                    <p>Search activities</p>
+                  </div>
+                </div>
+              </div>
+              <div class="service-card-wrapper">
+                <div class="service-card card-transfers" data-target="#transfersSection">
+                  <div class="service-icon-wrapper">
+                    <i class="fa fa-bus"></i>
+                  </div>
+                  <div class="service-card-info">
+                    <h4>Transfers</h4>
+                    <p>Book transfers</p>
+                  </div>
+                </div>
+              </div>
+              <div class="service-card-wrapper">
+                <div class="service-card card-special-packages" data-target="#specialPackagesSection">
+                  <div class="service-icon-wrapper">
+                    <i class="fa fa-gift"></i>
+                  </div>
+                  <div class="service-card-info">
+                    <h4>Special Packages</h4>
+                    <p>Ready-made packages</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Expandable Sections -->
@@ -1022,6 +1236,87 @@
                 </div>
               </div>
             </div>
+            <!-- Transfers Section End -->
+
+            <!-- Special Packages Section -->
+            <div class="collapse mt-3" id="specialPackagesSection">
+              <div class="card card-body">
+                <h4>Special Packages</h4>
+                <div class="form-row">
+                  <!-- Country Dropdown -->
+                  <div class="form-group col-md-2">
+                    <label for="specialPackageCountryDropdown">Country:</label>
+                    <select class="form-control" id="specialPackageCountryDropdown">
+                      <option disabled selected>Select country</option>
+                    </select>
+                  </div>
+                  <!-- City Dropdown -->
+                  <div class="form-group col-md-3">
+                    <label for="specialPackageCityDropdown">City:</label>
+                    <select class="form-control" id="specialPackageCityDropdown">
+                      <option disabled selected>Select city first</option>
+                    </select>
+                  </div>
+                  <!-- From Date -->
+                  <div class="form-group col-md-2">
+                    <label for="specialPackageFromDate">From Date:</label>
+                    <input
+                      type="date"
+                      class="form-control"
+                      id="specialPackageFromDate"
+                      placeholder="Select from date"
+                    />
+                  </div>
+                  <!-- To Date -->
+                  <div class="form-group col-md-2">
+                    <label for="specialPackageToDate">To Date:</label>
+                    <input
+                      type="date"
+                      class="form-control"
+                      id="specialPackageToDate"
+                      placeholder="Select to date"
+                    />
+                  </div>
+                  <!-- Keyword Search and Button -->
+                  <div class="form-group col-md-3">
+                    <label for="specialPackageKeyword">Keyword & Search:</label>
+                    <div class="input-group">
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="specialPackageKeyword"
+                        placeholder="Enter keyword"
+                      />
+                      <div class="input-group-append">
+                        <button
+                          type="button"
+                          class="btn btn-secondary"
+                          id="searchSpecialPackageButton"
+                        >
+                          <i class="fa fa-search"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Dynamic Table -->
+                <div class="table-responsive">
+                  <table class="table table-striped" id="specialPackagesTable">
+                    <thead>
+                      <tr>
+                        <th class="package-name-column">Name</th>
+                        <th class="city-column">City</th>
+                        <th class="description-column">Description</th>
+                        <th class="view-column">View</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- Rows will be added dynamically here -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
 
             <!-- Thailand Map Section -->
             <div class="row mt-4 mb-4">
@@ -1082,8 +1377,11 @@
                               <button type="button" class="btn btn-warning btn-block text-left text-white" id="btn-search-excursions" style="padding: 12px 15px; border-radius: 8px; font-weight: 600; margin: 0 0 10px 0;">
                                 <i class="fa fa-binoculars mr-2"></i> Search Excursions
                               </button>
-                              <button type="button" class="btn btn-info btn-block text-left" id="btn-search-transfers" style="padding: 12px 15px; border-radius: 8px; font-weight: 600; margin: 0;">
+                              <button type="button" class="btn btn-info btn-block text-left" id="btn-search-transfers" style="padding: 12px 15px; border-radius: 8px; font-weight: 600; margin: 0 0 10px 0;">
                                 <i class="fa fa-bus mr-2"></i> Search Transfers
+                              </button>
+                              <button type="button" class="btn btn-block text-left" id="btn-search-special-packages" style="padding: 12px 15px; border-radius: 8px; font-weight: 600; margin: 0; background-color: #9b59b6; border-color: #9b59b6; color: white;">
+                                <i class="fa fa-gift mr-2"></i> Search Special Packages
                               </button>
                             </div>
                           </div>
@@ -1376,6 +1674,68 @@
               </button>
             </div>
             <button type="button" class="btn btn-secondary modal-btn-pill" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- View Special Package Modal -->
+    <div class="modal fade" id="viewSpecialPackageModal" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header" style="background: linear-gradient(135deg, #9b59b6, #8e44ad); color: white;">
+            <h5 class="modal-title" style="font-weight: 700;">Special Package Details</h5>
+            <button type="button" class="close" data-dismiss="modal" style="color: white;">&times;</button>
+          </div>
+          <div class="modal-body" style="padding: 24px;">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <strong>Package Name:</strong> <span id="viewPkgName" class="text-primary font-weight-bold">N/A</span>
+              </div>
+              <div class="col-md-6 mb-3">
+                <strong>Package Code:</strong> <span id="viewPkgCode">N/A</span>
+              </div>
+              <div class="col-md-6 mb-3">
+                <strong>Category:</strong> <span id="viewPkgCategory">N/A</span>
+              </div>
+              <div class="col-md-6 mb-3">
+                <strong>Duration (Days):</strong> <span id="viewPkgDuration">N/A</span>
+              </div>
+              <div class="col-md-4 mb-3">
+                <strong>SGL Price (Adult):</strong> <span id="viewPkgSgl" class="text-success font-weight-bold">N/A</span>
+              </div>
+              <div class="col-md-4 mb-3">
+                <strong>DBL Price (Double):</strong> <span id="viewPkgDbl" class="text-success font-weight-bold">N/A</span>
+              </div>
+              <div class="col-md-4 mb-3">
+                <strong>TPL Price (Child/Triple):</strong> <span id="viewPkgTpl" class="text-success font-weight-bold">N/A</span>
+              </div>
+              <div class="col-md-12 mb-3">
+                <strong>City:</strong> <span id="viewPkgCity">N/A</span>
+              </div>
+              <div class="col-md-12 mb-3">
+                <strong>Description:</strong>
+                <div id="viewPkgDescription" class="border p-2 bg-light rounded" style="max-height: 120px; overflow-y: auto;">N/A</div>
+              </div>
+              <div class="col-md-12 mb-3">
+                <strong>Itinerary (Days):</strong>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-striped" id="viewPkgDaysTable">
+                    <thead>
+                      <tr class="bg-primary text-white">
+                        <th style="width: 80px;">Day</th>
+                        <th>Activities</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- Day itinerary will go here dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
           </div>
         </div>
       </div>
@@ -2315,6 +2675,80 @@
         populatePromotionsTable(hotel.promotions || []);
       }
 
+      function populateSpecialPackageModal(pkg) {
+        console.log("Populating Special Package Modal with data:", pkg);
+        $("#viewPkgName").text(pkg.name || "N/A");
+        $("#viewPkgCode").text(pkg.code || "N/A");
+        $("#viewPkgCategory").text(pkg.category || "N/A");
+        $("#viewPkgDuration").text(pkg.duration || "N/A");
+        $("#viewPkgSgl").text(pkg.price_per_adult || "0");
+        $("#viewPkgDbl").text(pkg.price_dbl || "0");
+        $("#viewPkgTpl").text(pkg.price_per_child || "0");
+        $("#viewPkgCity").text(pkg.city || "N/A");
+        $("#viewPkgDescription").text(pkg.description || "N/A");
+
+        // Populate Itinerary Days
+        const daysTableBody = $("#viewPkgDaysTable tbody");
+        daysTableBody.empty();
+
+        if (pkg.special_package_items && pkg.special_package_items.length > 0) {
+          // Group itinerary items by day
+          const daysMap = {};
+          pkg.special_package_items.forEach(item => {
+            const dayNum = item.day_number;
+            if (!daysMap[dayNum]) daysMap[dayNum] = [];
+            daysMap[dayNum].push(item);
+          });
+
+          // Sort days ascending
+          const sortedDays = Object.keys(daysMap).sort((a, b) => parseInt(a) - parseInt(b));
+
+          sortedDays.forEach(day => {
+            const items = daysMap[day];
+            
+            // Format activities listing for this day
+            let activitiesHtml = "";
+            items.forEach(item => {
+              let typeLabel = "";
+              let detailText = "";
+              if (item.flight_id) {
+                typeLabel = `<span class="badge badge-primary">Flight</span>`;
+                detailText = `${item.flight_name || 'Flight'} (${item.from_location} ➔ ${item.to_location})`;
+              } else if (item.transfer_id) {
+                typeLabel = `<span class="badge badge-info">Transfer</span>`;
+                detailText = `${item.transfer_name || 'Transfer'} (${item.from_location} ➔ ${item.to_location})`;
+              } else if (item.hotel_id) {
+                typeLabel = `<span class="badge text-white" style="background-color: #f0ad4e;">Hotel</span>`;
+                detailText = `${item.hotel_name || 'Hotel'} - Room: ${item.room_type || 'Standard'}, ${item.nights || 1} night(s)`;
+              } else if (item.excursion_id) {
+                typeLabel = `<span class="badge text-white" style="background-color: #5cb85c;">Excursion</span>`;
+                detailText = `${item.excursion_name || 'Excursion'}`;
+              } else if (item.tour_id) {
+                typeLabel = `<span class="badge badge-success">Tour</span>`;
+                detailText = `${item.tour_name || 'Tour'} (${item.from_location} ➔ ${item.to_location})`;
+              } else {
+                typeLabel = `<span class="badge badge-secondary">Other</span>`;
+                detailText = `${item.other_name || 'Activity'}`;
+              }
+              activitiesHtml += `<div class="mb-2">${typeLabel} ${detailText}</div>`;
+            });
+
+            daysTableBody.append(`
+              <tr>
+                <td class="font-weight-bold text-center">Day ${day}</td>
+                <td>${activitiesHtml}</td>
+              </tr>
+            `);
+          });
+        } else {
+          daysTableBody.append(`
+            <tr>
+              <td colspan="2" class="text-center">No itinerary details available.</td>
+            </tr>
+          `);
+        }
+      }
+
       function populateExcursionPriceRow(priceData) {
         const tableBody = $("#excursionPriceTable tbody");
         tableBody.empty(); // Clear existing rows
@@ -2390,6 +2824,12 @@
           $("#transferKeyword").val("");
           $("#transferFromDate").val("");
           $("#transferToDate").val("");
+
+          $("#specialPackageCountryDropdown").val("Select a country");
+          $("#specialPackageCityDropdown").val("Select a city");
+          $("#specialPackageKeyword").val("");
+          $("#specialPackageFromDate").val("");
+          $("#specialPackageToDate").val("");
         }
         clearFormFields();
         
@@ -2410,6 +2850,7 @@
             "tourCityDropdown",
             "excursionCityDropdown",
             "transferCityDropdown",
+            "specialPackageCityDropdown",
           ]).catch(error => {
             console.error("Error populating city dropdowns:", error);
           });
@@ -2426,6 +2867,9 @@
           });
           LocationCache.populateCountriesDropdown("transferCountryDropdown").catch(error => {
             console.error("Error populating transfer country dropdown:", error);
+          });
+          LocationCache.populateCountriesDropdown("specialPackageCountryDropdown").catch(error => {
+            console.error("Error populating special package country dropdown:", error);
           });
         }, 1000); // 1 second delay to ensure authentication is ready
 
@@ -2467,6 +2911,16 @@
             LocationCache.populateCitiesDropdown(
               selectedCountry,
               "transferCityDropdown"
+            );
+          });
+
+        document
+          .getElementById("specialPackageCountryDropdown")
+          .addEventListener("change", function () {
+            const selectedCountry = this.value;
+            LocationCache.populateCitiesDropdown(
+              selectedCountry,
+              "specialPackageCityDropdown"
             );
           });
 
@@ -2700,12 +3154,14 @@
         const toursTable = initializeTable("toursTable");
         const excursionsTable = initializeTable("excursionsTable");
         const transfersTable = initializeTable("transfersTable");
+        const specialPackagesTable = initializeTable("specialPackagesTable");
 
         // Global variable to hold fetched data for view button references
         let hotelData = [];
         let tourData = [];
         let excursionData = [];
         let transferData = [];
+        let specialPackageData = [];
 
         // Reusable fetch and populate function with sorting by name
         function fetchDataAndPopulateTable(
@@ -2841,6 +3297,22 @@
           );
         });
 
+        $("#searchSpecialPackageButton").on("click", function () {
+          fetchDataAndPopulateTable(
+            specialPackagesTable,
+            "special-packages",
+            {
+              city: $("#specialPackageCityDropdown").val(),
+              search: $("#specialPackageKeyword").val(),
+              from_date: $("#specialPackageFromDate").val(),
+              to_date: $("#specialPackageToDate").val(),
+            },
+            specialPackageData,
+            "specialPackagesTable",
+            "special packages"
+          );
+        });
+
         // Improved modal data population function
         function populateModal(data, modalId) {
           $(`#${modalId}`).modal("show");
@@ -2876,6 +3348,11 @@
                 selectedData = transferData[index];
                 modalId = "viewTransferModal";
                 populateTransferModal(selectedData); // ✅ Fixed call here
+                break;
+              case "special-packages":
+                selectedData = specialPackageData[index];
+                modalId = "viewSpecialPackageModal";
+                populateSpecialPackageModal(selectedData);
                 break;
               default:
                 console.error("Invalid data type for view button.");
@@ -3173,17 +3650,37 @@
           $('#btn-search-transfers').off('click').on('click', function() {
             selectCityAndSearch('transfersSection', 'transferCountryDropdown', 'transferCityDropdown', 'searchTransferButton', provinceName);
           });
+
+          $('#btn-search-special-packages').off('click').on('click', function() {
+            selectCityAndSearch('specialPackagesSection', 'specialPackageCountryDropdown', 'specialPackageCityDropdown', 'searchSpecialPackageButton', provinceName);
+          });
         }
 
         // Select city and trigger search in section
         function selectCityAndSearch(sectionId, countryDropdownId, cityDropdownId, searchButtonId, cityName) {
+          // Map province names from Leaflet map to database city/area names
+          const provinceToCityMap = {
+            "nakhon ratchasima": "Khao Yai",
+            "chon buri": "Pattaya",
+            "surat thani": "Koh Samui",
+            "phang nga": "Khao Lak",
+            "prachuap khiri khan": "Hua Hin",
+            "samut songkhram": "Amphawa"
+          };
+          
+          let targetCity = cityName;
+          const normName = cityName.trim().toLowerCase();
+          if (provinceToCityMap[normName]) {
+            targetCity = provinceToCityMap[normName];
+          }
+
           // Expand the section
           $(".collapse").collapse("hide"); // Hide others
           $(`#${sectionId}`).collapse('show');
 
-          // Highlight button
-          $(".btn-group button").removeClass("active");
-          $(`button[data-target="#${sectionId}"]`).addClass("active");
+          // Highlight card
+          $(".service-card").removeClass("active");
+          $(`.service-card[data-target="#${sectionId}"]`).addClass("active");
 
           const countryDropdown = document.getElementById(countryDropdownId);
           const cityDropdown = document.getElementById(cityDropdownId);
@@ -3199,8 +3696,8 @@
             const performSelection = () => {
               // Find matching city option (case-insensitive)
               const option = Array.from(cityDropdown.options).find(opt => 
-                opt.value.toLowerCase() === cityName.toLowerCase() || 
-                opt.text.toLowerCase() === cityName.toLowerCase()
+                opt.value.toLowerCase() === targetCity.toLowerCase() || 
+                opt.text.toLowerCase() === targetCity.toLowerCase()
               );
 
               if (option) {
@@ -3211,11 +3708,11 @@
                   document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth' });
                 }, 150);
               } else {
-                console.warn(`City "${cityName}" not found in dropdown ${cityDropdownId}`);
+                console.warn(`City "${targetCity}" not found in dropdown ${cityDropdownId}`);
                 // Try wildcard matching
                 const partialOption = Array.from(cityDropdown.options).find(opt => 
-                  opt.value.toLowerCase().includes(cityName.toLowerCase()) || 
-                  opt.text.toLowerCase().includes(cityName.toLowerCase())
+                  opt.value.toLowerCase().includes(targetCity.toLowerCase()) || 
+                  opt.text.toLowerCase().includes(targetCity.toLowerCase())
                 );
                 if (partialOption) {
                   cityDropdown.value = partialOption.value;
@@ -3267,14 +3764,25 @@
         fetchDataAndPopulateTable(toursTable, "tours", {}, tourData, "toursTable", "tours");
         fetchDataAndPopulateTable(excursionsTable, "excursions", {}, excursionData, "excursionsTable", "excursions");
         fetchDataAndPopulateTable(transfersTable, "transfers", {}, transferData, "transfersTable", "transfers");
+        fetchDataAndPopulateTable(specialPackagesTable, "special-packages", {}, specialPackageData, "specialPackagesTable", "special packages");
 
         // Ensure only one section is visible at a time
-        $(".btn-group button").on("click", function () {
-          $(".collapse").collapse("hide"); // Hide all sections
-          $(".btn-group button").removeClass("active"); // Remove active class from all buttons
-          $(this).addClass("active"); // Highlight clicked button
+        $(".service-card").on("click", function () {
           const target = $(this).data("target");
-          $(target).collapse("show"); // Show the target section
+          const isCurrentlyOpen = $(target).hasClass("show");
+          
+          $(".collapse").collapse("hide"); // Hide all sections
+          $(".service-card").removeClass("active"); // Remove active class from all cards
+          
+          if (!isCurrentlyOpen) {
+            $(this).addClass("active"); // Highlight clicked card
+            $(target).collapse("show"); // Show the target section
+            
+            // Smoothly scroll down to the search filters
+            $('html, body').animate({
+              scrollTop: $(target).offset().top - 80
+            }, 500);
+          }
         });
       });
     </script>

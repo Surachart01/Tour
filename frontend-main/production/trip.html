@@ -81,6 +81,146 @@
         transform: translateY(-1px);
         box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3) !important;
       }
+
+      /* Truncation helper with tooltips */
+      .text-truncate-display {
+        display: inline-block;
+        max-width: 140px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+        border-bottom: 1px dotted #ccc;
+      }
+      
+      /* Premium table row indicators */
+      .quotation-row {
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        border-left: 4px solid transparent;
+      }
+      
+      .quotation-row:hover {
+        background-color: #f8fafc !important;
+      }
+
+      .row-status-approved {
+        border-left: 4px solid #2ecc71 !important;
+      }
+
+      .row-status-cancelled {
+        border-left: 4px solid #e74c3c !important;
+      }
+
+      .row-status-pending {
+        border-left: 4px solid #f39c12 !important;
+      }
+
+      .row-status-inprogress {
+        border-left: 4px solid #3498db !important;
+      }
+
+      /* Premium badge styles */
+      .badge-status {
+        padding: 5px 10px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        display: inline-block;
+      }
+      .badge-status-approved {
+        background-color: #e8f8f0;
+        color: #2ecc71;
+      }
+      .badge-status-cancelled {
+        background-color: #fce8e6;
+        color: #e74c3c;
+      }
+      .badge-status-pending {
+        background-color: #fef5e7;
+        color: #f39c12;
+      }
+      .badge-status-inprogress {
+        background-color: #ebf5fb;
+        color: #3498db;
+      }
+
+      /* Modern icon-only action buttons */
+      .btn-action {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 2px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        background-color: #f1f5f9;
+        color: #64748b;
+        cursor: pointer;
+        padding: 0 !important;
+      }
+
+      .btn-action:hover {
+        transform: translateY(-1.5px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      }
+
+      .btn-action-edit {
+        background-color: #eff6ff;
+        color: #2563eb;
+      }
+      .btn-action-edit:hover {
+        background-color: #2563eb !important;
+        color: #fff !important;
+      }
+
+      .btn-action-cancel {
+        background-color: #fef2f2;
+        color: #dc2626;
+      }
+      .btn-action-cancel:hover {
+        background-color: #dc2626 !important;
+        color: #fff !important;
+      }
+
+      .btn-action-save {
+        background-color: #f0fdf4;
+        color: #16a34a;
+      }
+      .btn-action-save:hover {
+        background-color: #16a34a !important;
+        color: #fff !important;
+      }
+
+      .btn-action-client {
+        background-color: #ecfeff;
+        color: #0891b2;
+      }
+      .btn-action-client:hover {
+        background-color: #0891b2 !important;
+        color: #fff !important;
+      }
+
+      .btn-action-notify {
+        background-color: #fff7ed;
+        color: #ea580c;
+      }
+      .btn-action-notify:hover {
+        background-color: #ea580c !important;
+        color: #fff !important;
+      }
+
+      .actions-cell {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        flex-wrap: nowrap;
+      }
     </style>
   </head>
   <body class="nav-md">
@@ -434,10 +574,7 @@
                                   id="sort-final_cost"
                                 ></i>
                               </th>
-                              <th>Edit</th>
-                              <th>Delete/Cancel</th>
-                              <th>Save</th>
-                              <th>Email</th>
+                              <th class="text-center" style="width: 190px;">Actions</th>
                             </tr>
                           </thead>
                           <tbody id="tripTableBody">
@@ -781,6 +918,11 @@
 
         // Render trips into the table
         function renderTrips() {
+          // Destroy previous tooltips to prevent memory leaks and orphan elements
+          try {
+            $('[data-toggle="tooltip"]').tooltip('destroy');
+          } catch(e) {}
+
           tripTableBody.innerHTML = "";
 
           // Apply sorting based on current sort settings
@@ -789,31 +931,38 @@
           const start = (currentPage - 1) * rowsPerPage;
           const end = Math.min(start + rowsPerPage, filteredTrips.length);
 
+          const escapeHtml = (str) => {
+            if (!str) return '';
+            return str.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+          };
+
           filteredTrips.slice(start, end).forEach((trip) => {
             const row = document.createElement("tr");
+            row.className = "quotation-row";
 
-            // ✅ Apply background color based on approval status
+            // Apply left border color indicator based on status
             if (trip.status === "Approved") {
-              row.style.backgroundColor = "#A2D9A5"; // Green for approved trips
-            } else if (
-              trip.status === "Declined" ||
-              trip.status === "Cancelled"
-            ) {
-              row.style.backgroundColor = "#E74C3C"; // Red for cancelled or declined trips
-            } else if (
-              (trip.client_booking || trip.booking_reference) &&
-              (trip.client_booking || trip.booking_reference).trim() !== ""
-            ) {
-              row.style.backgroundColor = "#FFD580"; // Yellow if client_booking is not empty
+              row.classList.add("row-status-approved");
+            } else if (trip.status === "Declined" || trip.status === "Cancelled") {
+              row.classList.add("row-status-cancelled");
+            } else if (trip.status === "InProgress") {
+              row.classList.add("row-status-inprogress");
+            } else {
+              row.classList.add("row-status-pending");
             }
 
-            let actionButton = `<button class="btn btn-danger btn-sm delete-btn" data-id="${trip.id}"><i class="fa fa-trash"></i> Delete</button>`;
+            // Also tint row background slightly if client booking reference is present (for visual cue)
+            const hasBookingRef = (trip.client_booking || trip.booking_reference) && (trip.client_booking || trip.booking_reference).trim() !== "";
+            if (hasBookingRef && trip.status !== "Approved" && trip.status !== "Cancelled" && trip.status !== "Declined") {
+              row.style.backgroundColor = "#fffef0"; 
+            }
+
+            let actionButton = `<button class="btn-action btn-action-cancel delete-btn" data-id="${trip.id}" data-toggle="tooltip" data-container="body" title="Delete / Cancel Quotation"><i class="fa fa-trash"></i></button>`;
             if (trip.status !== "Pending") {
-              actionButton = `<button class="btn btn-warning btn-sm cancel-btn" data-id="${trip.id}"><i class="fa fa-ban"></i> Cancel</button>`;
+              actionButton = `<button class="btn-action btn-action-cancel cancel-btn" data-id="${trip.id}" data-toggle="tooltip" data-container="body" title="Void Booking"><i class="fa fa-ban"></i></button>`;
             }
 
             // Convert the trip start date to DD/MM/YYYY format
-            // Accept both mapped alias (start_date) and raw Prisma field (trip_start_date)
             const rawStartDate = trip.start_date || trip.trip_start_date || null;
             let formattedDate = "N/A";
             if (rawStartDate) {
@@ -823,8 +972,7 @@
               }
             }
 
-            // Format booking date to DD/MM/YYYY format, handle cases where booking_date might be null or invalid
-            // Accept both mapped alias (booking_date) and raw Prisma field (created_at)
+            // Format booking date to DD/MM/YYYY format
             let formattedBookingDate = "N/A";
             const rawBookingDate = trip.booking_date || trip.created_at || null;
             if (rawBookingDate && rawBookingDate !== "0001-01-01T00:00:00Z") {
@@ -834,40 +982,62 @@
               }
             }
 
-            // Accept both mapped aliases and raw Prisma field names
             const quotationRef = trip.quotation_reference || trip.booking_reference || '';
             const clientBooking = trip.client_booking || trip.booking_reference || '';
             const finalCostRaw = trip.final_cost !== undefined ? trip.final_cost : (trip.final_amount !== undefined ? trip.final_amount : null);
             const finalCostDisplay = (finalCostRaw !== null && finalCostRaw !== undefined)
-              ? (parseFloat(finalCostRaw) === 0 ? '0' : (parseFloat(finalCostRaw) || 'N/A'))
+              ? (parseFloat(finalCostRaw) === 0 ? '0' : (parseFloat(finalCostRaw).toLocaleString() || 'N/A'))
               : 'N/A';
 
+            // Truncation configurations
+            const escapedRef = escapeHtml(quotationRef);
+            const escapedName = escapeHtml(trip.client_name);
+            const escapedPhone = escapeHtml(trip.client_phone);
+            const escapedBooking = escapeHtml(clientBooking);
+
+            const displayRef = `<span class="text-truncate-display" data-toggle="tooltip" data-container="body" title="${escapedRef}">${escapedRef}</span>`;
+            const displayName = `<span class="text-truncate-display" data-toggle="tooltip" data-container="body" title="${escapedName}">${escapedName}</span>`;
+            const displayPhone = `<span class="text-truncate-display" data-toggle="tooltip" data-container="body" title="${escapedPhone}">${escapedPhone}</span>`;
+            const displayBooking = `<span class="text-truncate-display" data-toggle="tooltip" data-container="body" title="${escapedBooking}">${escapedBooking}</span>`;
+
+            // Status Badge rendering
+            let statusBadge = '';
+            if (trip.status === "Approved") {
+              statusBadge = `<span class="badge-status badge-status-approved">Approved</span>`;
+            } else if (trip.status === "Declined" || trip.status === "Cancelled") {
+              statusBadge = `<span class="badge-status badge-status-cancelled">${trip.status}</span>`;
+            } else if (trip.status === "InProgress") {
+              statusBadge = `<span class="badge-status badge-status-inprogress">InProgress</span>`;
+            } else {
+              statusBadge = `<span class="badge-status badge-status-pending">Pending</span>`;
+            }
+
             row.innerHTML = `
-            <td>${quotationRef}</td>
-        <td>${trip.client_name}</td>
-        <td>${formattedBookingDate}</td>
-        <td>${formattedDate}</td>
-        <td>${trip.number_of_adults + trip.number_of_kids}</td>
-        <td>${trip.client_phone}</td>
-        <td>${clientBooking}</td>
-        <td>${trip.status}</td>
-        <td>${finalCostDisplay}</td>
-        <td><button class="btn btn-primary btn-sm edit-btn" data-id="${
-          trip.id
-        }">Edit</button></td>
-        <td>${actionButton}</td>
-        <td><button class="btn btn-success btn-sm print-btn" data-id="${
-          trip.id
-        }">Save</button></td>
-        <td><button class="btn btn-info btn-sm email-btn" data-id="${
-          trip.id
-        }" data-client-name="${trip.client_name}" data-quotation-ref="${
-              quotationRef
-            }"><i class="fa fa-envelope"></i> Email</button></td>
-    `;
+              <td>${displayRef}</td>
+              <td>${displayName}</td>
+              <td>${formattedBookingDate}</td>
+              <td>${formattedDate}</td>
+              <td class="text-center">${trip.number_of_adults + trip.number_of_kids}</td>
+              <td>${displayPhone}</td>
+              <td>${displayBooking}</td>
+              <td>${statusBadge}</td>
+              <td class="font-weight-bold text-success">${finalCostDisplay}</td>
+              <td class="text-center">
+                <div class="actions-cell">
+                  <button class="btn-action btn-action-edit edit-btn" data-id="${trip.id}" data-toggle="tooltip" data-container="body" title="Edit Quotation"><i class="fa fa-edit"></i></button>
+                  ${actionButton}
+                  <button class="btn-action btn-action-save print-btn" data-id="${trip.id}" data-toggle="tooltip" data-container="body" title="Save / Download PDF"><i class="fa fa-save"></i></button>
+                  <button class="btn-action btn-action-client email-btn" data-id="${trip.id}" data-client-name="${escapedName}" data-quotation-ref="${escapedRef}" data-toggle="tooltip" data-container="body" title="Email Quotation to Client"><i class="fa fa-envelope"></i></button>
+                  <button class="btn-action btn-action-notify notify-hotels-btn" data-id="${trip.id}" data-quotation-ref="${escapedRef}" data-toggle="tooltip" data-container="body" title="Notify Hotels & Stay Summaries"><i class="fa fa-bell-o"></i></button>
+                </div>
+              </td>
+            `;
 
             tripTableBody.appendChild(row);
           });
+
+          // Initialize tooltips with boundary constraints
+          $('[data-toggle="tooltip"]').tooltip({ boundary: 'window' });
         }
 
         function updatePaginationButtons() {
@@ -1280,8 +1450,191 @@
                 event.target.disabled = false;
               });
           }
+
+          if (event.target.classList.contains("notify-hotels-btn") || event.target.closest(".notify-hotels-btn")) {
+            const targetBtn = event.target.classList.contains("notify-hotels-btn") ? event.target : event.target.closest(".notify-hotels-btn");
+            const tripId = targetBtn.getAttribute("data-id");
+            const quotationRef = targetBtn.getAttribute("data-quotation-ref");
+            
+            $("#notifModalRef").text(quotationRef || tripId);
+            $("#notifModalSendAllBtn").attr("data-trip-id", tripId);
+
+            const tbody = document.querySelector("#notifHotelsTable tbody");
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center"><i class="fa fa-spinner fa-spin"></i> Loading hotels...</td></tr>`;
+            $("#notifHotelsModal").modal("show");
+
+            const formatDateString = (d) => {
+              if (!d) return 'N/A';
+              const date = new Date(d);
+              if (isNaN(date.getTime())) return 'N/A';
+              return date.toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+              });
+            };
+
+            fetch(`${Endpoint}/api/v1/bookings/${tripId}`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              }
+            })
+            .then(res => res.json())
+            .then(booking => {
+              tbody.innerHTML = "";
+              if (!booking.hotel_trip_items || booking.hotel_trip_items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center">No hotels booked for this quotation.</td></tr>`;
+                $("#notifModalSendAllBtn").prop("disabled", true);
+              } else {
+                $("#notifModalSendAllBtn").prop("disabled", false);
+                booking.hotel_trip_items.forEach(item => {
+                  const fromStr = formatDateString(item.from_date);
+                  const toStr = formatDateString(item.to_date);
+                  const stayPeriod = `${fromStr} to ${toStr}`;
+                  
+                  const isSent = item.email_sent 
+                    ? `<span class="badge badge-success"><i class="fa fa-check"></i> Sent</span>` 
+                    : `<span class="badge badge-warning text-white" style="background-color: #f0ad4e;"><i class="fa fa-clock-o"></i> Pending</span>`;
+                  
+                  const actionBtn = `
+                    <button class="btn btn-info btn-xs notif-send-single-btn" data-id="${item.id}" data-trip-id="${booking.id}">
+                      ${item.email_sent ? '<i class="fa fa-refresh"></i> Resend' : '<i class="fa fa-envelope"></i> Send'}
+                    </button>
+                  `;
+
+                  const tr = document.createElement("tr");
+                  tr.innerHTML = `
+                    <td><strong>${item.hotel_name || (item.hotels ? item.hotels.name : 'N/A')}</strong></td>
+                    <td>${item.room_type || 'Standard'}</td>
+                    <td>${stayPeriod}</td>
+                    <td class="text-center">${item.nights || 1}</td>
+                    <td class="status-cell">${isSent}</td>
+                    <td>${actionBtn}</td>
+                  `;
+                  tbody.appendChild(tr);
+                });
+              }
+            })
+            .catch(err => {
+              console.error("Error loading hotel bookings:", err);
+              tbody.innerHTML = `<tr><td colspan="6" class="text-danger text-center">Failed to load hotel items.</td></tr>`;
+            });
+          }
+        });
+
+        // Handle single hotel send click inside modal
+        $("#notifHotelsTable tbody").on("click", ".notif-send-single-btn", function () {
+          const btn = $(this);
+          const itemId = btn.attr("data-id");
+          const tripId = btn.attr("data-trip-id");
+          const originalText = btn.html();
+
+          btn.html('<i class="fa fa-spinner fa-spin"></i> Sending...').prop("disabled", true);
+
+          fetch(`${Endpoint}/api/v1/bookings/${tripId}/notify/hotel/${itemId}`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              "Content-Type": "application/json",
+            }
+          })
+          .then(res => {
+            if (!res.ok) throw new Error("Failed to send notification email");
+            return res.json();
+          })
+          .then(data => {
+            alert("Reservation email sent successfully!");
+            btn.html('<i class="fa fa-refresh"></i> Resend').prop("disabled", false);
+            btn.closest("tr").find(".status-cell").html(`<span class="badge badge-success"><i class="fa fa-check"></i> Sent</span>`);
+          })
+          .catch(err => {
+            console.error("Error sending hotel notification:", err);
+            alert("Error sending email: " + err.message);
+            btn.html(originalText).prop("disabled", false);
+          });
+        });
+
+        // Handle send all hotels click
+        $("#notifModalSendAllBtn").on("click", function () {
+          const btn = $(this);
+          const tripId = btn.attr("data-trip-id");
+          const originalText = btn.html();
+
+          if (!confirm("Are you sure you want to send reservation emails to all hotels for this trip?")) {
+            return;
+          }
+
+          btn.html('<i class="fa fa-spinner fa-spin"></i> Sending All...').prop("disabled", true);
+
+          fetch(`${Endpoint}/api/v1/bookings/${tripId}/notify/hotel/all`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              "Content-Type": "application/json",
+            }
+          })
+          .then(res => {
+            if (!res.ok) throw new Error("Failed to send notification emails");
+            return res.json();
+          })
+          .then(data => {
+            alert("All hotel reservation emails sent successfully!");
+            btn.html(originalText).prop("disabled", false);
+            $("#notifHotelsTable tbody tr").each(function () {
+              const tr = $(this);
+              tr.find(".status-cell").html(`<span class="badge badge-success"><i class="fa fa-check"></i> Sent</span>`);
+              tr.find(".notif-send-single-btn").html('<i class="fa fa-refresh"></i> Resend');
+            });
+          })
+          .catch(err => {
+            console.error("Error sending all hotel notifications:", err);
+            alert("Error sending emails: " + err.message);
+            btn.html(originalText).prop("disabled", false);
+          });
         });
       });
     </script>
+    <!-- Notify Hotels Summary Modal -->
+    <div class="modal fade" id="notifHotelsModal" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+          <div class="modal-header" style="background: linear-gradient(135deg, #f0ad4e, #d9534f); color: white; border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 18px 24px;">
+            <h5 class="modal-title" style="font-weight: 700; color: white;"><i class="fa fa-hotel"></i> Send Hotel Reservation Request</h5>
+            <button type="button" class="close" data-dismiss="modal" style="color: white;">&times;</button>
+          </div>
+          <div class="modal-body" style="padding: 24px;">
+            <div class="d-flex justify-content-between align-items-center mb-3" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+              <div>
+                <strong>Quotation Ref:</strong> <span id="notifModalRef" class="text-primary font-weight-bold">N/A</span>
+              </div>
+              <button class="btn btn-warning" id="notifModalSendAllBtn"><i class="fa fa-paper-plane"></i> Email All Hotels</button>
+            </div>
+            
+            <div class="table-responsive">
+              <table class="table table-bordered table-striped" id="notifHotelsTable">
+                <thead>
+                  <tr class="bg-light">
+                    <th>Hotel Name</th>
+                    <th>Room Type</th>
+                    <th>Stay Period</th>
+                    <th class="text-center">Nights</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Summary of stays will be injected dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
