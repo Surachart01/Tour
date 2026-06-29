@@ -906,6 +906,7 @@ model special_packages {
   inclusions      String?
   exclusions      String?
   terms           String?
+   display_order   Int?                    @default(0) @map("display_order")
   created_by      Int?
   created_at      DateTime?               @default(now()) @db.Timestamp(6)
   updated_at      DateTime?               @default(now()) @db.Timestamp(6)

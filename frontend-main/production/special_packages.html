@@ -280,6 +280,7 @@
                         <tr>
                           <th>Code</th>
                           <th>Name</th>
+                          <th>Display Order</th>
                           <th>Duration (Days)</th>
                           <th>City</th>
                           <th>Category</th>
@@ -437,7 +438,7 @@
           tbody.innerHTML = "";
 
           if (packages.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="${isAdmin ? 10 : 9}" class="text-center">No special packages found.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="${isAdmin ? 11 : 10}" class="text-center">No special packages found.</td></tr>`;
             return;
           }
 
@@ -495,6 +496,7 @@
             tr.innerHTML = `
               <td>${pkg.code || '-'}</td>
               <td><strong>${pkg.name}</strong></td>
+              <td>${pkg.display_order ?? 0}</td>
               <td>${pkg.duration}</td>
               <td>${pkg.city || '-'}</td>
               <td>${pkg.category || '-'}</td>

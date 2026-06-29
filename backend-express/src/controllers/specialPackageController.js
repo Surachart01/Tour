@@ -42,7 +42,10 @@ export async function listSpecialPackages(req, res, next) {
           ]
         }
       },
-      orderBy: { created_at: 'desc' }
+      orderBy: [
+        { display_order: 'asc' },
+        { created_at: 'desc' }
+      ]
     });
 
     res.json(packages);
@@ -119,6 +122,7 @@ export async function createSpecialPackage(req, res, next) {
           inclusions: data.inclusions || null,
           exclusions: data.exclusions || null,
           terms: data.terms || null,
+          display_order: data.display_order !== undefined ? parseInt(data.display_order) : 0,
           created_by: claims ? claims.user_id : null
         }
       });
@@ -219,6 +223,7 @@ export async function updateSpecialPackage(req, res, next) {
           inclusions: data.inclusions !== undefined ? data.inclusions : existing.inclusions,
           exclusions: data.exclusions !== undefined ? data.exclusions : existing.exclusions,
           terms: data.terms !== undefined ? data.terms : existing.terms,
+          display_order: data.display_order !== undefined ? parseInt(data.display_order) : existing.display_order,
           updated_at: new Date()
         }
       });
