@@ -364,7 +364,7 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-primary print-modal-btn"><i class="fa fa-print"></i> Print</button>
+            <button type="button" class="btn btn-success print-modal-btn"><i class="fa fa-print"></i> Print</button>
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
           </div>
         </div>
@@ -686,6 +686,22 @@
               days[dNum].push(item);
             });
 
+            // Sort items inside each day chronologically by item_type priority
+            const typePriority = {
+              "flight": 1,
+              "transfer": 2,
+              "excursion": 3,
+              "hotel": 4,
+              "other": 5
+            };
+            for (let i = 1; i <= pkg.duration; i++) {
+              days[i].sort((a, b) => {
+                const priorityA = typePriority[a.item_type] || 99;
+                const priorityB = typePriority[b.item_type] || 99;
+                return priorityA - priorityB;
+              });
+            }
+
             for (let d = 1; d <= pkg.duration; d++) {
               const dayDiv = document.createElement("div");
               dayDiv.className = "itinerary-day";
@@ -807,6 +823,22 @@
             if (!days[dNum]) days[dNum] = [];
             days[dNum].push(item);
           });
+
+          // Sort items inside each day chronologically by item_type priority
+          const typePriority = {
+            "flight": 1,
+            "transfer": 2,
+            "excursion": 3,
+            "hotel": 4,
+            "other": 5
+          };
+          for (let i = 1; i <= pkg.duration; i++) {
+            days[i].sort((a, b) => {
+              const priorityA = typePriority[a.item_type] || 99;
+              const priorityB = typePriority[b.item_type] || 99;
+              return priorityA - priorityB;
+            });
+          }
 
           let itineraryHtml = "";
           for (let d = 1; d <= pkg.duration; d++) {
