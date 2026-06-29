@@ -1252,11 +1252,15 @@
         }
 
         tripTableBody.addEventListener("click", function (event) {
-          if (event.target.classList.contains("edit-btn")) {
-            const tripId = event.target.getAttribute("data-id");
+          const editBtn = event.target.closest(".edit-btn");
+          if (editBtn) {
+            const tripId = editBtn.getAttribute("data-id");
             window.location.href = `edit_trip.html?id=${tripId}`;
+            return;
           }
-          if (event.target.classList.contains("cancel-btn")) {
+
+          const cancelBtn = event.target.closest(".cancel-btn");
+          if (cancelBtn) {
             if (
               !confirm(
                 "Are you sure you want to cancel? Penalty charges may apply if booking is approved?"
@@ -1264,7 +1268,7 @@
             ) {
               return;
             }
-            const tripId = event.target.getAttribute("data-id");
+            const tripId = cancelBtn.getAttribute("data-id");
             fetch(`${Endpoint}/api/v1/quotations/${tripId}/cancel`, {
               method: "POST",
               headers: {
@@ -1288,9 +1292,12 @@
                 console.error("Error canceling trip:", error);
                 alert("Error: Could not cancel trip.");
               });
+            return;
           }
-          if (event.target.classList.contains("delete-btn")) {
-            const tripId = event.target.getAttribute("data-id");
+
+          const deleteBtn = event.target.closest(".delete-btn");
+          if (deleteBtn) {
+            const tripId = deleteBtn.getAttribute("data-id");
 
             if (!tripId) {
               alert("Invalid quotation ID.");
@@ -1321,7 +1328,7 @@
                 alert("Quotation deleted successfully!"); // ✅ Show success message
 
                 // Remove row from the table dynamically
-                event.target.closest("tr").remove();
+                deleteBtn.closest("tr").remove();
 
                 // Update the filtered trips array
                 trips = trips.filter(
@@ -1339,9 +1346,12 @@
                 console.error("Error deleting quotation:", error);
                 alert(`Error: ${error.message}`);
               });
+            return;
           }
-          if (event.target.classList.contains("print-btn")) {
-            const tripId = event.target.getAttribute("data-id");
+
+          const printBtn = event.target.closest(".print-btn");
+          if (printBtn) {
+            const tripId = printBtn.getAttribute("data-id");
 
             if (!tripId) {
               alert("Invalid quotation ID.");
@@ -1375,13 +1385,15 @@
                 console.error("Error fetching PDF:", error);
                 alert("Failed to open PDF.");
               });
+            return;
           }
 
-          if (event.target.classList.contains("email-btn")) {
-            const tripId = event.target.getAttribute("data-id");
-            const clientName = event.target.getAttribute("data-client-name");
+          const emailBtn = event.target.closest(".email-btn");
+          if (emailBtn) {
+            const tripId = emailBtn.getAttribute("data-id");
+            const clientName = emailBtn.getAttribute("data-client-name");
             const quotationRef =
-              event.target.getAttribute("data-quotation-ref");
+              emailBtn.getAttribute("data-quotation-ref");
 
             if (!tripId) {
               alert("Invalid quotation ID.");
@@ -1397,10 +1409,10 @@
             }
 
             // Show loading state
-            const originalText = event.target.innerHTML;
-            event.target.innerHTML =
+            const originalText = emailBtn.innerHTML;
+            emailBtn.innerHTML =
               '<i class="fa fa-spinner fa-spin"></i> Sending...';
-            event.target.disabled = true;
+            emailBtn.disabled = true;
 
             fetch(`${Endpoint}/api/v1/quotations/${tripId}/send-email`, {
               method: "POST",
@@ -1446,9 +1458,10 @@
               })
               .finally(() => {
                 // Reset button state
-                event.target.innerHTML = originalText;
-                event.target.disabled = false;
+                emailBtn.innerHTML = originalText;
+                emailBtn.disabled = false;
               });
+            return;
           }
 
           if (event.target.classList.contains("notify-hotels-btn") || event.target.closest(".notify-hotels-btn")) {

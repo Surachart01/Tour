@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         }
         
-        const permKeys = ["tours", "hotels", "transfers", "excursions", "bookings", "special_packages", "activities", "suppliers", "agents", "markups", "city_info", "users"];
+        const permKeys = ["tours", "hotels", "transfers", "excursions", "bookings", "special_packages", "activities", "suppliers", "agents", "markups", "city_info", "users", "analytics"];
         permKeys.forEach(key => {
           const checkbox = document.getElementById(`perm_${key}`);
           if (checkbox) {
@@ -116,7 +116,7 @@ document.addEventListener("DOMContentLoaded", function () {
             event.preventDefault();
 
             const permissionsObj = {};
-            const permKeys = ["tours", "hotels", "transfers", "excursions", "bookings", "special_packages", "activities", "suppliers", "agents", "markups", "city_info", "users"];
+            const permKeys = ["tours", "hotels", "transfers", "excursions", "bookings", "special_packages", "activities", "suppliers", "agents", "markups", "city_info", "users", "analytics"];
             permKeys.forEach(key => {
               const checkbox = document.getElementById(`perm_${key}`);
               permissionsObj[key] = checkbox ? checkbox.checked : true;
@@ -131,6 +131,12 @@ document.addEventListener("DOMContentLoaded", function () {
               email: document.getElementById("editEmail").value,
               permissions: permissionsObj
             };
+
+            const submitBtn = document.getElementById("submitEditUser");
+            if (submitBtn) {
+              submitBtn.disabled = true;
+              submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px"></i> Saving...';
+            }
 
             fetch(`${Endpoint}/api/v1/users/${userId}`, {
               method: "PUT",
@@ -162,6 +168,10 @@ document.addEventListener("DOMContentLoaded", function () {
               .catch((error) => {
                 console.error("Error updating user:", error);
                 alert("Failed to update user. Please try again later.");
+                if (submitBtn) {
+                  submitBtn.disabled = false;
+                  submitBtn.innerHTML = '<i class="fas fa-save" style="margin-right: 8px"></i> Save Changes';
+                }
               });
           });
 

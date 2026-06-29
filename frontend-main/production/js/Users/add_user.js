@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const agentId = agentIdValue ? parseInt(agentIdValue, 10) : null;
 
       const permissionsObj = {};
-      const permKeys = ["tours", "hotels", "transfers", "excursions", "bookings", "special_packages", "activities", "suppliers", "agents", "markups", "city_info", "users"];
+      const permKeys = ["tours", "hotels", "transfers", "excursions", "bookings", "special_packages", "activities", "suppliers", "agents", "markups", "city_info", "users", "analytics"];
       permKeys.forEach(key => {
         const checkbox = document.getElementById(`perm_${key}`);
         permissionsObj[key] = checkbox ? checkbox.checked : true;
@@ -74,6 +74,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Log the user object to check its structure
       console.log("User data being sent:", user);
+
+      const submitBtn = document.getElementById("submitUser");
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px"></i> Saving...';
+      }
 
       // Send the user data to the backend
       fetch(`${Endpoint}/api/v1/users`, {
@@ -101,6 +107,10 @@ document.addEventListener("DOMContentLoaded", function () {
         .catch((error) => {
           console.error("Error saving user:", error);
           alert(`Error saving user: ${error.message}`);
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-save" style="margin-right: 8px"></i> Create Account';
+          }
         });
     });
 });

@@ -176,7 +176,7 @@ document.getElementById("hotelsTableBody").addEventListener("click", function (e
   const rowData = hotelsArray[rowIndex];
   if (!rowData) return;
 
-  if (event.target.classList.contains("editBtn")) {
+  if (event.target.classList.contains("editBtn") || event.target.closest(".editBtn")) {
     console.log("Editing hotel:", rowData);
 
     // Set editing flag to prevent auto-Thailand selection
@@ -348,7 +348,7 @@ document.getElementById("hotelsTableBody").addEventListener("click", function (e
     });
   }
 
-  if (event.target.classList.contains("deleteBtn")) {
+  if (event.target.classList.contains("deleteBtn") || event.target.closest(".deleteBtn")) {
     if (confirm("Are you sure you want to delete this hotel booking?")) {
       hotelsArray.splice(rowIndex, 1);
       row.remove();

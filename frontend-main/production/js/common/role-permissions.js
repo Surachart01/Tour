@@ -94,6 +94,7 @@ function applyModulePermissions() {
     "edit_user.html": "users",
     "special_packages.html": "special_packages",
     "edit_special_package.html": "special_packages",
+    "analytics.html": "analytics",
     "city_info.html": "city_info",
     "stop_sale.html": "stop_sale",
     "tools.html": "tools",
@@ -134,6 +135,41 @@ function applyModulePermissions() {
       } else {
         controlPanelMenu.style.display = "none";
       }
+    }
+  }
+
+  // Handle special packages visibility based on permissions
+  if (permissions["special_packages"] === false) {
+    // Hide specialPackageSelect group on quotation/edit pages
+    const spSelect = document.getElementById("specialPackageSelect");
+    if (spSelect) {
+      const group = spSelect.closest(".form-group");
+      if (group) group.style.display = "none";
+    }
+    
+    // Hide card-special-packages on index.html
+    const spCard = document.querySelector(".card-special-packages");
+    if (spCard) {
+      const wrapper = spCard.closest(".service-card-wrapper");
+      if (wrapper) wrapper.style.display = "none";
+    }
+    
+    // Hide btn-search-special-packages on index.html
+    const spSearchBtn = document.getElementById("btn-search-special-packages");
+    if (spSearchBtn) {
+      spSearchBtn.style.display = "none";
+    }
+    
+    // Hide specialPackagesSection on index.html
+    const spSection = document.getElementById("specialPackagesSection");
+    if (spSection) {
+      spSection.style.display = "none";
+    }
+
+    // Hide btnSpecialPackages tab button on quotation pages
+    const spTabBtn = document.getElementById("btnSpecialPackages");
+    if (spTabBtn) {
+      spTabBtn.style.display = "none";
     }
   }
 

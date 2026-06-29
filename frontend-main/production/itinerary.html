@@ -606,12 +606,15 @@
         }
 
         tripTableBody.addEventListener("click", function (event) {
-          if (event.target.classList.contains("edit-btn")) {
-            const tripId = event.target.getAttribute("data-id");
+          const editBtn = event.target.closest(".edit-btn");
+          if (editBtn) {
+            const tripId = editBtn.getAttribute("data-id");
             window.location.href = `edit_itinerary.html?id=${tripId}`;
+            return;
           }
-          if (event.target.classList.contains("print-btn")) {
-            const tripId = event.target.getAttribute("data-id");
+          const printBtn = event.target.closest(".print-btn");
+          if (printBtn) {
+            const tripId = printBtn.getAttribute("data-id");
 
             if (!tripId) {
               alert("Invalid quotation ID.");
@@ -647,6 +650,7 @@
                 console.error("Error printing itinerary:", error);
                 alert(`Error: ${error.message}`);
               });
+            return;
           }
         });
 
