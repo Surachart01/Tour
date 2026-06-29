@@ -453,7 +453,7 @@
             <div class="x_panel">
               <div class="x_content text-right">
                 <a href="special_packages.html" class="btn btn-secondary">Cancel</a>
-                <button type="submit" class="btn btn-success">Save Package</button>
+                <button type="submit" id="saveBtn" class="btn btn-success">Save Package</button>
               </div>
             </div>
           </form>
@@ -490,9 +490,10 @@
         document.getElementById("profileName").innerText = username;
         document.getElementById("navProfileName").innerText = username;
 
-        // Get Package ID if editing
+        // Get Package ID if editing or cloning
         const urlParams = new URLSearchParams(window.location.search);
         const packageId = urlParams.get("id");
+        const isCloneMode = urlParams.get("clone") === "true";
 
         // Master records lists loaded from database
         let dbHotels = [];
@@ -1083,7 +1084,10 @@
 
         // Load existing package for editing
         async function loadPackageForEdit() {
-          document.getElementById("pageTitle").innerText = "Edit Special Package";
+          document.getElementById("pageTitle").innerText = isCloneMode ? "Clone Special Package" : "Edit Special Package";
+          if (isCloneMode) {
+            document.getElementById("saveBtn").innerText = "Create Clone";
+          }
           try {
             const res = await fetch(`${Endpoint}/api/v1/special-packages/${packageId}`, {
               headers: { "Authorization": `Bearer ${token}` }
@@ -1092,8 +1096,8 @@
             const pkg = await res.json();
 
             // Populate general info
-            document.getElementById("pkgName").value = pkg.name;
-            document.getElementById("pkgCode").value = pkg.code || "";
+            document.getElementById("pkgName").value = isCloneMode ? `${pkg.name} (Copy)` : pkg.name;
+            document.getElementById("pkgCode").value = isCloneMode ? (pkg.code ? `${pkg.code}-COPY` : "") : (pkg.code || "");
             document.getElementById("pkgCity").value = pkg.city || "";
             document.getElementById("pkgCategory").value = pkg.category || "";
             document.getElementById("pkgPriceAdult").value = pkg.price_per_adult || "";
@@ -1334,8 +1338,8 @@
             items: itineraryItems
           };
 
-          const method = packageId ? "PUT" : "POST";
-          const url = packageId ? `${Endpoint}/api/v1/special-packages/${packageId}` : `${Endpoint}/api/v1/special-packages`;
+          const method = (packageId && !isCloneMode) ? "PUT" : "POST";
+          const url = (packageId && !isCloneMode) ? `${Endpoint}/api/v1/special-packages/${packageId}` : `${Endpoint}/api/v1/special-packages`;
 
           try {
             const res = await fetch(url, {
@@ -1352,7 +1356,7 @@
               throw new Error(errData.message || errData.error || "Failed to save special package");
             }
 
-            alert("Special Package saved successfully!");
+            alert(isCloneMode ? "Special Package cloned successfully!" : "Special Package saved successfully!");
             window.location.href = "special_packages.html";
           } catch (err) {
             console.error(err);

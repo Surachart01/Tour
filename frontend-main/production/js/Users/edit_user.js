@@ -46,6 +46,24 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("editEmail").value = user.email;
         document.getElementById("editAgent").value = user.agent;
 
+        // Parse and bind permissions
+        let permissions = {};
+        if (user.permissions) {
+          try {
+            permissions = typeof user.permissions === 'string' ? JSON.parse(user.permissions) : user.permissions;
+          } catch (e) {
+            console.error("Failed to parse permissions", e);
+          }
+        }
+        
+        const permKeys = ["tours", "hotels", "transfers", "excursions", "bookings", "special_packages", "activities", "suppliers", "agents", "markups", "city_info", "users"];
+        permKeys.forEach(key => {
+          const checkbox = document.getElementById(`perm_${key}`);
+          if (checkbox) {
+            checkbox.checked = permissions[key] !== false;
+          }
+        });
+
         // Fetch agent options from the backend
         fetch(`${Endpoint}/api/v1/agents/names`, {
           method: "GET",
@@ -97,6 +115,13 @@ document.addEventListener("DOMContentLoaded", function () {
           .addEventListener("submit", function (event) {
             event.preventDefault();
 
+            const permissionsObj = {};
+            const permKeys = ["tours", "hotels", "transfers", "excursions", "bookings", "special_packages", "activities", "suppliers", "agents", "markups", "city_info", "users"];
+            permKeys.forEach(key => {
+              const checkbox = document.getElementById(`perm_${key}`);
+              permissionsObj[key] = checkbox ? checkbox.checked : true;
+            });
+
             const updatedUser = {
               username: document.getElementById("editUsername").value,
               role: document.getElementById("editRole").value,
@@ -104,6 +129,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 parseInt(document.getElementById("editAgent").value, 10) ||
                 null,
               email: document.getElementById("editEmail").value,
+              permissions: permissionsObj
             };
 
             fetch(`${Endpoint}/api/v1/users/${userId}`, {

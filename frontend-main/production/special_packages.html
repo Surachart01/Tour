@@ -364,6 +364,7 @@
             </div>
           </div>
           <div class="modal-footer">
+            <button type="button" class="btn btn-primary print-modal-btn"><i class="fa fa-print"></i> Print</button>
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
           </div>
         </div>
@@ -464,9 +465,15 @@
                 <button class="btn btn-info btn-xs action-btn view-btn" data-id="${pkg.id}">
                   <i class="fa fa-eye"></i> View
                 </button>
+                <button class="btn btn-dark btn-xs action-btn print-btn" data-id="${pkg.id}">
+                  <i class="fa fa-print"></i> Print
+                </button>
                 <a href="edit_special_package.html?id=${pkg.id}" class="btn btn-primary btn-xs action-btn">
                   <i class="fa fa-pencil"></i> Edit
                 </a>
+                <button class="btn btn-default btn-xs action-btn clone-btn" data-id="${pkg.id}" style="background-color: #f0f4f8; border-color: #d0d8e0;">
+                  <i class="fa fa-copy"></i> Clone
+                </button>
                 <button class="btn ${pkg.is_active ? 'btn-warning' : 'btn-success'} btn-xs action-btn toggle-btn" data-id="${pkg.id}">
                   <i class="fa ${pkg.is_active ? 'fa-ban' : 'fa-check'}"></i> ${pkg.is_active ? 'Disable' : 'Enable'}
                 </button>
@@ -478,6 +485,9 @@
               actionButtons = `
                 <button class="btn btn-info btn-xs action-btn view-btn" data-id="${pkg.id}">
                   <i class="fa fa-eye"></i> View Details
+                </button>
+                <button class="btn btn-dark btn-xs action-btn print-btn" data-id="${pkg.id}">
+                  <i class="fa fa-print"></i> Print
                 </button>
               `;
             }
@@ -499,10 +509,20 @@
           });
         }
 
+        let currentPackageData = null;
+
         // Attach event handlers
         document.getElementById("searchBtn").addEventListener("click", loadPackages);
         document.getElementById("searchBox").addEventListener("keypress", function (e) {
           if (e.key === "Enter") loadPackages();
+        });
+
+        document.querySelector(".print-modal-btn").addEventListener("click", function () {
+          if (currentPackageData) {
+            printPackageDetails(currentPackageData);
+          } else {
+            alert("No package details loaded.");
+          }
         });
 
         // Table actions delegation
@@ -514,10 +534,14 @@
 
           if (target.classList.contains("view-btn")) {
             showPackageDetails(id);
+          } else if (target.classList.contains("print-btn")) {
+            fetchAndPrintPackage(id);
           } else if (target.classList.contains("toggle-btn")) {
             if (confirm("Are you sure you want to change the status of this package?")) {
               togglePackageStatus(id);
             }
+          } else if (target.classList.contains("clone-btn")) {
+            window.location.href = `edit_special_package.html?id=${id}&clone=true`;
           } else if (target.classList.contains("delete-btn")) {
             if (confirm("Are you sure you want to delete this special package? This action cannot be undone.")) {
               deletePackage(id);
@@ -553,6 +577,8 @@
           }
         }
 
+
+
         async function showPackageDetails(id) {
           try {
             const res = await fetch(`${Endpoint}/api/v1/special-packages/${id}`, {
@@ -560,6 +586,7 @@
             });
             if (!res.ok) throw new Error("Failed to load details");
             const pkg = await res.json();
+            currentPackageData = pkg;
 
             // Populate Modal Info
             document.getElementById("modalPackageName").innerText = pkg.name;
@@ -712,6 +739,199 @@
             console.error(err);
             alert("Error loading package details");
           }
+        }
+
+        async function fetchAndPrintPackage(id) {
+          try {
+            const res = await fetch(`${Endpoint}/api/v1/special-packages/${id}`, {
+              headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error("Failed to load details");
+            const pkg = await res.json();
+            printPackageDetails(pkg);
+          } catch (err) {
+            console.error(err);
+            alert("Error loading package details for printing");
+          }
+        }
+
+        function printPackageDetails(pkg) {
+          const currencyCode = pkg.currencies ? pkg.currencies.currency_code : "THB";
+          
+          let highlightsHtml = "";
+          let highlightsArray = [];
+          try {
+            if (pkg.highlights) highlightsArray = JSON.parse(pkg.highlights);
+          } catch (e) {
+            if (pkg.highlights) highlightsArray = pkg.highlights.split("\n");
+          }
+          if (highlightsArray.length > 0) {
+            highlightsHtml = `<ul>${highlightsArray.map(hl => hl.trim() ? `<li>${hl.trim()}</li>` : "").join("")}</ul>`;
+          } else {
+            highlightsHtml = "<p>No highlights specified</p>";
+          }
+
+          let inclusionsHtml = "";
+          let inclusionsArray = [];
+          try {
+            if (pkg.inclusions) inclusionsArray = JSON.parse(pkg.inclusions);
+          } catch (e) {
+            if (pkg.inclusions) inclusionsArray = pkg.inclusions.split("\n");
+          }
+          if (inclusionsArray.length > 0) {
+            inclusionsHtml = `<ul>${inclusionsArray.map(inc => inc.trim() ? `<li>${inc.trim()}</li>` : "").join("")}</ul>`;
+          } else {
+            inclusionsHtml = "<p>No inclusions specified</p>";
+          }
+
+          let exclusionsHtml = "";
+          let exclusionsArray = [];
+          try {
+            if (pkg.exclusions) exclusionsArray = JSON.parse(pkg.exclusions);
+          } catch (e) {
+            if (pkg.exclusions) exclusionsArray = pkg.exclusions.split("\n");
+          }
+          if (exclusionsArray.length > 0) {
+            exclusionsHtml = `<ul>${exclusionsArray.map(exc => exc.trim() ? `<li>${exc.trim()}</li>` : "").join("")}</ul>`;
+          } else {
+            exclusionsHtml = "<p>No exclusions specified</p>";
+          }
+
+          // Day-by-Day
+          const days = {};
+          for (let i = 1; i <= pkg.duration; i++) {
+            days[i] = [];
+          }
+          pkg.items.forEach(item => {
+            const dNum = item.day_number || 1;
+            if (!days[dNum]) days[dNum] = [];
+            days[dNum].push(item);
+          });
+
+          let itineraryHtml = "";
+          for (let d = 1; d <= pkg.duration; d++) {
+            itineraryHtml += `<div style="margin-bottom: 20px; border-left: 3px solid #1abb9c; padding-left: 15px; page-break-inside: avoid;">`;
+            itineraryHtml += `<h4 style="margin: 0 0 10px 0; color: #2a3f54;">Day ${d}</h4>`;
+            const itemsList = days[d];
+            if (itemsList.length === 0) {
+              itineraryHtml += `<p style="color: #6c757d; font-size: 0.9rem;">No specific activities or services scheduled for this day.</p>`;
+            } else {
+              itemsList.forEach(item => {
+                let detailHtml = "";
+                if (item.item_type === "hotel") {
+                  detailHtml = `<strong>🏨 Hotel:</strong> ${item.hotel_name || "TBD"} ${item.room_type ? `(${item.room_type})` : ""} - ${item.nights || 1} Night(s) in ${item.city || ""}`;
+                } else if (item.item_type === "transfer") {
+                  detailHtml = `<strong>🚐 Transfer (${item.transfer_type || "Private"}):</strong> From ${item.from_location || "TBD"} to ${item.to_location || "TBD"} ${item.pickup_time ? `at ${item.pickup_time}` : ""}`;
+                } else if (item.item_type === "excursion") {
+                  detailHtml = `<strong>🎯 Excursion:</strong> ${item.excursion_name || "TBD"}`;
+                } else if (item.item_type === "flight") {
+                  detailHtml = `<strong>✈️ Flight:</strong> ${item.flight_airline || ""} ${item.flight_number || "TBD"} Route: ${item.flight_route || ""} (${item.departure_time || ""} -> ${item.arrival_time || ""})`;
+                } else {
+                  detailHtml = `<strong>📋 Other:</strong> ${item.other_description || item.description || "TBD"}`;
+                }
+                if (item.remarks) {
+                  detailHtml += `<br/><small style="color: #17a2b8;">Remarks: ${item.remarks}</small>`;
+                }
+                itineraryHtml += `
+                  <div style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 10px; margin-bottom: 8px; font-size: 0.9rem; page-break-inside: avoid;">
+                    <div style="font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: #1abb9c; margin-bottom: 4px;">${item.item_type}</div>
+                    <div>${detailHtml}</div>
+                  </div>
+                `;
+              });
+            }
+            itineraryHtml += `</div>`;
+          }
+
+          const printWindow = window.open("", "_blank");
+          printWindow.document.write(`
+            <html>
+              <head>
+                <title>Print - ${pkg.name}</title>
+                <style>
+                  body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; padding: 20px; line-height: 1.6; }
+                  h1, h2, h3, h4 { color: #2a3f54; margin-top: 0; }
+                  .header-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                  .header-table td { padding: 8px; vertical-align: top; border-bottom: 1px solid #eee; }
+                  .col-half { width: 50%; }
+                  hr { border: 0; border-top: 1px solid #ddd; margin: 20px 0; }
+                  ul { padding-left: 20px; margin: 0; }
+                  .flex-row { display: flex; justify-content: space-between; }
+                  .flex-col { width: 48%; }
+                  @media print {
+                    .no-print { display: none; }
+                    body { padding: 0; }
+                  }
+                </style>
+              </head>
+              <body>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                  <h1>${pkg.name}</h1>
+                  <button class="no-print" onclick="window.print()" style="padding: 8px 16px; background-color: #1abb9c; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Print This Page</button>
+                </div>
+                
+                <table class="header-table">
+                  <tr>
+                    <td class="col-half">
+                      <strong>Code:</strong> ${pkg.code || "-"}<br/>
+                      <strong>Category:</strong> ${pkg.category || "-"}<br/>
+                      <strong>Duration:</strong> ${pkg.duration} Days<br/>
+                      <strong>Main City:</strong> ${pkg.city || "-"}
+                    </td>
+                    <td class="col-half">
+                      <strong>SGL Price:</strong> ${pkg.price_per_adult ? parseFloat(pkg.price_per_adult).toLocaleString() + ' ' + currencyCode : "-"}<br/>
+                      <strong>DBL Price:</strong> ${pkg.price_dbl ? parseFloat(pkg.price_dbl).toLocaleString() + ' ' + currencyCode : "-"}<br/>
+                      <strong>TPL Price:</strong> ${pkg.price_per_child ? parseFloat(pkg.price_per_child).toLocaleString() + ' ' + currencyCode : "-"}<br/>
+                      <strong>Max Pax:</strong> ${pkg.max_pax || "-"}<br/>
+                      <strong>Min Pax:</strong> ${pkg.min_pax || "-"}
+                    </td>
+                  </tr>
+                </table>
+
+                <h3>Description</h3>
+                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; font-size: 0.95rem; margin-bottom: 20px;">
+                  ${pkg.description || "No description available"}
+                </div>
+
+                <div class="flex-row">
+                  <div class="flex-col">
+                    <h3>Highlights</h3>
+                    ${highlightsHtml}
+                  </div>
+                  <div class="flex-col">
+                    <h3>Inclusions</h3>
+                    ${inclusionsHtml}
+                  </div>
+                </div>
+
+                <div class="flex-row" style="margin-top: 20px;">
+                  <div class="flex-col">
+                    <h3>Exclusions</h3>
+                    ${exclusionsHtml}
+                  </div>
+                  <div class="flex-col">
+                    <h3>Terms & Conditions</h3>
+                    <p style="font-size: 0.9rem; white-space: pre-wrap;">${pkg.terms || "Standard Terms and Conditions apply."}</p>
+                  </div>
+                </div>
+
+                <hr/>
+                <h2>Day-by-Day Itinerary</h2>
+                <div>
+                  ${itineraryHtml}
+                </div>
+
+                <script>
+                  window.onload = function() {
+                    setTimeout(function() {
+                      window.print();
+                    }, 500);
+                  };
+                <\/script>
+              </body>
+            </html>
+          `);
+          printWindow.document.close();
         }
 
         // Initial Load

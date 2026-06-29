@@ -6,7 +6,8 @@ import {
   createSpecialPackage,
   updateSpecialPackage,
   deleteSpecialPackage,
-  toggleSpecialPackage
+  toggleSpecialPackage,
+  cloneSpecialPackage
 } from '../controllers/specialPackageController.js';
 
 const router = express.Router();
@@ -29,5 +30,8 @@ router.delete('/special-packages/:id', authorize('admin'), deleteSpecialPackage)
 
 // Toggle active/inactive (admin only)
 router.patch('/special-packages/:id/toggle', authorize('admin'), toggleSpecialPackage);
+
+// Clone special package (admin only)
+router.post('/special-packages/:id/clone', authorize('admin'), cloneSpecialPackage);
 
 export default router;

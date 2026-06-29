@@ -887,7 +887,7 @@ model service_documents {
 model special_packages {
   id              Int                     @id @default(autoincrement())
   name            String                  @db.VarChar(255)
-  code            String?                 @unique @db.VarChar(50)
+  code            String?                 @db.VarChar(50)
   description     String?
   duration        Int                     @default(1)
   city            String?                 @db.VarChar(100)

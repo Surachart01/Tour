@@ -162,7 +162,8 @@ export async function login(req, res, next) {
         email: user.email,
         agent: agent.name,
         enable_assistance_fee: agent.enableAssistanceFee,
-        default_assistance_fee: agent.defaultAssistanceFee ? parseFloat(agent.defaultAssistanceFee.toString()) : null
+        default_assistance_fee: agent.defaultAssistanceFee ? parseFloat(agent.defaultAssistanceFee.toString()) : null,
+        permissions: user.permissions
       }
     });
   } catch (err) {
@@ -377,7 +378,8 @@ export async function getUser(req, res, next) {
       email: user.email,
       role: user.role,
       agent_id: user.agent.id,
-      organization_id: user.organizationId
+      organization_id: user.organizationId,
+      permissions: user.permissions
     };
 
     if (idParam === 'me') {

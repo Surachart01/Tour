@@ -337,3 +337,90 @@ export async function toggleSpecialPackage(req, res, next) {
     next(err);
   }
 }
+
+// ============================================================
+// CLONE SPECIAL PACKAGE (Admin only)
+// ============================================================
+export async function cloneSpecialPackage(req, res, next) {
+  try {
+    const { id } = req.params;
+    const pkgId = parseInt(id);
+    if (isNaN(pkgId)) {
+      return res.status(400).json({ error: 'Invalid special package ID' });
+    }
+
+    // Fetch original package with items
+    const original = await prisma.special_packages.findUnique({
+      where: { id: pkgId },
+      include: { items: true }
+    });
+
+    if (!original) {
+      return res.status(404).json({ error: 'Special package not found' });
+    }
+
+    const clonedName = `${original.name} (Copy)`;
+    const clonedData = {
+      name: clonedName,
+      code: original.code,
+      description: original.description,
+      duration: original.duration,
+      city: original.city,
+      category: original.category,
+      price_per_adult: original.price_per_adult,
+      price_dbl: original.price_dbl,
+      price_per_child: original.price_per_child,
+      currency_id: original.currency_id,
+      max_pax: original.max_pax,
+      min_pax: original.min_pax,
+      valid_from: original.valid_from,
+      valid_to: original.valid_to,
+      is_active: original.is_active,
+      cover_image: original.cover_image,
+      highlights: original.highlights,
+      inclusions: original.inclusions,
+      exclusions: original.exclusions,
+      terms: original.terms,
+      created_by: req.user ? req.user.id : null,
+      items: {
+        create: original.items.map(item => ({
+          item_type: item.item_type,
+          day_number: item.day_number,
+          sort_order: item.sort_order,
+          hotel_id: item.hotel_id,
+          hotel_name: item.hotel_name,
+          room_type: item.room_type,
+          nights: item.nights,
+          city: item.city,
+          transfer_id: item.transfer_id,
+          transfer_type: item.transfer_type,
+          from_location: item.from_location,
+          to_location: item.to_location,
+          pickup_time: item.pickup_time,
+          excursion_id: item.excursion_id,
+          excursion_name: item.excursion_name,
+          tour_id: item.tour_id,
+          tour_name: item.tour_name,
+          flight_number: item.flight_number,
+          flight_airline: item.flight_airline,
+          flight_route: item.flight_route,
+          departure_time: item.departure_time,
+          arrival_time: item.arrival_time,
+          other_description: item.other_description,
+          description: item.description,
+          price: item.price,
+          remarks: item.remarks
+        }))
+      }
+    };
+
+    const clonedPackage = await prisma.special_packages.create({
+      data: clonedData,
+      include: { items: true }
+    });
+
+    res.json(clonedPackage);
+  } catch (err) {
+    next(err);
+  }
+}

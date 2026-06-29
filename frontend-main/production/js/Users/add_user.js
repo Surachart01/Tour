@@ -55,6 +55,13 @@ document.addEventListener("DOMContentLoaded", function () {
       const agentIdValue = document.getElementById("selectAgent").value;
       const agentId = agentIdValue ? parseInt(agentIdValue, 10) : null;
 
+      const permissionsObj = {};
+      const permKeys = ["tours", "hotels", "transfers", "excursions", "bookings", "special_packages", "activities", "suppliers", "agents", "markups", "city_info", "users"];
+      permKeys.forEach(key => {
+        const checkbox = document.getElementById(`perm_${key}`);
+        permissionsObj[key] = checkbox ? checkbox.checked : true;
+      });
+
       // Prepare the user data
       const user = {
         username: document.getElementById("username").value,
@@ -62,6 +69,7 @@ document.addEventListener("DOMContentLoaded", function () {
         agent_id: agentId,
         email: document.getElementById("email").value,
         password: password,
+        permissions: permissionsObj
       };
 
       // Log the user object to check its structure
