@@ -728,7 +728,7 @@
                   if (item.item_type === "hotel") {
                     detailHtml = `<strong>🏨 Hotel:</strong> ${item.hotel_name || "TBD"} ${item.room_type ? `(${item.room_type})` : ""} - ${item.nights || 1} Night(s) in ${item.city || ""}`;
                   } else if (item.item_type === "transfer") {
-                    detailHtml = `<strong>🚐 Transfer (${item.transfer_type || "Private"}):</strong> From ${item.from_location || "TBD"} to ${item.to_location || "TBD"} ${item.pickup_time ? `at ${item.pickup_time}` : ""}`;
+                    detailHtml = `<strong>🚐 Transfer (${item.transfer_type || "SIC"}):</strong> From ${item.from_location || "TBD"} to ${item.to_location || "TBD"} ${item.pickup_time ? `at ${item.pickup_time}` : ""}`;
                   } else if (item.item_type === "excursion") {
                     detailHtml = `<strong>🎯 Excursion:</strong> ${item.excursion_name || "TBD"}`;
                   } else if (item.item_type === "flight") {
@@ -855,7 +855,7 @@
                 if (item.item_type === "hotel") {
                   detailHtml = `<strong>🏨 Hotel:</strong> ${item.hotel_name || "TBD"} ${item.room_type ? `(${item.room_type})` : ""} - ${item.nights || 1} Night(s) in ${item.city || ""}`;
                 } else if (item.item_type === "transfer") {
-                  detailHtml = `<strong>🚐 Transfer (${item.transfer_type || "Private"}):</strong> From ${item.from_location || "TBD"} to ${item.to_location || "TBD"} ${item.pickup_time ? `at ${item.pickup_time}` : ""}`;
+                  detailHtml = `<strong>🚐 Transfer (${item.transfer_type || "SIC"}):</strong> From ${item.from_location || "TBD"} to ${item.to_location || "TBD"} ${item.pickup_time ? `at ${item.pickup_time}` : ""}`;
                 } else if (item.item_type === "excursion") {
                   detailHtml = `<strong>🎯 Excursion:</strong> ${item.excursion_name || "TBD"}`;
                 } else if (item.item_type === "flight") {

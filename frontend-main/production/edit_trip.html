@@ -830,7 +830,7 @@
               </div>
               <!-- Collapsible Sections for Each Button -->
               <div class="collapse" id="flightsSection">
-                <div class="card card-body">
+                <div class="card card-body" style="padding: 20px 25px; margin: 10px 15px 20px 15px;">
                   <h4>Flight Details</h4>
                   <!-- Add form fields for flights here -->
                   <!-- Flights Table -->
@@ -869,7 +869,7 @@
               </div>
 
               <div class="collapse" id="transfersSection">
-                <div class="card card-body">
+                <div class="card card-body" style="padding: 20px 25px; margin: 10px 15px 20px 15px;">
                   <h4>Transfer Details</h4>
                   <!-- Add form fields for transfers here -->
                   <div class="table-responsive">
@@ -906,7 +906,7 @@
               </div>
 
               <div class="collapse" id="excursionsSection">
-                <div class="card card-body">
+                <div class="card card-body" style="padding: 20px 25px; margin: 10px 15px 20px 15px;">
                   <h4>Excursion Details</h4>
                   <!-- Add form fields for excursions here -->
                   <div class="table-responsive">
@@ -942,7 +942,7 @@
               </div>
 
               <div class="collapse" id="toursSection">
-                <div class="card card-body">
+                <div class="card card-body" style="padding: 20px 25px; margin: 10px 15px 20px 15px;">
                   <h4>Tour Details</h4>
                   <!-- Add form fields for tours here -->
                   <div class="table-responsive">
@@ -977,7 +977,7 @@
               </div>
 
               <div class="collapse" id="hotelsSection">
-                <div class="card card-body">
+                <div class="card card-body" style="padding: 20px 25px; margin: 10px 15px 20px 15px;">
                   <h4>Hotel Details</h4>
                   <!-- Add form fields for hotels here -->
                   <div class="table-responsive">
@@ -1015,7 +1015,7 @@
               </div>
 
               <div class="collapse" id="othersSection">
-                <div class="card card-body">
+                <div class="card card-body" style="padding: 20px 25px; margin: 10px 15px 20px 15px;">
                   <h4>Other Services</h4>
                   <!-- Add form fields for other services here -->
                   <div class="table-responsive">
@@ -1046,7 +1046,7 @@
               </div>
 
               <div class="collapse" id="specialPackagesSection">
-                <div class="card card-body" style="border-left: 5px solid #9b59b6;">
+                <div class="card card-body" style="border-left: 5px solid #9b59b6; padding: 20px 25px; margin: 10px 15px 20px 15px;">
                   <h4 style="color: #9b59b6; font-weight: 700;"><i class="fa fa-gift"></i> Special Packages</h4>
                   <p class="text-muted">Select a pre-made special package to import its itinerary items into this quotation.</p>
                   <div class="row">
@@ -1059,6 +1059,25 @@
                         <option value="">-- None (Custom Quotation) --</option>
                       </select>
                     </div>
+                    <div class="col-md-2 form-group">
+                      <label for="specialPackageSglPrice">SGL Price</label>
+                      <input type="text" id="specialPackageSglPrice" class="form-control" readonly style="background-color: #f8f9fa;" />
+                    </div>
+                    <div class="col-md-2 form-group">
+                      <label for="specialPackageDblPrice">DBL Price</label>
+                      <input type="text" id="specialPackageDblPrice" class="form-control" readonly style="background-color: #f8f9fa;" />
+                    </div>
+                    <div class="col-md-2 form-group">
+                      <label for="specialPackageTplPrice">TPL Price</label>
+                      <input type="text" id="specialPackageTplPrice" class="form-control" readonly style="background-color: #f8f9fa;" />
+                    </div>
+                  </div>
+                  <!-- Itinerary Preview Container -->
+                  <div id="specialPackageItineraryPreview" class="mt-4" style="display: none; border-top: 1px solid #eee; padding-top: 20px;">
+                    <h5 style="color: #9b59b6; font-weight: 700; margin-bottom: 15px;"><i class="fa fa-list"></i> Day-by-Day Itinerary Preview</h5>
+                    <div id="specialPackageItineraryList" style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
+                      <!-- Populated dynamically -->
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1069,6 +1088,7 @@
                   display: flex;
                   gap: 15px;
                   justify-content: center;
+                  margin-top: 30px;
                   padding-top: 30px;
                   border-top: 2px solid #ecf0f1;
                 "
@@ -2323,6 +2343,31 @@
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         let quotationStatus = ""; // ✅ Global variable to store quotation status
+        window.pendingSpecialPackageId = null;
+        window.specialPackagesLoaded = false;
+        window.quotationLoaded = false;
+
+        async function checkAndApplyPendingSpecialPackage() {
+          if (window.specialPackagesLoaded && window.quotationLoaded && window.pendingSpecialPackageId) {
+            const pkgId = window.pendingSpecialPackageId;
+            const select = document.getElementById("specialPackageSelect");
+            if (select) select.value = pkgId;
+            enableQuotationItemEditing(false);
+            try {
+              const res = await fetch(`${Endpoint}/api/v1/special-packages/${pkgId}`, {
+                headers: { "Authorization": `Bearer ${token}` }
+              });
+              if (res.ok) {
+                currentSpecialPackage = await res.json();
+                updateSpecialPackagePrice();
+                updateSpecialPackagePriceDisplay(currentSpecialPackage);
+                renderSpecialPackageItineraryPreview(currentSpecialPackage);
+              }
+            } catch (e) {
+              console.error("Error fetching special package on load", e);
+            }
+          }
+        }
         let transfersArray = []; // Store transfer data
         let excursionsArray = [];
         let toursArray = [];
@@ -8303,22 +8348,10 @@
             document.getElementById("remark").value = data.remarks;
 
             if (data.special_package_id) {
-              document.getElementById("specialPackageSelect").value = data.special_package_id;
-              setTimeout(async () => {
-                enableQuotationItemEditing(false);
-                try {
-                  const res = await fetch(`${Endpoint}/api/v1/special-packages/${data.special_package_id}`, {
-                    headers: { "Authorization": `Bearer ${token}` }
-                  });
-                  if (res.ok) {
-                    currentSpecialPackage = await res.json();
-                    updateSpecialPackagePrice();
-                  }
-                } catch (e) {
-                  console.error("Error fetching special package on load", e);
-                }
-              }, 550);
+              window.pendingSpecialPackageId = data.special_package_id;
             }
+            window.quotationLoaded = true;
+            checkAndApplyPendingSpecialPackage();
 
 
             // ✅ Store the quotation status globally
@@ -8749,10 +8782,10 @@
 
             const agentName = document.getElementById("agentName").textContent;
             const totalPrice =
-              document.getElementById("totalPrice").textContent;
+              parseFloat(document.getElementById("totalPrice").value) || 0;
             const finalPrice =
-              document.getElementById("finalPrice").textContent;
-            const discount = document.getElementById("discount").textContent;
+              parseFloat(document.getElementById("finalPrice").value) || 0;
+            const discount = parseFloat(document.getElementById("discount").value) || 0;
             const clientName = document.getElementById("clientName").value;
             const clientPhone = document.getElementById("mobileNumber").value;
             const clientEmail = document.getElementById("clientEmail").value;
@@ -9203,6 +9236,9 @@
               remarks: remarks,
               include_assistance_fee: includeAssistanceFee,
               assistance_fee_amount: assistanceFeeAmount,
+              total_amount: totalPrice,
+              discount_amount: discount,
+              final_amount: finalPrice,
               include_description_in_itinerary: includeDescriptionInItinerary,
               payment_deadline: paymentDeadline,
               cancellation_deadline: cancellationDeadline,
@@ -9587,9 +9623,27 @@
                   select.appendChild(opt);
                 });
               }
+              window.specialPackagesLoaded = true;
+              checkAndApplyPendingSpecialPackage();
             }
           } catch (e) {
             console.error("Error loading special packages dropdown", e);
+          }
+        }
+
+        function updateSpecialPackagePriceDisplay(pkg) {
+          const sglInput = document.getElementById("specialPackageSglPrice");
+          const dblInput = document.getElementById("specialPackageDblPrice");
+          const tplInput = document.getElementById("specialPackageTplPrice");
+          if (!sglInput || !dblInput || !tplInput) return;
+          if (pkg) {
+            sglInput.value = pkg.price_per_adult ? parseFloat(pkg.price_per_adult).toFixed(2) : "0.00";
+            dblInput.value = pkg.price_dbl ? parseFloat(pkg.price_dbl).toFixed(2) : "0.00";
+            tplInput.value = pkg.price_per_child ? parseFloat(pkg.price_per_child).toFixed(2) : "0.00";
+          } else {
+            sglInput.value = "";
+            dblInput.value = "";
+            tplInput.value = "";
           }
         }
 
@@ -9618,6 +9672,116 @@
           document.getElementById("finalPrice").value = final.toFixed(2);
         }
 
+        function renderSpecialPackageItineraryPreview(pkg) {
+          const previewContainer = document.getElementById("specialPackageItineraryPreview");
+          const listContainer = document.getElementById("specialPackageItineraryList");
+          if (!previewContainer || !listContainer) return;
+
+          if (!pkg || !pkg.items || pkg.items.length === 0) {
+            previewContainer.style.display = "none";
+            return;
+          }
+
+          // Group by day_number
+          const days = {};
+          for (let i = 1; i <= pkg.duration; i++) {
+            days[i] = [];
+          }
+          pkg.items.forEach(item => {
+            const dNum = item.day_number || 1;
+            if (!days[dNum]) days[dNum] = [];
+            days[dNum].push(item);
+          });
+
+          // Sort items inside each day chronologically by item_type priority
+          const typePriority = {
+            "flight": 1,
+            "transfer": 2,
+            "excursion": 3,
+            "hotel": 4,
+            "other": 5
+          };
+          for (let i = 1; i <= pkg.duration; i++) {
+            days[i].sort((a, b) => {
+              const priorityA = typePriority[a.item_type] || 99;
+              const priorityB = typePriority[b.item_type] || 99;
+              return priorityA - priorityB;
+            });
+          }
+
+          listContainer.innerHTML = ""; // Clear previous
+
+          for (let d = 1; d <= pkg.duration; d++) {
+            const dayDiv = document.createElement("div");
+            dayDiv.style.marginBottom = "15px";
+            dayDiv.style.borderLeft = "3px solid #9b59b6";
+            dayDiv.style.paddingLeft = "12px";
+
+            const dayTitle = document.createElement("h6");
+            dayTitle.style.margin = "0 0 8px 0";
+            dayTitle.style.color = "#2a3f54";
+            dayTitle.style.fontWeight = "bold";
+            dayTitle.innerText = `Day ${d}`;
+            dayDiv.appendChild(dayTitle);
+
+            const itemsList = days[d];
+            if (itemsList.length === 0) {
+              const emptyMsg = document.createElement("p");
+              emptyMsg.style.color = "#73879c";
+              emptyMsg.style.fontSize = "0.85rem";
+              emptyMsg.style.margin = "0";
+              emptyMsg.innerText = "No specific activities or services scheduled for this day.";
+              dayDiv.appendChild(emptyMsg);
+            } else {
+              itemsList.forEach(item => {
+                const itemDiv = document.createElement("div");
+                itemDiv.style.backgroundColor = "#f8f9fa";
+                itemDiv.style.border = "1px solid #e9ecef";
+                itemDiv.style.borderRadius = "6px";
+                itemDiv.style.padding = "8px 10px";
+                itemDiv.style.marginBottom = "6px";
+                itemDiv.style.fontSize = "0.85rem";
+
+                const typeTag = document.createElement("div");
+                typeTag.style.fontSize = "0.7rem";
+                typeTag.style.fontWeight = "bold";
+                typeTag.style.textTransform = "uppercase";
+                typeTag.style.color = "#9b59b6";
+                typeTag.style.marginBottom = "2px";
+                typeTag.innerText = item.item_type;
+                itemDiv.appendChild(typeTag);
+
+                let detailHtml = "";
+                if (item.item_type === "hotel") {
+                  detailHtml = `<strong>🏨 Hotel:</strong> ${item.hotel_name || "TBD"} ${item.room_type ? `(${item.room_type})` : ""} - ${item.nights || 1} Night(s) in ${item.city || ""}`;
+                } else if (item.item_type === "transfer") {
+                  detailHtml = `<strong>🚐 Transfer (${item.transfer_type || "SIC"}):</strong> From ${item.from_location || "TBD"} to ${item.to_location || "TBD"} ${item.pickup_time ? `at ${item.pickup_time}` : ""}`;
+                } else if (item.item_type === "excursion") {
+                  detailHtml = `<strong>🎯 Excursion:</strong> ${item.excursion_name || "TBD"}`;
+                } else if (item.item_type === "flight") {
+                  detailHtml = `<strong>✈️ Flight:</strong> ${item.flight_airline || ""} ${item.flight_number || "TBD"} Route: ${item.flight_route || ""} (${item.departure_time || ""} -> ${item.arrival_time || ""})`;
+                } else {
+                  detailHtml = `<strong>📋 Other:</strong> ${item.other_description || item.description || "TBD"}`;
+                }
+
+                if (item.remarks) {
+                  detailHtml += `<br/><small class="text-info">Remarks: ${item.remarks}</small>`;
+                }
+
+                const detailContent = document.createElement("div");
+                detailContent.innerHTML = detailHtml;
+                itemDiv.appendChild(detailContent);
+
+                dayDiv.appendChild(itemDiv);
+              });
+            }
+
+            listContainer.appendChild(dayDiv);
+          }
+
+          previewContainer.style.display = "block";
+        }
+
         async function handleSpecialPackageChange() {
           const pkgId = document.getElementById("specialPackageSelect").value;
           const token = localStorage.getItem("token");
@@ -9628,6 +9792,9 @@
             clearAllTables();
             document.getElementById("totalPrice").value = "";
             document.getElementById("finalPrice").value = "";
+            updateSpecialPackagePriceDisplay(null);
+            const previewContainer = document.getElementById("specialPackageItineraryPreview");
+            if (previewContainer) previewContainer.style.display = "none";
             return;
           }
 
@@ -9642,6 +9809,8 @@
             populateTablesFromPackage(pkg);
             enableQuotationItemEditing(false);
             updateSpecialPackagePrice();
+            updateSpecialPackagePriceDisplay(pkg);
+            renderSpecialPackageItineraryPreview(pkg);
           } catch (e) {
             console.error(e);
             alert("Error loading package details");
