@@ -4752,3 +4752,239 @@ ul.notifications {
   border: 1px solid #e5e5e5;
 }
 /** /Dropzone.js **/
+
+/* ==========================================================================
+   Modern Premium Sidebar Design Override
+   ========================================================================== */
+.left_col.menu_fixed {
+  background: #0f172a !important; /* Elegant slate-900 background */
+}
+
+.left_col {
+  background: #0f172a !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.scroll-view {
+  background: #0f172a !important;
+}
+
+/* Header site title */
+.nav_title {
+  background: #0f172a !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  padding: 15px 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  height: 70px !important;
+}
+
+.site_title {
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 20px !important;
+  color: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding-left: 0 !important;
+  height: auto !important;
+  line-height: normal !important;
+}
+
+.site_title i {
+  border: none !important;
+  font-size: 22px !important;
+  color: #6366f1 !important; /* Premium Indigo */
+  width: auto !important;
+  height: auto !important;
+  line-height: normal !important;
+  margin: 0 !important;
+}
+
+/* Profile section */
+.profile {
+  padding: 25px 20px 15px 20px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;
+  margin-bottom: 10px !important;
+}
+
+.profile_pic {
+  width: 30% !important;
+}
+
+.profile_pic img {
+  width: 50px !important;
+  height: 50px !important;
+  border-radius: 50% !important;
+  border: 2px solid #6366f1 !important; /* Indigo border circle */
+  padding: 2px !important;
+  object-fit: cover !important;
+}
+
+.profile_info {
+  width: 70% !important;
+  padding: 5px 0 0 15px !important;
+}
+
+.profile_info span {
+  font-size: 12px !important;
+  color: #64748b !important; /* Slate 400 */
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  font-weight: 600 !important;
+}
+
+.profile_info h2 {
+  font-size: 16px !important;
+  color: #f8fafc !important; /* Pure white */
+  font-weight: 700 !important;
+  margin: 4px 0 0 0 !important;
+}
+
+/* Sidebar Menu navigation */
+#sidebar-menu {
+  background: #0f172a !important;
+  padding: 10px 0 !important;
+}
+
+.menu_section {
+  margin-bottom: 25px !important;
+}
+
+.menu_section h3 {
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 11px !important;
+  color: #475569 !important; /* Slate 600 */
+  text-transform: uppercase !important;
+  letter-spacing: 1.5px !important;
+  font-weight: 700 !important;
+  margin: 0 0 15px 20px !important;
+}
+
+/* Main items */
+ul.nav.side-menu > li {
+  margin: 4px 12px !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+ul.nav.side-menu > li > a {
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 14.5px !important;
+  font-weight: 500 !important;
+  color: #94a3b8 !important; /* Slate 400 */
+  padding: 12px 15px !important;
+  background: transparent !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+ul.nav.side-menu > li > a i {
+  font-size: 16px !important;
+  width: 24px !important;
+  text-align: center !important;
+  margin-right: 12px !important;
+  color: #64748b !important;
+  transition: color 0.2s ease !important;
+}
+
+/* Hover state */
+ul.nav.side-menu > li > a:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+ul.nav.side-menu > li > a:hover i {
+  color: #ffffff !important;
+}
+
+/* Active & Opened State */
+ul.nav.side-menu > li.active {
+  background: rgba(99, 102, 241, 0.06) !important;
+  border: 1px solid rgba(99, 102, 241, 0.15) !important;
+}
+
+ul.nav.side-menu > li.active > a {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+ul.nav.side-menu > li.active > a i {
+  color: #6366f1 !important; /* Active Indigo Icon */
+}
+
+/* Custom left active indicator bar */
+ul.nav.side-menu > li.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #6366f1;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Child Menu (Dropdown) */
+ul.nav.child_menu {
+  background: rgba(0, 0, 0, 0.2) !important;
+  padding: 8px 0 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.03) !important;
+}
+
+ul.nav.child_menu li {
+  margin: 2px 15px !important;
+}
+
+ul.nav.child_menu li a {
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  color: #94a3b8 !important;
+  padding: 8px 12px !important;
+  background: transparent !important;
+  border-radius: 6px !important;
+  transition: all 0.15s ease !important;
+}
+
+ul.nav.child_menu li a:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  padding-left: 15px !important; /* Subtle indent slide animation on hover */
+}
+
+ul.nav.child_menu li.active a {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+/* Sidebar footer buttons */
+.sidebar-footer {
+  background: #090d16 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.sidebar-footer a {
+  background: #090d16 !important;
+  color: #64748b !important;
+  transition: all 0.2s ease !important;
+}
+
+.sidebar-footer a:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Body and main layout background tweaks for better blending */
+body {
+  background: #f8fafc !important;
+}
+
+.nav_menu {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}

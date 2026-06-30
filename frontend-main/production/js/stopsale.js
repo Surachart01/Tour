@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let uploadedAttachmentUrl = null;
   let uploadedAttachmentName = null;
 
-  // Fetch cities from the backend and populate the dropdown
+  // Fetch cities from the backend and populate the search autocomplete list
   fetch(`${Endpoint}/api/v1/cities`, {
     method: "GET",
     headers: {
@@ -35,27 +35,67 @@ document.addEventListener("DOMContentLoaded", function () {
       return response.json();
     })
     .then((cities) => {
-      const dropdownMenu = document.getElementById("cityDropdownMenu");
-      dropdownMenu.innerHTML = ""; // Clear the current dropdown
-
-      cities.forEach((city) => {
-        const cityItem = document.createElement("a");
-        cityItem.className = "dropdown-item";
-        cityItem.href = "#";
-        cityItem.textContent = city;
-        cityItem.onclick = function (e) {
-          e.preventDefault();
-          document.getElementById("citySearchInput").value = city;
-          displayHotels(city); // Display hotels for the selected city
-          dropdownMenu.classList.remove("show"); // Hide the dropdown after selection
-        };
-        dropdownMenu.appendChild(cityItem);
-      });
+      window.allCities = cities;
+      populateCitiesDropdown(cities);
     })
     .catch((error) => {
       console.error("Error fetching cities:", error);
       alert("Failed to load cities. Please try again later.");
     });
+
+  function populateCitiesDropdown(cities) {
+    const dropdownMenu = document.getElementById("cityDropdownMenu");
+    dropdownMenu.innerHTML = ""; // Clear
+
+    if (cities.length === 0) {
+      dropdownMenu.innerHTML = '<li class="list-group-item text-muted">No cities found</li>';
+      return;
+    }
+
+    cities.forEach((city) => {
+      const cityItem = document.createElement("li");
+      cityItem.className = "list-group-item list-group-item-action";
+      cityItem.textContent = city;
+      cityItem.style.cursor = "pointer";
+      cityItem.addEventListener("click", () => {
+        document.getElementById("citySearchInput").value = city;
+        dropdownMenu.style.display = "none";
+        displayHotels(city); // Display hotels for the selected city
+      });
+      dropdownMenu.appendChild(cityItem);
+    });
+  }
+
+  // Real-time search for cities as the user types
+  document.getElementById("citySearchInput").addEventListener("input", function () {
+    const query = this.value.toLowerCase();
+    const dropdownMenu = document.getElementById("cityDropdownMenu");
+    dropdownMenu.style.display = "block";
+
+    if (window.allCities) {
+      const filtered = window.allCities.filter(c => c.toLowerCase().includes(query));
+      populateCitiesDropdown(filtered);
+    }
+  });
+
+  // Focus triggers display of dropdown
+  document.getElementById("citySearchInput").addEventListener("focus", function () {
+    const dropdownMenu = document.getElementById("cityDropdownMenu");
+    dropdownMenu.style.display = "block";
+    
+    // Populate with all if empty
+    if (window.allCities) {
+      populateCitiesDropdown(window.allCities);
+    }
+  });
+
+  // Hide city dropdown menu on click outside
+  document.addEventListener("click", function(e) {
+    if (e.target.id !== "citySearchInput" && e.target.id !== "cityDropdownMenu") {
+      const dropdownMenu = document.getElementById("cityDropdownMenu");
+      if (dropdownMenu) dropdownMenu.style.display = "none";
+    }
+  });
 
   // Function to display hotels associated with the selected city
   function displayHotels(city) {

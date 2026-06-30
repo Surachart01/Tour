@@ -4,9 +4,6 @@
  */
 
 document.addEventListener("DOMContentLoaded", function() {
-  // Inject Proforma and Tax Invoice menu items dynamically
-  injectInvoiceMenuItems();
-  
   // Get current user role from localStorage
   const role = localStorage.getItem("role");
   
@@ -16,38 +13,6 @@ document.addEventListener("DOMContentLoaded", function() {
   // Apply module-specific permissions
   applyModulePermissions();
 });
-
-function injectInvoiceMenuItems() {
-  const paymentLink = document.querySelector("#sidebar-menu a[href*='payment.html']");
-  if (paymentLink) {
-    const paymentLi = paymentLink.closest("li");
-    if (paymentLi) {
-      const existingProforma = document.querySelector("#sidebar-menu a[href*='invoice_management.html']");
-      const existingTax = document.querySelector("#sidebar-menu a[href*='tax_invoices.html']");
-      
-      if (!existingProforma) {
-        const proformaLi = document.createElement("li");
-        proformaLi.innerHTML = `
-          <a href="invoice_management.html">
-            <i class="fa fa-file-text-o"></i> Proforma Invoice
-          </a>
-        `;
-        paymentLi.parentNode.insertBefore(proformaLi, paymentLi.nextSibling);
-      }
-      
-      if (!existingTax) {
-        const taxLi = document.createElement("li");
-        taxLi.innerHTML = `
-          <a href="tax_invoices.html">
-            <i class="fa fa-file-text-o"></i> Tax Invoices
-          </a>
-        `;
-        const targetRef = document.querySelector("#sidebar-menu a[href*='invoice_management.html']")?.closest("li") || paymentLi;
-        targetRef.parentNode.insertBefore(taxLi, targetRef.nextSibling);
-      }
-    }
-  }
-}
 
 /**
  * Configure UI elements based on user role

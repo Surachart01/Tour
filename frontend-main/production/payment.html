@@ -514,7 +514,7 @@
         }
 
         // Hide the Control Panel menu item if the user is not an admin
-        if (role !== "admin") {
+        if (role !== "admin" && role !== "superadmin") {
           const controlPanelMenu = document.getElementById("controlPanelMenu");
           if (controlPanelMenu) {
             controlPanelMenu.style.display = "none";
@@ -522,7 +522,7 @@
         }
 
         // Show admin Update header if user is admin
-        if (role === "admin") {
+        if (role === "admin" || role === "superadmin") {
           const adminHeader = document.getElementById("adminUpdateHeader");
           if (adminHeader) {
             adminHeader.style.display = "table-cell";
@@ -886,7 +886,7 @@
             `;
 
             // Add an extra Update button for admin users
-            if (role === "admin") {
+            if (role === "admin" || role === "superadmin") {
               let updateTd = document.createElement("td");
               let updateBtn = document.createElement("button");
               updateBtn.className = "btn btn-primary btn-sm";

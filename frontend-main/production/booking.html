@@ -81,6 +81,26 @@
         transform: translateY(-1px);
         box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3) !important;
       }
+      
+      /* Make action buttons compact and icon-only */
+      .table-action-btn {
+        width: 28px !important;
+        height: 28px !important;
+        padding: 0 !important;
+        border-radius: 6px !important;
+        font-size: 13px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      .table-action-btn.edit-btn {
+        background: #eff6ff !important;
+        color: #2563eb !important;
+      }
+      .table-action-btn.edit-btn:hover {
+        background: #dbeafe !important;
+        transform: translateY(-1px) !important;
+      }
     </style>
   </head>
   <body class="nav-md">
@@ -396,34 +416,35 @@
                 <div class="x_content">
                   <div class="row">
                     <div class="col-sm-12">
-                      <div class="card-box table-responsive">
+                      <div class="card-box table-responsive" style="overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch;">
                         <table
                           id="datatable-buttons"
                           class="table table-striped table-bordered"
-                          style="width: 100%"
+                          style="width: 100%; table-layout: fixed;"
                         >
                           <thead>
                             <tr>
-                              <th>Agent</th>
-                              <th>Quotations Ref</th>
-                              <th>Client Name</th>
-                              <th class="sortable" data-column="booking_date">
+                              <th style="width: 8%;">Agent</th>
+                              <th style="width: 10%;">Quotations Ref</th>
+                              <th style="width: 13%;">Client Name</th>
+                              <th style="width: 8%;" class="sortable" data-column="booking_date">
                                 Booking Date
                                 <i
                                   class="fa fa-sort sort-icon"
                                   id="sort-booking_date"
                                 ></i>
                               </th>
-                              <th class="sortable" data-column="start_date">
+                              <th style="width: 8%;" class="sortable" data-column="start_date">
                                 Trip Start Date
                                 <i
                                   class="fa fa-sort sort-icon"
                                   id="sort-start_date"
                                 ></i>
                               </th>
-                              <th>Pax</th>
-                              <th>Telephone</th>
+                              <th style="width: 4%;">Pax</th>
+                              <th style="width: 9%;">Telephone</th>
                               <th
+                                style="width: 11%;"
                                 class="sortable"
                                 data-column="booking_reference"
                               >
@@ -433,16 +454,15 @@
                                   id="sort-booking_reference"
                                 ></i>
                               </th>
-                              <th>Status</th>
-                              <th class="sortable" data-column="final_cost">
+                              <th style="width: 8%;">Status</th>
+                              <th style="width: 9%;" class="sortable" data-column="final_cost">
                                 Final Cost
                                 <i
                                   class="fa fa-sort sort-icon"
                                   id="sort-final_cost"
                                 ></i>
                               </th>
-                              <th>View</th>
-                              <th>Save</th>
+                              <th style="width: 12%; text-align: center;">Actions</th>
                             </tr>
                           </thead>
                           <tbody id="tripTableBody">
@@ -476,6 +496,63 @@
         <!-- Footer -->
         <footer></footer>
         <!-- /Footer -->
+
+        <!-- Email Summary Modal -->
+        <div class="modal fade" id="emailModal" tabindex="-1" role="dialog" aria-hidden="true">
+          <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+              <div class="modal-header" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 18px 24px;">
+                <h5 class="modal-title" style="font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 18px; display: inline-block;">
+                  <i class="fa fa-envelope-o"></i> Hotel Email Reservation Summary
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8; font-size: 24px; padding: 18px 24px; margin: -18px -24px -18px auto; background: transparent; border: none; float: right;">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body" style="padding: 24px;">
+                <div id="emailModalLoading" style="text-align: center; padding: 40px 0;">
+                  <i class="fa fa-spinner fa-spin fa-3x" style="color: #6366f1; margin-bottom: 15px;"></i>
+                  <p style="color: #64748b; font-size: 15px; font-weight: 500;">Retrieving hotel stays information...</p>
+                </div>
+                <div id="emailModalContent" style="display: none;">
+                  <div style="margin-bottom: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
+                    <table style="width: 100%; font-size: 14px;">
+                      <tr>
+                        <td style="color: #64748b; font-weight: 600; width: 140px; padding: 4px 0;">Booking Ref:</td>
+                        <td id="emailModalRef" style="color: #0f172a; font-weight: 700; padding: 4px 0;">-</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #64748b; font-weight: 600; padding: 4px 0;">Client Name:</td>
+                        <td id="emailModalClient" style="color: #0f172a; padding: 4px 0;">-</td>
+                      </tr>
+                    </table>
+                  </div>
+                  <h6 style="font-family: 'Outfit', sans-serif; font-weight: 600; color: #0f172a; margin-bottom: 15px; font-size: 16px;">Grouped Hotel Stays</h6>
+                  <div class="table-responsive">
+                    <table class="table table-bordered" style="font-size: 14px; margin-bottom: 0;">
+                      <thead style="background: #f1f5f9; color: #334155; font-weight: 600;">
+                        <tr>
+                          <th>Hotel Name</th>
+                          <th>Room Type</th>
+                          <th>Stay Dates</th>
+                          <th style="width: 100px; text-align: center;">Nights</th>
+                          <th style="width: 100px; text-align: center;">Status</th>
+                          <th style="width: 120px; text-align: center;">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody id="emailModalTableBody">
+                        <!-- Dynamic hotel stays list -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 15px 24px;">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" style="border-radius: 6px; font-weight: 500; padding: 8px 16px;">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -665,6 +742,12 @@
             window.location.href = `edit_booking.html?id=${tripId}`;
             return;
           }
+          const viewBtn = event.target.closest(".view-btn");
+          if (viewBtn) {
+            const tripId = viewBtn.getAttribute("data-id");
+            window.location.href = `edit_booking.html?id=${tripId}&mode=view`;
+            return;
+          }
           const printBtn = event.target.closest(".print-btn");
           if (printBtn) {
             const tripId = printBtn.getAttribute("data-id");
@@ -703,7 +786,172 @@
               });
             return;
           }
+          const emailBtn = event.target.closest(".email-btn");
+          if (emailBtn) {
+            const tripId = emailBtn.getAttribute("data-id");
+            openEmailModal(tripId);
+            return;
+          }
         });
+
+        // Open Email Reservation Summary Modal
+        function openEmailModal(tripId) {
+          $("#emailModalLoading").show();
+          $("#emailModalContent").hide();
+          $("#emailModal").modal("show");
+
+          fetch(`${Endpoint}/api/v1/bookings/${tripId}`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          })
+          .then(res => {
+            if (!res.ok) throw new Error("Failed to load booking details");
+            return res.json();
+          })
+          .then(trip => {
+            $("#emailModalRef").text(trip.booking_reference || trip.id);
+            $("#emailModalClient").text(trip.client_name);
+
+            const hotelItems = trip.hotel_trip_items || [];
+            const tbody = document.getElementById("emailModalTableBody");
+            tbody.innerHTML = "";
+
+            if (hotelItems.length === 0) {
+              tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted" style="padding: 20px;">No hotels booked for this trip.</td></tr>`;
+              $("#emailModalLoading").hide();
+              $("#emailModalContent").show();
+              return;
+            }
+
+            // Consolidate hotel stays client-side
+            const stays = consolidateHotelStays(hotelItems);
+
+            stays.forEach((stay) => {
+              const row = document.createElement("tr");
+
+              const fromStr = new Date(stay.from_date).toLocaleDateString("en-GB").replace(/\//g, "-");
+              const toStr = new Date(stay.to_date).toLocaleDateString("en-GB").replace(/\//g, "-");
+
+              const statusBadge = stay.email_sent 
+                ? `<span class="badge badge-success" style="padding: 5px 10px; border-radius: 4px; font-weight: 500; background-color: #28a745; color: white;">Sent</span>`
+                : `<span class="badge badge-warning" style="padding: 5px 10px; border-radius: 4px; font-weight: 500; background-color: #f39c12; color: white;">Not Sent</span>`;
+
+              row.innerHTML = `
+                <td style="font-weight: 600; color: #334155; vertical-align: middle;">${stay.hotel_name}</td>
+                <td style="vertical-align: middle;">${stay.room_type}</td>
+                <td style="vertical-align: middle;">${fromStr} to ${toStr}</td>
+                <td style="text-align: center; vertical-align: middle; font-weight: 600;">${stay.nights}</td>
+                <td style="text-align: center; vertical-align: middle;">${statusBadge}</td>
+                <td style="text-align: center; vertical-align: middle;">
+                  <button class="btn btn-primary btn-sm send-hotel-email-btn" 
+                          data-trip-id="${tripId}" 
+                          data-item-ids="${stay.itemIds.join('_')}" 
+                          style="border-radius: 4px; font-weight: 500; padding: 4px 10px; transition: all 0.2s ease;">
+                    <i class="fa fa-paper-plane"></i> Send
+                  </button>
+                </td>
+              `;
+              tbody.appendChild(row);
+            });
+
+            // Bind click handler for send-hotel-email-btn
+            $(".send-hotel-email-btn").off("click").on("click", function() {
+              const btn = $(this);
+              const tId = btn.attr("data-trip-id");
+              const itemIds = btn.attr("data-item-ids");
+
+              if (!confirm("Are you sure you want to send reservation email to this hotel?")) {
+                return;
+              }
+
+              btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Sending...');
+
+              fetch(`${Endpoint}/api/v1/bookings/${tId}/notify/hotel/group_${itemIds}`, {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json"
+                }
+              })
+              .then(res => {
+                if (!res.ok) throw new Error("Failed to send reservation email");
+                return res.json();
+              })
+              .then(data => {
+                alert("Email sent successfully!");
+                // Refresh modal details
+                openEmailModal(tId);
+              })
+              .catch(err => {
+                alert(`Error: ${err.message}`);
+                btn.prop("disabled", false).html('<i class="fa fa-paper-plane"></i> Send');
+              });
+            });
+
+            $("#emailModalLoading").hide();
+            $("#emailModalContent").show();
+          })
+          .catch(err => {
+            alert(`Error: ${err.message}`);
+            $("#emailModal").modal("hide");
+          });
+        }
+
+        // Consolidation logic for hotel stays
+        function consolidateHotelStays(hotelItems) {
+          const groups = {};
+          hotelItems.forEach(item => {
+            const key = item.hotel_id || item.hotel_name;
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(item);
+          });
+
+          const consolidated = [];
+          for (const key in groups) {
+            const items = groups[key];
+            // Sort by check-in date
+            items.sort((a, b) => new Date(a.from_date) - new Date(b.from_date));
+
+            let currentStay = null;
+            for (const item of items) {
+              const itemFrom = new Date(item.from_date);
+              const itemTo = new Date(item.to_date);
+
+              // We consider stays consecutive if they belong to the same hotel,
+              // check-out of current matches check-in of next, and same room type
+              if (currentStay && 
+                  new Date(currentStay.to_date).toDateString() === itemFrom.toDateString() &&
+                  currentStay.room_type === item.room_type
+              ) {
+                currentStay.to_date = itemTo;
+                currentStay.nights += item.nights || 1;
+                currentStay.itemIds.push(item.id);
+                // Group is considered sent if all individual items are sent
+                currentStay.email_sent = currentStay.email_sent && item.email_sent;
+              } else {
+                if (currentStay) {
+                  consolidated.push(currentStay);
+                }
+                currentStay = {
+                  hotel_id: item.hotel_id,
+                  hotel_name: item.hotel_name,
+                  room_type: item.room_type || 'Standard',
+                  from_date: itemFrom,
+                  to_date: itemTo,
+                  nights: item.nights || 1,
+                  itemIds: [item.id],
+                  email_sent: item.email_sent
+                };
+              }
+            }
+            if (currentStay) {
+              consolidated.push(currentStay);
+            }
+          }
+          return consolidated;
+        }
 
         // Fetch trips from backend API
         function loadTripsFromAPI(useAllData = true) {
@@ -833,56 +1081,58 @@
           filteredTrips.slice(start, end).forEach((trip) => {
             const row = document.createElement("tr");
 
-            // ✅ Apply background color based on approval and booking reference
+            // ✅ Apply background color based on approval and booking reference using soft premium pastels
             if (trip.status === "Approved") {
-              row.style.backgroundColor = "#A2D9A5"; // Green for approved trips
+              row.style.backgroundColor = "rgba(34, 197, 94, 0.08)"; // Soft pastel green for approved
             } else if (
               trip.status === "Declined" ||
               trip.status === "Cancelled"
             ) {
-              row.style.backgroundColor = "#E74C3C"; // Red for cancelled or declined trips
+              row.style.backgroundColor = "rgba(239, 68, 68, 0.08)"; // Soft pastel red for cancelled/declined
             } else if (
               trip.booking_reference &&
               trip.booking_reference.trim() !== ""
             ) {
-              row.style.backgroundColor = "#FFD580"; // Yellow if booking_reference is not empty
+              row.style.backgroundColor = "rgba(245, 158, 11, 0.08)"; // Soft pastel amber/orange for has booking_ref
             }
 
             // Convert the date to DD/MM/YYYY format
-            const formattedDate = new Date(trip.start_date)
-              .toLocaleDateString("en-GB")
-              .split("/")
-              .join("-");
+            const formattedDate = trip.trip_start_date
+              ? new Date(trip.trip_start_date).toLocaleDateString("en-GB").split("/").join("-")
+              : "N/A";
 
             // Format booking date to DD/MM/YYYY format, handle cases where booking_date might be null or invalid
             let formattedBookingDate = "N/A";
-            if (
-              trip.booking_date &&
-              trip.booking_date !== "0001-01-01T00:00:00Z"
-            ) {
-              const bookingDate = new Date(trip.booking_date);
+            if (trip.created_at && trip.created_at !== "0001-01-01T00:00:00Z") {
+              const bookingDate = new Date(trip.created_at);
               if (!isNaN(bookingDate.getTime())) {
                 formattedBookingDate = bookingDate.toLocaleDateString("en-GB").replace(/\//g, "-");
               }
             }
 
+            // Styled Status Badge
+            let statusClass = "pending";
+            if (trip.status === "Approved") statusClass = "approved";
+            else if (trip.status === "Declined" || trip.status === "Cancelled") statusClass = "declined";
+            const statusHtml = `<span class="status-badge ${statusClass}">${trip.status}</span>`;
+
             row.innerHTML = `
-            <td>${(trip.agent && trip.agent.name) || (trip.agents && trip.agents.name) || "N/A"}</td>
-            <td>${trip.quotation_reference}</td>
-            <td>${trip.client_name}</td>
+            <td style="font-weight: 500;">${(trip.agent && trip.agent.name) || (trip.agents && trip.agents.name) || "N/A"}</td>
+            <td>${trip.file_reference || trip.booking_reference || "-"}</td>
+            <td style="font-weight: 500;">${trip.client_name}</td>
             <td>${formattedBookingDate}</td>
             <td>${formattedDate}</td>
-            <td>${trip.number_of_adults + trip.number_of_kids}</td>
+            <td style="text-align: center; font-weight: 500;">${trip.number_of_adults + trip.number_of_kids}</td>
             <td>${trip.client_phone}</td>
-            <td>${trip.booking_reference || ""}</td>
-            <td>${trip.status}</td>
-            <td>${trip.final_cost || "N/A"}</td>
-            <td><button class="btn btn-primary btn-sm edit-btn" data-id="${
-              trip.id
-            }">View</button></td>
-            <td><button class="btn btn-success btn-sm print-btn" data-id="${
-              trip.id
-            }">Save</button></td>
+            <td style="font-weight: 500;">${trip.booking_reference || ""}</td>
+            <td>${statusHtml}</td>
+            <td style="font-weight: 600;">${trip.final_amount || "N/A"}</td>
+            <td style="text-align: center; white-space: nowrap;">
+              <button class="btn table-action-btn view-btn" data-id="${trip.id}" title="View"><i class="fa fa-eye"></i></button>
+              <button class="btn table-action-btn edit-btn" data-id="${trip.id}" title="Edit"><i class="fa fa-edit"></i></button>
+              <button class="btn table-action-btn save-btn print-btn" data-id="${trip.id}" title="Save"><i class="fa fa-save"></i></button>
+              <button class="btn table-action-btn email-btn" data-id="${trip.id}" title="Email"><i class="fa fa-envelope"></i></button>
+            </td>
         `;
 
             tripTableBody.appendChild(row);

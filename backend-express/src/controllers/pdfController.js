@@ -133,8 +133,18 @@ export async function notifySupplierOrHotel(req, res, next) {
     };
 
     if (itemType === 'hotel') {
+      let whereClause = {};
+      if (itemID === 'all') {
+        whereClause = { trip_item_id: tripId };
+      } else if (itemID.startsWith('group_')) {
+        const ids = itemID.replace('group_', '').split('_').map(x => parseInt(x)).filter(Boolean);
+        whereClause = { id: { in: ids } };
+      } else {
+        whereClause = { id: parseInt(itemID) };
+      }
+
       const hotelItems = await prisma.hotel_trip_items.findMany({
-        where: itemID === 'all' ? { trip_item_id: tripId } : { id: parseInt(itemID) },
+        where: whereClause,
         include: { hotels: { include: { hotel_contacts: true } } }
       });
 

@@ -6352,3 +6352,630 @@ ul.notifications {
   text-align: center;
   padding: 0.5rem;
 }
+
+/* ==========================================================================
+   Modern Premium Sidebar Design Override (Expanded Mode - nav-md)
+   ========================================================================== */
+.nav-md .left_col.menu_fixed {
+  background: #0f172a !important; /* Elegant slate-900 background */
+}
+
+.nav-md .left_col {
+  background: #0f172a !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.nav-md .scroll-view {
+  background: #0f172a !important;
+}
+
+/* Header site title */
+.nav-md .nav_title {
+  background: #0f172a !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  padding: 15px 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  height: 70px !important;
+}
+
+.nav-md .site_title {
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 20px !important;
+  color: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding-left: 0 !important;
+  height: auto !important;
+  line-height: normal !important;
+}
+
+.nav-md .site_title i {
+  border: none !important;
+  font-size: 22px !important;
+  color: #6366f1 !important; /* Premium Indigo */
+  width: auto !important;
+  height: auto !important;
+  line-height: normal !important;
+  margin: 0 !important;
+}
+
+/* Profile section */
+.nav-md .profile {
+  padding: 25px 20px 15px 20px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;
+  margin-bottom: 10px !important;
+}
+
+.nav-md .profile_pic {
+  width: 30% !important;
+}
+
+.nav-md .profile_pic img {
+  width: 50px !important;
+  height: 50px !important;
+  border-radius: 50% !important;
+  border: 2px solid #6366f1 !important; /* Indigo border circle */
+  padding: 2px !important;
+  object-fit: cover !important;
+}
+
+.nav-md .profile_info {
+  width: 70% !important;
+  padding: 5px 0 0 15px !important;
+}
+
+.nav-md .profile_info span {
+  font-size: 12px !important;
+  color: #64748b !important; /* Slate 400 */
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  font-weight: 600 !important;
+}
+
+.nav-md .profile_info h2 {
+  font-size: 16px !important;
+  color: #f8fafc !important; /* Pure white */
+  font-weight: 700 !important;
+  margin: 4px 0 0 0 !important;
+}
+
+/* Sidebar Menu navigation */
+.nav-md #sidebar-menu {
+  background: #0f172a !important;
+  padding: 10px 0 !important;
+}
+
+.nav-md .menu_section {
+  margin-bottom: 25px !important;
+}
+
+.nav-md .menu_section h3 {
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 11px !important;
+  color: #475569 !important; /* Slate 600 */
+  text-transform: uppercase !important;
+  letter-spacing: 1.5px !important;
+  font-weight: 700 !important;
+  margin: 0 0 15px 20px !important;
+}
+
+/* Main items */
+.nav-md ul.nav.side-menu > li {
+  margin: 4px 12px !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+.nav-md ul.nav.side-menu > li > a {
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 14.5px !important;
+  font-weight: 500 !important;
+  color: #94a3b8 !important; /* Slate 400 */
+  padding: 12px 15px !important;
+  background: transparent !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.nav-md ul.nav.side-menu > li > a i {
+  font-size: 16px !important;
+  width: 24px !important;
+  text-align: center !important;
+  margin-right: 12px !important;
+  color: #64748b !important;
+  transition: color 0.2s ease !important;
+}
+
+/* Hover state */
+.nav-md ul.nav.side-menu > li > a:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.nav-md ul.nav.side-menu > li > a:hover i {
+  color: #ffffff !important;
+}
+
+/* Active & Opened State */
+.nav-md ul.nav.side-menu > li.active {
+  background: rgba(99, 102, 241, 0.06) !important;
+  border: 1px solid rgba(99, 102, 241, 0.15) !important;
+}
+
+.nav-md ul.nav.side-menu > li.active > a {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.nav-md ul.nav.side-menu > li.active > a i {
+  color: #6366f1 !important; /* Active Indigo Icon */
+}
+
+/* Custom left active indicator bar */
+.nav-md ul.nav.side-menu > li.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #6366f1;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Child Menu (Dropdown) */
+.nav-md ul.nav.child_menu {
+  background: rgba(0, 0, 0, 0.2) !important;
+  padding: 8px 0 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.03) !important;
+}
+
+.nav-md ul.nav.child_menu li {
+  margin: 2px 15px !important;
+}
+
+.nav-md ul.nav.child_menu li a {
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  color: #94a3b8 !important;
+  padding: 8px 12px !important;
+  background: transparent !important;
+  border-radius: 6px !important;
+  transition: all 0.15s ease !important;
+}
+
+.nav-md ul.nav.child_menu li a:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  padding-left: 15px !important; /* Subtle indent slide animation on hover */
+}
+
+.nav-md ul.nav.child_menu li.active a {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+/* Sidebar footer buttons */
+.sidebar-footer {
+  background: #090d16 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.sidebar-footer a {
+  background: #090d16 !important;
+  color: #64748b !important;
+  transition: all 0.2s ease !important;
+}
+
+.sidebar-footer a:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Body and main layout background tweaks for better blending */
+body {
+  background: #f8fafc !important;
+}
+
+/* ==========================================================================
+   Modern Premium Sidebar Design Override (Collapsed Mode - nav-sm)
+   ========================================================================== */
+.nav-sm .left_col.menu_fixed,
+.nav-sm .left_col,
+.nav-sm .scroll-view,
+.nav-sm #sidebar-menu {
+  background: #0f172a !important; /* Keep Slate-900 background consistent */
+  width: 70px !important;
+}
+
+.nav-sm .navbar.nav_title {
+  background: #0f172a !important;
+  width: 70px !important;
+}
+
+.nav-sm .site_title i {
+  color: #6366f1 !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 13px 0 0 3px !important;
+}
+
+.nav-sm ul.nav.side-menu > li {
+  margin: 8px 0 !important;
+}
+
+.nav-sm ul.nav.side-menu > li > a {
+  padding: 15px 0 !important;
+  text-align: center !important;
+  display: block !important;
+  color: #94a3b8 !important;
+  transition: all 0.2s ease !important;
+}
+
+.nav-sm ul.nav.side-menu > li > a i {
+  font-size: 22px !important;
+  width: 100% !important;
+  margin: 0 !important;
+  color: #64748b !important;
+  transition: color 0.2s ease !important;
+}
+
+.nav-sm ul.nav.side-menu > li > a:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.nav-sm ul.nav.side-menu > li > a:hover i {
+  color: #ffffff !important;
+}
+
+.nav-sm ul.nav.side-menu > li.active > a {
+  color: #6366f1 !important;
+  background: rgba(99, 102, 241, 0.06) !important;
+}
+
+.nav-sm ul.nav.side-menu > li.active > a i {
+  color: #6366f1 !important;
+}
+
+/* Hover popup menus for nav-sm */
+.nav-sm ul.nav.child_menu {
+  background: #0f172a !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3) !important;
+  padding: 10px !important;
+  border-radius: 8px !important;
+}
+
+.nav-sm ul.nav.child_menu li a {
+  color: #94a3b8 !important;
+  padding: 8px 12px !important;
+}
+
+.nav-sm ul.nav.child_menu li a:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.nav_menu {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+/* ==========================================================================
+   Modern Premium Top Navigation (Navbar) Override
+   ========================================================================== */
+.top_nav {
+  margin-left: 230px !important;
+  background: #ffffff !important;
+}
+
+.nav-sm .top_nav {
+  margin-left: 70px !important;
+}
+
+.nav_menu {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.03) !important;
+  height: 70px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 20px !important;
+  margin-bottom: 0 !important;
+}
+
+/* Sidebar Toggle button */
+.toggle {
+  float: none !important;
+  width: auto !important;
+  margin: 0 !important;
+}
+
+.toggle a {
+  padding: 10px !important;
+  border-radius: 8px !important;
+  color: #64748b !important; /* Slate 500 */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.toggle a:hover {
+  background: #f1f5f9 !important; /* Light Slate bg */
+  color: #0f172a !important;
+}
+
+.toggle a i {
+  font-size: 20px !important;
+}
+
+/* Right-side user profile area */
+.top_nav .navbar-right {
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 15px !important;
+}
+
+.top_nav .navbar-right li {
+  margin: 0 !important;
+}
+
+/* Profile button link */
+a.user-profile {
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 14.5px !important;
+  font-weight: 600 !important;
+  color: #334155 !important; /* Slate 700 */
+  padding: 8px 16px !important;
+  border-radius: 9999px !important; /* Capsule style */
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  line-height: normal !important;
+}
+
+a.user-profile:hover, a.user-profile:focus {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+a.user-profile img {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  border: 2px solid #6366f1 !important; /* Indigo ring */
+  margin: 0 !important;
+}
+
+a.user-profile span.fa {
+  font-size: 11px !important;
+  color: #94a3b8 !important;
+  margin-top: 0 !important;
+}
+
+/* Dropdown Menu styling */
+.top_nav .dropdown-menu {
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+  padding: 8px !important;
+  margin-top: 10px !important;
+  background: #ffffff !important;
+  width: 180px !important;
+}
+
+.top_nav .dropdown-menu::before {
+  display: none !important; /* Hide default arrow */
+}
+
+.top_nav .dropdown-menu li {
+  width: 100% !important;
+}
+
+.top_nav .dropdown-menu>li>a {
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #475569 !important; /* Slate 600 */
+  padding: 10px 12px !important;
+  border-radius: 8px !important;
+  transition: all 0.15s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.top_nav .dropdown-menu>li>a:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.top_nav .dropdown-menu>li>a i {
+  font-size: 14px !important;
+  width: 16px !important;
+  text-align: center !important;
+  color: #64748b !important;
+}
+
+.top_nav .dropdown-menu>li>a:hover i {
+  color: #0f172a !important;
+}
+
+/* Fix main layout alignments for 70px height navbar */
+.right_col {
+  padding-top: 20px !important;
+}
+
+@media (max-width: 991px) {
+  .top_nav {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+}
+
+/* ==========================================================================
+   Modern Premium Table Styles Override
+   ========================================================================== */
+.table-responsive {
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.02) !important;
+  background: #ffffff !important;
+  overflow: hidden !important;
+}
+
+#datatable-buttons {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  width: 100% !important;
+  margin: 0 !important;
+  border: none !important;
+  table-layout: fixed !important;
+}
+
+#datatable-buttons thead th {
+  font-family: 'Outfit', sans-serif !important;
+  background: #f8fafc !important;
+  color: #475569 !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  padding: 8px 4px !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  vertical-align: middle !important;
+}
+
+#datatable-buttons tbody td {
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 12px !important;
+  color: #334155 !important;
+  padding: 8px 4px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  vertical-align: middle !important;
+  transition: background 0.2s ease !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+}
+
+#datatable-buttons tbody tr {
+  transition: all 0.2s ease !important;
+}
+
+#datatable-buttons tbody tr:hover td {
+  background: rgba(15, 23, 42, 0.02) !important;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 3px 6px !important;
+  border-radius: 9999px !important;
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  text-transform: capitalize !important;
+}
+
+.status-badge.approved {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+}
+
+.status-badge.pending {
+  background: #fef3c7 !important;
+  color: #b45309 !important;
+}
+
+.status-badge.declined, .status-badge.cancelled {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+}
+
+/* Action Buttons inside Table */
+.table-action-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 10.5px !important;
+  padding: 4px 6px !important;
+  border-radius: 4px !important;
+  border: none !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+  margin: 0 1px !important;
+}
+
+.table-action-btn.view-btn {
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+}
+
+.table-action-btn.view-btn:hover {
+  background: #dbeafe !important;
+  transform: translateY(-1px) !important;
+}
+
+.table-action-btn.save-btn {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+}
+
+.table-action-btn.save-btn:hover {
+  background: #d1fae5 !important;
+  transform: translateY(-1px) !important;
+}
+
+.table-action-btn.email-btn {
+  background: #f5f3ff !important;
+  color: #6d28d9 !important;
+}
+
+.table-action-btn.email-btn:hover {
+  background: #ede9fe !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Date range inputs and filters styling */
+.x_panel {
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+  padding: 20px !important;
+}
+
+.x_title {
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 10px 0 !important;
+}
+
+.x_title h2 {
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+}

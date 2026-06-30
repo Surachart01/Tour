@@ -1,505 +1,510 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Special Packages</title>
 
-    <!-- Bootstrap -->
-    <link
-      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <!-- Font Awesome -->
-    <link
-      href="../vendors/font-awesome/css/font-awesome.min.css"
-      rel="stylesheet"
-    />
-    <!-- Custom Theme Style -->
-    <link rel="stylesheet" href="../build/css/custom.min.css" />
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Special Packages</title>
 
-    <style>
-      /* Sidebar and navbar text size */
-      .nav_title span,
-      .profile_info span,
-      .profile_info h2,
-      .side-menu a,
-      .navbar-right a {
-        font-size: 1rem;
-      }
-      .left_col.scroll-view {
-        overflow-y: auto;
-        max-height: 100vh;
-      }
-      body.nav-sm .left_col.scroll-view {
-        overflow-y: visible;
-        max-height: none;
-      }
-      .action-btn {
-        margin-right: 5px;
-      }
-      /* Status Badge */
-      .badge-active {
-        background-color: #e6f4ea;
-        color: #137333;
-        border: 1px solid #ceead6;
-      }
-      .badge-inactive {
-        background-color: #fce8e6;
-        color: #c5221f;
-        border: 1px solid #fad2cf;
-      }
-      /* Modern table styles */
-      .modern-packages-table {
-        border-collapse: separate;
-        border-spacing: 0;
-        width: 100%;
-        border: none !important;
-        background-color: #fff;
-      }
-      .modern-packages-table th {
-        background-color: #f4f6f9 !important;
-        color: #4a5568 !important;
-        font-weight: 600 !important;
-        text-transform: uppercase !important;
-        font-size: 0.8rem !important;
-        letter-spacing: 0.5px;
-        padding: 12px 16px !important;
-        border-bottom: 2px solid #e2e8f0 !important;
-        border-top: none !important;
-        border-left: none !important;
-        border-right: none !important;
-      }
-      .modern-packages-table td {
-        padding: 14px 16px !important;
-        vertical-align: middle !important;
-        border-bottom: 1px solid #edf2f7 !important;
-        border-top: none !important;
-        border-left: none !important;
-        border-right: none !important;
-      }
-      .modern-packages-table tbody tr {
-        transition: background-color 0.15s ease-in-out;
-      }
-      .modern-packages-table tbody tr:hover {
-        background-color: #f7fafc !important;
-      }
-      /* Dropdown action button styles */
-      .dropdown-item.action-btn {
-        background: none;
-        border: none;
-        width: 100%;
-        text-align: left;
-        cursor: pointer;
-        transition: background-color 0.15s ease-in-out;
-      }
-      .dropdown-item.action-btn:hover {
-        background-color: #f8f9fa;
-      }
-      /* Itinerary item card styles */
-      .itinerary-day {
-        margin-bottom: 20px;
-        border-left: 3px solid #1abb9c;
-        padding-left: 15px;
-      }
-      .itinerary-day-title {
-        font-weight: bold;
-        color: #2a3f54;
-        margin-bottom: 10px;
-      }
-      .itinerary-item {
-        background-color: #f8f9fa;
-        border: 1px solid #e9ecef;
-        border-radius: 6px;
-        padding: 10px 15px;
-        margin-bottom: 8px;
-      }
-      .itinerary-item-type {
-        font-size: 0.8rem;
-        font-weight: bold;
-        text-transform: uppercase;
-        color: #1abb9c;
-      }
-    </style>
-    
+  <!-- Bootstrap -->
+  <link href="../vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Font Awesome -->
+  <link href="../vendors/font-awesome/css/font-awesome.min.css" rel="stylesheet" />
+  <!-- Custom Theme Style -->
+  <link rel="stylesheet" href="../build/css/custom.min.css" />
+
+  <style>
+    /* Sidebar and navbar text size */
+    .nav_title span,
+    .profile_info span,
+    .profile_info h2,
+    .side-menu a,
+    .navbar-right a {
+      font-size: 1rem;
+    }
+
+    .left_col.scroll-view {
+      overflow-y: auto;
+      max-height: 100vh;
+    }
+
+    body.nav-sm .left_col.scroll-view {
+      overflow-y: visible;
+      max-height: none;
+    }
+
+    .action-btn {
+      margin-right: 5px;
+    }
+
+    /* Status Badge */
+    .badge-active {
+      background-color: #e6f4ea;
+      color: #137333;
+      border: 1px solid #ceead6;
+    }
+
+    .badge-inactive {
+      background-color: #fce8e6;
+      color: #c5221f;
+      border: 1px solid #fad2cf;
+    }
+
+    /* Modern table styles */
+    .modern-packages-table {
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 100%;
+      border: none !important;
+      background-color: #fff;
+    }
+
+    .modern-packages-table th {
+      background-color: #f4f6f9 !important;
+      color: #4a5568 !important;
+      font-weight: 600 !important;
+      text-transform: uppercase !important;
+      font-size: 0.8rem !important;
+      letter-spacing: 0.5px;
+      padding: 12px 16px !important;
+      border-bottom: 2px solid #e2e8f0 !important;
+      border-top: none !important;
+      border-left: none !important;
+      border-right: none !important;
+    }
+
+    .modern-packages-table td {
+      padding: 14px 16px !important;
+      vertical-align: middle !important;
+      border-bottom: 1px solid #edf2f7 !important;
+      border-top: none !important;
+      border-left: none !important;
+      border-right: none !important;
+    }
+
+    .modern-packages-table tbody tr {
+      transition: background-color 0.15s ease-in-out;
+    }
+
+    .modern-packages-table tbody tr:hover {
+      background-color: #f7fafc !important;
+    }
+
+    /* Dropdown action button styles */
+    .dropdown-item.action-btn {
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      transition: background-color 0.15s ease-in-out;
+    }
+
+    .dropdown-item.action-btn:hover {
+      background-color: #f8f9fa;
+    }
+
+    /* Itinerary item card styles */
+    .itinerary-day {
+      margin-bottom: 20px;
+      border-left: 3px solid #1abb9c;
+      padding-left: 15px;
+    }
+
+    .itinerary-day-title {
+      font-weight: bold;
+      color: #2a3f54;
+      margin-bottom: 10px;
+    }
+
+    .itinerary-item {
+      background-color: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      padding: 10px 15px;
+      margin-bottom: 8px;
+    }
+
+    .itinerary-item-type {
+      font-size: 0.8rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: #1abb9c;
+    }
+  </style>
+
 </head>
-  <body class="nav-md">
-    <div class="container body">
-      <div class="main_container">
-        <!-- Sidebar -->
-        <div class="col-md-3 left_col menu_fixed">
-          <div class="left_col scroll-view">
-            <div class="navbar nav_title" style="border: 0">
-              <a href="index.html" class="site_title" style="display: block; text-align: center; font-size: 2rem; font-weight: bold; color: #007bff; text-decoration: none;">
-                <span style="font-size: 1.5rem">VeraThailandia!</span>
-              </a>
+
+<body class="nav-md">
+  <div class="container body">
+    <div class="main_container">
+      <!-- Sidebar -->
+      <div class="col-md-3 left_col menu_fixed">
+        <div class="left_col scroll-view">
+          <div class="navbar nav_title" style="border: 0">
+            <a href="index.html" class="site_title"
+              style="display: block; text-align: center; font-size: 2rem; font-weight: bold; color: #007bff; text-decoration: none;">
+              <span style="font-size: 1.5rem">VeraThailandia!</span>
+            </a>
+          </div>
+
+          <div class="clearfix"></div>
+
+          <!-- Profile Info -->
+          <div class="profile clearfix">
+            <div class="profile_pic">
+              <img src="images/verathailandlogo.png" alt="..." class="img-circle profile_img" />
             </div>
-
-            <div class="clearfix"></div>
-
-            <!-- Profile Info -->
-            <div class="profile clearfix">
-              <div class="profile_pic">
-                <img src="images/verathailandlogo.png" alt="..." class="img-circle profile_img" />
-              </div>
-              <div class="profile_info">
-                <span>Welcome,</span>
-                <h2 id="profileName"></h2>
-              </div>
+            <div class="profile_info">
+              <span>Welcome,</span>
+              <h2 id="profileName"></h2>
             </div>
+          </div>
 
-            <br />
+          <br />
 
-            <!-- Sidebar menu -->
-            <div
-              id="sidebar-menu"
-              class="main_menu_side hidden-print main_menu"
-            >
-              <div class="menu_section">
-                <h3>General</h3>
-                <ul class="nav side-menu">
-                  <li>
-                    <a href="index.html"
-                      ><i class="fa fa-home"></i> Home
-                      <span class="label label-success pull-right"></span
-                    ></a>
-                  </li>
-                  <li id="controlPanelMenu">
-                    <a>
-                      <i class="fa fa-edit"></i> Control-Panel
-                      <span class="fa fa-chevron-down"></span>
-                    </a>
-                                        <ul class="nav child_menu">
-                      <li><a href="activities.html">Activities</a></li>
-                      <li><a href="agents.html">Agents</a></li>
-                      <li><a href="booking.html">Bookings</a></li>
-                      <li><a href="city_info.html">City Information</a></li>
-                      <li><a href="excursion_description.html">Excursion Description</a></li>
-                      <li><a href="excursions.html">Excursions</a></li>
-                      <li><a href="hotels.html">Hotels</a></li>
-                      <li><a href="markup.html">Markups</a></li>
-                      <li><a href="othercharges.html">Other Charges</a></li>
-                      <li><a href="special_packages.html">Special Packages</a></li>
-                      <li><a href="stop_sale.html">Stop Sale</a></li>
-                      <li><a href="suppliers.html">Suppliers</a></li>
-                      <li><a href="tools.html">Tools</a></li>
-                      <li><a href="tour_description.html">Tour Description</a></li>
-                      <li><a href="tours.html">Tours</a></li>
-                      <li><a href="transfers.html">Transfers</a></li>
-                      <li><a href="users.html">Users</a></li>
-                    </ul>
-                  </li>
-                  <li>
-                    <a href="trip.html"
-                      ><i class="fa fa-book"></i> Quotation
-                      <span class="label label-success pull-right"></span
-                    ></a>
-                  </li>
-                  <li>
-                    <a href="payment.html"
-                      ><i class="fa fa-pencil-square-o"></i> Payment
-                      <span class="label label-success pull-right"></span
-                    ></a>
-                  </li>
-                  <!--<li>
+          <!-- Sidebar menu -->
+          <div id="sidebar-menu" class="main_menu_side hidden-print main_menu">
+            <div class="menu_section">
+              <h3>General</h3>
+              <ul class="nav side-menu">
+                <li>
+                  <a href="index.html"><i class="fa fa-home"></i> Home
+                    <span class="label label-success pull-right"></span></a>
+                </li>
+                <li id="controlPanelMenu">
+                  <a>
+                    <i class="fa fa-edit"></i> Control-Panel
+                    <span class="fa fa-chevron-down"></span>
+                  </a>
+                  <ul class="nav child_menu">
+                    <li><a href="activities.html">Activities</a></li>
+                    <li><a href="agents.html">Agents</a></li>
+                    <li><a href="booking.html">Bookings</a></li>
+                    <li><a href="city_info.html">City Information</a></li>
+                    <li><a href="excursion_description.html">Excursion Description</a></li>
+                    <li><a href="excursions.html">Excursions</a></li>
+                    <li><a href="hotels.html">Hotels</a></li>
+                    <li><a href="markup.html">Markups</a></li>
+                    <li><a href="othercharges.html">Other Charges</a></li>
+                    <li><a href="special_packages.html">Special Packages</a></li>
+                    <li><a href="stop_sale.html">Stop Sale</a></li>
+                    <li><a href="suppliers.html">Suppliers</a></li>
+                    <li><a href="tools.html">Tools</a></li>
+                    <li><a href="tour_description.html">Tour Description</a></li>
+                    <li><a href="tours.html">Tours</a></li>
+                    <li><a href="transfers.html">Transfers</a></li>
+                    <li><a href="users.html">Users</a></li>
+                  </ul>
+                </li>
+                <li>
+                  <a href="trip.html"><i class="fa fa-book"></i> Quotation
+                    <span class="label label-success pull-right"></span></a>
+                </li>
+                <li>
+                  <a href="payment.html"><i class="fa fa-pencil-square-o"></i> Payment
+                    <span class="label label-success pull-right"></span></a>
+                </li>
+                <!--<li>
                     <a href="tax_invoices.html"
                       ><i class="fa fa-file-text-o"></i> Tax Invoices
                       <span class="label label-success pull-right"></span
                     ></a>
                   </li> -->
-                  <!-- <li>
+                <!-- <li>
                     <a href="invoice_management.html"
                       ><i class="fa fa-table"></i> Invoice Management
                       <span class="label label-success pull-right"></span
                     ></a>
                   </li> -->
-                  <li>
-                    <a href="itinerary.html"
-                      ><i class="fa fa-ticket"></i> Itinerary
-                      <span class="label label-success pull-right"></span
-                    ></a>
-                  </li>
-                  <!--<li>
+                <li>
+                  <a href="itinerary.html"><i class="fa fa-ticket"></i> Itinerary
+                    <span class="label label-success pull-right"></span></a>
+                </li>
+                <!--<li>
                     <a href="leads.html"
                       ><i class="fa fa-ticket"></i> Leads
                       <span class="label label-success pull-right"></span
                     ></a>
                   </li> -->
-                  <li>
-                    <a href="analytics.html"
-                      ><i class="fa fa-bar-chart"></i> Analytics
-                      <span class="label label-success pull-right"></span
-                    ></a>
-                  </li>
-                  <!--<li>
+                <li>
+                  <a href="analytics.html"><i class="fa fa-bar-chart"></i> Analytics
+                    <span class="label label-success pull-right"></span></a>
+                </li>
+                <!--<li>
                     <a href="about.html"
                       ><i class="fa fa-info-circle"></i> About Us
                       <span class="label label-success pull-right"></span
                     ></a>
                   </li> -->
-                </ul>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Footer buttons -->
+          <div class="sidebar-footer hidden-small">
+            <a data-toggle="tooltip" data-placement="top" title="Settings">
+              <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+            </a>
+            <a data-toggle="tooltip" data-placement="top" title="FullScreen">
+              <span class="glyphicon glyphicon-fullscreen" aria-hidden="true"></span>
+            </a>
+            <a data-toggle="tooltip" data-placement="top" title="Lock">
+              <span class="glyphicon glyphicon-eye-close" aria-hidden="true"></span>
+            </a>
+            <a data-toggle="tooltip" data-placement="top" title="Logout" href="logout.html">
+              <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top navigation -->
+      <div class="top_nav">
+        <div class="nav_menu">
+          <div class="nav toggle">
+            <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+          </div>
+          <nav class="nav navbar-nav">
+            <ul class="navbar-right">
+              <li class="nav-item dropdown open" style="padding-left: 15px">
+                <a href="javascript:;" class="user-profile dropdown-toggle" aria-haspopup="true" id="navbarDropdown"
+                  data-toggle="dropdown" aria-expanded="false">
+                  <img id="navProfileImage" src="images/verathailandlogo.png" alt="" />
+                  <span id="navProfileName"></span>
+                </a>
+                <div class="dropdown-menu dropdown-usermenu pull-right" aria-labelledby="navbarDropdown">
+                  <a class="dropdown-item" href="profile.html"><i class="fa fa-user pull-right"></i> Profile</a>
+                  <a class="dropdown-item" href="logout.html"><i class="fa fa-sign-out pull-right"></i> Log Out</a>
+                </div>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Page content -->
+      <div class="right_col" role="main">
+        <div class="page-title">
+          <div class="title_left">
+            <h3>Special Packages</h3>
+          </div>
+        </div>
+
+        <div class="clearfix"></div>
+
+        <!-- Search Box and Filters -->
+        <div class="row" style="margin-bottom: 20px">
+          <div class="col-md-4">
+            <input type="text" id="searchBox" class="form-control" placeholder="Search by name, code or city..." />
+          </div>
+          <div class="col-md-3">
+            <input type="text" id="cityFilter" class="form-control" placeholder="Filter by City..." />
+          </div>
+          <div class="col-md-3">
+            <input type="text" id="categoryFilter" class="form-control" placeholder="Filter by Category..." />
+          </div>
+          <div class="col-md-2">
+            <button id="searchBtn" class="btn btn-primary btn-block">
+              <i class="fa fa-search"></i> Search
+            </button>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-12 col-sm-12">
+            <div class="x_panel">
+              <div class="x_title" style="display: flex; align-items: center; justify-content: space-between;">
+                <h2 style="margin: 0">List of Special Packages</h2>
+                <div id="adminCreateBtnContainer">
+                  <a href="edit_special_package.html" class="btn btn-success btn-sm">
+                    <i class="fa fa-plus"></i> Create Special Package
+                  </a>
+                </div>
+              </div>
+              <div class="x_content">
+                <div class="table-responsive">
+                  <table class="table modern-packages-table" style="width: 100%">
+                    <thead>
+                      <tr>
+                        <th>Package Details</th>
+                        <th style="width: 150px;">Duration & Order</th>
+                        <th style="width: 180px;">Main City / Category</th>
+                        <th style="width: 220px;">Rates (SGL / DBL / TPL)</th>
+                        <th id="statusHeader" style="width: 100px; text-align: center;">Status</th>
+                        <th style="width: 120px; text-align: center;">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="packageTableBody">
+                      <!-- Loaded dynamically -->
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-
-            <!-- Footer buttons -->
-            <div class="sidebar-footer hidden-small">
-              <a data-toggle="tooltip" data-placement="top" title="Settings">
-                <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
-              </a>
-              <a data-toggle="tooltip" data-placement="top" title="FullScreen">
-                <span class="glyphicon glyphicon-fullscreen" aria-hidden="true"></span>
-              </a>
-              <a data-toggle="tooltip" data-placement="top" title="Lock">
-                <span class="glyphicon glyphicon-eye-close" aria-hidden="true"></span>
-              </a>
-              <a data-toggle="tooltip" data-placement="top" title="Logout" href="logout.html">
-                <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
-              </a>
-            </div>
           </div>
         </div>
+      </div>
 
-        <!-- Top navigation -->
-        <div class="top_nav">
-          <div class="nav_menu">
-            <div class="nav toggle">
-              <a id="menu_toggle"><i class="fa fa-bars"></i></a>
-            </div>
-            <nav class="nav navbar-nav">
-              <ul class="navbar-right">
-                <li class="nav-item dropdown open" style="padding-left: 15px">
-                  <a href="javascript:;" class="user-profile dropdown-toggle" aria-haspopup="true" id="navbarDropdown" data-toggle="dropdown" aria-expanded="false">
-                    <img id="navProfileImage" src="images/verathailandlogo.png" alt="" />
-                    <span id="navProfileName"></span>
-                  </a>
-                  <div class="dropdown-menu dropdown-usermenu pull-right" aria-labelledby="navbarDropdown">
-                    <a class="dropdown-item" href="profile.html"><i class="fa fa-user pull-right"></i> Profile</a>
-                    <a class="dropdown-item" href="logout.html"><i class="fa fa-sign-out pull-right"></i> Log Out</a>
-                  </div>
-                </li>
-              </ul>
-            </nav>
-          </div>
+      <!-- Footer -->
+      <footer></footer>
+    </div>
+  </div>
+
+  <!-- View Package Modal -->
+  <div class="modal fade" id="viewPackageModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title" id="modalPackageName">Package Details</h4>
+          <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span></button>
         </div>
-
-        <!-- Page content -->
-        <div class="right_col" role="main">
-          <div class="page-title">
-            <div class="title_left">
-              <h3>Special Packages</h3>
+        <div class="modal-body">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <strong>Code:</strong> <span id="modalPackageCode"></span><br />
+              <strong>Category:</strong> <span id="modalPackageCategory"></span><br />
+              <strong>Duration:</strong> <span id="modalPackageDuration"></span> Days<br />
+              <strong>Main City:</strong> <span id="modalPackageCity"></span>
+            </div>
+            <div class="col-md-6">
+              <strong>SGL Price:</strong> <span id="modalPackageAdultPrice"></span><br />
+              <strong>DBL Price:</strong> <span id="modalPackageDblPrice"></span><br />
+              <strong>TPL Price:</strong> <span id="modalPackageChildPrice"></span><br />
+              <strong>Max Pax:</strong> <span id="modalPackageMaxPax"></span><br />
+              <strong>Min Pax:</strong> <span id="modalPackageMinPax"></span>
             </div>
           </div>
 
-          <div class="clearfix"></div>
-
-          <!-- Search Box and Filters -->
-          <div class="row" style="margin-bottom: 20px">
-            <div class="col-md-4">
-              <input type="text" id="searchBox" class="form-control" placeholder="Search by name, code or city..." />
-            </div>
-            <div class="col-md-3">
-              <input type="text" id="cityFilter" class="form-control" placeholder="Filter by City..." />
-            </div>
-            <div class="col-md-3">
-              <input type="text" id="categoryFilter" class="form-control" placeholder="Filter by Category..." />
-            </div>
-            <div class="col-md-2">
-              <button id="searchBtn" class="btn btn-primary btn-block">
-                <i class="fa fa-search"></i> Search
-              </button>
-            </div>
+          <hr />
+          <h5>Description</h5>
+          <div id="modalPackageDescription"
+            style="max-height: 200px; overflow-y: auto; background-color: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
           </div>
 
           <div class="row">
-            <div class="col-md-12 col-sm-12">
-              <div class="x_panel">
-                <div class="x_title" style="display: flex; align-items: center; justify-content: space-between;">
-                  <h2 style="margin: 0">List of Special Packages</h2>
-                  <div id="adminCreateBtnContainer">
-                    <a href="edit_special_package.html" class="btn btn-success btn-sm">
-                      <i class="fa fa-plus"></i> Create Special Package
-                    </a>
-                  </div>
-                </div>
-                <div class="x_content">
-                  <div class="table-responsive">
-                    <table class="table modern-packages-table" style="width: 100%">
-                      <thead>
-                        <tr>
-                          <th>Package Details</th>
-                          <th style="width: 150px;">Duration & Order</th>
-                          <th style="width: 180px;">Main City / Category</th>
-                          <th style="width: 220px;">Rates (SGL / DBL / TPL)</th>
-                          <th id="statusHeader" style="width: 100px; text-align: center;">Status</th>
-                          <th style="width: 120px; text-align: center;">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody id="packageTableBody">
-                        <!-- Loaded dynamically -->
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
+            <div class="col-md-6">
+              <h5>Highlights</h5>
+              <ul id="modalPackageHighlights"></ul>
             </div>
+            <div class="col-md-6">
+              <h5>Inclusions</h5>
+              <ul id="modalPackageInclusions"></ul>
+            </div>
+          </div>
+
+          <div class="row mt-2">
+            <div class="col-md-6">
+              <h5>Exclusions</h5>
+              <ul id="modalPackageExclusions"></ul>
+            </div>
+            <div class="col-md-6">
+              <h5>Terms & Conditions</h5>
+              <div id="modalPackageTerms" style="white-space: pre-wrap; font-size: 0.9rem;"></div>
+            </div>
+          </div>
+
+          <hr />
+          <h4 class="mb-3">Day-by-Day Itinerary</h4>
+          <div id="modalItineraryContainer">
+            <!-- Dynamically populated -->
           </div>
         </div>
-
-        <!-- Footer -->
-        <footer></footer>
-      </div>
-    </div>
-
-    <!-- View Package Modal -->
-    <div class="modal fade" id="viewPackageModal" tabindex="-1" role="dialog" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h4 class="modal-title" id="modalPackageName">Package Details</h4>
-            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">×</span></button>
-          </div>
-          <div class="modal-body">
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <strong>Code:</strong> <span id="modalPackageCode"></span><br/>
-                <strong>Category:</strong> <span id="modalPackageCategory"></span><br/>
-                <strong>Duration:</strong> <span id="modalPackageDuration"></span> Days<br/>
-                <strong>Main City:</strong> <span id="modalPackageCity"></span>
-              </div>
-              <div class="col-md-6">
-                <strong>SGL Price:</strong> <span id="modalPackageAdultPrice"></span><br/>
-                <strong>DBL Price:</strong> <span id="modalPackageDblPrice"></span><br/>
-                <strong>TPL Price:</strong> <span id="modalPackageChildPrice"></span><br/>
-                <strong>Max Pax:</strong> <span id="modalPackageMaxPax"></span><br/>
-                <strong>Min Pax:</strong> <span id="modalPackageMinPax"></span>
-              </div>
-            </div>
-
-            <hr/>
-            <h5>Description</h5>
-            <div id="modalPackageDescription" style="max-height: 200px; overflow-y: auto; background-color: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 15px;"></div>
-
-            <div class="row">
-              <div class="col-md-6">
-                <h5>Highlights</h5>
-                <ul id="modalPackageHighlights"></ul>
-              </div>
-              <div class="col-md-6">
-                <h5>Inclusions</h5>
-                <ul id="modalPackageInclusions"></ul>
-              </div>
-            </div>
-
-            <div class="row mt-2">
-              <div class="col-md-6">
-                <h5>Exclusions</h5>
-                <ul id="modalPackageExclusions"></ul>
-              </div>
-              <div class="col-md-6">
-                <h5>Terms & Conditions</h5>
-                <div id="modalPackageTerms" style="white-space: pre-wrap; font-size: 0.9rem;"></div>
-              </div>
-            </div>
-
-            <hr/>
-            <h4 class="mb-3">Day-by-Day Itinerary</h4>
-            <div id="modalItineraryContainer">
-              <!-- Dynamically populated -->
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-primary" id="bulkEmailBtn" style="background-color: #1abb9c; border-color: #1abb9c; display: none;"><i class="fa fa-envelope"></i> Bulk Email</button>
-            <button type="button" class="btn btn-success print-modal-btn"><i class="fa fa-print"></i> Print</button>
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" id="bulkEmailBtn"
+            style="background-color: #1abb9c; border-color: #1abb9c; display: none;"><i class="fa fa-envelope"></i> Bulk
+            Email</button>
+          <button type="button" class="btn btn-success print-modal-btn"><i class="fa fa-print"></i> Print</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- jQuery -->
-    <script src="../vendors/jquery/dist/jquery.min.js"></script>
-    <!-- Bootstrap -->
-    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Custom Theme Scripts -->
-    <script src="../build/js/custom.min.js"></script>
-    <script src="js/config.js"></script>
+  <!-- jQuery -->
+  <script src="../vendors/jquery/dist/jquery.min.js"></script>
+  <!-- Bootstrap -->
+  <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Custom Theme Scripts -->
+  <script src="../build/js/custom.min.js"></script>
+  <script src="js/config.js"></script>
 
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        const token = localStorage.getItem("token");
-        const role = localStorage.getItem("role");
-        const isAdmin = role === "admin" || role === "superadmin";
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const token = localStorage.getItem("token");
+      const role = localStorage.getItem("role");
+      const isAdmin = role === "admin" || role === "superadmin";
 
-        if (!token) {
-          alert("You are not authorized. Please log in first.");
-          window.location.href = "login.html";
+      if (!token) {
+        alert("You are not authorized. Please log in first.");
+        window.location.href = "login.html";
+        return;
+      }
+
+      const username = localStorage.getItem("username") || "Guest";
+      document.getElementById("profileName").innerText = username;
+      document.getElementById("navProfileName").innerText = username;
+
+      // Hide Control Panel menu for non-admin users
+      if (!isAdmin) {
+        const controlPanelMenu = document.getElementById("controlPanelMenu");
+        if (controlPanelMenu) {
+          controlPanelMenu.style.display = "none";
+        }
+        // Hide admin columns and buttons
+        document.getElementById("adminCreateBtnContainer").style.display = "none";
+        document.getElementById("statusHeader").style.display = "none";
+      }
+
+      // Fetch packages
+      async function loadPackages() {
+        const search = document.getElementById("searchBox").value;
+        const city = document.getElementById("cityFilter").value;
+        const category = document.getElementById("categoryFilter").value;
+
+        let url = `${Endpoint}/api/v1/special-packages?`;
+        if (search) url += `search=${encodeURIComponent(search)}&`;
+        if (city) url += `city=${encodeURIComponent(city)}&`;
+        if (category) url += `category=${encodeURIComponent(category)}&`;
+
+        try {
+          const response = await fetch(url, {
+            headers: { "Authorization": `Bearer ${token}` }
+          });
+
+          if (!response.ok) throw new Error("Failed to load packages");
+          const packages = await response.json();
+
+          renderPackagesTable(packages);
+        } catch (err) {
+          console.error(err);
+          alert("Error loading packages");
+        }
+      }
+
+      function renderPackagesTable(packages) {
+        const tbody = document.getElementById("packageTableBody");
+        tbody.innerHTML = "";
+
+        if (packages.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="${isAdmin ? 6 : 5}" class="text-center">No special packages found.</td></tr>`;
           return;
         }
 
-        const username = localStorage.getItem("username") || "Guest";
-        document.getElementById("profileName").innerText = username;
-        document.getElementById("navProfileName").innerText = username;
+        packages.forEach(pkg => {
+          const tr = document.createElement("tr");
 
-        // Hide Control Panel menu for non-admin users
-        if (!isAdmin) {
-          const controlPanelMenu = document.getElementById("controlPanelMenu");
-          if (controlPanelMenu) {
-            controlPanelMenu.style.display = "none";
-          }
-          // Hide admin columns and buttons
-          document.getElementById("adminCreateBtnContainer").style.display = "none";
-          document.getElementById("statusHeader").style.display = "none";
-        }
+          const currencyCode = pkg.currencies ? pkg.currencies.currency_code : "THB";
+          const sglPrice = pkg.price_per_adult ? `${pkg.price_per_adult} ${currencyCode}` : "-";
+          const dblPrice = pkg.price_dbl ? `${pkg.price_dbl} ${currencyCode}` : "-";
+          const tplPrice = pkg.price_per_child ? `${pkg.price_per_child} ${currencyCode}` : "-";
 
-        // Fetch packages
-        async function loadPackages() {
-          const search = document.getElementById("searchBox").value;
-          const city = document.getElementById("cityFilter").value;
-          const category = document.getElementById("categoryFilter").value;
+          let statusCell = "";
+          let actionButtons = "";
 
-          let url = `${Endpoint}/api/v1/special-packages?`;
-          if (search) url += `search=${encodeURIComponent(search)}&`;
-          if (city) url += `city=${encodeURIComponent(city)}&`;
-          if (category) url += `category=${encodeURIComponent(category)}&`;
-
-          try {
-            const response = await fetch(url, {
-              headers: { "Authorization": `Bearer ${token}` }
-            });
-
-            if (!response.ok) throw new Error("Failed to load packages");
-            const packages = await response.json();
-
-            renderPackagesTable(packages);
-          } catch (err) {
-            console.error(err);
-            alert("Error loading packages");
-          }
-        }
-
-        function renderPackagesTable(packages) {
-          const tbody = document.getElementById("packageTableBody");
-          tbody.innerHTML = "";
-
-          if (packages.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="${isAdmin ? 6 : 5}" class="text-center">No special packages found.</td></tr>`;
-            return;
-          }
-
-          packages.forEach(pkg => {
-            const tr = document.createElement("tr");
-
-            const currencyCode = pkg.currencies ? pkg.currencies.currency_code : "THB";
-            const sglPrice = pkg.price_per_adult ? `${pkg.price_per_adult} ${currencyCode}` : "-";
-            const dblPrice = pkg.price_dbl ? `${pkg.price_dbl} ${currencyCode}` : "-";
-            const tplPrice = pkg.price_per_child ? `${pkg.price_per_child} ${currencyCode}` : "-";
-
-            let statusCell = "";
-            let actionButtons = "";
-
-            if (isAdmin) {
-              statusCell = `
+          if (isAdmin) {
+            statusCell = `
                 <td style="text-align: center; vertical-align: middle;">
                   <span class="badge ${pkg.is_active ? 'badge-active' : 'badge-inactive'}" style="padding: 6px 12px; border-radius: 12px; font-weight: 500;">
                     ${pkg.is_active ? 'Active' : 'Inactive'}
@@ -507,7 +512,7 @@
                 </td>
               `;
 
-              actionButtons = `
+            actionButtons = `
                 <div class="dropdown" style="text-align: center;">
                   <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="margin: 0; padding: 5px 12px; background-color: #f8f9fa; border-color: #ccc; color: #333; font-weight: 500; font-size: 0.85rem; border-radius: 4px; box-shadow: none;">
                     <i class="fa fa-cog" style="margin-right: 4px;"></i> Actions
@@ -535,8 +540,8 @@
                   </div>
                 </div>
               `;
-            } else {
-              actionButtons = `
+          } else {
+            actionButtons = `
                 <div class="dropdown" style="text-align: center;">
                   <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="margin: 0; padding: 5px 12px; background-color: #f8f9fa; border-color: #ccc; color: #333; font-weight: 500; font-size: 0.85rem; border-radius: 4px; box-shadow: none;">
                     <i class="fa fa-cog" style="margin-right: 4px;"></i> Actions
@@ -551,16 +556,16 @@
                   </div>
                 </div>
               `;
-            }
+          }
 
-            const packageDetails = `
+          const packageDetails = `
               <div style="display: flex; flex-direction: column;">
                 <span style="font-weight: 600; color: #2a3f54; font-size: 1.05rem; margin-bottom: 4px;">${pkg.name}</span>
                 <span class="text-muted" style="font-size: 0.85rem; font-family: monospace; background: #f0f4f8; padding: 2px 6px; border-radius: 4px; align-self: flex-start; border: 1px solid #d0d8e0;">${pkg.code || '-'}</span>
               </div>
             `;
 
-            const durationAndOrder = `
+          const durationAndOrder = `
               <div style="display: flex; flex-direction: column; gap: 4px;">
                 <span style="font-weight: 500; font-size: 0.95rem; color: #34495e;">
                   <i class="fa fa-calendar" style="color: #1abb9c; margin-right: 4px;"></i> ${pkg.duration} Days
@@ -571,7 +576,7 @@
               </div>
             `;
 
-            const cityAndCategory = `
+          const cityAndCategory = `
               <div style="display: flex; flex-direction: column; gap: 4px;">
                 <span style="font-weight: 500; font-size: 0.95rem; color: #34495e;">
                   <i class="fa fa-map-marker" style="color: #e74c3c; margin-right: 6px;"></i> ${pkg.city || '-'}
@@ -582,7 +587,7 @@
               </div>
             `;
 
-            const pricing = `
+          const pricing = `
               <div style="display: flex; flex-direction: column; gap: 2px; font-size: 0.9rem; background-color: #fcfcfc; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0; width: 100%;">
                 <div style="display: flex; justify-content: space-between; gap: 10px;">
                   <span style="color: #7f8c8d;">SGL:</span>
@@ -599,7 +604,7 @@
               </div>
             `;
 
-            tr.innerHTML = `
+          tr.innerHTML = `
               <td>${packageDetails}</td>
               <td>${durationAndOrder}</td>
               <td>${cityAndCategory}</td>
@@ -608,373 +613,196 @@
               <td style="vertical-align: middle;">${actionButtons}</td>
             `;
 
-            tbody.appendChild(tr);
+          tbody.appendChild(tr);
+        });
+      }
+
+      let currentPackageData = null;
+
+      // Attach event handlers
+      document.getElementById("searchBtn").addEventListener("click", loadPackages);
+      document.getElementById("searchBox").addEventListener("keypress", function (e) {
+        if (e.key === "Enter") loadPackages();
+      });
+
+      document.querySelector(".print-modal-btn").addEventListener("click", function () {
+        if (currentPackageData) {
+          printPackageDetails(currentPackageData);
+        } else {
+          alert("No package details loaded.");
+        }
+      });
+
+      document.getElementById("bulkEmailBtn").addEventListener("click", async function () {
+        const checkedCheckboxes = document.querySelectorAll(".bulk-email-select-checkbox:checked");
+        if (checkedCheckboxes.length === 0) {
+          alert("Please select at least one hotel or transfer item to send an email request.");
+          return;
+        }
+
+        if (!confirm(`Are you sure you want to send bulk email inquiries for the ${checkedCheckboxes.length} selected item(s)?`)) {
+          return;
+        }
+
+        const selectedItems = [];
+        checkedCheckboxes.forEach(cb => {
+          const itemId = parseInt(cb.dataset.itemId);
+          const itemType = cb.dataset.itemType;
+          if (currentPackageData && currentPackageData.items) {
+            const item = currentPackageData.items.find(i => i.id === itemId);
+            if (item) {
+              selectedItems.push(item);
+            }
+          }
+        });
+
+        const bulkEmailBtnEl = document.getElementById("bulkEmailBtn");
+        const originalHtml = bulkEmailBtnEl.innerHTML;
+        bulkEmailBtnEl.disabled = true;
+        bulkEmailBtnEl.innerHTML = `<i class="fa fa-spinner fa-spin"></i> Sending...`;
+
+        try {
+          const token = localStorage.getItem("token");
+          const res = await fetch(`${Endpoint}/api/v1/special-packages/bulk-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              packageName: currentPackageData.name,
+              items: selectedItems
+            })
           });
+
+          if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.error || "Failed to send bulk email");
+          }
+
+          const result = await res.json();
+          alert(result.message || "Bulk email sent successfully.");
+        } catch (err) {
+          console.error(err);
+          alert("Error sending bulk email: " + err.message);
+        } finally {
+          bulkEmailBtnEl.disabled = false;
+          bulkEmailBtnEl.innerHTML = originalHtml;
         }
+      });
 
-        let currentPackageData = null;
+      // Table actions delegation
+      document.getElementById("packageTableBody").addEventListener("click", async function (e) {
+        const target = e.target.closest(".action-btn");
+        if (!target) return;
 
-        // Attach event handlers
-        document.getElementById("searchBtn").addEventListener("click", loadPackages);
-        document.getElementById("searchBox").addEventListener("keypress", function (e) {
-          if (e.key === "Enter") loadPackages();
-        });
+        // Prevent default actions (e.g. form submit) and stop bubbling for all non-link buttons
+        if (target.tagName.toLowerCase() !== 'a') {
+          e.preventDefault();
+        }
+        e.stopPropagation();
 
-        document.querySelector(".print-modal-btn").addEventListener("click", function () {
-          if (currentPackageData) {
-            printPackageDetails(currentPackageData);
-          } else {
-            alert("No package details loaded.");
+        const id = target.getAttribute("data-id");
+
+        if (target.classList.contains("view-btn")) {
+          showPackageDetails(id);
+        } else if (target.classList.contains("print-btn")) {
+          fetchAndPrintPackage(id);
+        } else if (target.classList.contains("toggle-btn")) {
+          if (confirm("Are you sure you want to change the status of this package?")) {
+            togglePackageStatus(id);
           }
-        });
-
-        document.getElementById("bulkEmailBtn").addEventListener("click", async function () {
-          const checkedCheckboxes = document.querySelectorAll(".bulk-email-select-checkbox:checked");
-          if (checkedCheckboxes.length === 0) {
-            alert("Please select at least one hotel or transfer item to send an email request.");
-            return;
+        } else if (target.classList.contains("clone-btn")) {
+          window.location.href = `edit_special_package.html?id=${id}&clone=true`;
+        } else if (target.classList.contains("delete-btn")) {
+          if (confirm("Are you sure you want to delete this special package? This action cannot be undone.")) {
+            deletePackage(id);
           }
+        }
+      });
 
-          if (!confirm(`Are you sure you want to send bulk email inquiries for the ${checkedCheckboxes.length} selected item(s)?`)) {
-            return;
-          }
-
-          const selectedItems = [];
-          checkedCheckboxes.forEach(cb => {
-            const itemId = parseInt(cb.dataset.itemId);
-            const itemType = cb.dataset.itemType;
-            if (currentPackageData && currentPackageData.items) {
-              const item = currentPackageData.items.find(i => i.id === itemId);
-              if (item) {
-                selectedItems.push(item);
-              }
-            }
+      async function togglePackageStatus(id) {
+        try {
+          const res = await fetch(`${Endpoint}/api/v1/special-packages/${id}/toggle`, {
+            method: "PATCH",
+            headers: { "Authorization": `Bearer ${token}` }
           });
-
-          const bulkEmailBtnEl = document.getElementById("bulkEmailBtn");
-          const originalHtml = bulkEmailBtnEl.innerHTML;
-          bulkEmailBtnEl.disabled = true;
-          bulkEmailBtnEl.innerHTML = `<i class="fa fa-spinner fa-spin"></i> Sending...`;
-
-          try {
-            const token = localStorage.getItem("token");
-            const res = await fetch(`${Endpoint}/api/v1/special-packages/bulk-email`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
-              },
-              body: JSON.stringify({
-                packageName: currentPackageData.name,
-                items: selectedItems
-              })
-            });
-
-            if (!res.ok) {
-              const errData = await res.json();
-              throw new Error(errData.error || "Failed to send bulk email");
-            }
-
-            const result = await res.json();
-            alert(result.message || "Bulk email sent successfully.");
-          } catch (err) {
-            console.error(err);
-            alert("Error sending bulk email: " + err.message);
-          } finally {
-            bulkEmailBtnEl.disabled = false;
-            bulkEmailBtnEl.innerHTML = originalHtml;
-          }
-        });
-
-        // Table actions delegation
-        document.getElementById("packageTableBody").addEventListener("click", async function (e) {
-          const target = e.target.closest(".action-btn");
-          if (!target) return;
-
-          // Prevent default actions (e.g. form submit) and stop bubbling for all non-link buttons
-          if (target.tagName.toLowerCase() !== 'a') {
-            e.preventDefault();
-          }
-          e.stopPropagation();
-
-          const id = target.getAttribute("data-id");
-
-          if (target.classList.contains("view-btn")) {
-            showPackageDetails(id);
-          } else if (target.classList.contains("print-btn")) {
-            fetchAndPrintPackage(id);
-          } else if (target.classList.contains("toggle-btn")) {
-            if (confirm("Are you sure you want to change the status of this package?")) {
-              togglePackageStatus(id);
-            }
-          } else if (target.classList.contains("clone-btn")) {
-            window.location.href = `edit_special_package.html?id=${id}&clone=true`;
-          } else if (target.classList.contains("delete-btn")) {
-            if (confirm("Are you sure you want to delete this special package? This action cannot be undone.")) {
-              deletePackage(id);
-            }
-          }
-        });
-
-        async function togglePackageStatus(id) {
-          try {
-            const res = await fetch(`${Endpoint}/api/v1/special-packages/${id}/toggle`, {
-              method: "PATCH",
-              headers: { "Authorization": `Bearer ${token}` }
-            });
-            if (!res.ok) throw new Error("Toggle status failed");
-            loadPackages();
-          } catch (err) {
-            console.error(err);
-            alert("Error toggling package status");
-          }
+          if (!res.ok) throw new Error("Toggle status failed");
+          loadPackages();
+        } catch (err) {
+          console.error(err);
+          alert("Error toggling package status");
         }
+      }
 
-        async function deletePackage(id) {
-          try {
-            const res = await fetch(`${Endpoint}/api/v1/special-packages/${id}`, {
-              method: "DELETE",
-              headers: { "Authorization": `Bearer ${token}` }
-            });
-            if (!res.ok) throw new Error("Delete failed");
-            loadPackages();
-          } catch (err) {
-            console.error(err);
-            alert("Error deleting package");
-          }
+      async function deletePackage(id) {
+        try {
+          const res = await fetch(`${Endpoint}/api/v1/special-packages/${id}`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${token}` }
+          });
+          if (!res.ok) throw new Error("Delete failed");
+          loadPackages();
+        } catch (err) {
+          console.error(err);
+          alert("Error deleting package");
         }
+      }
 
 
 
-        async function showPackageDetails(id) {
-          try {
-            const res = await fetch(`${Endpoint}/api/v1/special-packages/${id}`, {
-              headers: { "Authorization": `Bearer ${token}` }
-            });
-            if (!res.ok) throw new Error("Failed to load details");
-            const pkg = await res.json();
-            currentPackageData = pkg;
+      async function showPackageDetails(id) {
+        try {
+          const res = await fetch(`${Endpoint}/api/v1/special-packages/${id}`, {
+            headers: { "Authorization": `Bearer ${token}` }
+          });
+          if (!res.ok) throw new Error("Failed to load details");
+          const pkg = await res.json();
+          currentPackageData = pkg;
 
-            // Populate Modal Info
-            document.getElementById("modalPackageName").innerText = pkg.name;
-            document.getElementById("modalPackageCode").innerText = pkg.code || "-";
-            document.getElementById("modalPackageCategory").innerText = pkg.category || "-";
-            document.getElementById("modalPackageDuration").innerText = pkg.duration;
-            document.getElementById("modalPackageCity").innerText = pkg.city || "-";
+          // Populate Modal Info
+          document.getElementById("modalPackageName").innerText = pkg.name;
+          document.getElementById("modalPackageCode").innerText = pkg.code || "-";
+          document.getElementById("modalPackageCategory").innerText = pkg.category || "-";
+          document.getElementById("modalPackageDuration").innerText = pkg.duration;
+          document.getElementById("modalPackageCity").innerText = pkg.city || "-";
 
-            const currencyCode = pkg.currencies ? pkg.currencies.currency_code : "THB";
-            document.getElementById("modalPackageAdultPrice").innerText = pkg.price_per_adult ? `${pkg.price_per_adult} ${currencyCode}` : "-";
-            document.getElementById("modalPackageDblPrice").innerText = pkg.price_dbl ? `${pkg.price_dbl} ${currencyCode}` : "-";
-            document.getElementById("modalPackageChildPrice").innerText = pkg.price_per_child ? `${pkg.price_per_child} ${currencyCode}` : "-";
-            document.getElementById("modalPackageMaxPax").innerText = pkg.max_pax || "-";
-            document.getElementById("modalPackageMinPax").innerText = pkg.min_pax || "-";
-
-            // Description HTML
-            document.getElementById("modalPackageDescription").innerHTML = pkg.description || "<i>No description available</i>";
-
-            // Highlights
-            const highlightsUl = document.getElementById("modalPackageHighlights");
-            highlightsUl.innerHTML = "";
-            let highlightsArray = [];
-            try {
-              if (pkg.highlights) {
-                highlightsArray = JSON.parse(pkg.highlights);
-              }
-            } catch (e) {
-              if (pkg.highlights) highlightsArray = pkg.highlights.split("\n");
-            }
-            if (highlightsArray.length > 0) {
-              highlightsArray.forEach(hl => {
-                if (hl.trim()) {
-                  const li = document.createElement("li");
-                  li.innerText = hl;
-                  highlightsUl.appendChild(li);
-                }
-              });
-            } else {
-              highlightsUl.innerHTML = "<li>No highlights specified</li>";
-            }
-
-            // Inclusions / Exclusions / Terms
-            const inclusionsUl = document.getElementById("modalPackageInclusions");
-            inclusionsUl.innerHTML = "";
-            let inclusionsArray = [];
-            try {
-              if (pkg.inclusions) inclusionsArray = JSON.parse(pkg.inclusions);
-            } catch (e) {
-              if (pkg.inclusions) inclusionsArray = pkg.inclusions.split("\n");
-            }
-            if (inclusionsArray.length > 0) {
-              inclusionsArray.forEach(inc => {
-                if (inc.trim()) {
-                  const li = document.createElement("li");
-                  li.innerText = inc;
-                  inclusionsUl.appendChild(li);
-                }
-              });
-            } else {
-              inclusionsUl.innerHTML = "<li>No inclusions specified</li>";
-            }
-
-            const exclusionsUl = document.getElementById("modalPackageExclusions");
-            exclusionsUl.innerHTML = "";
-            let exclusionsArray = [];
-            try {
-              if (pkg.exclusions) exclusionsArray = JSON.parse(pkg.exclusions);
-            } catch (e) {
-              if (pkg.exclusions) exclusionsArray = pkg.exclusions.split("\n");
-            }
-            if (exclusionsArray.length > 0) {
-              exclusionsArray.forEach(exc => {
-                if (exc.trim()) {
-                  const li = document.createElement("li");
-                  li.innerText = exc;
-                  exclusionsUl.appendChild(li);
-                }
-              });
-            } else {
-              exclusionsUl.innerHTML = "<li>No exclusions specified</li>";
-            }
-
-            document.getElementById("modalPackageTerms").innerText = pkg.terms || "Standard Terms and Conditions apply.";
-
-            // Group Itinerary items by Day
-            const itineraryContainer = document.getElementById("modalItineraryContainer");
-            itineraryContainer.innerHTML = "";
-
-            const days = {};
-            for (let i = 1; i <= pkg.duration; i++) {
-              days[i] = [];
-            }
-
-            pkg.items.forEach(item => {
-              const dNum = item.day_number || 1;
-              if (!days[dNum]) days[dNum] = [];
-              days[dNum].push(item);
-            });
-
-            // Sort items inside each day chronologically by item_type priority
-            const typePriority = {
-              "flight": 1,
-              "transfer": 2,
-              "excursion": 3,
-              "hotel": 4,
-              "other": 5
-            };
-            for (let i = 1; i <= pkg.duration; i++) {
-              days[i].sort((a, b) => {
-                const priorityA = typePriority[a.item_type] || 99;
-                const priorityB = typePriority[b.item_type] || 99;
-                return priorityA - priorityB;
-              });
-            }
-
-            for (let d = 1; d <= pkg.duration; d++) {
-              const dayDiv = document.createElement("div");
-              dayDiv.className = "itinerary-day";
-
-              const title = document.createElement("h5");
-              title.className = "itinerary-day-title";
-              title.innerText = `Day ${d}`;
-              dayDiv.appendChild(title);
-
-              const itemsList = days[d];
-              if (itemsList.length === 0) {
-                const emptyMsg = document.createElement("p");
-                emptyMsg.className = "text-muted small";
-                emptyMsg.innerText = "No specific activities or services scheduled for this day.";
-                dayDiv.appendChild(emptyMsg);
-              } else {
-                itemsList.forEach(item => {
-                  const itemDiv = document.createElement("div");
-                  itemDiv.className = "itinerary-item";
-                  itemDiv.style.display = "flex";
-                  itemDiv.style.alignItems = "stretch";
-
-                  let detailHtml = "";
-                  if (item.item_type === "hotel") {
-                    detailHtml = `<strong>🏨 Hotel:</strong> ${item.hotel_name || "TBD"} ${item.room_type ? `(${item.room_type})` : ""} - ${item.nights || 1} Night(s) in ${item.city || ""}`;
-                  } else if (item.item_type === "transfer") {
-                    detailHtml = `<strong>🚐 Transfer (${item.transfer_type || "SIC"}):</strong> From ${item.from_location || "TBD"} to ${item.to_location || "TBD"} ${item.pickup_time ? `at ${item.pickup_time}` : ""}`;
-                  } else if (item.item_type === "excursion") {
-                    detailHtml = `<strong>🎯 Excursion:</strong> ${item.excursion_name || "TBD"}`;
-                  } else if (item.item_type === "flight") {
-                    detailHtml = `<strong>✈️ Flight:</strong> ${item.flight_airline || ""} ${item.flight_number || "TBD"} Route: ${item.flight_route || ""} (${item.departure_time || ""} -> ${item.arrival_time || ""})`;
-                  } else {
-                    detailHtml = `<strong>📋 Other:</strong> ${item.other_description || item.description || "TBD"}`;
-                  }
-
-                  if (item.remarks) {
-                    detailHtml += `<br/><small class="text-info">Remarks: ${item.remarks}</small>`;
-                  }
-
-                  let checkboxHtml = "";
-                  if (item.item_type === "hotel" || item.item_type === "transfer") {
-                    checkboxHtml = `
-                      <div style="display: flex; align-items: center; justify-content: center; margin-right: 12px; padding-left: 5px;">
-                        <input type="checkbox" class="bulk-email-select-checkbox" data-item-id="${item.id}" data-item-type="${item.item_type}" style="width: 18px; height: 18px; cursor: pointer;" />
-                      </div>
-                    `;
-                  }
-
-                  itemDiv.innerHTML = `
-                    ${checkboxHtml}
-                    <div style="flex: 1;">
-                      <div class="itinerary-item-type">${item.item_type}</div>
-                      <div>${detailHtml}</div>
-                    </div>
-                  `;
-                  dayDiv.appendChild(itemDiv);
-                });
-              }
-
-              itineraryContainer.appendChild(dayDiv);
-            }
-
-            const hasHotelsOrTransfers = pkg.items.some(item => item.item_type === "hotel" || item.item_type === "transfer");
-            const bulkEmailBtn = document.getElementById("bulkEmailBtn");
-            if (bulkEmailBtn) {
-              bulkEmailBtn.style.display = hasHotelsOrTransfers ? "inline-block" : "none";
-            }
-
-            $("#viewPackageModal").modal("show");
-          } catch (err) {
-            console.error(err);
-            alert("Error loading package details");
-          }
-        }
-
-        async function fetchAndPrintPackage(id) {
-          try {
-            const res = await fetch(`${Endpoint}/api/v1/special-packages/${id}`, {
-              headers: { "Authorization": `Bearer ${token}` }
-            });
-            if (!res.ok) throw new Error("Failed to load details");
-            const pkg = await res.json();
-            printPackageDetails(pkg);
-          } catch (err) {
-            console.error(err);
-            alert("Error loading package details for printing");
-          }
-        }
-
-        function printPackageDetails(pkg) {
           const currencyCode = pkg.currencies ? pkg.currencies.currency_code : "THB";
-          
-          let highlightsHtml = "";
+          document.getElementById("modalPackageAdultPrice").innerText = pkg.price_per_adult ? `${pkg.price_per_adult} ${currencyCode}` : "-";
+          document.getElementById("modalPackageDblPrice").innerText = pkg.price_dbl ? `${pkg.price_dbl} ${currencyCode}` : "-";
+          document.getElementById("modalPackageChildPrice").innerText = pkg.price_per_child ? `${pkg.price_per_child} ${currencyCode}` : "-";
+          document.getElementById("modalPackageMaxPax").innerText = pkg.max_pax || "-";
+          document.getElementById("modalPackageMinPax").innerText = pkg.min_pax || "-";
+
+          // Description HTML
+          document.getElementById("modalPackageDescription").innerHTML = pkg.description || "<i>No description available</i>";
+
+          // Highlights
+          const highlightsUl = document.getElementById("modalPackageHighlights");
+          highlightsUl.innerHTML = "";
           let highlightsArray = [];
           try {
-            if (pkg.highlights) highlightsArray = JSON.parse(pkg.highlights);
+            if (pkg.highlights) {
+              highlightsArray = JSON.parse(pkg.highlights);
+            }
           } catch (e) {
             if (pkg.highlights) highlightsArray = pkg.highlights.split("\n");
           }
           if (highlightsArray.length > 0) {
-            highlightsHtml = `<ul>${highlightsArray.map(hl => hl.trim() ? `<li>${hl.trim()}</li>` : "").join("")}</ul>`;
+            highlightsArray.forEach(hl => {
+              if (hl.trim()) {
+                const li = document.createElement("li");
+                li.innerText = hl;
+                highlightsUl.appendChild(li);
+              }
+            });
           } else {
-            highlightsHtml = "<p>No highlights specified</p>";
+            highlightsUl.innerHTML = "<li>No highlights specified</li>";
           }
 
-          let inclusionsHtml = "";
+          // Inclusions / Exclusions / Terms
+          const inclusionsUl = document.getElementById("modalPackageInclusions");
+          inclusionsUl.innerHTML = "";
           let inclusionsArray = [];
           try {
             if (pkg.inclusions) inclusionsArray = JSON.parse(pkg.inclusions);
@@ -982,12 +810,19 @@
             if (pkg.inclusions) inclusionsArray = pkg.inclusions.split("\n");
           }
           if (inclusionsArray.length > 0) {
-            inclusionsHtml = `<ul>${inclusionsArray.map(inc => inc.trim() ? `<li>${inc.trim()}</li>` : "").join("")}</ul>`;
+            inclusionsArray.forEach(inc => {
+              if (inc.trim()) {
+                const li = document.createElement("li");
+                li.innerText = inc;
+                inclusionsUl.appendChild(li);
+              }
+            });
           } else {
-            inclusionsHtml = "<p>No inclusions specified</p>";
+            inclusionsUl.innerHTML = "<li>No inclusions specified</li>";
           }
 
-          let exclusionsHtml = "";
+          const exclusionsUl = document.getElementById("modalPackageExclusions");
+          exclusionsUl.innerHTML = "";
           let exclusionsArray = [];
           try {
             if (pkg.exclusions) exclusionsArray = JSON.parse(pkg.exclusions);
@@ -995,16 +830,28 @@
             if (pkg.exclusions) exclusionsArray = pkg.exclusions.split("\n");
           }
           if (exclusionsArray.length > 0) {
-            exclusionsHtml = `<ul>${exclusionsArray.map(exc => exc.trim() ? `<li>${exc.trim()}</li>` : "").join("")}</ul>`;
+            exclusionsArray.forEach(exc => {
+              if (exc.trim()) {
+                const li = document.createElement("li");
+                li.innerText = exc;
+                exclusionsUl.appendChild(li);
+              }
+            });
           } else {
-            exclusionsHtml = "<p>No exclusions specified</p>";
+            exclusionsUl.innerHTML = "<li>No exclusions specified</li>";
           }
 
-          // Day-by-Day
+          document.getElementById("modalPackageTerms").innerText = pkg.terms || "Standard Terms and Conditions apply.";
+
+          // Group Itinerary items by Day
+          const itineraryContainer = document.getElementById("modalItineraryContainer");
+          itineraryContainer.innerHTML = "";
+
           const days = {};
           for (let i = 1; i <= pkg.duration; i++) {
             days[i] = [];
           }
+
           pkg.items.forEach(item => {
             const dNum = item.day_number || 1;
             if (!days[dNum]) days[dNum] = [];
@@ -1027,15 +874,28 @@
             });
           }
 
-          let itineraryHtml = "";
           for (let d = 1; d <= pkg.duration; d++) {
-            itineraryHtml += `<div style="margin-bottom: 20px; border-left: 3px solid #1abb9c; padding-left: 15px; page-break-inside: avoid;">`;
-            itineraryHtml += `<h4 style="margin: 0 0 10px 0; color: #2a3f54;">Day ${d}</h4>`;
+            const dayDiv = document.createElement("div");
+            dayDiv.className = "itinerary-day";
+
+            const title = document.createElement("h5");
+            title.className = "itinerary-day-title";
+            title.innerText = `Day ${d}`;
+            dayDiv.appendChild(title);
+
             const itemsList = days[d];
             if (itemsList.length === 0) {
-              itineraryHtml += `<p style="color: #6c757d; font-size: 0.9rem;">No specific activities or services scheduled for this day.</p>`;
+              const emptyMsg = document.createElement("p");
+              emptyMsg.className = "text-muted small";
+              emptyMsg.innerText = "No specific activities or services scheduled for this day.";
+              dayDiv.appendChild(emptyMsg);
             } else {
               itemsList.forEach(item => {
+                const itemDiv = document.createElement("div");
+                itemDiv.className = "itinerary-item";
+                itemDiv.style.display = "flex";
+                itemDiv.style.alignItems = "stretch";
+
                 let detailHtml = "";
                 if (item.item_type === "hotel") {
                   detailHtml = `<strong>🏨 Hotel:</strong> ${item.hotel_name || "TBD"} ${item.room_type ? `(${item.room_type})` : ""} - ${item.nights || 1} Night(s) in ${item.city || ""}`;
@@ -1048,22 +908,167 @@
                 } else {
                   detailHtml = `<strong>📋 Other:</strong> ${item.other_description || item.description || "TBD"}`;
                 }
+
                 if (item.remarks) {
-                  detailHtml += `<br/><small style="color: #17a2b8;">Remarks: ${item.remarks}</small>`;
+                  detailHtml += `<br/><small class="text-info">Remarks: ${item.remarks}</small>`;
                 }
-                itineraryHtml += `
+
+                let checkboxHtml = "";
+                if (item.item_type === "hotel" || item.item_type === "transfer") {
+                  checkboxHtml = `
+                      <div style="display: flex; align-items: center; justify-content: center; margin-right: 12px; padding-left: 5px;">
+                        <input type="checkbox" class="bulk-email-select-checkbox" data-item-id="${item.id}" data-item-type="${item.item_type}" style="width: 18px; height: 18px; cursor: pointer;" />
+                      </div>
+                    `;
+                }
+
+                itemDiv.innerHTML = `
+                    ${checkboxHtml}
+                    <div style="flex: 1;">
+                      <div class="itinerary-item-type">${item.item_type}</div>
+                      <div>${detailHtml}</div>
+                    </div>
+                  `;
+                dayDiv.appendChild(itemDiv);
+              });
+            }
+
+            itineraryContainer.appendChild(dayDiv);
+          }
+
+          const hasHotelsOrTransfers = pkg.items.some(item => item.item_type === "hotel" || item.item_type === "transfer");
+          const bulkEmailBtn = document.getElementById("bulkEmailBtn");
+          if (bulkEmailBtn) {
+            bulkEmailBtn.style.display = hasHotelsOrTransfers ? "inline-block" : "none";
+          }
+
+          $("#viewPackageModal").modal("show");
+        } catch (err) {
+          console.error(err);
+          alert("Error loading package details");
+        }
+      }
+
+      async function fetchAndPrintPackage(id) {
+        try {
+          const res = await fetch(`${Endpoint}/api/v1/special-packages/${id}`, {
+            headers: { "Authorization": `Bearer ${token}` }
+          });
+          if (!res.ok) throw new Error("Failed to load details");
+          const pkg = await res.json();
+          printPackageDetails(pkg);
+        } catch (err) {
+          console.error(err);
+          alert("Error loading package details for printing");
+        }
+      }
+
+      function printPackageDetails(pkg) {
+        const currencyCode = pkg.currencies ? pkg.currencies.currency_code : "THB";
+
+        let highlightsHtml = "";
+        let highlightsArray = [];
+        try {
+          if (pkg.highlights) highlightsArray = JSON.parse(pkg.highlights);
+        } catch (e) {
+          if (pkg.highlights) highlightsArray = pkg.highlights.split("\n");
+        }
+        if (highlightsArray.length > 0) {
+          highlightsHtml = `<ul>${highlightsArray.map(hl => hl.trim() ? `<li>${hl.trim()}</li>` : "").join("")}</ul>`;
+        } else {
+          highlightsHtml = "<p>No highlights specified</p>";
+        }
+
+        let inclusionsHtml = "";
+        let inclusionsArray = [];
+        try {
+          if (pkg.inclusions) inclusionsArray = JSON.parse(pkg.inclusions);
+        } catch (e) {
+          if (pkg.inclusions) inclusionsArray = pkg.inclusions.split("\n");
+        }
+        if (inclusionsArray.length > 0) {
+          inclusionsHtml = `<ul>${inclusionsArray.map(inc => inc.trim() ? `<li>${inc.trim()}</li>` : "").join("")}</ul>`;
+        } else {
+          inclusionsHtml = "<p>No inclusions specified</p>";
+        }
+
+        let exclusionsHtml = "";
+        let exclusionsArray = [];
+        try {
+          if (pkg.exclusions) exclusionsArray = JSON.parse(pkg.exclusions);
+        } catch (e) {
+          if (pkg.exclusions) exclusionsArray = pkg.exclusions.split("\n");
+        }
+        if (exclusionsArray.length > 0) {
+          exclusionsHtml = `<ul>${exclusionsArray.map(exc => exc.trim() ? `<li>${exc.trim()}</li>` : "").join("")}</ul>`;
+        } else {
+          exclusionsHtml = "<p>No exclusions specified</p>";
+        }
+
+        // Day-by-Day
+        const days = {};
+        for (let i = 1; i <= pkg.duration; i++) {
+          days[i] = [];
+        }
+        pkg.items.forEach(item => {
+          const dNum = item.day_number || 1;
+          if (!days[dNum]) days[dNum] = [];
+          days[dNum].push(item);
+        });
+
+        // Sort items inside each day chronologically by item_type priority
+        const typePriority = {
+          "flight": 1,
+          "transfer": 2,
+          "excursion": 3,
+          "hotel": 4,
+          "other": 5
+        };
+        for (let i = 1; i <= pkg.duration; i++) {
+          days[i].sort((a, b) => {
+            const priorityA = typePriority[a.item_type] || 99;
+            const priorityB = typePriority[b.item_type] || 99;
+            return priorityA - priorityB;
+          });
+        }
+
+        let itineraryHtml = "";
+        for (let d = 1; d <= pkg.duration; d++) {
+          itineraryHtml += `<div style="margin-bottom: 20px; border-left: 3px solid #1abb9c; padding-left: 15px; page-break-inside: avoid;">`;
+          itineraryHtml += `<h4 style="margin: 0 0 10px 0; color: #2a3f54;">Day ${d}</h4>`;
+          const itemsList = days[d];
+          if (itemsList.length === 0) {
+            itineraryHtml += `<p style="color: #6c757d; font-size: 0.9rem;">No specific activities or services scheduled for this day.</p>`;
+          } else {
+            itemsList.forEach(item => {
+              let detailHtml = "";
+              if (item.item_type === "hotel") {
+                detailHtml = `<strong>🏨 Hotel:</strong> ${item.hotel_name || "TBD"} ${item.room_type ? `(${item.room_type})` : ""} - ${item.nights || 1} Night(s) in ${item.city || ""}`;
+              } else if (item.item_type === "transfer") {
+                detailHtml = `<strong>🚐 Transfer (${item.transfer_type || "SIC"}):</strong> From ${item.from_location || "TBD"} to ${item.to_location || "TBD"} ${item.pickup_time ? `at ${item.pickup_time}` : ""}`;
+              } else if (item.item_type === "excursion") {
+                detailHtml = `<strong>🎯 Excursion:</strong> ${item.excursion_name || "TBD"}`;
+              } else if (item.item_type === "flight") {
+                detailHtml = `<strong>✈️ Flight:</strong> ${item.flight_airline || ""} ${item.flight_number || "TBD"} Route: ${item.flight_route || ""} (${item.departure_time || ""} -> ${item.arrival_time || ""})`;
+              } else {
+                detailHtml = `<strong>📋 Other:</strong> ${item.other_description || item.description || "TBD"}`;
+              }
+              if (item.remarks) {
+                detailHtml += `<br/><small style="color: #17a2b8;">Remarks: ${item.remarks}</small>`;
+              }
+              itineraryHtml += `
                   <div style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 10px; margin-bottom: 8px; font-size: 0.9rem; page-break-inside: avoid;">
                     <div style="font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: #1abb9c; margin-bottom: 4px;">${item.item_type}</div>
                     <div>${detailHtml}</div>
                   </div>
                 `;
-              });
-            }
-            itineraryHtml += `</div>`;
+            });
           }
+          itineraryHtml += `</div>`;
+        }
 
-          const printWindow = window.open("", "_blank");
-          printWindow.document.write(`
+        const printWindow = window.open("", "_blank");
+        printWindow.document.write(`
             <html>
               <head>
                 <title>Print - ${pkg.name}</title>
@@ -1150,12 +1155,13 @@
               </body>
             </html>
           `);
-          printWindow.document.close();
-        }
+        printWindow.document.close();
+      }
 
-        // Initial Load
-        loadPackages();
-      });
-    </script>
-  </body>
+      // Initial Load
+      loadPackages();
+    });
+  </script>
+</body>
+
 </html>

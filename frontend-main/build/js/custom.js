@@ -51,6 +51,128 @@ var CURRENT_URL = window.location.href.split('#')[0].split('?')[0],
 
 // Sidebar
 function init_sidebar() {
+    $SIDEBAR_MENU = $('#sidebar-menu');
+    // Dynamically render sidebar menu component to ensure single shared instance
+    (function renderSidebar() {
+      const sidebarContainer = document.getElementById("sidebar-menu");
+      if (!sidebarContainer) return;
+      
+      sidebarContainer.innerHTML = `
+        <div class="menu_section">
+          <h3>General</h3>
+          <ul class="nav side-menu">
+            <li>
+              <a href="index.html"><i class="fa fa-home"></i> Home</a>
+            </li>
+            <li id="controlPanelMenu">
+              <a><i class="fa fa-edit"></i> Control-Panel <span class="fa fa-chevron-down"></span></a>
+              <ul class="nav child_menu">
+                <li><a href="activities.html">Activities</a></li>
+                <li><a href="agents.html">Agents</a></li>
+                <li><a href="booking.html">Bookings</a></li>
+                <li><a href="city_info.html">City Information</a></li>
+                <li><a href="excursion_description.html">Excursion Description</a></li>
+                <li><a href="excursions.html">Excursions</a></li>
+                <li><a href="hotels.html">Hotels</a></li>
+                <li><a href="markup.html">Markups</a></li>
+                <li><a href="othercharges.html">Other Charges</a></li>
+                <li><a href="special_packages.html">Special Packages</a></li>
+                <li><a href="stop_sale.html">Stop Sale</a></li>
+                <li><a href="suppliers.html">Suppliers</a></li>
+                <li><a href="tools.html">Tools</a></li>
+                <li><a href="tour_description.html">Tour Description</a></li>
+                <li><a href="tours.html">Tours</a></li>
+                <li><a href="transfers.html">Transfers</a></li>
+                <li><a href="users.html">Users</a></li>
+              </ul>
+            </li>
+            <li>
+              <a href="trip.html"><i class="fa fa-book"></i> Quotation</a>
+            </li>
+            <li>
+              <a href="payment.html"><i class="fa fa-pencil-square-o"></i> Payment</a>
+            </li>
+            <li>
+              <a href="invoice_management.html"><i class="fa fa-file-text-o"></i> Proforma Invoice</a>
+            </li>
+            <li>
+              <a href="tax_invoices.html"><i class="fa fa-file-text-o"></i> Tax Invoices</a>
+            </li>
+            <li>
+              <a href="itinerary.html"><i class="fa fa-ticket"></i> Itinerary</a>
+            </li>
+            <li>
+              <a href="analytics.html"><i class="fa fa-bar-chart"></i> Analytics</a>
+            </li>
+          </ul>
+        </div>
+      `;
+
+      // Apply roles and permissions to dynamic menu elements
+      const role = localStorage.getItem("role");
+      let permissions = {};
+      try {
+        const stored = localStorage.getItem("permissions");
+        if (stored && stored !== "undefined" && stored !== "null") {
+          permissions = JSON.parse(stored) || {};
+        }
+      } catch (e) {
+        console.error("Failed to parse permissions", e);
+      }
+
+      const mapping = {
+        "tours.html": "tours",
+        "hotels.html": "hotels",
+        "transfers.html": "transfers",
+        "excursions.html": "excursions",
+        "booking.html": "bookings",
+        "activities.html": "activities",
+        "agents.html": "agents",
+        "markup.html": "markups",
+        "suppliers.html": "suppliers",
+        "users.html": "users",
+        "special_packages.html": "special_packages",
+        "analytics.html": "analytics",
+        "city_info.html": "city_info",
+        "stop_sale.html": "stop_sale",
+        "tools.html": "tools",
+        "othercharges.html": "other_charges",
+        "invoice_management.html": "proforma_invoices",
+        "tax_invoices.html": "tax_invoices",
+        "trip.html": "bookings",
+        "payment.html": "bookings",
+        "itinerary.html": "bookings"
+      };
+
+      const links = sidebarContainer.querySelectorAll("a");
+      links.forEach(link => {
+        const href = link.getAttribute("href");
+        if (!href) return;
+        const filename = href.substring(href.lastIndexOf("/") + 1);
+        const permKey = mapping[filename];
+        if (permKey && permissions && permissions[permKey] === false) {
+          const li = link.closest("li");
+          if (li) {
+            li.style.display = "none";
+          }
+        }
+      });
+
+      const controlPanelMenu = document.getElementById("controlPanelMenu");
+      if (controlPanelMenu) {
+        if (role !== "admin" && role !== "superadmin") {
+          const visibleLinks = controlPanelMenu.querySelectorAll("ul.child_menu li:not([style*='display: none'])");
+          if (visibleLinks.length > 0) {
+            controlPanelMenu.style.display = "block";
+          } else {
+            controlPanelMenu.style.display = "none";
+          }
+        } else {
+          controlPanelMenu.style.display = "block";
+        }
+      }
+    })();
+
     // TODO: This is some kind of easy fix, maybe we can improve this
     var setContentHeight = function () {
         // reset height
@@ -72,7 +194,7 @@ function init_sidebar() {
         $SIDEBAR_MENU.find('li ul').slideUp();
     }
 
-    $SIDEBAR_MENU.find('a').on('click', function (ev) {
+    $SIDEBAR_MENU.on('click', 'a', function (ev) {
         var $li = $(this).parent();
 
         if ($li.is('.active')) {

@@ -928,7 +928,7 @@
                   </div>
                 </div>
               </div>
-              <div class="service-card-wrapper">
+              <div class="service-card-wrapper" id="bookingsShortcutCard">
                 <div class="service-card card-bookings" onclick="window.location.href='booking.html'">
                   <div class="service-icon-wrapper">
                     <i class="fa fa-list-alt"></i>
@@ -2109,6 +2109,14 @@
         console.log("✅ Valid token found, proceeding with page initialization");
 
         const role = localStorage.getItem("role"); // Get the user's role
+
+        // Hide Bookings card on homepage for non-admin users
+        if (role !== "admin" && role !== "superadmin") {
+          const bookingsCard = document.getElementById("bookingsShortcutCard");
+          if (bookingsCard) {
+            bookingsCard.style.display = "none";
+          }
+        }
 
         // Retrieve the username from localStorage
         const username = localStorage.getItem("username") || "Guest";
