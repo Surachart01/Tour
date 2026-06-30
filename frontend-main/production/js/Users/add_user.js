@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const agentId = agentIdValue ? parseInt(agentIdValue, 10) : null;
 
       const permissionsObj = {};
-      const permKeys = ["tours", "hotels", "transfers", "excursions", "bookings", "special_packages", "activities", "suppliers", "agents", "markups", "city_info", "users", "analytics"];
+      const permKeys = ["tours", "hotels", "transfers", "excursions", "bookings", "special_packages", "activities", "suppliers", "agents", "markups", "city_info", "users", "analytics", "proforma_invoices", "tax_invoices"];
       permKeys.forEach(key => {
         const checkbox = document.getElementById(`perm_${key}`);
         permissionsObj[key] = checkbox ? checkbox.checked : true;

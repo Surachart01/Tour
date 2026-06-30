@@ -1049,6 +1049,26 @@
                 <div class="card card-body" style="border-left: 5px solid #9b59b6; padding: 20px 25px; margin: 10px 15px 20px 15px;">
                   <h4 style="color: #9b59b6; font-weight: 700;"><i class="fa fa-gift"></i> Special Packages</h4>
                   <p class="text-muted">Select a pre-made special package to import its itinerary items into this quotation.</p>
+                  <div class="row" style="background-color: #faf8fc; padding: 15px; border-radius: 8px; margin: 0 0 20px 0; border: 1px solid #f1ebf7;">
+                    <div class="col-md-6 form-group" style="margin-bottom: 0;">
+                      <label for="specialPackageFilterCity" style="font-weight: 600; color: #555;">
+                        <i class="fas fa-map-marker-alt" style="margin-right: 6px; color: #9b59b6"></i>
+                        Filter by City
+                      </label>
+                      <select id="specialPackageFilterCity" class="form-control" style="border-color: #d1b9e3;">
+                        <option value="">-- All Cities --</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6 form-group" style="margin-bottom: 0;">
+                      <label for="specialPackageFilterDuration" style="font-weight: 600; color: #555;">
+                        <i class="fas fa-calendar-day" style="margin-right: 6px; color: #9b59b6"></i>
+                        Filter by Duration
+                      </label>
+                      <select id="specialPackageFilterDuration" class="form-control" style="border-color: #d1b9e3;">
+                        <option value="">-- All Durations --</option>
+                      </select>
+                    </div>
+                  </div>
                   <div class="row">
                     <div class="col-md-6 form-group">
                       <label for="specialPackageSelect">
@@ -2352,7 +2372,7 @@
             const pkgId = window.pendingSpecialPackageId;
             const select = document.getElementById("specialPackageSelect");
             if (select) select.value = pkgId;
-            enableQuotationItemEditing(false);
+            enableQuotationItemEditing(true);
             try {
               const res = await fetch(`${Endpoint}/api/v1/special-packages/${pkgId}`, {
                 headers: { "Authorization": `Bearer ${token}` }
@@ -3057,31 +3077,67 @@
           }
 
           const row = document.createElement("tr");
+
+          const remarksVal = excursion.remarks || "";
+          const isPackage = remarksVal.includes("[Special Package]");
+          const cleanRemarks = remarksVal.replace(/\[Special Package\]/gi, "").trim();
+
           row.dataset.excursionId = excursion.excursion_id; // ✅ Store Excursion ID
           row.dataset.quotationStatus = quotationStatus; // ✅ Store quotation status
+          row.dataset.remarks = remarksVal;
+
+          if (isPackage) {
+            row.dataset.isPackageItem = "true";
+            row.dataset.toe = "SIC";
+          } else {
+            row.dataset.toe = excursion.toe || "PVT";
+          }
+
+          const packageBadge = isPackage
+            ? `<span class="badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
+            : "";
+
+          const buttonsHtml = isPackage
+            ? `
+                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
+                    <button disabled class="btn btn-sm btn-warning edit-excursion" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <span class="tooltip-text">Edit Locked</span>
+                  </div>
+                  <div class="tooltip-btn" style="display: inline-block;">
+                    <button disabled class="btn btn-sm btn-danger delete-excursion" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                    <span class="tooltip-text">Delete Locked</span>
+                  </div>
+              `
+            : `
+                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
+                    <button class="btn btn-sm btn-warning edit-excursion" type="button">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <span class="tooltip-text">Edit</span>
+                  </div>
+                  <div class="tooltip-btn" style="display: inline-block;">
+                    <button class="btn btn-sm btn-danger delete-excursion" type="button">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                    <span class="tooltip-text">Delete</span>
+                  </div>
+              `;
 
           row.innerHTML = `
                   <td>${excursion.date || ""}</td>
-                  <td>${excursion.city || ""}</td>
+                  <td>${excursion.city || ""} ${packageBadge}</td>
                   <td>${excursion.excursion_name || ""}</td>
                   <td>${excursion.event_time || ""}</td>
                   <td>${excursion.hotel || ""}</td>
-                  <td>${excursion.remarks || ""}</td>
-                  <td>${excursion.toe || ""}</td>
+                  <td>${cleanRemarks}</td>
+                  <td>${isPackage ? "SIC" : (excursion.toe || "")}</td>
                   <td class="excursion-price">${excursion.final_cost}</td>
                   <td>
-                    <div class="tooltip-btn">
-                      <button class="btn btn-sm btn-warning edit-excursion" type="button">
-                        <i class="fa fa-edit"></i>
-                      </button>
-                      <span class="tooltip-text">Edit</span>
-                    </div>
-                    <div class="tooltip-btn">
-                      <button class="btn btn-sm btn-danger delete-excursion" type="button">
-                        <i class="fa fa-trash"></i>
-                      </button>
-                      <span class="tooltip-text">Delete</span>
-                    </div>
+                    ${buttonsHtml}
                   </td>
                 `;
 
@@ -3308,6 +3364,11 @@
           .addEventListener("click", function (event) {
             const row = event.target.closest("tr");
             if (!row) return;
+
+            // ✅ Block package items editing/deleting
+            if (row.dataset.isPackageItem === "true") {
+              return;
+            }
 
             if (event.target.classList.contains("edit-excursion")) {
               editExcursion(row);
@@ -3576,15 +3637,25 @@
             document.getElementById("transferTableBody");
           const row = document.createElement("tr");
 
+          const remarksVal = transfer.remarks || "";
+          const isPackage = remarksVal.includes("[Special Package]");
+          const cleanRemarks = remarksVal.replace(/\[Special Package\]/gi, "").trim();
+
           row.dataset.id = transfer.id || ""; // ✅ Store DB ID correctly
           row.dataset.transferId = transfer.transfer_id || 0; // ✅ Store transfer_id correctly
           row.dataset.flightTime = transfer.flight_time || ""; // ✅ Store Flight Time
           row.dataset.transferFlight = transfer.flight_number || ""; // ✅ Store Flight Number
           const normalizedType = normalizeTransferDirection(transfer.type_of_transfer || "");
           row.dataset.typeOfTransfer = normalizedType; // ✅ Store TRF Type
-          console.log(formatToYYYYMMDD(transfer.date));
-          // ✅ Store the quotation status in the dataset
           row.dataset.quotationStatus = quotationStatus;
+          row.dataset.remarks = remarksVal;
+
+          if (isPackage) {
+            row.dataset.isPackageItem = "true";
+            row.dataset.tot = "SIC";
+          } else {
+            row.dataset.tot = transfer.tot || "PVT";
+          }
 
           let displayPickupTime = formatTimeToHHMM(transfer.pickup_time || transfer.flight_time || "");
           if (!displayPickupTime && transfer.flight_number && typeof flightsArray !== "undefined") {
@@ -3598,17 +3669,26 @@
           row.dataset.pickupTime = displayPickupTime;
           row.dataset.transferDate = formatToYYYYMMDD(transfer.date || "");
 
-          row.innerHTML = `
-                <td>${transfer.date || ""}<br>${transfer.flight_number || ""}</td>
-                <td>${normalizedType}</td>
-                <td>${transfer.city || ""}</td>
-                <td>${transfer.transfer_description || ""}</td>
-                <td>${transfer.tot || ""}</td>
-                <td>${transfer.from_location || ""}</td>
-                <td>${transfer.to_location || ""}</td>
-                <td>${transfer.remarks || ""}</td>
-                <td class="transfer-price">${transfer.final_cost}</td>
-                <td>
+          const packageBadge = isPackage
+            ? `<span class="badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
+            : "";
+
+          const buttonsHtml = isPackage
+            ? `
+                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
+                    <button disabled class="btn btn-sm btn-warning edit-transfer" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <span class="tooltip-text">Edit Locked</span>
+                  </div>
+                  <div class="tooltip-btn" style="display: inline-block;">
+                    <button disabled class="btn btn-sm btn-danger delete-transfer" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                    <span class="tooltip-text">Delete Locked</span>
+                  </div>
+              `
+            : `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
                     <button class="btn btn-sm btn-warning edit-transfer" type="button">
                       <i class="fa fa-edit"></i>
@@ -3621,6 +3701,20 @@
                     </button>
                     <span class="tooltip-text">Delete</span>
                   </div>
+              `;
+
+          row.innerHTML = `
+                <td>${transfer.date || ""}<br>${transfer.flight_number || ""}</td>
+                <td>${normalizedType}</td>
+                <td>${transfer.city || ""} ${packageBadge}</td>
+                <td>${transfer.transfer_description || ""}</td>
+                <td>${isPackage ? "SIC" : (transfer.tot || "")}</td>
+                <td>${transfer.from_location || ""}</td>
+                <td>${transfer.to_location || ""}</td>
+                <td>${cleanRemarks}</td>
+                <td class="transfer-price">${transfer.final_cost}</td>
+                <td>
+                  ${buttonsHtml}
                 </td>
               `;
 
@@ -4307,6 +4401,11 @@
           .addEventListener("click", function (event) {
             const row = event.target.closest("tr");
             if (!row) return;
+
+            // ✅ Block package items editing/deleting
+            if (row.dataset.isPackageItem === "true") {
+              return;
+            }
 
             if (event.target.classList.contains("edit-transfer") || event.target.closest(".edit-transfer")) {
               editTransfer(row);
@@ -5245,8 +5344,12 @@
           row.dataset.lunchNotes = hotel.lunch_notes || "";
           row.dataset.dinnerNotes = hotel.dinner_notes || "";
           row.dataset.allInclusiveNotes = hotel.all_inclusive_notes || "";
-          row.dataset.discount = hotel.discount || "";
-          row.dataset.notes = hotel.notes || "";
+          const notesVal = hotel.notes || hotel.remarks || "";
+          const isPackage = notesVal.includes("[Special Package]");
+          row.dataset.notes = notesVal;
+          if (isPackage) {
+            row.dataset.isPackageItem = "true";
+          }
 
           // ✅ 🚀 New: Save full room type array
           if (hotel.room_types) {
@@ -5260,18 +5363,26 @@
                 .join(", ")
             : hotel.room_type || "";
 
-          row.innerHTML = `
-                <td>${hotel.from_date || ""}</td>
-                <td>${hotel.to_date || ""}</td>
-                <td>${hotel.city || ""}</td>
-                <td>${hotel.hotel_name || ""}</td>
-                <td>${roomTypeSummary}</td>
-                <td>${hotel.nights || ""}</td>
-                <td>${hotel.single_room_days || 0}</td>
-                <td>${hotel.double_room_days || 0}</td>
-                <td>${hotel.promotion || ""}</td>
-                <td>${hotel.final_cost || ""}</td>
-                <td>
+          const hotelNameDisplay = isPackage
+            ? `${hotel.hotel_name || ""} <span class="badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
+            : hotel.hotel_name || "";
+
+          const buttonsHtml = isPackage
+            ? `
+                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
+                    <button disabled class="btn btn-sm btn-warning edit-hotel" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <span class="tooltip-text">Edit Locked</span>
+                  </div>
+                  <div class="tooltip-btn" style="display: inline-block;">
+                    <button disabled class="btn btn-sm btn-danger delete-hotel" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                    <span class="tooltip-text">Delete Locked</span>
+                  </div>
+              `
+            : `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
                     <button class="btn btn-sm btn-warning edit-hotel" type="button">
                       <i class="fa fa-edit"></i>
@@ -5284,6 +5395,21 @@
                     </button>
                     <span class="tooltip-text">Delete</span>
                   </div>
+              `;
+
+          row.innerHTML = `
+                <td>${hotel.from_date || ""}</td>
+                <td>${hotel.to_date || ""}</td>
+                <td>${hotel.city || ""}</td>
+                <td>${hotelNameDisplay}</td>
+                <td>${roomTypeSummary}</td>
+                <td>${hotel.nights || ""}</td>
+                <td>${hotel.single_room_days || 0}</td>
+                <td>${hotel.double_room_days || 0}</td>
+                <td>${hotel.promotion || ""}</td>
+                <td>${hotel.final_cost || ""}</td>
+                <td>
+                  ${buttonsHtml}
                 </td>
               `;
 
@@ -6168,6 +6294,11 @@
           .addEventListener("click", function (event) {
             const row = event.target.closest("tr");
             if (!row) return;
+
+            // ✅ Block package items editing/deleting
+            if (row.dataset.isPackageItem === "true") {
+              return;
+            }
 
             if (event.target.classList.contains("edit-hotel")) {
               editHotel(row);
@@ -7351,6 +7482,10 @@
             return;
           }
 
+          const remarksVal = tour.remarks || "";
+          const isPackage = remarksVal.includes("[Special Package]");
+          const cleanRemarks = remarksVal.replace(/\[Special Package\]/gi, "").trim();
+
           row.dataset.tourId = tour.tour_id; // ✅ Store tour_id (master tour ID)
           row.dataset.tourItemId = tour.id; // ✅ Store tour trip item ID for hotel display
           row.dataset.quotationStatus = quotationStatus; // ✅ Store quotation status
@@ -7363,27 +7498,56 @@
           row.dataset.departureTime = tour.departure_time || "";
           row.dataset.tourStartDate = tour.from_date || "";
           row.dataset.tourEndDate = tour.to_date || "";
+          row.dataset.remarks = remarksVal;
+
+          if (isPackage) {
+            row.dataset.isPackageItem = "true";
+          }
+
+          const packageBadge = isPackage
+            ? `<span class="badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
+            : "";
+
+          const buttonsHtml = isPackage
+            ? `
+                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
+                    <button disabled class="btn btn-sm btn-warning edit-tour" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <span class="tooltip-text">Edit Locked</span>
+                  </div>
+                  <div class="tooltip-btn" style="display: inline-block;">
+                    <button disabled class="btn btn-sm btn-danger delete-tour" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                    <span class="tooltip-text">Delete Locked</span>
+                  </div>
+              `
+            : `
+                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
+                    <button class="btn btn-sm btn-warning edit-tour" type="button">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <span class="tooltip-text">Edit</span>
+                  </div>
+                  <div class="tooltip-btn" style="display: inline-block;">
+                    <button class="btn btn-sm btn-danger delete-tour" type="button">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                    <span class="tooltip-text">Delete</span>
+                  </div>
+              `;
+
           row.innerHTML = `
                     <td>${tour.from_location || ""}</td>
-                    <td>${tour.tour_name || ""}</td>
+                    <td>${tour.tour_name || ""} ${packageBadge}</td>
                     <td>${tour.tot || ""}</td>
                     <td>${tour.route || ""}</td>
                     <td>${totalPax}</td>
-                    <td>${tour.remarks || ""}</td>
+                    <td>${cleanRemarks}</td>
                     <td class="tour-price">${tour.final_cost}</td>
                     <td>
-                      <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                        <button class="btn btn-sm btn-warning edit-tour" type="button">
-                          <i class="fa fa-edit"></i>
-                        </button>
-                        <span class="tooltip-text">Edit</span>
-                      </div>
-                      <div class="tooltip-btn" style="display: inline-block;">
-                        <button class="btn btn-sm btn-danger delete-tour" type="button">
-                          <i class="fa fa-trash"></i>
-                        </button>
-                        <span class="tooltip-text">Delete</span>
-                      </div>
+                      ${buttonsHtml}
                     </td>
                   `;
 
@@ -7615,6 +7779,11 @@
           .addEventListener("click", function (event) {
             const row = event.target.closest("tr");
             if (!row) return;
+
+            // ✅ Block package items editing/deleting
+            if (row.dataset.isPackageItem === "true") {
+              return;
+            }
 
             if (event.target.classList.contains("edit-tour")) {
               editTour(row);
@@ -7891,11 +8060,20 @@
           const flightsTableBody = document.getElementById("flightsTableBody");
           const row = document.createElement("tr");
 
+          const remarksVal = flight.remarks || "";
+          const isPackage = remarksVal.includes("[Special Package]");
+          const cleanRemarks = remarksVal.replace(/\[Special Package\]/gi, "").trim();
+
           // Store flight id and cost data in dataset for editing
           row.dataset.id = flight.id || `temp-${Date.now()}`;
           row.dataset.totalCost = flight.total_cost || 0;
           row.dataset.discount = flight.discount || 0;
           row.dataset.finalCost = flight.final_cost || flight.total_cost || 0;
+          row.dataset.remarks = remarksVal;
+
+          if (isPackage) {
+            row.dataset.isPackageItem = "true";
+          }
 
           // Normalize field names: DB uses from_date, flight_airline, edt, eat
           const flightDate = (flight.from_date || flight.date || flight.flight_date || "").split("T")[0];
@@ -7903,9 +8081,43 @@
           const edt = flight.edt || flight.departure_time || "";
           const eat = flight.eat || flight.arrival_time || "";
 
+          const packageBadge = isPackage
+            ? `<span class="badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
+            : "";
+
+          const buttonsHtml = isPackage
+            ? `
+                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
+                    <button disabled class="btn btn-sm btn-warning edit-flight" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <span class="tooltip-text">Edit Locked</span>
+                  </div>
+                  <div class="tooltip-btn" style="display: inline-block;">
+                    <button disabled class="btn btn-sm btn-danger delete-flight" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                    <span class="tooltip-text">Delete Locked</span>
+                  </div>
+              `
+            : `
+                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
+                    <button class="btn btn-sm btn-warning edit-flight" type="button">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <span class="tooltip-text">Edit</span>
+                  </div>
+                  <div class="tooltip-btn" style="display: inline-block;">
+                    <button class="btn btn-sm btn-danger delete-flight" type="button">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                    <span class="tooltip-text">Delete</span>
+                  </div>
+              `;
+
           row.innerHTML = `
                   <td>${flightDate}</td>
-                  <td>${flightAirline}</td>
+                  <td>${flightAirline} ${packageBadge}</td>
                   <td>${flight.flight_number || ""}</td>
                   <td>${flight.in_or_out || ""}</td>
                   <td>${flight.route || ""}</td>
@@ -7915,20 +8127,9 @@
                   <td class="flight-cost">${
                     flight.final_cost || flight.total_cost || 0
                   }</td>
-                  <td>${flight.remarks || ""}</td>
+                  <td>${cleanRemarks}</td>
                   <td>
-                    <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                      <button class="btn btn-sm btn-warning edit-flight" type="button">
-                        <i class="fa fa-edit"></i>
-                      </button>
-                      <span class="tooltip-text">Edit</span>
-                    </div>
-                    <div class="tooltip-btn" style="display: inline-block;">
-                      <button class="btn btn-sm btn-danger delete-flight" type="button">
-                        <i class="fa fa-trash"></i>
-                      </button>
-                      <span class="tooltip-text">Delete</span>
-                    </div>
+                    ${buttonsHtml}
                   </td>
                 `;
 
@@ -8114,6 +8315,13 @@
           .getElementById("flightsTableBody")
           .addEventListener("click", function (event) {
             const row = event.target.closest("tr");
+            if (!row) return;
+
+            // ✅ Block package items editing/deleting
+            if (row.dataset.isPackageItem === "true") {
+              return;
+            }
+
             const editBtn = event.target.closest(".edit-flight");
             const deleteBtn = event.target.closest(".delete-flight");
 
@@ -9367,26 +9575,58 @@
             return;
           }
 
+          const remarksVal = other.remarks || "";
+          const isPackage = remarksVal.includes("[Special Package]");
+          const cleanRemarks = remarksVal.replace(/\[Special Package\]/gi, "").trim();
+
           row.dataset.otherId =
             other.id || other.other_id || `temp-${Date.now()}`;
+          row.dataset.remarks = remarksVal;
+
+          if (isPackage) {
+            row.dataset.isPackageItem = "true";
+          }
+
+          const packageBadge = isPackage
+            ? `<span class="badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
+            : "";
+
+          const buttonsHtml = isPackage
+            ? `
+                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
+                    <button disabled class="btn btn-sm btn-warning edit-other" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <span class="tooltip-text">Edit Locked</span>
+                  </div>
+                  <div class="tooltip-btn" style="display: inline-block;">
+                    <button disabled class="btn btn-sm btn-danger delete-other" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                    <span class="tooltip-text">Delete Locked</span>
+                  </div>
+              `
+            : `
+                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
+                    <button class="btn btn-sm btn-warning edit-other" type="button">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <span class="tooltip-text">Edit</span>
+                  </div>
+                  <div class="tooltip-btn" style="display: inline-block;">
+                    <button class="btn btn-sm btn-danger delete-other" type="button">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                    <span class="tooltip-text">Delete</span>
+                  </div>
+              `;
 
           row.innerHTML = `
-            <td>${other.description || ""}</td>
+            <td>${other.description || ""} ${packageBadge}</td>
             <td>${other.date || ""}</td>
             <td>${other.total_price || other.cost || 0}</td>
             <td>
-              <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                <button class="btn btn-sm btn-warning edit-other" type="button">
-                  <i class="fa fa-edit"></i>
-                </button>
-                <span class="tooltip-text">Edit</span>
-              </div>
-              <div class="tooltip-btn" style="display: inline-block;">
-                <button class="btn btn-sm btn-danger delete-other" type="button">
-                  <i class="fa fa-trash"></i>
-                </button>
-                <span class="tooltip-text">Delete</span>
-              </div>
+              ${buttonsHtml}
             </td>
           `;
 
@@ -9529,6 +9769,12 @@
           .getElementById("othersTableBody")
           .addEventListener("click", function (event) {
             const row = event.target.closest("tr");
+            if (!row) return;
+
+            // ✅ Block package items editing/deleting
+            if (row.dataset.isPackageItem === "true") {
+              return;
+            }
 
             if (event.target.classList.contains("edit-other")) {
               editOtherService(row);
@@ -9606,6 +9852,8 @@
         // ============================================================
         // SPECIAL PACKAGE SELECTION MANAGEMENT
         // ============================================================
+        let allSpecialPackages = [];
+
         async function loadSpecialPackagesDropdown() {
           try {
             const token = localStorage.getItem("token");
@@ -9613,22 +9861,104 @@
               headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) {
-              const packages = await res.json();
-              const select = document.getElementById("specialPackageSelect");
-              if (select) {
-                packages.forEach(pkg => {
-                  const opt = document.createElement("option");
-                  opt.value = pkg.id;
-                  opt.textContent = `${pkg.code ? `[${pkg.code}] ` : ""}${pkg.name} (${pkg.duration} Days)`;
-                  select.appendChild(opt);
-                });
-              }
+              allSpecialPackages = await res.json();
+              populateSpecialPackageFilters(allSpecialPackages);
+              renderSpecialPackagesSelect(allSpecialPackages);
               window.specialPackagesLoaded = true;
               checkAndApplyPendingSpecialPackage();
             }
           } catch (e) {
             console.error("Error loading special packages dropdown", e);
           }
+        }
+
+        function populateSpecialPackageFilters(packages) {
+          const citySelect = document.getElementById("specialPackageFilterCity");
+          const durationSelect = document.getElementById("specialPackageFilterDuration");
+          if (!citySelect || !durationSelect) return;
+          
+          citySelect.innerHTML = '<option value="">-- All Cities --</option>';
+          durationSelect.innerHTML = '<option value="">-- All Durations --</option>';
+          
+          const citiesSet = new Set();
+          const durationsSet = new Set();
+          
+          packages.forEach(pkg => {
+            if (pkg.city) {
+              pkg.city.split(",").forEach(c => {
+                const trimmed = c.trim();
+                if (trimmed) citiesSet.add(trimmed);
+              });
+            }
+            if (pkg.duration !== undefined && pkg.duration !== null) {
+              durationsSet.add(pkg.duration);
+            }
+          });
+          
+          Array.from(citiesSet).sort().forEach(city => {
+            const opt = document.createElement("option");
+            opt.value = city;
+            opt.textContent = city;
+            citySelect.appendChild(opt);
+          });
+          
+          Array.from(durationsSet).sort((a, b) => a - b).forEach(dur => {
+            const opt = document.createElement("option");
+            opt.value = dur;
+            opt.textContent = `${dur} Day${dur > 1 ? "s" : ""}`;
+            durationSelect.appendChild(opt);
+          });
+        }
+
+        function renderSpecialPackagesSelect(filteredPackages) {
+          const select = document.getElementById("specialPackageSelect");
+          if (!select) return;
+          
+          const currentValue = select.value;
+          select.innerHTML = '<option value="">-- None (Custom Quotation) --</option>';
+          
+          filteredPackages.forEach(pkg => {
+            const opt = document.createElement("option");
+            opt.value = pkg.id;
+            opt.textContent = `${pkg.code ? `[${pkg.code}] ` : ""}${pkg.name} (${pkg.duration} Days)`;
+            select.appendChild(opt);
+          });
+          
+          const hasSelected = filteredPackages.some(pkg => String(pkg.id) === currentValue);
+          if (hasSelected) {
+            select.value = currentValue;
+          } else {
+            select.value = "";
+            if (currentValue) {
+              handleSpecialPackageChange();
+            }
+          }
+        }
+
+        function handleSpecialPackageFilterChange() {
+          const cityFilter = document.getElementById("specialPackageFilterCity")?.value || "";
+          const durationFilter = document.getElementById("specialPackageFilterDuration")?.value || "";
+          
+          const filtered = allSpecialPackages.filter(pkg => {
+            let cityMatch = true;
+            if (cityFilter) {
+              if (!pkg.city) {
+                cityMatch = false;
+              } else {
+                const cities = pkg.city.split(",").map(c => c.trim().toLowerCase());
+                cityMatch = cities.includes(cityFilter.toLowerCase());
+              }
+            }
+            
+            let durationMatch = true;
+            if (durationFilter) {
+              durationMatch = String(pkg.duration) === durationFilter;
+            }
+            
+            return cityMatch && durationMatch;
+          });
+          
+          renderSpecialPackagesSelect(filtered);
         }
 
         function updateSpecialPackagePriceDisplay(pkg) {
@@ -9657,7 +9987,8 @@
           const adultPrice = parseFloat(currentSpecialPackage.price_per_adult) || 0;
           const childPrice = parseFloat(currentSpecialPackage.price_per_child) || 0;
           
-          const baseTotal = (adultPrice * adults) + (childPrice * children);
+          const additionalCost = typeof calculateBaseTotalCost === "function" ? calculateBaseTotalCost() : 0;
+          const baseTotal = (adultPrice * adults) + (childPrice * children) + additionalCost;
           
           const includeAssistanceFee = document.getElementById("includeAssistanceFee");
           const assistanceFeeAmount = document.getElementById("assistanceFeeAmount");
@@ -9681,6 +10012,9 @@
             previewContainer.style.display = "none";
             return;
           }
+
+          const baseDateStr = document.getElementById("tripStartDate").value;
+          const baseDate = baseDateStr ? new Date(baseDateStr) : new Date();
 
           // Group by day_number
           const days = {};
@@ -9742,13 +10076,17 @@
                 itemDiv.style.marginBottom = "6px";
                 itemDiv.style.fontSize = "0.85rem";
 
+                const dayOffset = (item.day_number || 1) - 1;
+                const itemDate = new Date(baseDate.getTime() + dayOffset * 24 * 60 * 60 * 1000);
+                const dateStr = itemDate.toLocaleDateString("en-GB").replace(/\//g, "-");
+
                 const typeTag = document.createElement("div");
                 typeTag.style.fontSize = "0.7rem";
                 typeTag.style.fontWeight = "bold";
                 typeTag.style.textTransform = "uppercase";
                 typeTag.style.color = "#9b59b6";
                 typeTag.style.marginBottom = "2px";
-                typeTag.innerText = item.item_type;
+                typeTag.innerHTML = `${item.item_type} <span style="float: right; color: #73879c; font-weight: normal; text-transform: none;">Date: ${dateStr}</span>`;
                 itemDiv.appendChild(typeTag);
 
                 let detailHtml = "";
@@ -9807,7 +10145,7 @@
 
             currentSpecialPackage = pkg;
             populateTablesFromPackage(pkg);
-            enableQuotationItemEditing(false);
+            enableQuotationItemEditing(true);
             updateSpecialPackagePrice();
             updateSpecialPackagePriceDisplay(pkg);
             renderSpecialPackageItineraryPreview(pkg);
@@ -9845,63 +10183,100 @@
             const itemDate = new Date(baseDate.getTime() + dayOffset * 24 * 60 * 60 * 1000);
             const dateStr = itemDate.toLocaleDateString("en-GB").replace(/\//g, "-");
 
+            const cleanRemarks = (item.remarks || "").replace(/\[Special Package\]/gi, "").trim();
+            const remarksWithSig = item.remarks ? (item.remarks.includes("[Special Package]") ? item.remarks : `${item.remarks} [Special Package]`) : "[Special Package]";
+            const packageBadge = `<span class="badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`;
+            const actionButtons = `
+              <td>
+                <button disabled class="btn btn-sm btn-warning" style="opacity: 0.5; cursor: not-allowed; margin-right: 5px;">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button disabled class="btn btn-sm btn-danger" style="opacity: 0.5; cursor: not-allowed;">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            `;
+
             if (item.item_type === 'hotel') {
               const checkoutDate = new Date(itemDate.getTime() + (item.nights || 1) * 24 * 60 * 60 * 1000);
               const checkoutStr = checkoutDate.toLocaleDateString("en-GB").replace(/\//g, "-");
 
               const tbody = document.getElementById("hotelsTableBody");
               const tr = document.createElement("tr");
+              tr.dataset.isPackageItem = "true";
+              tr.dataset.hotelId = item.hotel_id || 0;
+              tr.dataset.roomId = item.room_id || 0;
+              tr.dataset.roomTypes = JSON.stringify([{ room_type: item.room_type || "", adults: 2, children: 0 }]);
+              tr.dataset.nights = item.nights || 1;
+              tr.dataset.singleRooms = 0;
+              tr.dataset.doubleRooms = 0;
+              tr.dataset.notes = remarksWithSig;
+
               tr.innerHTML = `
                 <td>${dateStr}</td>
                 <td>${checkoutStr}</td>
                 <td>${item.city || "-"}</td>
-                <td>${item.hotel_name || "TBD"}</td>
+                <td>${item.hotel_name || "TBD"} ${packageBadge}</td>
                 <td>${item.room_type || "-"}</td>
                 <td>${item.nights || 1}</td>
                 <td>-</td>
                 <td>-</td>
                 <td>-</td>
                 <td>${item.price || "-"}</td>
-                <td></td>
+                ${actionButtons}
               `;
               tbody.appendChild(tr);
             } else if (item.item_type === 'transfer') {
               const tbody = document.getElementById("transferTableBody");
               const tr = document.createElement("tr");
+              tr.dataset.isPackageItem = "true";
+              tr.dataset.transferId = item.transfer_id || 0;
+              tr.dataset.transferDate = dateStr;
+              tr.dataset.remarks = remarksWithSig;
+              tr.dataset.tot = "SIC";
+
               tr.innerHTML = `
                 <td>${dateStr}</td>
                 <td>${item.transfer_type || "Private"}</td>
-                <td>${item.city || "-"}</td>
+                <td>${item.city || "-"} ${packageBadge}</td>
                 <td>-</td>
-                <td>PVT</td>
+                <td>SIC</td>
                 <td>${item.from_location || "-"}</td>
                 <td>${item.to_location || "-"}</td>
-                <td><small>${item.remarks || ""}</small></td>
+                <td><small>${cleanRemarks}</small></td>
                 <td>${item.price || "-"}</td>
-                <td></td>
+                ${actionButtons}
               `;
               tbody.appendChild(tr);
             } else if (item.item_type === 'excursion') {
               const tbody = document.getElementById("excursionTableBody");
               const tr = document.createElement("tr");
+              tr.dataset.isPackageItem = "true";
+              tr.dataset.excursionId = item.excursion_id || 0;
+              tr.dataset.remarks = remarksWithSig;
+              tr.dataset.toe = "SIC";
+
               tr.innerHTML = `
                 <td>${dateStr}</td>
                 <td>${item.city || "-"}</td>
-                <td>${item.excursion_name || "TBD"}</td>
+                <td>${item.excursion_name || "TBD"} ${packageBadge}</td>
                 <td>-</td>
                 <td>-</td>
-                <td><small>${item.remarks || ""}</small></td>
-                <td>PVT</td>
+                <td><small>${cleanRemarks}</small></td>
+                <td>SIC</td>
                 <td>${item.price || "-"}</td>
-                <td></td>
+                ${actionButtons}
               `;
               tbody.appendChild(tr);
             } else if (item.item_type === 'flight') {
               const tbody = document.getElementById("flightsTableBody");
               const tr = document.createElement("tr");
+              tr.dataset.isPackageItem = "true";
+              tr.dataset.remarks = remarksWithSig;
+
               tr.innerHTML = `
                 <td>${dateStr}</td>
-                <td>${item.flight_airline || "-"}</td>
+                <td>${item.flight_airline || "-"} ${packageBadge}</td>
                 <td>${item.flight_number || "TBD"}</td>
                 <td>-</td>
                 <td>${item.flight_route || "-"}</td>
@@ -9909,33 +10284,42 @@
                 <td>${item.arrival_time || "-"}</td>
                 <td>-</td>
                 <td>${item.price || "-"}</td>
-                <td><small>${item.remarks || ""}</small></td>
-                <td></td>
+                <td><small>${cleanRemarks}</small></td>
+                ${actionButtons}
               `;
               tbody.appendChild(tr);
             } else if (item.item_type === 'tour') {
               const tbody = document.getElementById("tourTableBody");
               const tr = document.createElement("tr");
+              tr.dataset.isPackageItem = "true";
               tr.dataset.tourId = item.tour_id || "";
+              tr.dataset.remarks = remarksWithSig;
+
               tr.innerHTML = `
                 <td>${item.city || "-"}</td>
-                <td>${item.tour_name || "TBD"}</td>
+                <td>${item.tour_name || "TBD"} ${packageBadge}</td>
                 <td>PVT</td>
                 <td>-</td>
                 <td>-</td>
-                <td><small>${item.remarks || ""}</small></td>
+                <td><small>${cleanRemarks}</small></td>
                 <td>${item.price || "-"}</td>
-                <td></td>
+                ${actionButtons}
               `;
               tbody.appendChild(tr);
             } else if (item.item_type === 'other') {
               const tbody = document.getElementById("othersTableBody");
               const tr = document.createElement("tr");
+              tr.dataset.isPackageItem = "true";
+              tr.dataset.description = item.other_description || item.description || "TBD";
+              tr.dataset.date = dateStr;
+              tr.dataset.totalPrice = item.price || 0;
+              tr.dataset.remarks = remarksWithSig;
+
               tr.innerHTML = `
-                <td>${item.other_description || item.description || "TBD"}</td>
+                <td>${item.other_description || item.description || "TBD"} ${packageBadge}</td>
                 <td>${dateStr}</td>
                 <td>${item.price || "-"}</td>
-                <td></td>
+                ${actionButtons}
               `;
               tbody.appendChild(tr);
             }
@@ -9974,6 +10358,8 @@
         }
 
         document.getElementById("specialPackageSelect").addEventListener("change", handleSpecialPackageChange);
+        document.getElementById("specialPackageFilterCity").addEventListener("change", handleSpecialPackageFilterChange);
+        document.getElementById("specialPackageFilterDuration").addEventListener("change", handleSpecialPackageFilterChange);
         document.getElementById("tripStartDate").addEventListener("change", function() {
           if (document.getElementById("specialPackageSelect").value) {
             handleSpecialPackageChange();

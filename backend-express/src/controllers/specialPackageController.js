@@ -306,7 +306,12 @@ export async function deleteSpecialPackage(req, res, next) {
     }
 
     await prisma.$transaction(async (tx) => {
-      // Delete child items first
+      // Nullify references in trips table first
+      await tx.trips.updateMany({
+        where: { special_package_id: parseInt(id) },
+        data: { special_package_id: null }
+      });
+      // Delete child items
       await tx.special_package_items.deleteMany({
         where: { package_id: parseInt(id) }
       });

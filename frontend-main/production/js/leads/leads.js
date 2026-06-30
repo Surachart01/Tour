@@ -696,8 +696,8 @@ function getPriorityDisplay(priority) {
 // Table Row Creation Functions
 function createLeadTableRow(lead) {
   const statusClass = `status-${lead.status || 'pending'}`;
-  const expiryDate = new Date(lead.expiry_date).toLocaleDateString();
-  const createdDate = new Date(lead.created_at).toLocaleDateString();
+  const expiryDate = new Date(lead.expiry_date).toLocaleDateString("en-GB").replace(/\//g, "-");
+  const createdDate = new Date(lead.created_at).toLocaleDateString("en-GB").replace(/\//g, "-");
   
   // Get priority display - backend sends 'urgency' field
   const priorityDisplay = getPriorityDisplay(lead.urgency || 'medium');
@@ -770,7 +770,7 @@ function createLeadTableRow(lead) {
 
 function createLeadGroupTableRow(group) {
   const statusClass = `status-${group.status || 'pending'}`;
-  const createdDate = new Date(group.created_at).toLocaleDateString();
+  const createdDate = new Date(group.created_at).toLocaleDateString("en-GB").replace(/\//g, "-");
   
   // Format status display
   const statusDisplay = (group.status || 'pending').replace('_', ' ').split(' ')
@@ -824,7 +824,7 @@ function createLeadGroupTableRow(group) {
       </td>
       <td>
         ${createdDate}
-        <br><small class="text-muted">Expires: ${new Date(group.expiry_date).toLocaleDateString()}</small>
+        <br><small class="text-muted">Expires: ${new Date(group.expiry_date).toLocaleDateString("en-GB").replace(/\//g, "-")}</small>
       </td>
       <td>
         ${getLeadGroupActionButtons(group)}

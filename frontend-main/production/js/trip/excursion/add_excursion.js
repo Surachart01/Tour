@@ -172,6 +172,12 @@ function updateExcursionRow(row, excursion) {
 // Handle edit and delete button clicks
 document.getElementById("excursionTableBody").addEventListener("click", function (event) {
   const row = event.target.closest("tr");
+  if (!row) return;
+
+  // ✅ Block package items editing/deleting
+  if (row.dataset.isPackageItem === "true") {
+    return;
+  }
 
   if (event.target.classList.contains("editBtn") || event.target.closest(".editBtn")) {
       // Populate modal with data from the row

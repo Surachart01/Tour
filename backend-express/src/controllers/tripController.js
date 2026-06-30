@@ -298,7 +298,7 @@ export async function createQuotation(req, res, next) {
               to_date: checkoutDate.toISOString().substring(0, 10),
               price: item.price ? parseFloat(item.price) : 0,
               total_price: item.price ? (parseFloat(item.price) * (item.nights || 1)) : 0,
-              remarks: item.remarks,
+              remarks: item.remarks ? `${item.remarks} [Special Package]` : "[Special Package]",
               room_types_json: null
             });
           } else if (item.item_type === 'transfer') {
@@ -312,8 +312,8 @@ export async function createQuotation(req, res, next) {
               to_date: dateStr,
               city: item.city || "",
               price: item.price ? parseFloat(item.price) : 0,
-              remarks: item.remarks,
-              tot: "PVT"
+              remarks: item.remarks ? `${item.remarks} [Special Package]` : "[Special Package]",
+              tot: "SIC"
             });
           } else if (item.item_type === 'excursion') {
             pkgExcursions.push({
@@ -322,9 +322,9 @@ export async function createQuotation(req, res, next) {
               from_date: dateStr,
               to_date: dateStr,
               city: item.city || "",
-              toe: "PVT",
+              toe: "SIC",
               price: item.price ? parseFloat(item.price) : 0,
-              remarks: item.remarks
+              remarks: item.remarks ? `${item.remarks} [Special Package]` : "[Special Package]"
             });
           } else if (item.item_type === 'flight') {
             pkgFlights.push({
@@ -336,7 +336,7 @@ export async function createQuotation(req, res, next) {
               from_date: dateStr,
               to_date: dateStr,
               price: item.price ? parseFloat(item.price) : 0,
-              remarks: item.remarks
+              remarks: item.remarks ? `${item.remarks} [Special Package]` : "[Special Package]"
             });
           } else if (item.item_type === 'other') {
             pkgOthers.push({
@@ -344,17 +344,32 @@ export async function createQuotation(req, res, next) {
               from_date: dateStr,
               to_date: dateStr,
               price: item.price ? parseFloat(item.price) : 0,
-              remarks: item.remarks
+              remarks: item.remarks ? `${item.remarks} [Special Package]` : "[Special Package]"
             });
           }
         });
 
-        data.hotel_items = pkgHotels;
-        data.excursion_items = pkgExcursions;
-        data.transfer_items = pkgTransfers;
-        data.flight_items = pkgFlights;
-        data.other_items = pkgOthers;
-        data.tour_items = [];
+        const hasItemsSent = (data.hotel_items && data.hotel_items.length > 0) ||
+                             (data.hotels && data.hotels.length > 0) ||
+                             (data.transfer_items && data.transfer_items.length > 0) ||
+                             (data.transfers && data.transfers.length > 0) ||
+                             (data.excursion_items && data.excursion_items.length > 0) ||
+                             (data.excursions && data.excursions.length > 0) ||
+                             (data.flight_items && data.flight_items.length > 0) ||
+                             (data.flights && data.flights.length > 0) ||
+                             (data.other_items && data.other_items.length > 0) ||
+                             (data.others && data.others.length > 0) ||
+                             (data.tour_items && data.tour_items.length > 0) ||
+                             (data.tours && data.tours.length > 0);
+
+        if (!hasItemsSent) {
+          data.hotel_items = pkgHotels;
+          data.excursion_items = pkgExcursions;
+          data.transfer_items = pkgTransfers;
+          data.flight_items = pkgFlights;
+          data.other_items = pkgOthers;
+          data.tour_items = [];
+        }
 
         if (data.total_amount === undefined && data.total_cost === undefined) {
           const adults = parseInt(data.number_of_adults) || 1;
@@ -760,7 +775,7 @@ export async function updateQuotation(req, res, next) {
                 to_date: checkoutDate.toISOString().substring(0, 10),
                 price: item.price ? parseFloat(item.price) : 0,
                 total_price: item.price ? (parseFloat(item.price) * (item.nights || 1)) : 0,
-                remarks: item.remarks,
+                remarks: item.remarks ? `${item.remarks} [Special Package]` : "[Special Package]",
                 room_types_json: null
               });
             } else if (item.item_type === 'transfer') {
@@ -774,8 +789,8 @@ export async function updateQuotation(req, res, next) {
                 to_date: dateStr,
                 city: item.city || "",
                 price: item.price ? parseFloat(item.price) : 0,
-                remarks: item.remarks,
-                tot: "PVT"
+                remarks: item.remarks ? `${item.remarks} [Special Package]` : "[Special Package]",
+                tot: "SIC"
               });
             } else if (item.item_type === 'excursion') {
               pkgExcursions.push({
@@ -784,9 +799,9 @@ export async function updateQuotation(req, res, next) {
                 from_date: dateStr,
                 to_date: dateStr,
                 city: item.city || "",
-                toe: "PVT",
+                toe: "SIC",
                 price: item.price ? parseFloat(item.price) : 0,
-                remarks: item.remarks
+                remarks: item.remarks ? `${item.remarks} [Special Package]` : "[Special Package]"
               });
             } else if (item.item_type === 'flight') {
               pkgFlights.push({
@@ -798,7 +813,7 @@ export async function updateQuotation(req, res, next) {
                 from_date: dateStr,
                 to_date: dateStr,
                 price: item.price ? parseFloat(item.price) : 0,
-                remarks: item.remarks
+                remarks: item.remarks ? `${item.remarks} [Special Package]` : "[Special Package]"
               });
             } else if (item.item_type === 'other') {
               pkgOthers.push({
@@ -806,17 +821,32 @@ export async function updateQuotation(req, res, next) {
                 from_date: dateStr,
                 to_date: dateStr,
                 price: item.price ? parseFloat(item.price) : 0,
-                remarks: item.remarks
+                remarks: item.remarks ? `${item.remarks} [Special Package]` : "[Special Package]"
               });
             }
           });
 
-          data.hotel_items = pkgHotels;
-          data.excursion_items = pkgExcursions;
-          data.transfer_items = pkgTransfers;
-          data.flight_items = pkgFlights;
-          data.other_items = pkgOthers;
-          data.tour_items = [];
+          const hasItemsSent = (data.hotel_items && data.hotel_items.length > 0) ||
+                               (data.hotels && data.hotels.length > 0) ||
+                               (data.transfer_items && data.transfer_items.length > 0) ||
+                               (data.transfers && data.transfers.length > 0) ||
+                               (data.excursion_items && data.excursion_items.length > 0) ||
+                               (data.excursions && data.excursions.length > 0) ||
+                               (data.flight_items && data.flight_items.length > 0) ||
+                               (data.flights && data.flights.length > 0) ||
+                               (data.other_items && data.other_items.length > 0) ||
+                               (data.others && data.others.length > 0) ||
+                               (data.tour_items && data.tour_items.length > 0) ||
+                               (data.tours && data.tours.length > 0);
+
+          if (!hasItemsSent) {
+            data.hotel_items = pkgHotels;
+            data.excursion_items = pkgExcursions;
+            data.transfer_items = pkgTransfers;
+            data.flight_items = pkgFlights;
+            data.other_items = pkgOthers;
+            data.tour_items = [];
+          }
 
           if (data.total_amount === undefined && data.total_cost === undefined) {
             const adults = parseInt(data.number_of_adults) || parseInt(existing.number_of_adults) || 1;

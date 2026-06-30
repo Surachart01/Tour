@@ -2425,7 +2425,7 @@ function formatTimeToHHMM(timeStr) {
 function formatDate(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString();
+    return date.toLocaleDateString("en-GB").replace(/\//g, "-");
 }
 
 // Format date from backend for HTML input (HTML date inputs expect YYYY-MM-DD format)

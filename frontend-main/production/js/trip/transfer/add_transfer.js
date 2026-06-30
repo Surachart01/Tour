@@ -302,6 +302,12 @@ function updateTransferRow(row, transfer) {
 // Handle edit and delete button clicks
 document.getElementById("transferTableBody").addEventListener("click", function (event) {
   const row = event.target.closest("tr");
+  if (!row) return;
+
+  // ✅ Block package items editing/deleting
+  if (row.dataset.isPackageItem === "true") {
+    return;
+  }
 
   if (event.target.classList.contains("editBtn") || event.target.closest(".editBtn")) {
     const transferId = row.dataset.transferId; // ✅ Retrieve ID from dataset

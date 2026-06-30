@@ -194,6 +194,20 @@
         color: #ffffff;
       }
 
+      /* Bookings: Red/Crimson Theme */
+      .service-card.card-bookings {
+        border-left-color: #dc3545;
+      }
+      .service-card.card-bookings .service-icon-wrapper {
+        background-color: #fde8e8;
+        color: #dc3545;
+      }
+      .service-card.card-bookings.active {
+        background: linear-gradient(135deg, #dc3545, #bd2130);
+        border-left-color: #721c24;
+        color: #ffffff;
+      }
+
       /* Active Card Text Styling overrides */
       .service-card.active .service-icon-wrapper {
         background-color: rgba(255, 255, 255, 0.2) !important;
@@ -911,6 +925,17 @@
                   <div class="service-card-info">
                     <h4>Special Packages</h4>
                     <p>Ready-made packages</p>
+                  </div>
+                </div>
+              </div>
+              <div class="service-card-wrapper">
+                <div class="service-card card-bookings" onclick="window.location.href='booking.html'">
+                  <div class="service-icon-wrapper">
+                    <i class="fa fa-list-alt"></i>
+                  </div>
+                  <div class="service-card-info">
+                    <h4>Bookings</h4>
+                    <p>View & manage bookings</p>
                   </div>
                 </div>
               </div>
@@ -3767,7 +3792,7 @@
         fetchDataAndPopulateTable(specialPackagesTable, "special-packages", {}, specialPackageData, "specialPackagesTable", "special packages");
 
         // Ensure only one section is visible at a time
-        $(".service-card").on("click", function () {
+        $(".service-card[data-target]").on("click", function () {
           const target = $(this).data("target");
           const isCurrentlyOpen = $(target).hasClass("show");
           

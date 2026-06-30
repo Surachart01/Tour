@@ -277,49 +277,124 @@
         <!-- /top navigation -->
 
         <!-- Page content -->
+        <!-- Page content -->
         <div class="right_col" role="main">
-          <div class="row">
-            <div class="col-md-4">
-              <h4>Select City</h4>
-              <div class="input-group mb-3">
-                <input
-                  type="text"
-                  class="form-control dropdown-toggle"
-                  placeholder="Search for city..."
-                  id="citySearchInput"
-                  data-toggle="dropdown"
-                  aria-haspopup="true"
-                  aria-expanded="false"
-                />
-                <div class="dropdown-menu w-100" id="cityDropdownMenu">
-                  <!-- Cities will be dynamically added here -->
+          <div class="x_panel" style="border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); padding: 25px; border: none; background: #fff;">
+            <div class="x_title" style="border-bottom: 2px solid #f1f1f1; padding-bottom: 15px; margin-bottom: 25px;">
+              <h3 style="font-weight: 700; color: #2a3f54; margin: 0;"><i class="fa fa-ban" style="color: #e74c3c; margin-right: 10px;"></i> Stop Sale Control Panel</h3>
+            </div>
+            
+            <!-- Filters row -->
+            <div class="row">
+              <div class="col-md-3 form-group">
+                <label style="font-weight: 600; color: #555;"><i class="fas fa-map-marker-alt" style="margin-right: 6px; color: #007bff;"></i> Select City</label>
+                <div class="input-group">
+                  <input
+                    type="text"
+                    class="form-control dropdown-toggle"
+                    placeholder="Search for city..."
+                    id="citySearchInput"
+                    data-toggle="dropdown"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    style="border-radius: 6px;"
+                  />
+                  <div class="dropdown-menu w-100" id="cityDropdownMenu" style="max-height: 250px; overflow-y: auto;">
+                    <!-- Cities populated dynamically -->
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="col-md-8">
-              <h4>Select Hotel</h4>
-              <div class="input-group mb-3">
+              
+              <div class="col-md-5 form-group">
+                <label style="font-weight: 600; color: #555;"><i class="fas fa-hotel" style="margin-right: 6px; color: #28a745;"></i> Select Hotel</label>
                 <input
                   type="text"
                   class="form-control"
-                  placeholder="Search for hotel..."
+                  placeholder="Type to search hotel..."
                   id="hotelSearchInput"
+                  style="border-radius: 6px;"
                 />
+                <ul class="list-group hotel-list" id="hotelList" style="max-height: 200px; overflow-y: auto; margin-top: 8px; border-radius: 6px; border: 1px solid #ddd; display: none; position: absolute; z-index: 1000; width: 94%;">
+                  <!-- Hotels populated dynamically -->
+                </ul>
               </div>
-              <ul class="list-group hotel-list" id="hotelList">
-                <!-- Hotels will be dynamically added here -->
-              </ul>
+
+              <!-- Attach file and Notify Toggle -->
+              <div class="col-md-4 form-group">
+                <label style="font-weight: 600; color: #555;"><i class="fas fa-paperclip" style="margin-right: 6px; color: #f39c12;"></i> Attach Document (Optional)</label>
+                <div class="custom-file" style="margin-bottom: 12px;">
+                  <input type="file" class="custom-file-input" id="stopSaleFile" style="cursor: pointer;">
+                  <label class="custom-file-label" for="stopSaleFile" id="stopSaleFileLabel">Choose file...</label>
+                </div>
+                <div class="custom-control custom-checkbox mt-2">
+                  <input type="checkbox" class="custom-control-input" id="notifyAgentsCheckbox">
+                  <label class="custom-control-label" for="notifyAgentsCheckbox" style="font-weight: 600; color: #555; cursor: pointer;">
+                    <i class="fas fa-envelope" style="color: #9b59b6; margin-right: 4px;"></i> Send Email to Agents
+                  </label>
+                </div>
+              </div>
             </div>
-            <div
-              class="col-md-12 mt-4"
-              id="roomTypeSection"
-              style="display: none"
-            >
-              <h4>Room Types</h4>
-              <ul class="list-group" id="roomTypeList">
-                <!-- Room types will be dynamically added here -->
-              </ul>
+
+            <!-- Room Types Row (Hidden until hotel is chosen) -->
+            <div class="row mt-3" id="roomTypeSection" style="display: none;">
+              <div class="col-md-12">
+                <div style="background-color: #fafbfc; border: 1px solid #eaebec; border-radius: 8px; padding: 15px 20px;">
+                  <h5 style="font-weight: 600; color: #2a3f54; margin-top: 0; margin-bottom: 12px;"><i class="fas fa-bed" style="color: #17a2b8; margin-right: 8px;"></i> Room Types</h5>
+                  <div class="row" id="roomTypeList" style="padding-left: 20px;">
+                    <!-- Checkboxes populated dynamically -->
+                  </div>
+                </div>
+              </div>
             </div>
+
+            <!-- Interactive Calendar & Manual Stop/Start Panel -->
+            <div class="row mt-4" id="calendarSection" style="display: none;">
+              <!-- Calendar Column (left) -->
+              <div class="col-md-8">
+                <div style="border: 1px solid #eef2f7; border-radius: 12px; padding: 20px; background-color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+                  <!-- Calendar Header -->
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <button class="btn btn-outline-secondary btn-sm" id="prevMonthBtn" style="border-radius: 6px;"><i class="fas fa-chevron-left"></i></button>
+                    <h4 style="font-weight: 700; color: #2a3f54; margin: 0;" id="calendarMonthTitle">June 2026</h4>
+                    <button class="btn btn-outline-secondary btn-sm" id="nextMonthBtn" style="border-radius: 6px;"><i class="fas fa-chevron-right"></i></button>
+                  </div>
+                  <!-- Calendar Grid -->
+                  <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; text-align: center; font-weight: 600; font-size: 13px; color: #777; margin-bottom: 10px;">
+                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                  </div>
+                  <div id="calendarGrid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;">
+                    <!-- Calendar days populated dynamically -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Controls Column (right) -->
+              <div class="col-md-4">
+                <div style="border: 1px solid #eef2f7; border-radius: 12px; padding: 20px; background-color: #fafbfc; height: 100%;">
+                  <h4 style="font-weight: 700; color: #2a3f54; margin-top: 0; margin-bottom: 20px;"><i class="fas fa-sliders-h" style="color: #007bff; margin-right: 8px;"></i> Actions</h4>
+                  
+                  <div class="form-group">
+                    <label style="font-weight: 600; color: #555;">From Date</label>
+                    <input type="date" class="form-control" id="fromDateInput" style="border-radius: 6px;" />
+                  </div>
+                  
+                  <div class="form-group">
+                    <label style="font-weight: 600; color: #555;">To Date</label>
+                    <input type="date" class="form-control" id="toDateInput" style="border-radius: 6px;" />
+                  </div>
+
+                  <div style="margin-top: 30px;">
+                    <button class="btn btn-danger btn-block btn-lg" id="btnStopSale" style="border-radius: 8px; font-weight: 700; padding: 12px; margin-bottom: 12px;">
+                      <i class="fas fa-ban mr-2"></i> Stop Sale (Close)
+                    </button>
+                    <button class="btn btn-success btn-block btn-lg" id="btnStartSale" style="border-radius: 8px; font-weight: 700; padding: 12px;">
+                      <i class="fas fa-check-circle mr-2"></i> Start Sale (Open)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
         <!-- /Page content -->

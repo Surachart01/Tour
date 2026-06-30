@@ -549,6 +549,11 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("tourTableBody").addEventListener("click", function (event) {
     const row = event.target.closest("tr");
     if (!row) return;
+
+    // ✅ Block package items editing/deleting
+    if (row.dataset.isPackageItem === "true") {
+      return;
+    }
   
     const rowIndex = row.rowIndex - 1;
     const rowData = toursArray[rowIndex];
