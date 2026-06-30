@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import nodemailer from 'nodemailer';
 
 const prisma = new PrismaClient();
 
@@ -304,8 +305,15 @@ export async function deleteSpecialPackage(req, res, next) {
       return res.status(404).json({ error: 'Special package not found' });
     }
 
-    await prisma.special_packages.delete({
-      where: { id: parseInt(id) }
+    await prisma.$transaction(async (tx) => {
+      // Delete child items first
+      await tx.special_package_items.deleteMany({
+        where: { package_id: parseInt(id) }
+      });
+      // Delete the package itself
+      await tx.special_packages.delete({
+        where: { id: parseInt(id) }
+      });
     });
 
     res.json({ message: 'Special package deleted successfully' });
@@ -425,6 +433,153 @@ export async function cloneSpecialPackage(req, res, next) {
     });
 
     res.json(clonedPackage);
+  } catch (err) {
+    next(err);
+  }
+}
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: false,
+  auth: { user: process.env.SMTP_USER || '', pass: process.env.SMTP_PASS || '' }
+});
+
+export async function sendBulkEmail(req, res, next) {
+  try {
+    const { packageName, items } = req.body;
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'No items selected' });
+    }
+
+    let emailsSentCount = 0;
+
+    for (const item of items) {
+      let recipientEmail = 'reservation@verathailandia.com';
+      let subject = '';
+      let emailHtml = '';
+
+      if (item.item_type === 'hotel') {
+        if (item.hotel_id) {
+          const hotel = await prisma.hotels.findUnique({
+            where: { id: parseInt(item.hotel_id) },
+            include: { hotel_contacts: true }
+          });
+          if (hotel && hotel.hotel_contacts && hotel.hotel_contacts.length > 0) {
+            const contact = hotel.hotel_contacts.find(c => c.email);
+            if (contact && contact.email) {
+              recipientEmail = contact.email;
+            }
+          }
+        }
+
+        subject = `Special Package Inquiry - ${packageName} - Hotel: ${item.hotel_name}`;
+        emailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+            <div style="text-align: center; border-bottom: 2px solid #9b59b6; padding-bottom: 10px; margin-bottom: 20px;">
+              <h2 style="color: #9b59b6; margin: 0;">VERA THAILANDIA</h2>
+              <p style="margin: 5px 0 0; color: #73879C; font-size: 14px;">Special Package - Hotel Inquiry</p>
+            </div>
+            <p>Dear Partner,</p>
+            <p>We would like to check the rates and availability for the following hotel stay from our special package <strong>"${packageName}"</strong>:</p>
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #9b59b6;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 4px 0; color: #73879C; font-weight: bold; width: 120px;">Hotel Name:</td>
+                  <td style="padding: 4px 0; color: #2A3F54; font-weight: bold;">${item.hotel_name}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #73879C; font-weight: bold;">Room Type:</td>
+                  <td style="padding: 4px 0; color: #2A3F54;">${item.room_type || 'TBD'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #73879C; font-weight: bold;">Nights:</td>
+                  <td style="padding: 4px 0; color: #2A3F54;">${item.nights || 1} Night(s)</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #73879C; font-weight: bold;">City:</td>
+                  <td style="padding: 4px 0; color: #2A3F54;">${item.city || ''}</td>
+                </tr>
+                ${item.remarks ? `
+                <tr>
+                  <td style="padding: 4px 0; color: #73879C; font-weight: bold; vertical-align: top;">Remarks:</td>
+                  <td style="padding: 4px 0; color: #d9534f;">${item.remarks}</td>
+                </tr>` : ''}
+              </table>
+            </div>
+            <p style="color: #73879C; font-size: 12px; text-align: center; margin-top: 30px; border-top: 1px solid #e0e0e0; padding-top: 10px;">
+              VeraThailandia Co., Ltd.
+            </p>
+          </div>
+        `;
+      } else if (item.item_type === 'transfer') {
+        if (item.transfer_id) {
+          const transfer = await prisma.transfers.findUnique({
+            where: { id: parseInt(item.transfer_id) },
+            include: { suppliers: true }
+          });
+          if (transfer && transfer.suppliers && transfer.suppliers.email) {
+            recipientEmail = transfer.suppliers.email;
+          }
+        }
+
+        subject = `Special Package Inquiry - ${packageName} - Transfer: ${item.from_location} to ${item.to_location}`;
+        emailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+            <div style="text-align: center; border-bottom: 2px solid #9b59b6; padding-bottom: 10px; margin-bottom: 20px;">
+              <h2 style="color: #9b59b6; margin: 0;">VERA THAILANDIA</h2>
+              <p style="margin: 5px 0 0; color: #73879C; font-size: 14px;">Special Package - Transfer Inquiry</p>
+            </div>
+            <p>Dear Partner,</p>
+            <p>We would like to check the rates and availability for the following transfer from our special package <strong>"${packageName}"</strong>:</p>
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #9b59b6;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 4px 0; color: #73879C; font-weight: bold; width: 120px;">Transfer Type:</td>
+                  <td style="padding: 4px 0; color: #2A3F54; font-weight: bold;">Transfer (${item.transfer_type || 'SIC'})</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #73879C; font-weight: bold;">Route:</td>
+                  <td style="padding: 4px 0; color: #2A3F54;">From ${item.from_location || 'TBD'} to ${item.to_location || 'TBD'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #73879C; font-weight: bold;">Pickup Time:</td>
+                  <td style="padding: 4px 0; color: #2A3F54;">${item.pickup_time || 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 4px 0; color: #73879C; font-weight: bold;">City:</td>
+                  <td style="padding: 4px 0; color: #2A3F54;">${item.city || ''}</td>
+                </tr>
+                ${item.remarks ? `
+                <tr>
+                  <td style="padding: 4px 0; color: #73879C; font-weight: bold; vertical-align: top;">Remarks:</td>
+                  <td style="padding: 4px 0; color: #d9534f;">${item.remarks}</td>
+                </tr>` : ''}
+              </table>
+            </div>
+            <p style="color: #73879C; font-size: 12px; text-align: center; margin-top: 30px; border-top: 1px solid #e0e0e0; padding-top: 10px;">
+              VeraThailandia Co., Ltd.
+            </p>
+          </div>
+        `;
+      }
+
+      if (subject && emailHtml) {
+        if (process.env.SMTP_USER) {
+          await transporter.sendMail({
+            from: process.env.SMTP_FROM || process.env.SMTP_USER,
+            to: recipientEmail,
+            subject: subject,
+            html: emailHtml
+          });
+        } else {
+          console.log(`[SMTP Not Configured] Would send email to ${recipientEmail} with subject: ${subject}`);
+        }
+        emailsSentCount++;
+      }
+    }
+
+    return res.json({ success: true, message: `Bulk email inquiry sent successfully to ${emailsSentCount} partners/suppliers.` });
   } catch (err) {
     next(err);
   }

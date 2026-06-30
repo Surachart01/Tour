@@ -7,7 +7,8 @@ import {
   updateSpecialPackage,
   deleteSpecialPackage,
   toggleSpecialPackage,
-  cloneSpecialPackage
+  cloneSpecialPackage,
+  sendBulkEmail
 } from '../controllers/specialPackageController.js';
 
 const router = express.Router();
@@ -33,5 +34,8 @@ router.patch('/special-packages/:id/toggle', authorize('admin'), toggleSpecialPa
 
 // Clone special package (admin only)
 router.post('/special-packages/:id/clone', authorize('admin'), cloneSpecialPackage);
+
+// Send bulk email to suppliers/hotels (admin, agent)
+router.post('/special-packages/bulk-email', authorize('admin', 'agent'), sendBulkEmail);
 
 export default router;
