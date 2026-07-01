@@ -372,11 +372,22 @@ export async function createQuotation(req, res, next) {
         }
 
         if (data.total_amount === undefined && data.total_cost === undefined) {
-          const adults = parseInt(data.number_of_adults) || 1;
-          const kids = parseInt(data.number_of_kids) || 0;
-          const pkgAdultPrice = pkg.price_per_adult ? parseFloat(pkg.price_per_adult) : 0;
-          const pkgChildPrice = pkg.price_per_child ? parseFloat(pkg.price_per_child) : 0;
-          data.total_amount = (pkgAdultPrice * adults) + (pkgChildPrice * kids);
+          const sglRooms = parseInt(data.special_pkg_single_rooms) || 0;
+          const dblRooms = parseInt(data.special_pkg_double_rooms) || 0;
+          const tplRooms = parseInt(data.special_pkg_triple_rooms) || 0;
+
+          if (sglRooms > 0 || dblRooms > 0 || tplRooms > 0) {
+            const sglPrice = pkg.price_per_adult ? parseFloat(pkg.price_per_adult) : 0;
+            const dblPrice = pkg.price_dbl ? parseFloat(pkg.price_dbl) : 0;
+            const tplPrice = pkg.price_per_child ? parseFloat(pkg.price_per_child) : 0;
+            data.total_amount = (sglPrice * sglRooms * 1) + (dblPrice * dblRooms * 2) + (tplPrice * tplRooms * 3);
+          } else {
+            const adults = parseInt(data.number_of_adults) || 1;
+            const kids = parseInt(data.number_of_kids) || 0;
+            const pkgAdultPrice = pkg.price_per_adult ? parseFloat(pkg.price_per_adult) : 0;
+            const pkgChildPrice = pkg.price_per_child ? parseFloat(pkg.price_per_child) : 0;
+            data.total_amount = (pkgAdultPrice * adults) + (pkgChildPrice * kids);
+          }
           data.final_amount = data.total_amount;
         }
       }
@@ -452,7 +463,10 @@ export async function createQuotation(req, res, next) {
           utm_content: data.utm_content || null,
           utm_term: data.utm_term || null,
           referral_source: data.referral_source || null,
-          special_package_id: finalSpecialPackageId
+          special_package_id: finalSpecialPackageId,
+          special_pkg_single_rooms: data.special_pkg_single_rooms ? parseInt(data.special_pkg_single_rooms) : 0,
+          special_pkg_double_rooms: data.special_pkg_double_rooms ? parseInt(data.special_pkg_double_rooms) : 0,
+          special_pkg_triple_rooms: data.special_pkg_triple_rooms ? parseInt(data.special_pkg_triple_rooms) : 0
         }
       });
 
@@ -849,11 +863,22 @@ export async function updateQuotation(req, res, next) {
           }
 
           if (data.total_amount === undefined && data.total_cost === undefined) {
-            const adults = parseInt(data.number_of_adults) || parseInt(existing.number_of_adults) || 1;
-            const kids = parseInt(data.number_of_kids) || parseInt(existing.number_of_kids) || 0;
-            const pkgAdultPrice = pkg.price_per_adult ? parseFloat(pkg.price_per_adult) : 0;
-            const pkgChildPrice = pkg.price_per_child ? parseFloat(pkg.price_per_child) : 0;
-            data.total_amount = (pkgAdultPrice * adults) + (pkgChildPrice * kids);
+            const sglRooms = data.special_pkg_single_rooms !== undefined ? (parseInt(data.special_pkg_single_rooms) || 0) : (parseInt(existing.special_pkg_single_rooms) || 0);
+            const dblRooms = data.special_pkg_double_rooms !== undefined ? (parseInt(data.special_pkg_double_rooms) || 0) : (parseInt(existing.special_pkg_double_rooms) || 0);
+            const tplRooms = data.special_pkg_triple_rooms !== undefined ? (parseInt(data.special_pkg_triple_rooms) || 0) : (parseInt(existing.special_pkg_triple_rooms) || 0);
+
+            if (sglRooms > 0 || dblRooms > 0 || tplRooms > 0) {
+              const sglPrice = pkg.price_per_adult ? parseFloat(pkg.price_per_adult) : 0;
+              const dblPrice = pkg.price_dbl ? parseFloat(pkg.price_dbl) : 0;
+              const tplPrice = pkg.price_per_child ? parseFloat(pkg.price_per_child) : 0;
+              data.total_amount = (sglPrice * sglRooms * 1) + (dblPrice * dblRooms * 2) + (tplPrice * tplRooms * 3);
+            } else {
+              const adults = parseInt(data.number_of_adults) || parseInt(existing.number_of_adults) || 1;
+              const kids = parseInt(data.number_of_kids) || parseInt(existing.number_of_kids) || 0;
+              const pkgAdultPrice = pkg.price_per_adult ? parseFloat(pkg.price_per_adult) : 0;
+              const pkgChildPrice = pkg.price_per_child ? parseFloat(pkg.price_per_child) : 0;
+              data.total_amount = (pkgAdultPrice * adults) + (pkgChildPrice * kids);
+            }
             data.final_amount = data.total_amount;
           }
         }
@@ -958,7 +983,10 @@ export async function updateQuotation(req, res, next) {
           utm_content: data.utm_content || undefined,
           utm_term: data.utm_term || undefined,
           referral_source: data.referral_source || undefined,
-          special_package_id: finalSpecialPackageId
+          special_package_id: finalSpecialPackageId,
+          special_pkg_single_rooms: data.special_pkg_single_rooms !== undefined ? (data.special_pkg_single_rooms ? parseInt(data.special_pkg_single_rooms) : 0) : undefined,
+          special_pkg_double_rooms: data.special_pkg_double_rooms !== undefined ? (data.special_pkg_double_rooms ? parseInt(data.special_pkg_double_rooms) : 0) : undefined,
+          special_pkg_triple_rooms: data.special_pkg_triple_rooms !== undefined ? (data.special_pkg_triple_rooms ? parseInt(data.special_pkg_triple_rooms) : 0) : undefined
         }
       });
 

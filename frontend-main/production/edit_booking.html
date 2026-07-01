@@ -1092,6 +1092,32 @@
                       <input type="text" id="specialPackageTplPrice" class="form-control" readonly style="background-color: #f8f9fa;" />
                     </div>
                   </div>
+                  <!-- Room type selection for Special Packages -->
+                  <div class="row" id="specialPackageRoomSelectionRow" style="display: none; margin-bottom: 15px;">
+                    <div class="col-md-12">
+                      <label style="font-weight: bold; color: #9b59b6;">
+                        <i class="fas fa-money-bill-wave" style="margin-right: 8px;"></i>
+                        Price Selections (Optional - override adult/child count pricing)
+                      </label>
+                      <div class="d-flex flex-wrap align-items-center" style="gap: 20px; background: #faf8fc; padding: 12px; border-radius: 6px; border: 1px dashed #9b59b6;">
+                        <div class="form-check d-flex align-items-center" style="margin-bottom: 0;">
+                          <input class="form-check-input" type="checkbox" id="specialPackageSingleRoom" style="margin-top: 0; width: 18px; height: 18px; cursor: pointer;">
+                          <label class="form-check-label" for="specialPackageSingleRoom" style="margin-left: 8px; font-weight: normal; cursor: pointer; margin-bottom: 0;">SGL (Single)</label>
+                          <input type="number" id="specialPackageSingleRoomCount" class="form-control" style="width: 70px; margin-left: 10px; height: 30px; padding: 2px 5px;" min="1" placeholder="Qty" disabled>
+                        </div>
+                        <div class="form-check d-flex align-items-center" style="margin-bottom: 0;">
+                          <input class="form-check-input" type="checkbox" id="specialPackageDoubleRoom" style="margin-top: 0; width: 18px; height: 18px; cursor: pointer;">
+                          <label class="form-check-label" for="specialPackageDoubleRoom" style="margin-left: 8px; font-weight: normal; cursor: pointer; margin-bottom: 0;">DB (Double)</label>
+                          <input type="number" id="specialPackageDoubleRoomCount" class="form-control" style="width: 70px; margin-left: 10px; height: 30px; padding: 2px 5px;" min="1" placeholder="Qty" disabled>
+                        </div>
+                        <div class="form-check d-flex align-items-center" style="margin-bottom: 0;">
+                          <input class="form-check-input" type="checkbox" id="specialPackageTripleRoom" style="margin-top: 0; width: 18px; height: 18px; cursor: pointer;">
+                          <label class="form-check-label" for="specialPackageTripleRoom" style="margin-left: 8px; font-weight: normal; cursor: pointer; margin-bottom: 0;">TP (Triple)</label>
+                          <input type="number" id="specialPackageTripleRoomCount" class="form-control" style="width: 70px; margin-left: 10px; height: 30px; padding: 2px 5px;" min="1" placeholder="Qty" disabled>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                   <!-- Itinerary Preview Container -->
                   <div id="specialPackageItineraryPreview" class="mt-4" style="display: none; border-top: 1px solid #eee; padding-top: 20px;">
                     <h5 style="color: #9b59b6; font-weight: 700; margin-bottom: 15px;"><i class="fa fa-list"></i> Day-by-Day Itinerary Preview</h5>
@@ -2359,6 +2385,28 @@
             const select = document.getElementById("specialPackageSelect");
             if (select) select.value = pkgId;
             enableQuotationItemEditing(true);
+            
+            // Set pending room selection values
+            const roomSelectionRow = document.getElementById("specialPackageRoomSelectionRow");
+            if (roomSelectionRow) {
+              roomSelectionRow.style.display = "block";
+            }
+            if (window.pendingSpecialPkgSingleRooms) {
+              document.getElementById("specialPackageSingleRoom").checked = true;
+              document.getElementById("specialPackageSingleRoomCount").disabled = false;
+              document.getElementById("specialPackageSingleRoomCount").value = window.pendingSpecialPkgSingleRooms;
+            }
+            if (window.pendingSpecialPkgDoubleRooms) {
+              document.getElementById("specialPackageDoubleRoom").checked = true;
+              document.getElementById("specialPackageDoubleRoomCount").disabled = false;
+              document.getElementById("specialPackageDoubleRoomCount").value = window.pendingSpecialPkgDoubleRooms;
+            }
+            if (window.pendingSpecialPkgTripleRooms) {
+              document.getElementById("specialPackageTripleRoom").checked = true;
+              document.getElementById("specialPackageTripleRoomCount").disabled = false;
+              document.getElementById("specialPackageTripleRoomCount").value = window.pendingSpecialPkgTripleRooms;
+            }
+            
             try {
               const res = await fetch(`${Endpoint}/api/v1/special-packages/${pkgId}`, {
                 headers: { "Authorization": `Bearer ${token}` }
@@ -8929,6 +8977,9 @@
 
             if (data.special_package_id) {
               window.pendingSpecialPackageId = data.special_package_id;
+              window.pendingSpecialPkgSingleRooms = data.special_pkg_single_rooms || 0;
+              window.pendingSpecialPkgDoubleRooms = data.special_pkg_double_rooms || 0;
+              window.pendingSpecialPkgTripleRooms = data.special_pkg_triple_rooms || 0;
             }
             window.quotationLoaded = true;
             checkAndApplyPendingSpecialPackage();
@@ -9832,7 +9883,10 @@
               flights: flights,
               tours: tours,
               others: others,
-              special_package_id: document.getElementById("specialPackageSelect").value ? parseInt(document.getElementById("specialPackageSelect").value) : null
+              special_package_id: document.getElementById("specialPackageSelect").value ? parseInt(document.getElementById("specialPackageSelect").value) : null,
+              special_pkg_single_rooms: document.getElementById("specialPackageSingleRoom").checked ? (parseInt(document.getElementById("specialPackageSingleRoomCount").value) || 0) : 0,
+              special_pkg_double_rooms: document.getElementById("specialPackageDoubleRoom").checked ? (parseInt(document.getElementById("specialPackageDoubleRoomCount").value) || 0) : 0,
+              special_pkg_triple_rooms: document.getElementById("specialPackageTripleRoom").checked ? (parseInt(document.getElementById("specialPackageTripleRoomCount").value) || 0) : 0
             };
 
             console.log("Submitting Quotation:", quotationRequest); // Debugging Log
@@ -10357,14 +10411,29 @@
 
         function updateSpecialPackagePrice() {
           if (!currentSpecialPackage) return;
-          const adults = parseInt(document.getElementById("adult").value) || 0;
-          const children = parseInt(document.getElementById("child").value) || 0;
           
           const adultPrice = parseFloat(currentSpecialPackage.price_per_adult) || 0;
-          const childPrice = parseFloat(currentSpecialPackage.price_per_child) || 0;
+          const dblPrice = parseFloat(currentSpecialPackage.price_dbl) || 0;
+          const childPrice = parseFloat(currentSpecialPackage.price_per_child) || 0; // TPL price
           
+          const sglChecked = document.getElementById("specialPackageSingleRoom").checked;
+          const dblChecked = document.getElementById("specialPackageDoubleRoom").checked;
+          const tplChecked = document.getElementById("specialPackageTripleRoom").checked;
+          
+          const sglRooms = sglChecked ? (parseInt(document.getElementById("specialPackageSingleRoomCount").value) || 0) : 0;
+          const dblRooms = dblChecked ? (parseInt(document.getElementById("specialPackageDoubleRoomCount").value) || 0) : 0;
+          const tplRooms = tplChecked ? (parseInt(document.getElementById("specialPackageTripleRoomCount").value) || 0) : 0;
+          
+          let baseTotal = 0;
           const additionalCost = typeof calculateBaseTotalCost === "function" ? calculateBaseTotalCost() : 0;
-          const baseTotal = (adultPrice * adults) + (childPrice * children) + additionalCost;
+          
+          if (sglRooms > 0 || dblRooms > 0 || tplRooms > 0) {
+            baseTotal = (adultPrice * sglRooms * 1) + (dblPrice * dblRooms * 2) + (childPrice * tplRooms * 3) + additionalCost;
+          } else {
+            const adults = parseInt(document.getElementById("adult").value) || 0;
+            const children = parseInt(document.getElementById("child").value) || 0;
+            baseTotal = (adultPrice * adults) + (childPrice * children) + additionalCost;
+          }
           
           const includeAssistanceFee = document.getElementById("includeAssistanceFee");
           const assistanceFeeAmount = document.getElementById("assistanceFeeAmount");
@@ -10509,6 +10578,20 @@
             updateSpecialPackagePriceDisplay(null);
             const previewContainer = document.getElementById("specialPackageItineraryPreview");
             if (previewContainer) previewContainer.style.display = "none";
+            
+            const roomSelectionRow = document.getElementById("specialPackageRoomSelectionRow");
+            if (roomSelectionRow) roomSelectionRow.style.display = "none";
+            
+            // Clear selections
+            document.getElementById("specialPackageSingleRoom").checked = false;
+            document.getElementById("specialPackageDoubleRoom").checked = false;
+            document.getElementById("specialPackageTripleRoom").checked = false;
+            document.getElementById("specialPackageSingleRoomCount").value = "";
+            document.getElementById("specialPackageSingleRoomCount").disabled = true;
+            document.getElementById("specialPackageDoubleRoomCount").value = "";
+            document.getElementById("specialPackageDoubleRoomCount").disabled = true;
+            document.getElementById("specialPackageTripleRoomCount").value = "";
+            document.getElementById("specialPackageTripleRoomCount").disabled = true;
             return;
           }
 
@@ -10522,6 +10605,10 @@
             currentSpecialPackage = pkg;
             populateTablesFromPackage(pkg);
             enableQuotationItemEditing(true);
+            
+            const roomSelectionRow = document.getElementById("specialPackageRoomSelectionRow");
+            if (roomSelectionRow) roomSelectionRow.style.display = "block";
+            
             updateSpecialPackagePrice();
             updateSpecialPackagePriceDisplay(pkg);
             renderSpecialPackageItineraryPreview(pkg);
@@ -10531,12 +10618,101 @@
           }
         }
 
-        document.getElementById("adult").addEventListener("input", function() {
+        function validateSpecialPackagePaxLimit(changedInputId, previousValue, isCheckboxChange, checkboxElement) {
+          const adult = parseInt(document.getElementById("adult").value) || 0;
+          const child = parseInt(document.getElementById("child").value) || 0;
+          const totalPax = adult + child;
+          
+          if (totalPax === 0) {
+            alert("กรุณาระบุจำนวนผู้เดินทาง (Adults / Children) ก่อนเลือกประเภทราคา / Please specify the number of travelers before selecting prices.");
+            if (isCheckboxChange) {
+              checkboxElement.checked = false;
+              const input = document.getElementById(changedInputId);
+              if (input) {
+                input.disabled = true;
+                input.value = "";
+              }
+            } else {
+              const input = document.getElementById(changedInputId);
+              if (input) {
+                input.value = "";
+              }
+            }
+            return false;
+          }
+          
+          const sglChecked = document.getElementById("specialPackageSingleRoom").checked;
+          const dblChecked = document.getElementById("specialPackageDoubleRoom").checked;
+          const tplChecked = document.getElementById("specialPackageTripleRoom").checked;
+          
+          const sglRooms = sglChecked ? (parseInt(document.getElementById("specialPackageSingleRoomCount").value) || 0) : 0;
+          const dblRooms = dblChecked ? (parseInt(document.getElementById("specialPackageDoubleRoomCount").value) || 0) : 0;
+          const tplRooms = tplChecked ? (parseInt(document.getElementById("specialPackageTripleRoomCount").value) || 0) : 0;
+          
+          const coveredPax = (sglRooms * 1) + (dblRooms * 2) + (tplRooms * 3);
+          
+          if (coveredPax > totalPax) {
+            alert("จำนวนคนในประเภทราคาที่เลือก (SGL=1, DB=2, TP=3) รวมกันได้ " + coveredPax + " คน เกินจำนวนผู้เดินทางทั้งหมด (" + totalPax + " คน)\nSelected price capacity exceeds the total number of travelers.");
+            if (isCheckboxChange) {
+              checkboxElement.checked = false;
+              const input = document.getElementById(changedInputId);
+              if (input) {
+                input.disabled = true;
+                input.value = "";
+              }
+            } else {
+              const input = document.getElementById(changedInputId);
+              if (input) {
+                input.value = previousValue || "";
+              }
+            }
+            return false;
+          }
+          return true;
+        }
+
+        function resetSpecialPackageRoomSelection() {
+          ["specialPackageSingleRoom", "specialPackageDoubleRoom", "specialPackageTripleRoom"].forEach(id => {
+            const cb = document.getElementById(id);
+            if (cb) cb.checked = false;
+          });
+          ["specialPackageSingleRoomCount", "specialPackageDoubleRoomCount", "specialPackageTripleRoomCount"].forEach(id => {
+            const inp = document.getElementById(id);
+            if (inp) {
+              inp.disabled = true;
+              inp.value = "";
+            }
+          });
+          if (typeof updateSpecialPackagePrice === "function") {
+            updateSpecialPackagePrice();
+          }
+        }
+
+        function handlePaxChangeWithSpecialPackageReset() {
+          const sglChecked = document.getElementById("specialPackageSingleRoom")?.checked;
+          const dblChecked = document.getElementById("specialPackageDoubleRoom")?.checked;
+          const tplChecked = document.getElementById("specialPackageTripleRoom")?.checked;
+          if (sglChecked || dblChecked || tplChecked) {
+            const adult = parseInt(document.getElementById("adult").value) || 0;
+            const child = parseInt(document.getElementById("child").value) || 0;
+            const totalPax = adult + child;
+            
+            const sglRooms = sglChecked ? (parseInt(document.getElementById("specialPackageSingleRoomCount").value) || 0) : 0;
+            const dblRooms = dblChecked ? (parseInt(document.getElementById("specialPackageDoubleRoomCount").value) || 0) : 0;
+            const tplRooms = tplChecked ? (parseInt(document.getElementById("specialPackageTripleRoomCount").value) || 0) : 0;
+            const coveredPax = (sglRooms * 1) + (dblRooms * 2) + (tplRooms * 3);
+            
+            if (coveredPax > totalPax) {
+              alert("จำนวนผู้เดินทางไม่สอดคล้องกับประเภทราคาที่ระบุ ระบบได้ทำการรีเซ็ตประเภทราคาที่เลือกใหม่ / Traveler count is less than selected price capacity. Resetting price selections.");
+              resetSpecialPackageRoomSelection();
+            }
+          }
           if (currentSpecialPackage) updateSpecialPackagePrice();
-        });
-        document.getElementById("child").addEventListener("input", function() {
-          if (currentSpecialPackage) updateSpecialPackagePrice();
-        });
+        }
+
+        document.getElementById("adult").addEventListener("input", handlePaxChangeWithSpecialPackageReset);
+        document.getElementById("child").addEventListener("input", handlePaxChangeWithSpecialPackageReset);
+
         document.getElementById("discount").addEventListener("input", function() {
           if (currentSpecialPackage) updateSpecialPackagePrice();
         });
@@ -10546,6 +10722,40 @@
         document.getElementById("assistanceFeeAmount").addEventListener("input", function() {
           if (currentSpecialPackage) updateSpecialPackagePrice();
         });
+
+        function bindSpecialPackageRoomSelectListener(checkboxId, inputId) {
+          const checkbox = document.getElementById(checkboxId);
+          const input = document.getElementById(inputId);
+          if (checkbox && input) {
+            checkbox.addEventListener("change", function() {
+              input.disabled = !this.checked;
+              if (!this.checked) {
+                input.value = "";
+                if (currentSpecialPackage) updateSpecialPackagePrice();
+              } else {
+                if (!input.value) input.value = "1";
+                if (!validateSpecialPackagePaxLimit(inputId, "", true, this)) {
+                  return;
+                }
+                if (currentSpecialPackage) updateSpecialPackagePrice();
+              }
+            });
+            input.addEventListener("focus", function() {
+              this.dataset.prevVal = this.value;
+            });
+            input.addEventListener("input", function() {
+              const prevVal = this.dataset.prevVal || "";
+              if (!validateSpecialPackagePaxLimit(this.id, prevVal, false)) {
+                return;
+              }
+              this.dataset.prevVal = this.value;
+              if (currentSpecialPackage) updateSpecialPackagePrice();
+            });
+          }
+        }
+        bindSpecialPackageRoomSelectListener("specialPackageSingleRoom", "specialPackageSingleRoomCount");
+        bindSpecialPackageRoomSelectListener("specialPackageDoubleRoom", "specialPackageDoubleRoomCount");
+        bindSpecialPackageRoomSelectListener("specialPackageTripleRoom", "specialPackageTripleRoomCount");
 
 
         function populateTablesFromPackage(pkg) {

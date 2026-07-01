@@ -809,6 +809,9 @@ model trips {
   tour_trip_items                  tour_trip_items[]
   transfer_trip_items              transfer_trip_items[]
   special_package_id               Int?
+  special_pkg_single_rooms         Int?                   @default(0)
+  special_pkg_double_rooms         Int?                   @default(0)
+  special_pkg_triple_rooms         Int?                   @default(0)
   special_packages                 special_packages?      @relation(fields: [special_package_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
   agents                           Agent?                 @relation(fields: [agent_id], references: [id], onUpdate: NoAction)
 }
