@@ -12,7 +12,7 @@ import {
 const router = express.Router();
 
 // Service documents
-router.get('/service-documents', authorize('admin', 'superadmin'), listServiceDocuments);
+router.get('/service-documents', authorize('user'), listServiceDocuments);
 router.post(
   '/service-documents/upload',
   authorize('admin', 'superadmin'),

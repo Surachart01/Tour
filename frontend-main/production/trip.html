@@ -84,13 +84,13 @@
 
       /* Truncation helper with tooltips */
       .text-truncate-display {
-        display: inline-block;
-        max-width: 140px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        cursor: pointer;
-        border-bottom: 1px dotted #ccc;
+        display: inline-block !important;
+        max-width: 140px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        cursor: pointer !important;
+        border-bottom: 1px dotted #ccc !important;
       }
       
       /* Premium table row indicators */
@@ -117,6 +117,7 @@
 
       .row-status-inprogress {
         border-left: 4px solid #3498db !important;
+        background-color: #ebf5fb !important;
       }
 
       /* Premium badge styles */
@@ -564,7 +565,6 @@
                                 ></i>
                               </th>
                               <th>Pax</th>
-                              <th>Telephone</th>
                               <th>Booking Ref</th>
                               <th>Status</th>
                               <th class="sortable" data-column="final_cost">
@@ -951,11 +951,11 @@
               row.classList.add("row-status-pending");
             }
 
-            // Also tint row background slightly if client booking reference is present (for visual cue)
-            const hasBookingRef = (trip.client_booking || trip.booking_reference) && (trip.client_booking || trip.booking_reference).trim() !== "";
-            if (hasBookingRef && trip.status !== "Approved" && trip.status !== "Cancelled" && trip.status !== "Declined") {
-              row.style.backgroundColor = "#fffef0"; 
-            }
+             // Also tint row background slightly if client booking reference is present (for visual cue)
+             const hasBookingRef = (trip.client_booking || trip.booking_reference) && (trip.client_booking || trip.booking_reference).trim() !== "";
+             if (hasBookingRef && trip.status !== "Approved" && trip.status !== "Cancelled" && trip.status !== "Declined" && trip.status !== "InProgress") {
+               row.style.backgroundColor = "#fffef0"; 
+             }
 
             let actionButton = `<button class="btn-action btn-action-cancel delete-btn" data-id="${trip.id}" data-toggle="tooltip" data-container="body" title="Delete / Cancel Quotation"><i class="fa fa-trash"></i></button>`;
             if (trip.status !== "Pending") {
@@ -995,43 +995,58 @@
             const escapedPhone = escapeHtml(trip.client_phone);
             const escapedBooking = escapeHtml(clientBooking);
 
-            const displayRef = `<span class="text-truncate-display" data-toggle="tooltip" data-container="body" title="${escapedRef}">${escapedRef}</span>`;
-            const displayName = `<span class="text-truncate-display" data-toggle="tooltip" data-container="body" title="${escapedName}">${escapedName}</span>`;
-            const displayPhone = `<span class="text-truncate-display" data-toggle="tooltip" data-container="body" title="${escapedPhone}">${escapedPhone}</span>`;
-            const displayBooking = `<span class="text-truncate-display" data-toggle="tooltip" data-container="body" title="${escapedBooking}">${escapedBooking}</span>`;
-
-            // Status Badge rendering
-            let statusBadge = '';
-            if (trip.status === "Approved") {
-              statusBadge = `<span class="badge-status badge-status-approved">Approved</span>`;
-            } else if (trip.status === "Declined" || trip.status === "Cancelled") {
-              statusBadge = `<span class="badge-status badge-status-cancelled">${trip.status}</span>`;
-            } else if (trip.status === "InProgress") {
-              statusBadge = `<span class="badge-status badge-status-inprogress">InProgress</span>`;
-            } else {
-              statusBadge = `<span class="badge-status badge-status-pending">Pending</span>`;
-            }
-
-            row.innerHTML = `
-              <td>${displayRef}</td>
-              <td>${displayName}</td>
-              <td>${formattedBookingDate}</td>
-              <td>${formattedDate}</td>
-              <td class="text-center">${trip.number_of_adults + trip.number_of_kids}</td>
-              <td>${displayPhone}</td>
-              <td>${displayBooking}</td>
-              <td>${statusBadge}</td>
-              <td class="font-weight-bold text-success">${finalCostDisplay}</td>
-              <td class="text-center">
-                <div class="actions-cell">
-                  <button class="btn-action btn-action-edit edit-btn" data-id="${trip.id}" data-toggle="tooltip" data-container="body" title="Edit Quotation"><i class="fa fa-edit"></i></button>
-                  ${actionButton}
-                  <button class="btn-action btn-action-save print-btn" data-id="${trip.id}" data-toggle="tooltip" data-container="body" title="Save / Download PDF"><i class="fa fa-save"></i></button>
-                  <button class="btn-action btn-action-client email-btn" data-id="${trip.id}" data-client-name="${escapedName}" data-quotation-ref="${escapedRef}" data-toggle="tooltip" data-container="body" title="Email Quotation to Client"><i class="fa fa-envelope"></i></button>
-                  <button class="btn-action btn-action-notify notify-hotels-btn" data-id="${trip.id}" data-quotation-ref="${escapedRef}" data-toggle="tooltip" data-container="body" title="Notify Hotels & Stay Summaries"><i class="fa fa-bell-o"></i></button>
-                </div>
-              </td>
-            `;
+             const agentName = trip.agent_name || (trip.agents ? trip.agents.name : '') || 'Direct Client';
+             const escapedAgentName = escapeHtml(agentName);
+             const displayRef = `
+               <div><strong>${escapedRef}</strong></div>
+               ${escapedAgentName ? `<div class="text-muted" style="font-size: 11px; margin-top: 3px; font-weight: normal;"><i class="fa fa-user-circle-o"></i> ${escapedAgentName}</div>` : ''}
+             `;
+             const displayName = escapedName;
+             const displayBooking = escapedBooking;
+ 
+             // Status Badge rendering
+             let statusBadge = '';
+             if (trip.status === "Approved") {
+               statusBadge = `<span class="badge-status badge-status-approved">Approved</span>`;
+             } else if (trip.status === "Declined" || trip.status === "Cancelled") {
+               statusBadge = `<span class="badge-status badge-status-cancelled">${trip.status}</span>`;
+             } else if (trip.status === "InProgress") {
+               statusBadge = `<span class="badge-status badge-status-inprogress">InProgress</span>`;
+             } else {
+               statusBadge = `<span class="badge-status badge-status-pending">Pending</span>`;
+             }
+ 
+             const notifyButton = (role === "admin" || role === "superadmin")
+               ? `<button class="btn-action btn-action-notify notify-hotels-btn" data-id="${trip.id}" data-quotation-ref="${escapedRef}" data-toggle="tooltip" data-container="body" title="Notify Hotels & Stay Summaries"><i class="fa fa-bell-o"></i></button>`
+               : '';
+ 
+             const proformaButton = (role === 'agent' && trip.status === 'Approved')
+               ? `<button class="btn-action btn-action-save print-btn proforma-btn" data-id="${trip.id}" data-toggle="tooltip" data-container="body" title="Print Proforma Invoice" style="color: #9b59b6 !important; border-color: #9b59b6 !important;"><i class="fa fa-file-text-o"></i></button>`
+               : '';
+ 
+             const emailIcon = trip.email_sent ? 'fa-paper-plane text-success' : 'fa-envelope';
+             const emailTitle = trip.email_sent ? 'Email Sent (Click to Resend)' : 'Email Quotation to Client';
+ 
+             row.innerHTML = `
+               <td>${displayRef}</td>
+               <td style="word-break: break-word; min-width: 130px;">${displayName}</td>
+               <td style="white-space: nowrap;">${formattedBookingDate}</td>
+               <td style="white-space: nowrap;">${formattedDate}</td>
+               <td class="text-center" style="white-space: nowrap;">${trip.number_of_adults + trip.number_of_kids}</td>
+               <td style="white-space: nowrap;">${displayBooking}</td>
+               <td style="white-space: nowrap;">${statusBadge}</td>
+               <td class="font-weight-bold text-success" style="white-space: nowrap;">${finalCostDisplay}</td>
+               <td class="text-center" style="white-space: nowrap; width: 1%;">
+                 <div class="actions-cell">
+                   <button class="btn-action btn-action-edit edit-btn" data-id="${trip.id}" data-toggle="tooltip" data-container="body" title="Edit Quotation"><i class="fa fa-edit"></i></button>
+                   ${actionButton}
+                   <button class="btn-action btn-action-save print-btn" data-id="${trip.id}" data-toggle="tooltip" data-container="body" title="Save / Download PDF"><i class="fa fa-save"></i></button>
+                   <button class="btn-action btn-action-client email-btn" data-id="${trip.id}" data-client-name="${escapedName}" data-quotation-ref="${escapedRef}" data-toggle="tooltip" data-container="body" title="${emailTitle}"><i class="fa ${emailIcon}"></i></button>
+                   ${proformaButton}
+                   ${notifyButton}
+                 </div>
+               </td>
+             `;
 
             tripTableBody.appendChild(row);
           });
@@ -1391,76 +1406,26 @@
           const emailBtn = event.target.closest(".email-btn");
           if (emailBtn) {
             const tripId = emailBtn.getAttribute("data-id");
-            const clientName = emailBtn.getAttribute("data-client-name");
-            const quotationRef =
-              emailBtn.getAttribute("data-quotation-ref");
-
             if (!tripId) {
               alert("Invalid quotation ID.");
               return;
             }
 
-            if (
-              !confirm(
-                `Are you sure you want to send the quotation email for ${quotationRef} to ${clientName}?`
-              )
-            ) {
+            const trip = trips.find(t => t.id == tripId);
+            if (!trip) {
+              alert("Quotation data not found in list.");
               return;
             }
 
-            // Show loading state
-            const originalText = emailBtn.innerHTML;
-            emailBtn.innerHTML =
-              '<i class="fa fa-spinner fa-spin"></i> Sending...';
-            emailBtn.disabled = true;
+            // Pre-fill modal fields
+            document.getElementById("emailTripId").value = trip.id;
+            document.getElementById("emailTo").value = trip.client_email || "";
+            document.getElementById("emailCc").value = (trip.agent && trip.agent.email) ? trip.agent.email : (trip.agents && trip.agents.email ? trip.agents.email : "");
+            document.getElementById("emailSubject").value = `Quotation Reference: ${trip.booking_reference || trip.quotation_reference || `Q-${trip.id}`}`;
+            document.getElementById("emailBodyText").value = `Please find as follow the requested quotation and attached the excursion and tour descriptions.`;
 
-            fetch(`${Endpoint}/api/v1/quotations/${tripId}/send-email`, {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            })
-              .then((response) => {
-                if (!response.ok) {
-                  return response.text().then((errorText) => {
-                    throw new Error(
-                      errorText || "Failed to send quotation email"
-                    );
-                  });
-                }
-                return response.json();
-              })
-              .then((data) => {
-                console.log("Email sent successfully:", data);
-                alert(
-                  `Quotation email sent successfully to ${data.sent_to}${
-                    data.cc ? ` (CC: ${data.cc})` : ""
-                  }`
-                );
-              })
-              .catch((error) => {
-                console.error("Error sending quotation email:", error);
-
-                // Handle specific error messages from backend
-                let errorMessage = error.message;
-                if (errorMessage.includes("Client email is required")) {
-                  errorMessage =
-                    "Cannot send email: Client email is missing. Please edit the quotation to add the client's email address.";
-                } else if (errorMessage.includes("Trip not found")) {
-                  errorMessage =
-                    "Quotation not found. Please refresh the page and try again.";
-                } else {
-                  errorMessage = `Failed to send quotation email: ${errorMessage}`;
-                }
-
-                alert(errorMessage);
-              })
-              .finally(() => {
-                // Reset button state
-                emailBtn.innerHTML = originalText;
-                emailBtn.disabled = false;
-              });
+            // Open the modal
+            $("#sendQuotationEmailModal").modal("show");
             return;
           }
 
@@ -1607,6 +1572,62 @@
             btn.html(originalText).prop("disabled", false);
           });
         });
+        // Send quotation email confirmation
+        document.getElementById("sendQuotationEmailConfirmBtn").addEventListener("click", () => {
+          const tripId = document.getElementById("emailTripId").value;
+          const to = document.getElementById("emailTo").value.trim();
+          const cc = document.getElementById("emailCc").value.trim();
+          const subject = document.getElementById("emailSubject").value.trim();
+          const bodyText = document.getElementById("emailBodyText").value.trim();
+
+          if (!to || !subject) {
+            alert("Recipient email and subject are required.");
+            return;
+          }
+
+          const confirmBtn = document.getElementById("sendQuotationEmailConfirmBtn");
+          const originalHtml = confirmBtn.innerHTML;
+          confirmBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending...';
+          confirmBtn.disabled = true;
+
+          fetch(`${Endpoint}/api/v1/quotations/${tripId}/send-email`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ to, cc, subject, body: bodyText })
+          })
+            .then((response) => {
+              if (!response.ok) {
+                return response.text().then((errorText) => {
+                  throw new Error(errorText || "Failed to send quotation email");
+                });
+              }
+              return response.json();
+            })
+            .then((data) => {
+              console.log("Email sent successfully:", data);
+              alert(`Quotation email sent successfully to ${data.sent_to}${data.cc ? ` (CC: ${data.cc})` : ""}`);
+              $("#sendQuotationEmailModal").modal("hide");
+
+              // Update local state and re-render table to show paper-plane icon
+              const localTrip = trips.find(t => t.id == tripId);
+              if (localTrip) localTrip.email_sent = true;
+              const localFilteredTrip = filteredTrips.find(t => t.id == tripId);
+              if (localFilteredTrip) localFilteredTrip.email_sent = true;
+
+              displayTrips(filteredTrips.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage));
+            })
+            .catch((error) => {
+              console.error("Error sending email:", error);
+              alert(`Failed to send email: ${error.message}`);
+            })
+            .finally(() => {
+              confirmBtn.innerHTML = originalHtml;
+              confirmBtn.disabled = false;
+            });
+        });
       });
     </script>
     <!-- Notify Hotels Summary Modal -->
@@ -1645,6 +1666,48 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Send Quotation Email Modal -->
+    <div class="modal fade" id="sendQuotationEmailModal" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+          <div class="modal-header" style="background: linear-gradient(135deg, #1abb9c, #16a085); color: white; border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 18px 24px;">
+            <h5 class="modal-title" style="font-weight: 700; color: white;"><i class="fa fa-envelope"></i> Send Quotation to Client / Agent</h5>
+            <button type="button" class="close" data-dismiss="modal" style="color: white; opacity: 0.8;">&times;</button>
+          </div>
+          <div class="modal-body" style="padding: 24px;">
+            <form id="emailQuotationForm">
+              <input type="hidden" id="emailTripId" />
+              <div class="form-group mb-3">
+                <label for="emailTo" style="font-weight: 600; color: #34495e;">To (Client / Recipient Email) *</label>
+                <input type="email" class="form-control" id="emailTo" required placeholder="example@email.com" style="border-radius: 6px;" />
+              </div>
+              <div class="form-group mb-3">
+                <label for="emailCc" style="font-weight: 600; color: #34495e;">Cc (Agent / Optional Email)</label>
+                <input type="email" class="form-control" id="emailCc" placeholder="agent@email.com" style="border-radius: 6px;" />
+              </div>
+              <div class="form-group mb-3">
+                <label for="emailSubject" style="font-weight: 600; color: #34495e;">Subject *</label>
+                <input type="text" class="form-control" id="emailSubject" required style="border-radius: 6px;" />
+              </div>
+              <div class="form-group mb-3">
+                <label for="emailBodyText" style="font-weight: 600; color: #34495e;">Introduction Message</label>
+                <textarea class="form-control" id="emailBodyText" rows="4" style="border-radius: 6px; resize: vertical;" placeholder="Please find as follow the requested quotation and attached the excursion and tour descriptions."></textarea>
+              </div>
+              <div class="alert alert-info mb-0" style="border-radius: 6px; background-color: #ebf5fb; border-color: #aed6f1; color: #2e86c1;">
+                <i class="fa fa-info-circle"></i> <strong>Note:</strong> The system will automatically attach the formatted quotation summary table and any description files (brochures) of the excursions/tours in this trip.
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer" style="background-color: #f8f9f9; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; padding: 15px 24px;">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" style="border-radius: 6px; padding: 8px 16px;">Cancel</button>
+            <button type="button" class="btn btn-success" id="sendQuotationEmailConfirmBtn" style="border-radius: 6px; padding: 8px 20px; background-color: #1abb9c; border-color: #1abb9c; color: white;">
+              <i class="fa fa-paper-plane"></i> Send Email
+            </button>
           </div>
         </div>
       </div>

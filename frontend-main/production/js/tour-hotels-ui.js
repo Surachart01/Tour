@@ -168,7 +168,7 @@ const TourHotelsUI = {
       hotelsList.className = "hotels-list";
       
       hotelData.hotels.forEach(hotel => {
-        const hotelItem = this.createHotelItem(hotel);
+        const hotelItem = this.createHotelItem(hotel, isAdmin);
         hotelsList.appendChild(hotelItem);
       });
       
@@ -202,18 +202,18 @@ const TourHotelsUI = {
    * @param {Object} hotel - Hotel object
    * @returns {HTMLElement} Hotel item element
    */
-  createHotelItem(hotel) {
+  createHotelItem(hotel, isAdmin = false) {
     const item = document.createElement("div");
     item.className = "hotel-item";
-    item.style.cssText = "padding: 10px; margin: 5px 0; background-color: white; border-radius: 4px; border: 1px solid #dee2e6;";
+    item.style.cssText = "padding: 10px; margin: 5px 0; background-color: white; border-radius: 4px; border: 1px solid #dee2e6; display:flex; justify-content:space-between; align-items:flex-start;";
 
     const content = document.createElement("div");
+    content.style.cssText = "flex:1;";
     
     // Hotel name with dates
     const mainInfo = document.createElement("div");
     mainInfo.style.cssText = "font-weight: 600; color: #333; margin-bottom: 5px;";
     
-    // Display actual dates instead of day numbers
     const dateRange = hotel.check_in_date && hotel.check_out_date 
       ? `${hotel.check_in_date} to ${hotel.check_out_date}`
       : `Night ${hotel.day}`;
@@ -232,12 +232,8 @@ const TourHotelsUI = {
 
     // Additional info
     const details = [];
-    if (hotel.room_type) {
-      details.push(`Room Type: ${hotel.room_type}`);
-    }
-    if (hotel.city) {
-      details.push(`City: ${hotel.city}`);
-    }
+    if (hotel.room_type) details.push(`Room Type: ${hotel.room_type}`);
+    if (hotel.city) details.push(`City: ${hotel.city}`);
     
     if (details.length > 0) {
       const detailsDiv = document.createElement("div");
@@ -246,7 +242,6 @@ const TourHotelsUI = {
       content.appendChild(detailsDiv);
     }
 
-    // Replacement note
     if (hotel.replacement_note) {
       const noteDiv = document.createElement("div");
       noteDiv.className = "alert alert-info";
@@ -256,8 +251,21 @@ const TourHotelsUI = {
     }
 
     item.appendChild(content);
+
+    // EMAIL button — admin only
+    if (isAdmin) {
+      const emailBtn = document.createElement("button");
+      emailBtn.type = "button";
+      emailBtn.className = "btn btn-sm btn-outline-primary";
+      emailBtn.style.cssText = "margin-left:12px; min-width:80px; flex-shrink:0; align-self:center;";
+      emailBtn.innerHTML = '<i class="fa fa-envelope"></i> EMAIL';
+      emailBtn.onclick = () => this.openHotelEmailModal(hotel);
+      item.appendChild(emailBtn);
+    }
+
     return item;
   },
+
 
   /**
    * Find tour row in the table by tour item ID
@@ -883,6 +891,98 @@ const TourHotelsUI = {
       revertBtn.disabled = false;
       revertBtn.innerHTML = '<i class="fa fa-undo"></i> Revert to Tour Defaults';
     }
+  },
+
+  /**
+   * Open email modal for sending hotel reservation request
+   */
+  openHotelEmailModal(hotel) {
+    // Create modal if not exists
+    let modal = document.getElementById("tourHotelEmailModal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.className = "modal fade";
+      modal.id = "tourHotelEmailModal";
+      modal.setAttribute("tabindex", "-1");
+      modal.innerHTML = `
+        <div class="modal-dialog modal-lg" role="document">
+          <div class="modal-content">
+            <div class="modal-header" style="background:linear-gradient(135deg,#2c3e50,#3498db);color:white;">
+              <h5 class="modal-title"><i class="fa fa-envelope"></i> Hotel Reservation Request</h5>
+              <button type="button" class="close" data-dismiss="modal" style="color:white;"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label><strong>To (Hotel Email)</strong></label>
+                <input type="email" class="form-control" id="hotelEmailTo" placeholder="hotel@email.com">
+              </div>
+              <div class="form-group">
+                <label>Subject</label>
+                <input type="text" class="form-control" id="hotelEmailSubject">
+              </div>
+              <div class="form-group">
+                <label>Message</label>
+                <textarea class="form-control" id="hotelEmailBody" rows="10" style="font-family:monospace;font-size:13px;"></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-primary" id="sendHotelEmailBtn"><i class="fa fa-send"></i> Send Email</button>
+            </div>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+    }
+
+    // Pre-fill fields
+    const dateRange = hotel.check_in_date && hotel.check_out_date
+      ? `${hotel.check_in_date} to ${hotel.check_out_date}` : `Night ${hotel.day}`;
+    document.getElementById("hotelEmailTo").value = "";
+    document.getElementById("hotelEmailSubject").value = `Reservation Request – ${hotel.hotel_name} (${dateRange})`;
+    document.getElementById("hotelEmailBody").value =
+`Dear ${hotel.hotel_name} Reservations Team,
+
+We would like to request a room reservation for our client as follows:
+
+Hotel: ${hotel.hotel_name}
+City: ${hotel.city || ""}
+Check-In: ${hotel.check_in_date || ""}
+Check-Out: ${hotel.check_out_date || ""}
+Room Type: ${hotel.room_type || ""}
+
+Kindly confirm availability and provide your best available rate.
+
+Thank you,
+VeraThailandia Travel Co., Ltd.
+info@verathailandia.com | +66 123 456 789`;
+
+    // Wire send button
+    const sendBtn = document.getElementById("sendHotelEmailBtn");
+    sendBtn.onclick = async () => {
+      const to = document.getElementById("hotelEmailTo").value.trim();
+      const subject = document.getElementById("hotelEmailSubject").value.trim();
+      const body = document.getElementById("hotelEmailBody").value.trim();
+      if (!to) { alert("Please enter the hotel email address."); return; }
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending...';
+      try {
+        const res = await fetch(`${Endpoint}/api/v1/email/send-generic`, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${localStorage.getItem("token")}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ to, subject, body })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        alert("Email sent successfully!");
+        $("#tourHotelEmailModal").modal("hide");
+      } catch (e) {
+        alert("Failed to send email: " + e.message);
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<i class="fa fa-send"></i> Send Email';
+      }
+    };
+
+    $("#tourHotelEmailModal").modal("show");
   },
 };
 

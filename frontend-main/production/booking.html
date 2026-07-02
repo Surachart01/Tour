@@ -101,6 +101,23 @@
         background: #dbeafe !important;
         transform: translateY(-1px) !important;
       }
+      .table-action-btn.invoice-btn { background: #fef3c7 !important; color: #d97706 !important; }
+      .table-action-btn.invoice-btn:hover { background: #fde68a !important; transform: translateY(-1px) !important; }
+      .table-action-btn.summary-btn { background: #f0fdf4 !important; color: #16a34a !important; }
+      .table-action-btn.summary-btn:hover { background: #dcfce7 !important; transform: translateY(-1px) !important; }
+      /* InProgress row */
+      .row-inprogress { background-color: #ebf5fb !important; border-left: 4px solid #3498db !important; }
+      /* Status badges */
+      .status-badge { display:inline-block; padding:3px 9px; border-radius:50px; font-size:11px; font-weight:600; }
+      .status-badge.approved { background:#d4edda; color:#155724; }
+      .status-badge.declined { background:#f8d7da; color:#721c24; }
+      .status-badge.inprogress { background:#cce5ff; color:#004085; }
+      .status-badge.pending { background:#fff3cd; color:#856404; }
+      /* Agent request remark chip */
+      .remark-agent { display:inline-block; margin-top:3px; font-size:10px; background:#fff3cd; color:#856404; border:1px solid #ffc107; border-radius:4px; padding:1px 6px; }
+      /* Agent request alert banner */
+      #agentRequestBanner { display:none; margin-bottom:10px; padding:10px 15px; background:linear-gradient(135deg,#fff3cd,#ffe8a1); border:1px solid #ffc107; border-radius:8px; color:#5a4000; font-size:13px; align-items:center; gap:10px; }
+      #agentRequestBanner i { font-size:16px; color:#e67e22; }
     </style>
   </head>
   <body class="nav-md">
@@ -414,6 +431,12 @@
                   </div>
                 </div>
                 <div class="x_content">
+                  <!-- Agent Request Alert Banner -->
+                  <div id="agentRequestBanner" style="display:none; margin-bottom:10px; padding:10px 15px; background:linear-gradient(135deg,#fff3cd,#ffe8a1); border:1px solid #ffc107; border-radius:8px; color:#5a4000; font-size:13px; align-items:center; gap:10px;">
+                    <i class="fa fa-bell" style="font-size:16px;color:#e67e22;"></i>
+                    <span id="agentRequestBannerText"></span>
+                    <span style="margin-left:auto;font-size:11px;opacity:.7;">คลิกดูรายการสีฟ้าด้านล่าง</span>
+                  </div>
                   <div class="row">
                     <div class="col-sm-12">
                       <div class="card-box table-responsive" style="overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch;">
@@ -792,6 +815,24 @@
             openEmailModal(tripId);
             return;
           }
+
+          const invoiceBtn = event.target.closest(".invoice-btn");
+          if (invoiceBtn) {
+            const tripId = invoiceBtn.getAttribute("data-id");
+            fetch(`${Endpoint}/api/v1/bookings/${tripId}/generate-pdf`, {
+              method: "GET", headers: { Authorization: `Bearer ${token}` }
+            }).then(r => r.ok ? r.blob() : r.text().then(t => { throw new Error(t); }))
+              .then(blob => window.open(window.URL.createObjectURL(blob), "_blank"))
+              .catch(e => alert("Error: " + e.message));
+            return;
+          }
+
+          const summaryBtn = event.target.closest(".summary-btn");
+          if (summaryBtn) {
+            const tripId = summaryBtn.getAttribute("data-id");
+            openBookingConfirmationModal(tripId);
+            return;
+          }
         });
 
         // Open Email Reservation Summary Modal
@@ -1081,40 +1122,31 @@
           filteredTrips.slice(start, end).forEach((trip) => {
             const row = document.createElement("tr");
 
-            // ✅ Apply background color based on approval and booking reference using soft premium pastels
-            if (trip.status === "Approved") {
-              row.style.backgroundColor = "rgba(34, 197, 94, 0.08)"; // Soft pastel green for approved
-            } else if (
-              trip.status === "Declined" ||
-              trip.status === "Cancelled"
-            ) {
-              row.style.backgroundColor = "rgba(239, 68, 68, 0.08)"; // Soft pastel red for cancelled/declined
-            } else if (
-              trip.booking_reference &&
-              trip.booking_reference.trim() !== ""
-            ) {
-              row.style.backgroundColor = "rgba(245, 158, 11, 0.08)"; // Soft pastel amber/orange for has booking_ref
+            // Apply row color based on status
+            const isInProgress = trip.status === "InProgress";
+            if (isInProgress) {
+              row.classList.add("row-inprogress");
+            } else if (trip.status === "Approved") {
+              row.style.backgroundColor = "rgba(34,197,94,0.08)";
+            } else if (trip.status === "Declined" || trip.status === "Cancelled") {
+              row.style.backgroundColor = "rgba(239,68,68,0.08)";
+            } else if (trip.booking_reference && trip.booking_reference.trim() !== "") {
+              row.style.backgroundColor = "rgba(245,158,11,0.08)";
             }
 
-            // Convert the date to DD/MM/YYYY format
+            // Dates
             const formattedDate = trip.trip_start_date
-              ? new Date(trip.trip_start_date).toLocaleDateString("en-GB").split("/").join("-")
-              : "N/A";
-
-            // Format booking date to DD/MM/YYYY format, handle cases where booking_date might be null or invalid
+              ? new Date(trip.trip_start_date).toLocaleDateString("en-GB").replace(/\//g,"-") : "N/A";
             let formattedBookingDate = "N/A";
             if (trip.created_at && trip.created_at !== "0001-01-01T00:00:00Z") {
-              const bookingDate = new Date(trip.created_at);
-              if (!isNaN(bookingDate.getTime())) {
-                formattedBookingDate = bookingDate.toLocaleDateString("en-GB").replace(/\//g, "-");
-              }
+              const bd = new Date(trip.created_at);
+              if (!isNaN(bd)) formattedBookingDate = bd.toLocaleDateString("en-GB").replace(/\//g,"-");
             }
 
-            // Styled Status Badge
-            let statusClass = "pending";
-            if (trip.status === "Approved") statusClass = "approved";
-            else if (trip.status === "Declined" || trip.status === "Cancelled") statusClass = "declined";
-            const statusHtml = `<span class="status-badge ${statusClass}">${trip.status}</span>`;
+            // Status badge + optional agent remark
+            let statusClass = isInProgress ? "inprogress" : (trip.status === "Approved" ? "approved" : (trip.status === "Declined" || trip.status === "Cancelled" ? "declined" : "pending"));
+            const remarkHtml = isInProgress ? `<br><span class="remark-agent"><i class="fa fa-bell-o"></i> New Agent Request</span>` : "";
+            const statusHtml = `<span class="status-badge ${statusClass}">${trip.status}</span>${remarkHtml}`;
 
             row.innerHTML = `
             <td style="font-weight: 500;">${(trip.agent && trip.agent.name) || (trip.agents && trip.agents.name) || "N/A"}</td>
@@ -1128,17 +1160,32 @@
             <td>${statusHtml}</td>
             <td style="font-weight: 600;">${trip.final_amount || "N/A"}</td>
             <td style="text-align: center; white-space: nowrap;">
-              <button class="btn table-action-btn view-btn" data-id="${trip.id}" title="View"><i class="fa fa-eye"></i></button>
-              <button class="btn table-action-btn edit-btn" data-id="${trip.id}" title="Edit"><i class="fa fa-edit"></i></button>
-              <button class="btn table-action-btn save-btn print-btn" data-id="${trip.id}" title="Save"><i class="fa fa-save"></i></button>
-              <button class="btn table-action-btn email-btn" data-id="${trip.id}" title="Email"><i class="fa fa-envelope"></i></button>
-            </td>
+               <button class="btn table-action-btn view-btn" data-id="${trip.id}" title="View"><i class="fa fa-eye"></i></button>
+               <button class="btn table-action-btn edit-btn" data-id="${trip.id}" title="Edit"><i class="fa fa-edit"></i></button>
+               <button class="btn table-action-btn save-btn print-btn" data-id="${trip.id}" title="Save PDF"><i class="fa fa-save"></i></button>
+               <button class="btn table-action-btn email-btn" data-id="${trip.id}" title="Notify Hotels"><i class="fa fa-envelope"></i></button>
+               <button class="btn table-action-btn invoice-btn" data-id="${trip.id}" title="Invoice"><i class="fa fa-file-text-o"></i></button>
+               <button class="btn table-action-btn summary-btn" data-id="${trip.id}" title="Booking Confirmation"><i class="fa fa-list-alt"></i></button>
+             </td>
         `;
 
             tripTableBody.appendChild(row);
           });
 
           updatePaginationButtons();
+
+          // Show/update agent request banner (counts ALL InProgress in full trips array)
+          const banner = document.getElementById("agentRequestBanner");
+          const bannerText = document.getElementById("agentRequestBannerText");
+          const inProgressCount = trips.filter(t => t.status === "InProgress").length;
+          if (banner && bannerText) {
+            if (inProgressCount > 0) {
+              bannerText.textContent = `มีคำขอยืนยันการจองใหม่จาก Agent จำนวน ${inProgressCount} รายการ รอการอนุมัติจาก Admin`;
+              banner.style.display = "flex";
+            } else {
+              banner.style.display = "none";
+            }
+          }
         }
 
         function updatePaginationButtons() {
@@ -1396,6 +1443,157 @@
           });
         }
       });
+    </script>
+
+    <!-- Booking Confirmation Modal -->
+    <div class="modal fade" id="bookingConfirmationModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+          <div class="modal-header" style="background:linear-gradient(135deg,#1a3c5e,#2980b9);color:white;">
+            <h5 class="modal-title"><i class="fa fa-list-alt"></i> Booking Confirmation</h5>
+            <button type="button" class="close" data-dismiss="modal" style="color:white;"><span>&times;</span></button>
+          </div>
+          <div class="modal-body">
+            <div id="bcmLoading" style="text-align:center;padding:40px;"><i class="fa fa-spinner fa-spin fa-2x"></i><br>Loading...</div>
+            <div id="bcmContent" style="display:none;">
+              <div class="form-group row" style="margin-bottom:10px;">
+                <label class="col-sm-2 col-form-label"><strong>Send To:</strong></label>
+                <div class="col-sm-10"><input type="email" class="form-control" id="bcmEmailTo" placeholder="agent@email.com"></div>
+              </div>
+              <div class="form-group row" style="margin-bottom:10px;">
+                <label class="col-sm-2 col-form-label">Subject:</label>
+                <div class="col-sm-10"><input type="text" class="form-control" id="bcmEmailSubject"></div>
+              </div>
+              <hr>
+              <div id="bcmPreview" style="font-family:Arial,sans-serif;font-size:13px;padding:20px;border:1px solid #ddd;border-radius:6px;background:#fff;max-height:60vh;overflow-y:auto;"></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-success" id="bcmSendBtn"><i class="fa fa-paper-plane"></i> Send Confirmation Email</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    async function openBookingConfirmationModal(tripId) {
+      $("#bcmLoading").show(); $("#bcmContent").hide();
+      $("#bookingConfirmationModal").modal("show");
+      const token = localStorage.getItem("token");
+
+      try {
+        const res = await fetch(`${Endpoint}/api/v1/bookings/${tripId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error("Failed to load booking");
+        const trip = await res.json();
+
+        const agentName = (trip.agent && trip.agent.name) || (trip.agents && trip.agents.name) || "Agent";
+        const agentEmail = (trip.agent && trip.agent.email) || (trip.agents && trip.agents.email) || "";
+        const ref = trip.booking_reference || ("BK" + trip.id);
+        const pax = `${trip.number_of_adults || 0} Adults, ${trip.number_of_kids || 0} Kids`;
+        const startDate = trip.trip_start_date ? new Date(trip.trip_start_date).toLocaleDateString("en-GB").replace(/\//g, "-") : "N/A";
+        const totalCost = trip.final_amount || trip.final_cost || "N/A";
+
+        document.getElementById("bcmEmailTo").value = agentEmail;
+        document.getElementById("bcmEmailSubject").value = `Booking Confirmation – ${ref} – ${trip.client_name}`;
+
+        // Build HTML preview
+        const flights = trip.flight_trip_items || [];
+        const transfers = trip.transfer_trip_items || [];
+        const hotels = trip.hotel_trip_items || [];
+        const tours = trip.tour_trip_items || [];
+
+        let html = `<h2 style="color:#1a3c5e;">Booking Confirmation</h2>
+          <p>Dear <strong>${agentName}</strong>,<br>we are delighted to confirm your booking with the following details:</p>
+          <p><strong>Booking Reference:</strong> ${ref}<br>
+          <strong>Client Name:</strong> ${trip.client_name || ""}<br>
+          <strong>Start Date:</strong> ${startDate}<br>
+          <strong>Number of Pax:</strong> ${pax}<br>
+          <strong>Total Cost:</strong> ${totalCost}</p>`;
+
+        if (flights.length > 0) {
+          html += `<h4 style="color:#1a3c5e;border-bottom:2px solid #1a3c5e;padding-bottom:4px;">1. Flight Details</h4>
+            <table border="1" cellpadding="6" cellspacing="0" width="100%" style="border-collapse:collapse;font-size:12px;">
+            <tr style="background:#1a3c5e;color:white;"><th>Date</th><th>Airline</th><th>Number</th><th>Departure</th><th>Arrival</th><th>Route</th></tr>`;
+          flights.forEach(f => {
+            const d = f.departure_time ? new Date(f.departure_time).toLocaleDateString("en-GB").replace(/\//g,"-") : "";
+            html += `<tr><td>${d}</td><td>${f.airline||""}</td><td>${f.flight_number||""}</td><td>${f.departure_time ? new Date(f.departure_time).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}) : ""}</td><td>${f.arrival_time ? new Date(f.arrival_time).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}) : ""}</td><td>${f.route||""}</td></tr>`;
+          });
+          html += `</table><br>`;
+        }
+
+        if (transfers.length > 0) {
+          html += `<h4 style="color:#1a3c5e;border-bottom:2px solid #1a3c5e;padding-bottom:4px;">2. Transfers</h4>
+            <table border="1" cellpadding="6" cellspacing="0" width="100%" style="border-collapse:collapse;font-size:12px;">
+            <tr style="background:#1a3c5e;color:white;"><th>Date</th><th>From</th><th>To</th><th>Remarks</th></tr>`;
+          transfers.forEach(t => {
+            const d = t.transfer_date ? new Date(t.transfer_date).toLocaleDateString("en-GB").replace(/\//g,"-") : "";
+            html += `<tr><td>${d}</td><td>${t.from_location||""}</td><td>${t.to_location||""}</td><td>${t.remarks||""}</td></tr>`;
+          });
+          html += `</table><br>`;
+        }
+
+        if (hotels.length > 0) {
+          html += `<h4 style="color:#1a3c5e;border-bottom:2px solid #1a3c5e;padding-bottom:4px;">3. Hotel Accommodation</h4>
+            <table border="1" cellpadding="6" cellspacing="0" width="100%" style="border-collapse:collapse;font-size:12px;">
+            <tr style="background:#1a3c5e;color:white;"><th>Hotel</th><th>City</th><th>Check-in</th><th>Check-out</th><th>Nights</th><th>Room Details</th></tr>`;
+          hotels.forEach(h => {
+            const ci = h.from_date ? new Date(h.from_date).toLocaleDateString("en-GB").replace(/\//g,"-") : "";
+            const co = h.to_date ? new Date(h.to_date).toLocaleDateString("en-GB").replace(/\//g,"-") : "";
+            html += `<tr><td>${h.hotel_name||""}</td><td>${h.city||""}</td><td>${ci}</td><td>${co}</td><td>${h.nights||""}</td><td>${h.room_type||""}</td></tr>`;
+          });
+          html += `</table><br>`;
+        }
+
+        if (tours.length > 0) {
+          html += `<h4 style="color:#1a3c5e;border-bottom:2px solid #1a3c5e;padding-bottom:4px;">4. Tour Details</h4>`;
+          tours.forEach((t, i) => {
+            html += `<p><strong>${t.tour_name || ("Tour " + (i+1))}</strong><br>
+              From: ${t.city||""} | Start Date: ${t.start_date ? new Date(t.start_date).toLocaleDateString("en-GB").replace(/\//g,"-") : ""}</p>`;
+          });
+        }
+
+        html += `<br><hr><p><strong>Best Regards,</strong><br>Verathailandia Reservations Team!<br>
+          <img src="images/Verathailand_logo.png" style="height:50px;margin-top:8px;" alt="VeraThailandia"><br><br>
+          20th Floor, Room 160/424-425, ITF Silom Palace<br>
+          160 Silom Road, Suriya Wong, Bangrak, Bangkok 10500, Thailand<br>
+          Tel: +66 2 126 6914 | Tax ID: 0105547045569<br>
+          Email: <a href="mailto:booking@verathailandia.com">booking@verathailandia.com</a><br>
+          Website: <a href="http://www.verathailandia.com">www.verathailandia.com</a></p>
+          <p style="color:#27ae60;font-weight:bold;">Before printing, think about environmental responsibility.</p>`;
+
+        document.getElementById("bcmPreview").innerHTML = html;
+        $("#bcmLoading").hide(); $("#bcmContent").show();
+
+        document.getElementById("bcmSendBtn").onclick = async () => {
+          const to = document.getElementById("bcmEmailTo").value.trim();
+          const subject = document.getElementById("bcmEmailSubject").value.trim();
+          if (!to) { alert("Please enter recipient email."); return; }
+          const btn = document.getElementById("bcmSendBtn");
+          btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending...';
+          try {
+            const r = await fetch(`${Endpoint}/api/v1/email/send`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ to, subject, html })
+            });
+            if (!r.ok) throw new Error(await r.text());
+            alert("Booking Confirmation sent successfully!");
+            $("#bookingConfirmationModal").modal("hide");
+          } catch(e) {
+            alert("Failed: " + e.message);
+          } finally {
+            btn.disabled = false; btn.innerHTML = '<i class="fa fa-paper-plane"></i> Send Confirmation Email';
+          }
+        };
+
+      } catch(e) {
+        alert("Error: " + e.message);
+        $("#bookingConfirmationModal").modal("hide");
+      }
+    }
     </script>
   </body>
 </html>

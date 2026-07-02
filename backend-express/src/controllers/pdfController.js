@@ -365,10 +365,310 @@ export async function notifySupplierOrHotel(req, res, next) {
 }
 
 // Send quotation email
+import path from 'path';
+import fs from 'fs';
+
 export async function sendQuotationEmail(req, res, next) {
   try {
     const id = parseInt(req.params.id);
-    return res.json({ success: true, message: `Quotation email sent for trip ${id}` });
+    if (isNaN(id)) return res.status(400).send('Invalid quotation ID');
+
+    const { to, cc, subject, body } = req.body;
+
+    const trip = await prisma.trips.findUnique({
+      where: { id },
+      include: {
+        agents: true,
+        hotel_trip_items: {
+          orderBy: [
+            { display_order: 'asc' },
+            { from_date: 'asc' }
+          ],
+          include: { hotels: true }
+        },
+        excursion_trip_items: {
+          orderBy: { from_date: 'asc' },
+          include: { excursions: true }
+        },
+        tour_trip_items: {
+          orderBy: { from_date: 'asc' },
+          include: { tours: true }
+        },
+        transfer_trip_items: {
+          orderBy: { from_date: 'asc' },
+          include: { transfers: true }
+        },
+        flight_trip_items: {
+          orderBy: { from_date: 'asc' }
+        },
+        other_trip_items: {
+          orderBy: { from_date: 'asc' },
+          include: { others: true }
+        }
+      }
+    });
+
+    if (!trip) return res.status(404).send('Quotation not found');
+
+    const toRecipient = to || trip.client_email || trip.agents?.email;
+    if (!toRecipient) return res.status(400).send('Recipient email is required (no client email or agent email found)');
+
+    const ccRecipient = cc || (to ? trip.agents?.email : undefined);
+    const subjectLine = subject || `Quotation Reference: ${trip.booking_reference || `Q-${trip.id}`}`;
+
+    const formatEmailDate = (date) => {
+      if (!date) return '-';
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return '-';
+      const day = d.getDate();
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${day}-${months[d.getMonth()]}`;
+    };
+
+    const items = [];
+
+    (trip.hotel_trip_items || []).forEach(h => {
+      items.push({
+        date: h.from_date,
+        period: `${formatEmailDate(h.from_date)} ${formatEmailDate(h.to_date)}`,
+        location: h.city || '-',
+        service: 'Overnight',
+        hotel: h.hotel_name || h.hotels?.name || '-',
+        room: h.room_type || '-',
+        pax: trip.number_of_adults + (trip.number_of_kids || 0),
+        nights: h.nights || '-',
+        price: h.total_price ? parseFloat(h.total_price) : 0
+      });
+    });
+
+    (trip.excursion_trip_items || []).forEach(e => {
+      items.push({
+        date: e.from_date,
+        period: `${formatEmailDate(e.from_date)} -`,
+        location: e.city || '-',
+        service: e.excursion_name || e.excursions?.name || 'Excursion',
+        hotel: '-',
+        room: '-',
+        pax: trip.number_of_adults + (trip.number_of_kids || 0),
+        nights: '-',
+        price: e.price ? parseFloat(e.price) : 0
+      });
+    });
+
+    (trip.tour_trip_items || []).forEach(t => {
+      items.push({
+        date: t.from_date,
+        period: `${formatEmailDate(t.from_date)} -`,
+        location: t.from_location || '-',
+        service: t.tours?.name || 'Tour',
+        hotel: '-',
+        room: '-',
+        pax: trip.number_of_adults + (trip.number_of_kids || 0),
+        nights: '-',
+        price: t.price ? parseFloat(t.price) : 0
+      });
+    });
+
+    (trip.transfer_trip_items || []).forEach(t => {
+      items.push({
+        date: t.from_date,
+        period: `${formatEmailDate(t.from_date)} -`,
+        location: t.city || '-',
+        service: t.transfer_description || (t.from_location && t.to_location ? `${t.from_location} → ${t.to_location}` : 'Transfer'),
+        hotel: '-',
+        room: '-',
+        pax: trip.number_of_adults + (trip.number_of_kids || 0),
+        nights: '-',
+        price: t.price ? parseFloat(t.price) : 0
+      });
+    });
+
+    (trip.flight_trip_items || []).forEach(f => {
+      items.push({
+        date: f.from_date,
+        period: `${formatEmailDate(f.from_date)} -`,
+        location: '-',
+        service: f.flight_number ? `Flight: ${f.flight_number}` : 'Flight',
+        hotel: '-',
+        room: '-',
+        pax: trip.number_of_adults + (trip.number_of_kids || 0),
+        nights: '-',
+        price: f.price ? parseFloat(f.price) : 0
+      });
+    });
+
+    (trip.other_trip_items || []).forEach(o => {
+      items.push({
+        date: o.from_date,
+        period: `${formatEmailDate(o.from_date)} -`,
+        location: '-',
+        service: o.others?.name || 'Service',
+        hotel: '-',
+        room: '-',
+        pax: trip.number_of_adults + (trip.number_of_kids || 0),
+        nights: '-',
+        price: o.price ? parseFloat(o.price) : 0
+      });
+    });
+
+    // Sort chronologically by date
+    items.sort((a, b) => {
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return new Date(a.date) - new Date(b.date);
+    });
+
+    const totalCost = trip.total_amount ? parseFloat(trip.total_amount) : 0;
+    const discount = trip.discount_amount ? parseFloat(trip.discount_amount) : 0;
+    const finalCost = trip.final_amount ? parseFloat(trip.final_amount) : 0;
+
+    const tableRows = items.map(item => {
+      return `
+        <tr style="border: 1px solid #000;">
+          <td style="border: 1px solid #000; padding: 6px; text-align: center; white-space: nowrap;">${item.period}</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: center;">${item.location}</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: left;">${item.service}</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: left;">${item.hotel}</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: left;">${item.room}</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: center;">${item.pax}</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: center;">${item.nights}</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: right; white-space: nowrap;">${item.price > 0 ? 'THB ' + Number(item.price).toLocaleString('en-US') : '-'}</td>
+        </tr>
+      `;
+    }).join('');
+
+    let totalRowsHtml = `
+      <tr style="border: 1px solid #000; font-weight: bold; background-color: #f9f9f9;">
+        <td colspan="7" style="border: 1px solid #000; padding: 8px; text-align: right;">Total Price</td>
+        <td style="border: 1px solid #000; padding: 8px; text-align: right; white-space: nowrap;">THB ${Number(totalCost).toLocaleString('en-US')}</td>
+      </tr>
+    `;
+    if (discount > 0) {
+      totalRowsHtml += `
+        <tr style="border: 1px solid #000; font-weight: bold; background-color: #f9f9f9;">
+          <td colspan="7" style="border: 1px solid #000; padding: 8px; text-align: right; color: #c0392b;">Discount</td>
+          <td style="border: 1px solid #000; padding: 8px; text-align: right; white-space: nowrap; color: #c0392b;">-THB ${Number(discount).toLocaleString('en-US')}</td>
+        </tr>
+        <tr style="border: 1px solid #000; font-weight: bold; background-color: #fff9e6;">
+          <td colspan="7" style="border: 1px solid #000; padding: 8px; text-align: right; font-size: 13px; color: #d35400;">Final Price</td>
+          <td style="border: 1px solid #000; padding: 8px; text-align: right; white-space: nowrap; font-size: 13px; color: #d35400; border-bottom: 3px double #000;">THB ${Number(finalCost).toLocaleString('en-US')}</td>
+        </tr>
+      `;
+    }
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; font-size: 13px; color: #333; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <p>Dear Agent,</p>
+        <p>Greetings from <strong>Verathailandia</strong>!</p>
+        <p>${body || 'Please find as follow the requested quotation and attached the excursion and tour descriptions.'}</p>
+        
+        <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11px; margin-top: 20px; margin-bottom: 20px; border: 1px solid #000;">
+          <thead>
+            <tr style="background-color: #ffa600; color: #000000; font-weight: bold; border: 1px solid #000;">
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 80px;">Period</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 80px;">Location</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: left;">Service</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: left;">Hotel</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: left;">Typology of Room</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 40px;">Pax</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 50px;">Nights</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: right; width: 100px;">Price in THB</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows}
+            ${totalRowsHtml}
+          </tbody>
+        </table>
+        
+        <p>The quotation includes the proposed accommodation, services, and the applicable rates based on your request.</p>
+        <p>Should you require any amendments, alternative hotel options, additional services, or a customized itinerary, please do not hesitate to contact us. Our team will be pleased to assist you.</p>
+        <p>We look forward to receiving your feedback and hope to have the opportunity to arrange this journey for you.</p>
+        <p>Thank you for choosing Verathailandia.</p>
+        <br>
+        <p>Kind regards,<br><strong>Verathailandia Reservations Team!</strong></p>
+        
+        <div style="margin-top: 30px; border-top: 1px dashed #ccc; padding-top: 20px; display: flex; align-items: flex-start; gap: 15px;">
+          <div>
+            <p style="font-size: 11px; color: #555; line-height: 1.5; margin: 0;">
+              <strong>VeraThailandia Co., Ltd.</strong><br>
+              20th Floor, Room 160/424-425, ITF Silom Palace<br>
+              160 Silom Road, Suriya Wong, Bangrak, Bangkok 10500, Thailand<br>
+              <strong>Tel:</strong> +66 2 126 6914<br>
+              <strong>Tax ID:</strong> 0105540745569<br>
+              <strong>Email:</strong> <a href="mailto:reservation@verathailandia.com" style="color: #3498db; text-decoration: none;">reservation@verathailandia.com</a><br>
+              <strong>Website:</strong> <a href="https://www.verathailandia.com" target="_blank" style="color: #3498db; text-decoration: none;">www.verathailandia.com</a>
+            </p>
+            <p style="font-size: 11px; color: #27ae60; font-weight: bold; margin: 10px 0 0 0;">
+              Before printing, think about environmental responsibility
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Fetch and prepare service document attachments (tour/excursion)
+    const tourIds = (trip.tour_trip_items || []).map(t => t.tour_id).filter(Boolean);
+    const excursionIds = (trip.excursion_trip_items || []).map(e => e.excursion_id).filter(Boolean);
+
+    const docRecords = await prisma.service_documents.findMany({
+      where: {
+        OR: [
+          { service_type: 'tour', service_id: { in: tourIds } },
+          { service_type: 'excursion', service_id: { in: excursionIds } }
+        ]
+      }
+    });
+
+    const UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'service-docs');
+    const attachments = docRecords.map(doc => {
+      const filePath = path.join(UPLOAD_DIR, doc.file_path);
+      if (fs.existsSync(filePath)) {
+        return {
+          filename: doc.file_name,
+          path: filePath
+        };
+      }
+      return null;
+    }).filter(Boolean);
+
+    if (!process.env.SMTP_USER) {
+      console.warn('SMTP_USER not configured. Returning email preview.');
+      await prisma.trips.update({
+        where: { id },
+        data: { email_sent: true }
+      });
+      return res.json({
+        success: true,
+        message: 'SMTP not configured. Email preview returned.',
+        sent_to: toRecipient,
+        cc: ccRecipient,
+        subject: subjectLine,
+        attachments: attachments.map(a => a.filename),
+        html: htmlContent
+      });
+    }
+
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to: toRecipient,
+      cc: ccRecipient,
+      subject: subjectLine,
+      html: htmlContent,
+      attachments
+    });
+
+    await prisma.trips.update({
+      where: { id },
+      data: { email_sent: true }
+    });
+
+    return res.json({
+      success: true,
+      message: 'Quotation email sent successfully',
+      sent_to: toRecipient,
+      cc: ccRecipient
+    });
   } catch (err) { next(err); }
 }
 

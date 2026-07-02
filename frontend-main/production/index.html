@@ -3196,6 +3196,56 @@
         let transferData = [];
         let specialPackageData = [];
 
+        function renderFilesButton(documents) {
+          if (!documents || documents.length === 0) return '';
+          
+          const getFileIcon = (ext) => {
+            ext = (ext || '').toLowerCase();
+            if (ext === 'pdf') return 'fa-file-pdf-o';
+            if (['ppt', 'pptx'].includes(ext)) return 'fa-file-powerpoint-o';
+            if (['xls', 'xlsx'].includes(ext)) return 'fa-file-excel-o';
+            if (['doc', 'docx'].includes(ext)) return 'fa-file-word-o';
+            return 'fa-file-o';
+          };
+
+          const getFileColor = (ext) => {
+            ext = (ext || '').toLowerCase();
+            if (ext === 'pdf') return '#e74c3c'; // red
+            if (['ppt', 'pptx'].includes(ext)) return '#e67e22'; // orange
+            if (['xls', 'xlsx'].includes(ext)) return '#2ecc71'; // green
+            if (['doc', 'docx'].includes(ext)) return '#3498db'; // blue
+            return '#7f8c8d'; // gray
+          };
+
+          if (documents.length === 1) {
+            const doc = documents[0];
+            const ext = doc.file_type || 'file';
+            const icon = getFileIcon(ext);
+            const color = getFileColor(ext);
+            const label = ext.toUpperCase();
+            return ` <a href="${Endpoint}/uploads/service-docs/${doc.file_path}" target="_blank" class="btn btn-sm btn-default" style="margin-left: 5px; padding: 4px 8px; vertical-align: middle; border-color: ${color}; color: ${color};" title="Download ${doc.file_name}"><i class="fa ${icon}"></i> ${label}</a>`;
+          }
+
+          // Multiple files: render a dropdown
+          const menuItems = documents.map(doc => {
+            const ext = doc.file_type || 'file';
+            const icon = getFileIcon(ext);
+            const color = getFileColor(ext);
+            return `<a class="dropdown-item" href="${Endpoint}/uploads/service-docs/${doc.file_path}" target="_blank" style="padding: 6px 12px; font-size: 12px; display: flex; align-items: center;"><i class="fa ${icon}" style="margin-right: 8px; color: ${color}; width: 14px;"></i> ${doc.file_name}</a>`;
+          }).join('');
+
+          return `
+            <div class="btn-group btn-group-sm" style="margin-left: 5px; vertical-align: middle;">
+              <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="padding: 4px 8px; border-color: #34495e; color: #34495e;">
+                <i class="fa fa-files-o"></i> Files <span class="caret"></span>
+              </button>
+              <div class="dropdown-menu dropdown-menu-right" style="min-width: 180px; max-width: 280px; overflow-wrap: break-word; white-space: normal;">
+                ${menuItems}
+              </div>
+            </div>
+          `;
+        }
+
         // Reusable fetch and populate function with sorting by name
         function fetchDataAndPopulateTable(
           tableInstance,
@@ -3241,15 +3291,19 @@
 
                 tableInstance.rows
                   .add(
-                    dataStorage.map((item, index) => [
-                      item.name || item.transfer_type || "N/A",
-                      item.city || "N/A",
-                      item.description || item.notes || "N/A",
-                      `<button class="btn btn-primary btn-sm view-btn"
+                    dataStorage.map((item, index) => {
+                      let actionHtml = `<button class="btn btn-primary btn-sm view-btn"
                         data-index="${index}"
                         data-target="${apiEndpoint}">
-                        View</button>`,
-                    ])
+                        View</button>`;
+                      actionHtml += renderFilesButton(item.documents);
+                      return [
+                        item.name || item.transfer_type || "N/A",
+                        item.city || "N/A",
+                        item.description || item.notes || "N/A",
+                        actionHtml,
+                      ];
+                    })
                   )
                   .draw();
               }

@@ -254,6 +254,13 @@
         pointer-events: none;
       }
 
+      /* Confirmed hotel row */
+      tr.row-confirmed { background-color: rgba(39,174,96,0.12) !important; border-left: 4px solid #27ae60 !important; }
+      tr.row-confirmed td { color: #1a5c38 !important; }
+      .confirm-hotel-btn { background:#27ae60 !important; border:none !important; color:#fff !important; }
+      .confirm-hotel-btn.unconfirmed { background:#ecf0f1 !important; color:#7f8c8d !important; border:1px solid #bdc3c7 !important; }
+      .confirm-hotel-btn:hover { opacity:0.85 !important; }
+
       /* Page Loader Overlay */
       #pageLoaderOverlay {
         position: fixed;
@@ -5453,6 +5460,13 @@
                   </div>
               `;
 
+          const confirmBtnHtml = `<div class="tooltip-btn" style="display:inline-block;margin-right:5px;">
+              <button class="btn btn-sm ${confirmBtnClass} confirm-hotel-row" type="button">
+                <i class="fa ${confirmIcon}"></i>
+              </button>
+              <span class="tooltip-text">${confirmTitle}</span>
+            </div>`;
+
           row.innerHTML = `
                 <td>${hotel.from_date || ""}</td>
                 <td>${hotel.to_date || ""}</td>
@@ -5465,6 +5479,7 @@
                 <td>${hotel.promotion || ""}</td>
                 <td>${hotel.final_cost || ""}</td>
                 <td>
+                  ${confirmBtnHtml}
                   ${buttonsHtml}
                 </td>
               `;
@@ -5918,6 +5933,13 @@
             .join(", ");
 
           // Fill row HTML
+          const confirmedNew = (hotel.approved === true || hotel.approved === "true") ? "true" : "false";
+          newRow.dataset.confirmed = confirmedNew;
+          if (confirmedNew === "true") newRow.classList.add("row-confirmed");
+          const cBtnClass = confirmedNew === "true" ? "confirm-hotel-btn" : "confirm-hotel-btn unconfirmed";
+          const cIcon = confirmedNew === "true" ? "fa-check-circle" : "fa-circle-o";
+          const cTitle = confirmedNew === "true" ? "Confirmed ✓" : "Mark as Confirmed";
+
           newRow.innerHTML = `
             <td>${formatToDDMMYYYY(hotel.from_date || hotel.checkInDate)}</td>
             <td>${formatToDDMMYYYY(hotel.to_date || hotel.checkOutDate)}</td>
@@ -5928,10 +5950,14 @@
             <td>${hotel.single_room_days || hotel.singleRooms || 0}</td>
             <td>${hotel.double_room_days || hotel.doubleRooms || 0}</td>
             <td>${hotel.promotion || ""}</td>
-            <td class="hotel-price">${
-              hotel.final_cost || hotel.totalCost || "N/A"
-            }</td>
+            <td class="hotel-price">${hotel.final_cost || hotel.totalCost || "N/A"}</td>
             <td>
+              <div class="tooltip-btn" style="display:inline-block;margin-right:5px;">
+                <button class="btn btn-sm ${cBtnClass} confirm-hotel-row" type="button">
+                  <i class="fa ${cIcon}"></i>
+                </button>
+                <span class="tooltip-text">${cTitle}</span>
+              </div>
               <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
                 <button class="btn btn-sm btn-warning edit-hotel" type="button">
                   <i class="fa fa-edit"></i>

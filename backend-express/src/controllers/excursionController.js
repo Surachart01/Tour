@@ -1,7 +1,7 @@
 import prisma from '../config/db.js';
 import { calculateExcursionCostLogic, calculateMarkedUpPrice } from '../utils/pricing.js';
 
-export function formatExcursionResponse(excursion, markupGroup = '', markups = []) {
+export function formatExcursionResponse(excursion, markupGroup = '', markups = [], documents = []) {
   if (!excursion) return null;
   const prices = (excursion.excursion_pricing || []).map(p => {
     let priceVal = p.price ? parseFloat(p.price) : 0;
@@ -53,7 +53,8 @@ export function formatExcursionResponse(excursion, markupGroup = '', markups = [
     display_order: excursion.display_order,
     order: (excursion.display_order === 0 || excursion.display_order === null || excursion.display_order === undefined) ? 100000 : excursion.display_order,
     prices,
-    available_days
+    available_days,
+    documents
   };
 }
 
@@ -142,7 +143,10 @@ export async function getExcursionByID(req, res, next) {
       include: { excursion_pricing: { include: { currencies: true } }, currencies: true }
     });
     if (!excursion) return res.status(404).send('Excursion not found');
-    return res.json(formatExcursionResponse(excursion, markupGroup, markups));
+    const docs = await prisma.service_documents.findMany({
+      where: { service_type: 'excursion', service_id: excursion.id }
+    });
+    return res.json(formatExcursionResponse(excursion, markupGroup, markups, docs));
   } catch (err) { next(err); }
 }
 
@@ -160,7 +164,10 @@ export async function getExcursions(req, res, next) {
     const excursions = await prisma.excursions.findMany({
       include: { excursion_pricing: { include: { currencies: true } }, currencies: true }
     });
-    const formatted = excursions.map(e => formatExcursionResponse(e, markupGroup, markups));
+    const docs = await prisma.service_documents.findMany({
+      where: { service_type: 'excursion' }
+    });
+    const formatted = excursions.map(e => formatExcursionResponse(e, markupGroup, markups, docs.filter(d => d.service_id === e.id)));
     formatted.sort((a, b) => {
       if (a.order !== b.order) return a.order - b.order;
       return a.name.localeCompare(b.name);
@@ -187,7 +194,10 @@ export async function listExcursionsByLocation(req, res, next) {
       where: { city },
       include: { excursion_pricing: { include: { currencies: true } }, currencies: true }
     });
-    const formatted = excursions.map(e => formatExcursionResponse(e, markupGroup, markups));
+    const docs = await prisma.service_documents.findMany({
+      where: { service_type: 'excursion' }
+    });
+    const formatted = excursions.map(e => formatExcursionResponse(e, markupGroup, markups, docs.filter(d => d.service_id === e.id)));
     formatted.sort((a, b) => {
       if (a.order !== b.order) return a.order - b.order;
       return a.name.localeCompare(b.name);
@@ -226,7 +236,10 @@ export async function listAvailableExcursionsByCity(req, res, next) {
       }
     });
 
-    let formatted = excursions.map(e => formatExcursionResponse(e, markupGroup, markups));
+    const docs = await prisma.service_documents.findMany({
+      where: { service_type: 'excursion' }
+    });
+    let formatted = excursions.map(e => formatExcursionResponse(e, markupGroup, markups, docs.filter(d => d.service_id === e.id)));
 
     // Filter by day-of-week when from_date is provided
     // valid_days is stored as comma-separated day numbers, e.g. "0,1,2,6" (0=Sun, 6=Sat)

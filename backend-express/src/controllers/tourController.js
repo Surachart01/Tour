@@ -1,7 +1,7 @@
 import prisma from '../config/db.js';
 import { calculateTourCostLogic, calculateMarkedUpPrice } from '../utils/pricing.js';
 
-export function formatTourResponse(tour, markupGroup = '', markups = []) {
+export function formatTourResponse(tour, markupGroup = '', markups = [], documents = []) {
   if (!tour) return null;
   const tour_pricings = (tour.tour_pricing || []).map(p => {
     let singlePrice = p.single_room_price ? parseFloat(p.single_room_price) : 0;
@@ -92,7 +92,8 @@ export function formatTourResponse(tour, markupGroup = '', markups = []) {
     order: (tour.display_order === 0 || tour.display_order === null || tour.display_order === undefined) ? 100000 : tour.display_order,
     tour_pricings,
     available_days,
-    tour_days
+    tour_days,
+    documents
   };
 }
 
@@ -194,7 +195,10 @@ export async function getTourByID(req, res, next) {
       }
     });
     if (!tour) return res.status(404).send('Tour not found');
-    return res.json(formatTourResponse(tour, markupGroup, markups));
+    const docs = await prisma.service_documents.findMany({
+      where: { service_type: 'tour', service_id: tour.id }
+    });
+    return res.json(formatTourResponse(tour, markupGroup, markups, docs));
   } catch (err) { next(err); }
 }
 
@@ -219,7 +223,10 @@ export async function getAllTours(req, res, next) {
         }
       }
     });
-    const formatted = tours.map(t => formatTourResponse(t, markupGroup, markups));
+    const docs = await prisma.service_documents.findMany({
+      where: { service_type: 'tour' }
+    });
+    const formatted = tours.map(t => formatTourResponse(t, markupGroup, markups, docs.filter(d => d.service_id === t.id)));
     formatted.sort((a, b) => {
       if (a.order !== b.order) return a.order - b.order;
       return a.name.localeCompare(b.name);
@@ -252,7 +259,10 @@ export async function listToursByCity(req, res, next) {
         }
       }
     });
-    const formatted = tours.map(t => formatTourResponse(t, markupGroup, markups));
+    const docs = await prisma.service_documents.findMany({
+      where: { service_type: 'tour' }
+    });
+    const formatted = tours.map(t => formatTourResponse(t, markupGroup, markups, docs.filter(d => d.service_id === t.id)));
     formatted.sort((a, b) => {
       if (a.order !== b.order) return a.order - b.order;
       return a.name.localeCompare(b.name);
@@ -335,7 +345,10 @@ export async function listAvailableToursByCity(req, res, next) {
       filtered = filtered.filter(tour => tour.tour_pricing.length > 0);
     }
 
-    const formatted = filtered.map(t => formatTourResponse(t, markupGroup, markups));
+    const docs = await prisma.service_documents.findMany({
+      where: { service_type: 'tour' }
+    });
+    const formatted = filtered.map(t => formatTourResponse(t, markupGroup, markups, docs.filter(d => d.service_id === t.id)));
     formatted.sort((a, b) => {
       if (a.order !== b.order) return a.order - b.order;
       return a.name.localeCompare(b.name);

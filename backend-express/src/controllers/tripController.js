@@ -1183,9 +1183,21 @@ export async function finalizeQuotation(req, res, next) {
       }
     }
 
+    const isAgent = claims && claims.role !== 'admin' && claims.role !== 'superadmin';
+    const updateData = {};
+    if (isAgent) {
+      updateData.approved = false;
+      updateData.declined = false;
+      updateData.status = 'InProgress';
+    } else {
+      updateData.approved = true;
+      updateData.declined = false;
+      updateData.status = 'Approved';
+    }
+
     const trip = await prisma.trips.update({
       where: { id },
-      data: { approved: true, declined: false }
+      data: updateData
     });
     return res.json(trip);
   } catch (err) { next(err); }
