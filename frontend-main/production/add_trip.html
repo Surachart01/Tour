@@ -6233,6 +6233,7 @@
                 input.value = "";
                 if (currentSpecialPackage) updateSpecialPackagePrice();
               } else {
+                if (!input.value) input.value = "1";
                 if (!validateSpecialPackagePaxLimit(inputId, "", true, this)) {
                   return;
                 }
