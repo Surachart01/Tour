@@ -13,6 +13,12 @@ function parseOptionalDate(value) {
   return isNaN(d.getTime()) ? null : d;
 }
 
+function parseSafeInt(value, fallback = null) {
+  if (value === null || value === undefined) return fallback;
+  const parsed = parseInt(value, 10);
+  return isNaN(parsed) ? fallback : parsed;
+}
+
 function generateQuotationNumber() {
   const now = new Date();
   const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
@@ -58,9 +64,12 @@ async function validateHotelAvailability(tx, hotelItems) {
   if (!hotelItems || hotelItems.length === 0) return;
 
   for (const item of hotelItems) {
+    const hotelIdParsed = parseSafeInt(item.hotel_id);
+    if (!hotelIdParsed) continue;
+
     const roomTypeItems = item.room_type_items || item.room_types || [];
     if (roomTypeItems.length > 0) {
-      const hotelDisplayName = item.hotel_name || `Hotel ID ${item.hotel_id}`;
+      const hotelDisplayName = item.hotel_name || `Hotel ID ${hotelIdParsed}`;
       for (const rt of roomTypeItems) {
         const roomTypeName = rt.room_type;
         const fromDate = new Date(item.from_date);
@@ -69,7 +78,7 @@ async function validateHotelAvailability(tx, hotelItems) {
         // Find the room type record to get its ID
         const roomTypeRecord = await tx.room_types.findFirst({
           where: {
-            hotel_id: parseInt(item.hotel_id),
+            hotel_id: hotelIdParsed,
             name: roomTypeName
           }
         });
@@ -179,6 +188,7 @@ function mapTripResponse(trip) {
     ...trip,
     // top-level field aliases
     agent: trip.agents || null,
+    agent_name: trip.agents ? trip.agents.name : null,
     quotation_reference: trip.booking_reference || '',
     client_booking: trip.booking_reference || '',
     total_cost: toFloat(trip.total_amount),
@@ -268,7 +278,7 @@ export async function createQuotation(req, res, next) {
 
     let finalSpecialPackageId = null;
     if (data.special_package_id) {
-      finalSpecialPackageId = parseInt(data.special_package_id);
+      finalSpecialPackageId = parseSafeInt(data.special_package_id);
       const pkg = await prisma.special_packages.findUnique({
         where: { id: finalSpecialPackageId },
         include: { items: true }
@@ -372,9 +382,9 @@ export async function createQuotation(req, res, next) {
         }
 
         if (data.total_amount === undefined && data.total_cost === undefined) {
-          const sglRooms = parseInt(data.special_pkg_single_rooms) || 0;
-          const dblRooms = parseInt(data.special_pkg_double_rooms) || 0;
-          const tplRooms = parseInt(data.special_pkg_triple_rooms) || 0;
+          const sglRooms = parseSafeInt(data.special_pkg_single_rooms) || 0;
+          const dblRooms = parseSafeInt(data.special_pkg_double_rooms) || 0;
+          const tplRooms = parseSafeInt(data.special_pkg_triple_rooms) || 0;
 
           if (sglRooms > 0 || dblRooms > 0 || tplRooms > 0) {
             const sglPrice = pkg.price_per_adult ? parseFloat(pkg.price_per_adult) : 0;
@@ -382,8 +392,8 @@ export async function createQuotation(req, res, next) {
             const tplPrice = pkg.price_per_child ? parseFloat(pkg.price_per_child) : 0;
             data.total_amount = (sglPrice * sglRooms * 1) + (dblPrice * dblRooms * 2) + (tplPrice * tplRooms * 3);
           } else {
-            const adults = parseInt(data.number_of_adults) || 1;
-            const kids = parseInt(data.number_of_kids) || 0;
+            const adults = parseSafeInt(data.number_of_adults) || 1;
+            const kids = parseSafeInt(data.number_of_kids) || 0;
             const pkgAdultPrice = pkg.price_per_adult ? parseFloat(pkg.price_per_adult) : 0;
             const pkgChildPrice = pkg.price_per_child ? parseFloat(pkg.price_per_child) : 0;
             data.total_amount = (pkgAdultPrice * adults) + (pkgChildPrice * kids);
@@ -431,12 +441,12 @@ export async function createQuotation(req, res, next) {
 
       const trip = await tx.trips.create({
         data: {
-          agent_id: data.agent_id ? parseInt(data.agent_id) : (claims ? claims.agent_id : null),
+          agent_id: parseSafeInt(data.agent_id, claims ? claims.agent_id : null),
           client_name: data.client_name,
           client_phone: data.client_phone,
           client_email: data.client_email || null,
-          number_of_adults: parseInt(data.number_of_adults) || 1,
-          number_of_kids: parseInt(data.number_of_kids) || 0,
+          number_of_adults: parseSafeInt(data.number_of_adults) || 1,
+          number_of_kids: parseSafeInt(data.number_of_kids) || 0,
           booking_reference: refNumber,
           file_reference: data.file_reference || null,
           remarks: data.remarks || null,
@@ -446,7 +456,7 @@ export async function createQuotation(req, res, next) {
           approved: false,
           declined: false,
           trip_start_date,
-          user_id: data.user_id ? parseInt(data.user_id) : (claims ? claims.user_id : null),
+          user_id: parseSafeInt(data.user_id, claims ? claims.user_id : null),
           is_booking: data.is_booking || false,
           amount_paid: data.amount_paid !== undefined ? parseFloat(data.amount_paid) : 0.00,
           penalty_cost: data.penalty_cost !== undefined ? parseFloat(data.penalty_cost) : 0.00,
@@ -464,9 +474,9 @@ export async function createQuotation(req, res, next) {
           utm_term: data.utm_term || null,
           referral_source: data.referral_source || null,
           special_package_id: finalSpecialPackageId,
-          special_pkg_single_rooms: data.special_pkg_single_rooms ? parseInt(data.special_pkg_single_rooms) : 0,
-          special_pkg_double_rooms: data.special_pkg_double_rooms ? parseInt(data.special_pkg_double_rooms) : 0,
-          special_pkg_triple_rooms: data.special_pkg_triple_rooms ? parseInt(data.special_pkg_triple_rooms) : 0
+          special_pkg_single_rooms: parseSafeInt(data.special_pkg_single_rooms) || 0,
+          special_pkg_double_rooms: parseSafeInt(data.special_pkg_double_rooms) || 0,
+          special_pkg_triple_rooms: parseSafeInt(data.special_pkg_triple_rooms) || 0
         }
       });
 
@@ -477,12 +487,12 @@ export async function createQuotation(req, res, next) {
           const rtItems = item.room_type_items || item.room_types || [];
           await tx.hotel_trip_items.create({
             data: {
-              trip_item_id: id, hotel_id: parseInt(item.hotel_id), from_date: parseRequiredDate(item.from_date, tripFallbackDate),
+              trip_item_id: id, hotel_id: parseSafeInt(item.hotel_id), from_date: parseRequiredDate(item.from_date, tripFallbackDate),
               to_date: parseRequiredDate(item.to_date, tripFallbackDate), city: item.city, hotel_name: item.hotel_name,
-              nights: parseInt(item.nights) || 1, single_price: parseFloat(item.single_price) || 0, double_price: parseFloat(item.double_price) || 0,
+              nights: parseSafeInt(item.nights) || 1, single_price: parseFloat(item.single_price) || 0, double_price: parseFloat(item.double_price) || 0,
               extra_bed_price: parseFloat(item.extra_bed_price) || 0, room_type: item.room_type,
               abf_price: parseFloat(item.abf_price) || 0, lunch_price: parseFloat(item.lunch_price) || 0, dinner_price: parseFloat(item.dinner_price) || 0,
-              promotions: item.promotions ? parseInt(item.promotions) : null, tour_package: item.tour_package,
+              promotions: parseSafeInt(item.promotions), tour_package: item.tour_package,
               notes: item.notes, approved: item.approved || false, declined: item.declined || false,
               promotion: item.promotion || null,
               meals: item.meals || null,
@@ -495,9 +505,9 @@ export async function createQuotation(req, res, next) {
               discount: item.discount !== undefined ? parseFloat(item.discount) : 0,
               booking_status: item.booking_status || null,
               booking_remark: item.booking_remark || null,
-              promotion_id: item.promotion_id ? parseInt(item.promotion_id) : null,
+              promotion_id: parseSafeInt(item.promotion_id),
               total_price: item.total_price !== undefined ? parseFloat(item.total_price) : 0,
-              display_order: item.display_order !== undefined ? parseInt(item.display_order) : 0,
+              display_order: parseSafeInt(item.display_order) || 0,
               extra_adult_bed_count: item.extra_adult_bed_count || 0,
               extra_child_bed_count: item.extra_child_bed_count || 0,
               rsvn_in: parseOptionalDate(item.rsvn_in),
@@ -505,8 +515,8 @@ export async function createQuotation(req, res, next) {
               payment_date: parseOptionalDate(item.payment_date),
               hotel_room_type_items: rtItems.length > 0 ? {
                 create: rtItems.map(rt => ({
-                  room_type_id: parseInt(rt.room_type_id), room_type: rt.room_type,
-                  adults: parseInt(rt.adults) || 0, children: parseInt(rt.children) || 0,
+                  room_type_id: parseSafeInt(rt.room_type_id) || 0, room_type: rt.room_type,
+                  adults: parseSafeInt(rt.adults) || 0, children: parseSafeInt(rt.children) || 0,
                   complimentary_abf: rt.complimentary_abf || false,
                   extra_adult_bed: rt.extra_adult_bed || false,
                   extra_child_bed: rt.extra_child_bed || false,
@@ -523,11 +533,11 @@ export async function createQuotation(req, res, next) {
           const excursionDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           await tx.excursion_trip_items.create({
             data: {
-              trip_item_id: id, excursion_id: parseInt(item.excursion_id), supplier_id: item.supplier_id ? parseInt(item.supplier_id) : null,
+              trip_item_id: id, excursion_id: parseSafeInt(item.excursion_id), supplier_id: parseSafeInt(item.supplier_id),
               city: item.city, toe: item.toe, from_date: excursionDate,
               to_date: excursionDate, hotel: item.hotel,
               guide_name: item.guide_name, guide_contact: item.guide_contact,
-              price: parseFloat(item.price) || 0, currency_id: item.currency_id ? parseInt(item.currency_id) : null, remarks: item.remarks,
+              price: parseFloat(item.price) || 0, currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
               approved: item.approved || false, declined: item.declined || false,
               pickup_time: item.pickup_time || null
             }
@@ -539,15 +549,15 @@ export async function createQuotation(req, res, next) {
         for (const item of tourItems) {
           await tx.tour_trip_items.create({
             data: {
-              trip_item_id: id, tour_id: parseInt(item.tour_id), supplier_id: item.supplier_id ? parseInt(item.supplier_id) : null,
+              trip_item_id: id, tour_id: parseSafeInt(item.tour_id), supplier_id: parseSafeInt(item.supplier_id),
               tot: item.tot, from_location: item.from_location, to_location: item.to_location,
-              number_of_adults: parseInt(item.number_of_adults) || 0, number_of_kids: parseInt(item.number_of_kids) || 0,
+              number_of_adults: parseSafeInt(item.number_of_adults) || 0, number_of_kids: parseSafeInt(item.number_of_kids) || 0,
               from_date: parseRequiredDate(item.from_date, tripFallbackDate), to_date: parseRequiredDate(item.to_date, tripFallbackDate),
               flight_in: parseOptionalDate(item.flight_in),
               flight_number: item.flight_number, flight_out: parseOptionalDate(item.flight_out),
               guide_name: item.guide_name, guide_contact: item.guide_contact,
               payment_car: item.payment_car, payment_service: item.payment_service,
-              price: parseFloat(item.price) || 0, currency_id: item.currency_id ? parseInt(item.currency_id) : null, remarks: item.remarks,
+              price: parseFloat(item.price) || 0, currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
               approved: item.approved || false, declined: item.declined || false
             }
           });
@@ -560,13 +570,13 @@ export async function createQuotation(req, res, next) {
           await tx.transfer_trip_items.create({
             data: {
               trip_item_id: id,
-              transfer_id: (item.transfer_id && !isNaN(parseInt(item.transfer_id))) ? parseInt(item.transfer_id) : null,
+              transfer_id: parseSafeInt(item.transfer_id),
               from_location: item.from_location, to_location: item.to_location,
               from_date: transferDate, to_date: transferDate,
               flight_number: item.flight_number, tot: item.tot,
-              supplier_id: item.supplier_id ? parseInt(item.supplier_id) : null, guide_name: item.guide_name,
+              supplier_id: parseSafeInt(item.supplier_id), guide_name: item.guide_name,
               guide_contact: item.guide_contact, price: parseFloat(item.price) || 0,
-              currency_id: item.currency_id ? parseInt(item.currency_id) : null, remarks: item.remarks,
+              currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
               approved: item.approved || false, declined: item.declined || false,
               city: item.city || item.transferCity || null,
               transfer_description: item.transfer_description || item.transferType || null,
@@ -586,7 +596,7 @@ export async function createQuotation(req, res, next) {
               trip_item_id: id, from_date: flightDate, to_date: flightDate,
               flight_number: item.flight_number, in_or_out: item.in_or_out,
               route: item.route, issued_by: item.issued_by, price: parseFloat(item.price) || 0,
-              currency_id: item.currency_id ? parseInt(item.currency_id) : null, remarks: item.remarks,
+              currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
               approved: item.approved || false, declined: item.declined || false,
               edt: item.edt || null,
               eat: item.eat || null,
@@ -601,7 +611,7 @@ export async function createQuotation(req, res, next) {
           const otherDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           await tx.other_trip_items.create({
             data: {
-              trip_item_id: id, other_id: parseInt(item.other_id),
+              trip_item_id: id, other_id: parseSafeInt(item.other_id),
               from_date: otherDate, to_date: otherDate
             }
           });
@@ -758,7 +768,7 @@ export async function updateQuotation(req, res, next) {
       if (data.special_package_id === null) {
         finalSpecialPackageId = null;
       } else {
-        finalSpecialPackageId = parseInt(data.special_package_id);
+        finalSpecialPackageId = parseSafeInt(data.special_package_id);
         const pkg = await prisma.special_packages.findUnique({
           where: { id: finalSpecialPackageId },
           include: { items: true }
@@ -863,9 +873,9 @@ export async function updateQuotation(req, res, next) {
           }
 
           if (data.total_amount === undefined && data.total_cost === undefined) {
-            const sglRooms = data.special_pkg_single_rooms !== undefined ? (parseInt(data.special_pkg_single_rooms) || 0) : (parseInt(existing.special_pkg_single_rooms) || 0);
-            const dblRooms = data.special_pkg_double_rooms !== undefined ? (parseInt(data.special_pkg_double_rooms) || 0) : (parseInt(existing.special_pkg_double_rooms) || 0);
-            const tplRooms = data.special_pkg_triple_rooms !== undefined ? (parseInt(data.special_pkg_triple_rooms) || 0) : (parseInt(existing.special_pkg_triple_rooms) || 0);
+            const sglRooms = data.special_pkg_single_rooms !== undefined ? (parseSafeInt(data.special_pkg_single_rooms) || 0) : (parseSafeInt(existing.special_pkg_single_rooms) || 0);
+            const dblRooms = data.special_pkg_double_rooms !== undefined ? (parseSafeInt(data.special_pkg_double_rooms) || 0) : (parseSafeInt(existing.special_pkg_double_rooms) || 0);
+            const tplRooms = data.special_pkg_triple_rooms !== undefined ? (parseSafeInt(data.special_pkg_triple_rooms) || 0) : (parseSafeInt(existing.special_pkg_triple_rooms) || 0);
 
             if (sglRooms > 0 || dblRooms > 0 || tplRooms > 0) {
               const sglPrice = pkg.price_per_adult ? parseFloat(pkg.price_per_adult) : 0;
@@ -873,8 +883,8 @@ export async function updateQuotation(req, res, next) {
               const tplPrice = pkg.price_per_child ? parseFloat(pkg.price_per_child) : 0;
               data.total_amount = (sglPrice * sglRooms * 1) + (dblPrice * dblRooms * 2) + (tplPrice * tplRooms * 3);
             } else {
-              const adults = parseInt(data.number_of_adults) || parseInt(existing.number_of_adults) || 1;
-              const kids = parseInt(data.number_of_kids) || parseInt(existing.number_of_kids) || 0;
+              const adults = parseSafeInt(data.number_of_adults) || parseSafeInt(existing.number_of_adults) || 1;
+              const kids = parseSafeInt(data.number_of_kids) || parseSafeInt(existing.number_of_kids) || 0;
               const pkgAdultPrice = pkg.price_per_adult ? parseFloat(pkg.price_per_adult) : 0;
               const pkgChildPrice = pkg.price_per_child ? parseFloat(pkg.price_per_child) : 0;
               data.total_amount = (pkgAdultPrice * adults) + (pkgChildPrice * kids);
@@ -959,14 +969,14 @@ export async function updateQuotation(req, res, next) {
         where: { id },
         data: {
           client_name: data.client_name, client_phone: data.client_phone,
-          number_of_adults: parseInt(data.number_of_adults) || 1,
-          number_of_kids: parseInt(data.number_of_kids) || 0,
+          number_of_adults: parseSafeInt(data.number_of_adults) || 1,
+          number_of_kids: parseSafeInt(data.number_of_kids) || 0,
           booking_reference: data.booking_reference, file_reference: data.file_reference,
-          remarks: data.remarks, agent_id: data.agent_id ? parseInt(data.agent_id) : undefined,
+          remarks: data.remarks, agent_id: data.agent_id ? parseSafeInt(data.agent_id) : undefined,
           total_amount, discount_amount, final_amount,
           trip_start_date,
           client_email: data.client_email !== undefined ? data.client_email : undefined,
-          user_id: data.user_id !== undefined ? (data.user_id ? parseInt(data.user_id) : null) : undefined,
+          user_id: data.user_id !== undefined ? (data.user_id ? parseSafeInt(data.user_id) : null) : undefined,
           is_booking: data.is_booking !== undefined ? data.is_booking : undefined,
           amount_paid: data.amount_paid !== undefined ? parseFloat(data.amount_paid) : undefined,
           penalty_cost: data.penalty_cost !== undefined ? parseFloat(data.penalty_cost) : undefined,
@@ -984,9 +994,9 @@ export async function updateQuotation(req, res, next) {
           utm_term: data.utm_term || undefined,
           referral_source: data.referral_source || undefined,
           special_package_id: finalSpecialPackageId,
-          special_pkg_single_rooms: data.special_pkg_single_rooms !== undefined ? (data.special_pkg_single_rooms ? parseInt(data.special_pkg_single_rooms) : 0) : undefined,
-          special_pkg_double_rooms: data.special_pkg_double_rooms !== undefined ? (data.special_pkg_double_rooms ? parseInt(data.special_pkg_double_rooms) : 0) : undefined,
-          special_pkg_triple_rooms: data.special_pkg_triple_rooms !== undefined ? (data.special_pkg_triple_rooms ? parseInt(data.special_pkg_triple_rooms) : 0) : undefined
+          special_pkg_single_rooms: data.special_pkg_single_rooms !== undefined ? (data.special_pkg_single_rooms ? parseSafeInt(data.special_pkg_single_rooms) : 0) : undefined,
+          special_pkg_double_rooms: data.special_pkg_double_rooms !== undefined ? (data.special_pkg_double_rooms ? parseSafeInt(data.special_pkg_double_rooms) : 0) : undefined,
+          special_pkg_triple_rooms: data.special_pkg_triple_rooms !== undefined ? (data.special_pkg_triple_rooms ? parseSafeInt(data.special_pkg_triple_rooms) : 0) : undefined
         }
       });
 
@@ -996,12 +1006,12 @@ export async function updateQuotation(req, res, next) {
           const rtItems = item.room_type_items || item.room_types || [];
           await tx.hotel_trip_items.create({
             data: {
-              trip_item_id: id, hotel_id: parseInt(item.hotel_id), from_date: parseRequiredDate(item.from_date, tripFallbackDate),
+              trip_item_id: id, hotel_id: parseSafeInt(item.hotel_id), from_date: parseRequiredDate(item.from_date, tripFallbackDate),
               to_date: parseRequiredDate(item.to_date, tripFallbackDate), city: item.city, hotel_name: item.hotel_name,
-              nights: parseInt(item.nights) || 1, single_price: parseFloat(item.single_price) || 0, double_price: parseFloat(item.double_price) || 0,
+              nights: parseSafeInt(item.nights) || 1, single_price: parseFloat(item.single_price) || 0, double_price: parseFloat(item.double_price) || 0,
               extra_bed_price: parseFloat(item.extra_bed_price) || 0, room_type: item.room_type,
               abf_price: parseFloat(item.abf_price) || 0, lunch_price: parseFloat(item.lunch_price) || 0, dinner_price: parseFloat(item.dinner_price) || 0,
-              promotions: item.promotions ? parseInt(item.promotions) : null, tour_package: item.tour_package,
+              promotions: parseSafeInt(item.promotions), tour_package: item.tour_package,
               notes: item.notes, approved: item.approved || false, declined: item.declined || false,
               promotion: item.promotion || null,
               meals: item.meals || null,
@@ -1014,9 +1024,9 @@ export async function updateQuotation(req, res, next) {
               discount: item.discount !== undefined ? parseFloat(item.discount) : 0,
               booking_status: item.booking_status || null,
               booking_remark: item.booking_remark || null,
-              promotion_id: item.promotion_id ? parseInt(item.promotion_id) : null,
+              promotion_id: parseSafeInt(item.promotion_id),
               total_price: item.total_price !== undefined ? parseFloat(item.total_price) : 0,
-              display_order: item.display_order !== undefined ? parseInt(item.display_order) : 0,
+              display_order: parseSafeInt(item.display_order) || 0,
               extra_adult_bed_count: item.extra_adult_bed_count || 0,
               extra_child_bed_count: item.extra_child_bed_count || 0,
               rsvn_in: parseOptionalDate(item.rsvn_in),
@@ -1024,8 +1034,8 @@ export async function updateQuotation(req, res, next) {
               payment_date: parseOptionalDate(item.payment_date),
               hotel_room_type_items: rtItems.length > 0 ? {
                 create: rtItems.map(rt => ({
-                  room_type_id: parseInt(rt.room_type_id), room_type: rt.room_type,
-                  adults: parseInt(rt.adults) || 0, children: parseInt(rt.children) || 0,
+                  room_type_id: parseSafeInt(rt.room_type_id) || 0, room_type: rt.room_type,
+                  adults: parseSafeInt(rt.adults) || 0, children: parseSafeInt(rt.children) || 0,
                   complimentary_abf: rt.complimentary_abf || false,
                   extra_adult_bed: rt.extra_adult_bed || false,
                   extra_child_bed: rt.extra_child_bed || false,
@@ -1041,11 +1051,11 @@ export async function updateQuotation(req, res, next) {
           const excursionDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           await tx.excursion_trip_items.create({
             data: {
-              trip_item_id: id, excursion_id: parseInt(item.excursion_id), supplier_id: item.supplier_id ? parseInt(item.supplier_id) : null,
+              trip_item_id: id, excursion_id: parseSafeInt(item.excursion_id), supplier_id: parseSafeInt(item.supplier_id),
               city: item.city, toe: item.toe, from_date: excursionDate,
               to_date: excursionDate, hotel: item.hotel,
               guide_name: item.guide_name, guide_contact: item.guide_contact,
-              price: parseFloat(item.price) || 0, currency_id: item.currency_id ? parseInt(item.currency_id) : null, remarks: item.remarks,
+              price: parseFloat(item.price) || 0, currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
               approved: item.approved || false, declined: item.declined || false,
               pickup_time: item.pickup_time || null
             }
@@ -1056,15 +1066,15 @@ export async function updateQuotation(req, res, next) {
         for (const item of tourItems) {
           await tx.tour_trip_items.create({
             data: {
-              trip_item_id: id, tour_id: parseInt(item.tour_id), supplier_id: item.supplier_id ? parseInt(item.supplier_id) : null,
+              trip_item_id: id, tour_id: parseSafeInt(item.tour_id), supplier_id: parseSafeInt(item.supplier_id),
               tot: item.tot, from_location: item.from_location, to_location: item.to_location,
-              number_of_adults: parseInt(item.number_of_adults) || 0, number_of_kids: parseInt(item.number_of_kids) || 0,
+              number_of_adults: parseSafeInt(item.number_of_adults) || 0, number_of_kids: parseSafeInt(item.number_of_kids) || 0,
               from_date: parseRequiredDate(item.from_date, tripFallbackDate), to_date: parseRequiredDate(item.to_date, tripFallbackDate),
               flight_in: parseOptionalDate(item.flight_in),
               flight_number: item.flight_number, flight_out: parseOptionalDate(item.flight_out),
               guide_name: item.guide_name, guide_contact: item.guide_contact,
               payment_car: item.payment_car, payment_service: item.payment_service,
-              price: parseFloat(item.price) || 0, currency_id: item.currency_id ? parseInt(item.currency_id) : null, remarks: item.remarks,
+              price: parseFloat(item.price) || 0, currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
               approved: item.approved || false, declined: item.declined || false
             }
           });
@@ -1076,13 +1086,13 @@ export async function updateQuotation(req, res, next) {
           await tx.transfer_trip_items.create({
             data: {
               trip_item_id: id,
-              transfer_id: (item.transfer_id && !isNaN(parseInt(item.transfer_id))) ? parseInt(item.transfer_id) : null,
+              transfer_id: parseSafeInt(item.transfer_id),
               from_location: item.from_location, to_location: item.to_location,
               from_date: transferDate, to_date: transferDate,
               flight_number: item.flight_number, tot: item.tot,
-              supplier_id: item.supplier_id ? parseInt(item.supplier_id) : null, guide_name: item.guide_name,
+              supplier_id: parseSafeInt(item.supplier_id), guide_name: item.guide_name,
               guide_contact: item.guide_contact, price: parseFloat(item.price) || 0,
-              currency_id: item.currency_id ? parseInt(item.currency_id) : null, remarks: item.remarks,
+              currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
               approved: item.approved || false, declined: item.declined || false,
               city: item.city || item.transferCity || null,
               transfer_description: item.transfer_description || item.transferType || null,
@@ -1101,7 +1111,7 @@ export async function updateQuotation(req, res, next) {
               trip_item_id: id, from_date: flightDate, to_date: flightDate,
               flight_number: item.flight_number, in_or_out: item.in_or_out,
               route: item.route, issued_by: item.issued_by, price: parseFloat(item.price) || 0,
-              currency_id: item.currency_id ? parseInt(item.currency_id) : null, remarks: item.remarks,
+              currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
               approved: item.approved || false, declined: item.declined || false,
               edt: item.edt || null,
               eat: item.eat || null,
@@ -1115,7 +1125,7 @@ export async function updateQuotation(req, res, next) {
           const otherDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           await tx.other_trip_items.create({
             data: {
-              trip_item_id: id, other_id: parseInt(item.other_id),
+              trip_item_id: id, other_id: parseSafeInt(item.other_id),
               from_date: otherDate, to_date: otherDate
             }
           });
