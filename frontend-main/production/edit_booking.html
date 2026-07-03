@@ -1716,8 +1716,9 @@
                     id="tourName"
                     class="form-control tour-dropdown"
                     required
+                    disabled
                   >
-                    <option value="" disabled selected>Select Tour</option>
+                    <option value="" disabled selected>Select a city first</option>
                     <!-- Populate dynamically -->
                   </select>
                 </div>
@@ -3127,10 +3128,10 @@
           const buttonsHtml = isPackage
             ? `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button disabled class="btn btn-sm btn-warning edit-excursion" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                    <button class="btn btn-sm btn-warning edit-excursion" type="button">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <span class="tooltip-text">Edit Locked</span>
+                    <span class="tooltip-text">Edit</span>
                   </div>
                   <div class="tooltip-btn" style="display: inline-block;">
                     <button disabled class="btn btn-sm btn-danger delete-excursion" type="button" style="opacity: 0.5; cursor: not-allowed;">
@@ -3455,7 +3456,6 @@
             const emailBtn = event.target.closest(".email-excursion");
 
             if (editBtn) {
-              if (row.dataset.isPackageItem === "true") return;
               editExcursion(row);
             } else if (deleteBtn) {
               if (row.dataset.isPackageItem === "true") return;
@@ -3768,10 +3768,10 @@
           const buttonsHtml = isPackage
             ? `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button disabled class="btn btn-sm btn-warning edit-transfer" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                    <button class="btn btn-sm btn-warning edit-transfer" type="button">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <span class="tooltip-text">Edit Locked</span>
+                    <span class="tooltip-text">Edit</span>
                   </div>
                   <div class="tooltip-btn" style="display: inline-block;">
                     <button disabled class="btn btn-sm btn-danger delete-transfer" type="button" style="opacity: 0.5; cursor: not-allowed;">
@@ -4556,7 +4556,6 @@
             const emailBtn = event.target.closest(".email-transfer");
 
             if (editBtn) {
-              if (row.dataset.isPackageItem === "true") return;
               editTransfer(row);
             } else if (deleteBtn) {
               if (row.dataset.isPackageItem === "true") return;
@@ -5527,10 +5526,10 @@
           const buttonsHtml = isPackage
             ? `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button disabled class="btn btn-sm btn-warning edit-hotel" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                    <button class="btn btn-sm btn-warning edit-hotel" type="button">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <span class="tooltip-text">Edit Locked</span>
+                    <span class="tooltip-text">Edit</span>
                   </div>
                   <div class="tooltip-btn" style="display: inline-block;">
                     <button disabled class="btn btn-sm btn-danger delete-hotel" type="button" style="opacity: 0.5; cursor: not-allowed;">
@@ -6648,7 +6647,6 @@
             const emailBtn = event.target.closest(".email-hotel");
 
             if (editBtn) {
-              if (row.dataset.isPackageItem === "true") return;
               editHotel(row);
             } else if (deleteBtn) {
               if (row.dataset.isPackageItem === "true") return;
@@ -7383,9 +7381,12 @@
           const selectedCity = cityDropdown.value;
 
           if (!selectedCity) {
-            alert("Please select a city.");
+            tourDropdown.innerHTML = '<option value="" disabled selected>Select a city first</option>';
+            tourDropdown.disabled = true;
             return;
           }
+
+          tourDropdown.disabled = false;
 
           console.log(`Fetching tours for city: ${selectedCity}`); // Debugging log
 
@@ -7866,10 +7867,10 @@
           const buttonsHtml = isPackage
             ? `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button disabled class="btn btn-sm btn-warning edit-tour" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                    <button class="btn btn-sm btn-warning edit-tour" type="button">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <span class="tooltip-text">Edit Locked</span>
+                    <span class="tooltip-text">Edit</span>
                   </div>
                   <div class="tooltip-btn" style="display: inline-block;">
                     <button disabled class="btn btn-sm btn-danger delete-tour" type="button" style="opacity: 0.5; cursor: not-allowed;">
@@ -8115,6 +8116,7 @@
               return response.json();
             })
             .then((tours) => {
+              tourDropdown.disabled = false;
               tourDropdown.innerHTML = '<option value="">Select Tour</option>'; // Clear previous options
 
               tours.forEach((tourOption) => {
@@ -8198,7 +8200,6 @@
             const emailBtn = event.target.closest(".email-tour");
 
             if (editBtn) {
-              if (row.dataset.isPackageItem === "true") return;
               editTour(row);
             } else if (deleteBtn) {
               if (row.dataset.isPackageItem === "true") return;
@@ -8508,10 +8509,10 @@
           const buttonsHtml = isPackage
             ? `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button disabled class="btn btn-sm btn-warning edit-flight" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                    <button class="btn btn-sm btn-warning edit-flight" type="button">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <span class="tooltip-text">Edit Locked</span>
+                    <span class="tooltip-text">Edit</span>
                   </div>
                   <div class="tooltip-btn" style="display: inline-block;">
                     <button disabled class="btn btn-sm btn-danger delete-flight" type="button" style="opacity: 0.5; cursor: not-allowed;">
@@ -8737,8 +8738,8 @@
             const row = event.target.closest("tr");
             if (!row) return;
 
-            // ✅ Block package items editing/deleting
-            if (row.dataset.isPackageItem === "true") {
+            // ✅ Block package items delete only, allow edit
+            if (row.dataset.isPackageItem === "true" && (event.target.classList.contains("delete-flight") || event.target.closest(".delete-flight"))) {
               return;
             }
 
@@ -10024,10 +10025,10 @@
           const buttonsHtml = isPackage
             ? `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button disabled class="btn btn-sm btn-warning edit-other" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                    <button class="btn btn-sm btn-warning edit-other" type="button">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <span class="tooltip-text">Edit Locked</span>
+                    <span class="tooltip-text">Edit</span>
                   </div>
                   <div class="tooltip-btn" style="display: inline-block;">
                     <button disabled class="btn btn-sm btn-danger delete-other" type="button" style="opacity: 0.5; cursor: not-allowed;">
@@ -10201,8 +10202,8 @@
             const row = event.target.closest("tr");
             if (!row) return;
 
-            // ✅ Block package items editing/deleting
-            if (row.dataset.isPackageItem === "true") {
+            // ✅ Block package items delete only, allow edit
+            if (row.dataset.isPackageItem === "true" && (event.target.classList.contains("delete-other") || event.target.closest(".delete-other"))) {
               return;
             }
 

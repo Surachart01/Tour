@@ -1745,8 +1745,9 @@
                     id="tourName"
                     class="form-control tour-dropdown"
                     required
+                    disabled
                   >
-                    <option value="" disabled selected>Select Tour</option>
+                    <option value="" disabled selected>Select a city first</option>
                     <!-- Populate dynamically -->
                   </select>
                 </div>
@@ -3163,10 +3164,10 @@
           const buttonsHtml = isPackage
             ? `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button disabled class="btn btn-sm btn-warning edit-excursion" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                    <button class="btn btn-sm btn-warning edit-excursion" type="button">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <span class="tooltip-text">Edit Locked</span>
+                    <span class="tooltip-text">Edit</span>
                   </div>
                   <div class="tooltip-btn" style="display: inline-block;">
                     <button disabled class="btn btn-sm btn-danger delete-excursion" type="button" style="opacity: 0.5; cursor: not-allowed;">
@@ -3428,14 +3429,14 @@
             const row = event.target.closest("tr");
             if (!row) return;
 
-            // ✅ Block package items editing/deleting
-            if (row.dataset.isPackageItem === "true") {
+            // ✅ Block package items delete only, allow edit
+            if (row.dataset.isPackageItem === "true" && (event.target.classList.contains("delete-excursion") || event.target.closest(".delete-excursion"))) {
               return;
             }
 
-            if (event.target.classList.contains("edit-excursion")) {
+            if (event.target.classList.contains("edit-excursion") || event.target.closest(".edit-excursion")) {
               editExcursion(row);
-            } else if (event.target.classList.contains("delete-excursion")) {
+            } else if (event.target.classList.contains("delete-excursion") || event.target.closest(".delete-excursion")) {
               deleteExcursion(row);
             }
           });
@@ -3739,10 +3740,10 @@
           const buttonsHtml = isPackage
             ? `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button disabled class="btn btn-sm btn-warning edit-transfer" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                    <button class="btn btn-sm btn-warning edit-transfer" type="button">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <span class="tooltip-text">Edit Locked</span>
+                    <span class="tooltip-text">Edit</span>
                   </div>
                   <div class="tooltip-btn" style="display: inline-block;">
                     <button disabled class="btn btn-sm btn-danger delete-transfer" type="button" style="opacity: 0.5; cursor: not-allowed;">
@@ -4465,8 +4466,8 @@
             const row = event.target.closest("tr");
             if (!row) return;
 
-            // ✅ Block package items editing/deleting
-            if (row.dataset.isPackageItem === "true") {
+            // ✅ Block package items delete only, allow edit
+            if (row.dataset.isPackageItem === "true" && (event.target.classList.contains("delete-transfer") || event.target.closest(".delete-transfer"))) {
               return;
             }
 
@@ -5419,6 +5420,13 @@
             row.dataset.roomTypes = JSON.stringify(hotel.room_types);
           }
 
+          row.dataset.approved = (hotel.approved === true || hotel.approved === 1 || hotel.approved === "true") ? "true" : "false";
+          if (row.dataset.approved === "true") row.classList.add("row-confirmed");
+
+          const confirmBtnClass = row.dataset.approved === "true" ? "confirm-hotel-btn" : "confirm-hotel-btn unconfirmed";
+          const confirmTitle = row.dataset.approved === "true" ? "Confirmed ✓" : "Mark as Confirmed";
+          const confirmIcon = row.dataset.approved === "true" ? "fa-check-circle" : "fa-circle-o";
+
           // ✅ Populate the row visually
           const roomTypeSummary = Array.isArray(hotel.room_types)
             ? hotel.room_types
@@ -5433,10 +5441,10 @@
           const buttonsHtml = isPackage
             ? `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button disabled class="btn btn-sm btn-warning edit-hotel" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                    <button class="btn btn-sm btn-warning edit-hotel" type="button">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <span class="tooltip-text">Edit Locked</span>
+                    <span class="tooltip-text">Edit</span>
                   </div>
                   <div class="tooltip-btn" style="display: inline-block;">
                     <button disabled class="btn btn-sm btn-danger delete-hotel" type="button" style="opacity: 0.5; cursor: not-allowed;">
@@ -5933,12 +5941,12 @@
             .join(", ");
 
           // Fill row HTML
-          const confirmedNew = (hotel.approved === true || hotel.approved === "true") ? "true" : "false";
-          newRow.dataset.confirmed = confirmedNew;
-          if (confirmedNew === "true") newRow.classList.add("row-confirmed");
-          const cBtnClass = confirmedNew === "true" ? "confirm-hotel-btn" : "confirm-hotel-btn unconfirmed";
-          const cIcon = confirmedNew === "true" ? "fa-check-circle" : "fa-circle-o";
-          const cTitle = confirmedNew === "true" ? "Confirmed ✓" : "Mark as Confirmed";
+          const approvedNew = (hotel.approved === true || hotel.approved === "true") ? "true" : "false";
+          newRow.dataset.approved = approvedNew;
+          if (approvedNew === "true") newRow.classList.add("row-confirmed");
+          const cBtnClass = approvedNew === "true" ? "confirm-hotel-btn" : "confirm-hotel-btn unconfirmed";
+          const cIcon = approvedNew === "true" ? "fa-check-circle" : "fa-circle-o";
+          const cTitle = approvedNew === "true" ? "Confirmed ✓" : "Mark as Confirmed";
 
           newRow.innerHTML = `
             <td>${formatToDDMMYYYY(hotel.from_date || hotel.checkInDate)}</td>
@@ -6377,14 +6385,33 @@
             const row = event.target.closest("tr");
             if (!row) return;
 
-            // ✅ Block package items editing/deleting
-            if (row.dataset.isPackageItem === "true") {
+            const confirmBtn = event.target.closest(".confirm-hotel-row");
+            if (confirmBtn) {
+              const isApproved = row.dataset.approved === "true";
+              if (isApproved) {
+                row.dataset.approved = "false";
+                row.classList.remove("row-confirmed");
+                confirmBtn.className = "btn btn-sm confirm-hotel-btn unconfirmed confirm-hotel-row";
+                confirmBtn.innerHTML = '<i class="fa fa-circle-o"></i>';
+                confirmBtn.nextElementSibling.textContent = "Mark as Confirmed";
+              } else {
+                row.dataset.approved = "true";
+                row.classList.add("row-confirmed");
+                confirmBtn.className = "btn btn-sm confirm-hotel-btn confirm-hotel-row";
+                confirmBtn.innerHTML = '<i class="fa fa-check-circle"></i>';
+                confirmBtn.nextElementSibling.textContent = "Confirmed ✓";
+              }
               return;
             }
 
-            if (event.target.classList.contains("edit-hotel")) {
+            // ✅ Block package items delete only, allow edit
+            if (row.dataset.isPackageItem === "true" && (event.target.classList.contains("delete-hotel") || event.target.closest(".delete-hotel"))) {
+              return;
+            }
+
+            if (event.target.classList.contains("edit-hotel") || event.target.closest(".edit-hotel")) {
               editHotel(row);
-            } else if (event.target.classList.contains("delete-hotel")) {
+            } else if (event.target.classList.contains("delete-hotel") || event.target.closest(".delete-hotel")) {
               deleteHotel(row);
             }
           });
@@ -7110,9 +7137,12 @@
           const selectedCity = cityDropdown.value;
 
           if (!selectedCity) {
-            alert("Please select a city.");
+            tourDropdown.innerHTML = '<option value="" disabled selected>Select a city first</option>';
+            tourDropdown.disabled = true;
             return;
           }
+
+          tourDropdown.disabled = false;
 
           console.log(`Fetching tours for city: ${selectedCity}`); // Debugging log
 
@@ -7593,10 +7623,10 @@
           const buttonsHtml = isPackage
             ? `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button disabled class="btn btn-sm btn-warning edit-tour" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                    <button class="btn btn-sm btn-warning edit-tour" type="button">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <span class="tooltip-text">Edit Locked</span>
+                    <span class="tooltip-text">Edit</span>
                   </div>
                   <div class="tooltip-btn" style="display: inline-block;">
                     <button disabled class="btn btn-sm btn-danger delete-tour" type="button" style="opacity: 0.5; cursor: not-allowed;">
@@ -7786,6 +7816,7 @@
               return response.json();
             })
             .then((tours) => {
+              tourDropdown.disabled = false;
               tourDropdown.innerHTML = '<option value="">Select Tour</option>'; // Clear previous options
 
               tours.forEach((tourOption) => {
@@ -7862,14 +7893,14 @@
             const row = event.target.closest("tr");
             if (!row) return;
 
-            // ✅ Block package items editing/deleting
-            if (row.dataset.isPackageItem === "true") {
+            // ✅ Block package items delete only, allow edit
+            if (row.dataset.isPackageItem === "true" && (event.target.classList.contains("delete-tour") || event.target.closest(".delete-tour"))) {
               return;
             }
 
-            if (event.target.classList.contains("edit-tour")) {
+            if (event.target.classList.contains("edit-tour") || event.target.closest(".edit-tour")) {
               editTour(row);
-            } else if (event.target.classList.contains("delete-tour")) {
+            } else if (event.target.classList.contains("delete-tour") || event.target.closest(".delete-tour")) {
               deleteTour(row);
             }
           });
@@ -8170,10 +8201,10 @@
           const buttonsHtml = isPackage
             ? `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button disabled class="btn btn-sm btn-warning edit-flight" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                    <button class="btn btn-sm btn-warning edit-flight" type="button">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <span class="tooltip-text">Edit Locked</span>
+                    <span class="tooltip-text">Edit</span>
                   </div>
                   <div class="tooltip-btn" style="display: inline-block;">
                     <button disabled class="btn btn-sm btn-danger delete-flight" type="button" style="opacity: 0.5; cursor: not-allowed;">
@@ -8399,8 +8430,8 @@
             const row = event.target.closest("tr");
             if (!row) return;
 
-            // ✅ Block package items editing/deleting
-            if (row.dataset.isPackageItem === "true") {
+            // ✅ Block package items delete only, allow edit
+            if (row.dataset.isPackageItem === "true" && (event.target.classList.contains("delete-flight") || event.target.closest(".delete-flight"))) {
               return;
             }
 
@@ -9682,10 +9713,10 @@
           const buttonsHtml = isPackage
             ? `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button disabled class="btn btn-sm btn-warning edit-other" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                    <button class="btn btn-sm btn-warning edit-other" type="button">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <span class="tooltip-text">Edit Locked</span>
+                    <span class="tooltip-text">Edit</span>
                   </div>
                   <div class="tooltip-btn" style="display: inline-block;">
                     <button disabled class="btn btn-sm btn-danger delete-other" type="button" style="opacity: 0.5; cursor: not-allowed;">
@@ -9859,14 +9890,14 @@
             const row = event.target.closest("tr");
             if (!row) return;
 
-            // ✅ Block package items editing/deleting
-            if (row.dataset.isPackageItem === "true") {
+            // ✅ Block package items delete only, allow edit
+            if (row.dataset.isPackageItem === "true" && (event.target.classList.contains("delete-other") || event.target.closest(".delete-other"))) {
               return;
             }
 
-            if (event.target.classList.contains("edit-other")) {
+            if (event.target.classList.contains("edit-other") || event.target.closest(".edit-other")) {
               editOtherService(row);
-            } else if (event.target.classList.contains("delete-other")) {
+            } else if (event.target.classList.contains("delete-other") || event.target.closest(".delete-other")) {
               deleteOtherService(row);
             }
           });

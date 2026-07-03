@@ -14,28 +14,27 @@ document.addEventListener("DOMContentLoaded", function () {
   // Ensure toursData is populated before selection
   let toursData = {};
 
-  // Fetch and populate tour options along with routes (with date filtering)
+  // Fetch and populate tour options along with routes
   function fetchAndPopulateTours(cityDropdown, tourDropdown) {
     const selectedCity = cityDropdown.value;
     const startDate = document.getElementById("tourStartDate").value;
 
     if (!selectedCity) {
-      alert("Please select a city.");
+      tourDropdown.innerHTML = '<option value="" disabled selected>Select a city first</option>';
+      tourDropdown.disabled = true;
       return;
     }
 
-    if (!startDate) {
-      alert("Please select a start date first.");
-      tourDropdown.innerHTML = '<option value="">Select a start date first</option>';
-      return;
+    tourDropdown.disabled = false;
+
+    console.log(`Fetching tours for city: ${selectedCity}`);
+
+    let url = `${Endpoint}/api/v1/tours?city=${selectedCity}&keyword=`;
+    if (startDate) {
+      url += `&from_date=${startDate}&to_date=${startDate}`;
     }
 
-    console.log(`Fetching tours for city: ${selectedCity}, date: ${startDate}`);
-
-    // Format date as YYYY-MM-DD
-    const dateStr = startDate; // Already in YYYY-MM-DD format from date input
-
-    fetch(`${Endpoint}/api/v1/tours?city=${selectedCity}&from_date=${dateStr}&to_date=${dateStr}&keyword=`, {
+    fetch(url, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -48,8 +47,7 @@ document.addEventListener("DOMContentLoaded", function () {
         toursData = {}; // Reset stored tours
 
         if (tours.length === 0) {
-          tourDropdown.innerHTML = '<option value="">No tours available on this date</option>';
-          console.warn(`No tours available in ${selectedCity} on ${startDate}`);
+          tourDropdown.innerHTML = '<option value="">No tours available in this city</option>';
           return;
         }
 
@@ -58,10 +56,6 @@ document.addEventListener("DOMContentLoaded", function () {
             console.warn("Warning: Tour object missing ID:", tour);
             return;
           }
-
-          console.log(
-            `✅ Storing Tour: ID=${tour.id}, Name=${tour.name}, Duration=${tour.duration}`
-          );
 
           toursData[tour.id] = tour; // Store tour data
 
@@ -73,7 +67,6 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .catch((error) => {
         console.error("Error fetching tours:", error);
-        alert("Failed to load tours. Please try again later.");
       });
   }
 
