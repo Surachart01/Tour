@@ -149,8 +149,8 @@ document.getElementById("flightsTableBody").addEventListener("click", function (
   const row = event.target.closest("tr");
   if (!row) return;
 
-  // ✅ Block package items editing/deleting
-  if (row.dataset.isPackageItem === "true") {
+  // ✅ Block package items delete only, allow edit
+  if (row.dataset.isPackageItem === "true" && (event.target.classList.contains("deleteBtn") || event.target.closest(".deleteBtn"))) {
     return;
   }
 
@@ -188,6 +188,14 @@ document.getElementById("flightsTableBody").addEventListener("click", function (
 
       // Show the modal for editing
       editingFlightRow = row; // Track the row being edited
+
+      const isPackageItem = row.dataset.isPackageItem === "true";
+      setTimeout(() => {
+        if (typeof window.toggleModalFieldsForPackage === "function") {
+          window.toggleModalFieldsForPackage("#flightModal", isPackageItem, ["#flightDate"]);
+        }
+      }, 300);
+
       $("#flightModal").modal("show");
   }
 

@@ -491,8 +491,8 @@ export async function calculateToursCost(req, res, next) {
     const final_cost = calculateTourCostLogic(tour, request, markupGroup, markups);
     return res.json({ final_cost, discount: 0 });
   } catch (err) {
-    if (err.message && (err.message.includes('not found') || err.message.includes('not available') || err.message.includes('mismatch') || err.message.includes('invalid'))) {
-      return res.status(400).send(err.message);
+    if (err.message && (err.message.includes('not found') || err.message.includes('not available') || err.message.includes('no ') || err.message.includes('mismatch') || err.message.includes('invalid'))) {
+      return res.status(400).json({ code: 400, message: err.message });
     }
     next(err);
   }

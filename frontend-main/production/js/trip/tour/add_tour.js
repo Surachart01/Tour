@@ -167,8 +167,14 @@ document.addEventListener("DOMContentLoaded", function () {
     })
       .then(async (response) => {
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText);
+          let errorMsg = "Unable to calculate price.";
+          try {
+            const errData = await response.json();
+            errorMsg = errData.message || errorMsg;
+          } catch (_) {
+            errorMsg = (await response.text()) || errorMsg;
+          }
+          throw new Error(errorMsg);
         }
         return response.json();
       })
@@ -181,7 +187,7 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .catch((error) => {
         console.error("Error fetching tour price:", error);
-        alert(`Error: ${error.message}`);
+        alert(`⚠️ Tour Pricing Error:\n${error.message}\n\nPlease check the selected tour date and pricing setup in the Admin panel.`);
         document.getElementById("updatedTourPrice").value = 0; // ✅ Set price to 0 on error
       });
   }
@@ -361,6 +367,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const endDateInput = document.getElementById("tourEndDate");
 
     // Set tourStartDate to tripStartDate or today's date
+    const today = new Date().toISOString().split('T')[0];
     startDateInput.value = tripStartDate ? tripStartDate : today;
     startDateInput.min = tripStartDate; // Prevent selecting past dates
 
@@ -425,11 +432,16 @@ document.addEventListener("DOMContentLoaded", function () {
       },
       body: JSON.stringify(requestData),
     })
-      .then((response) => {
+      .then(async (response) => {
         if (!response.ok) {
-          return response.text().then((errorData) => {
-            throw new Error("Failed to calculate tour price: " + errorData);
-          });
+          let errorMsg = "Unable to calculate price.";
+          try {
+            const errData = await response.json();
+            errorMsg = errData.message || errorMsg;
+          } catch (_) {
+            errorMsg = (await response.text()) || errorMsg;
+          }
+          throw new Error(errorMsg);
         }
         return response.json();
       })
@@ -442,7 +454,7 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .catch((error) => {
         console.error("Error calculating tour price:", error);
-        alert(error.message);
+        alert(`⚠️ Tour Pricing Error:\n${error.message}\n\nPlease check the selected tour date and pricing setup in the Admin panel.`);
       });
   });
 
@@ -543,8 +555,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const row = event.target.closest("tr");
     if (!row) return;
 
-    // ✅ Block package items editing/deleting
-    if (row.dataset.isPackageItem === "true") {
+    // ✅ Block package items delete only, allow edit
+    if (row.dataset.isPackageItem === "true" && (event.target.classList.contains("deleteBtn") || event.target.closest(".deleteBtn"))) {
       return;
     }
   
@@ -584,6 +596,17 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("tripleRoomCount").disabled = rowData.tripleRoomCount === 0;
 
       editingTourRow = row;
+
+      const isPackageItem = row.dataset.isPackageItem === "true";
+      if (isPackageItem) {
+        const totSelect = document.getElementById("tourToT");
+        if (totSelect) totSelect.value = "SIC";
+      }
+      setTimeout(() => {
+        if (typeof window.toggleModalFieldsForPackage === "function") {
+          window.toggleModalFieldsForPackage("#addTourModal", isPackageItem, ["#tourStartDate", "#tourEndDate"]);
+        }
+      }, 300);
 
       // Show modal first, then handle location setup
       $("#addTourModal").modal("show");

@@ -2408,6 +2408,30 @@
         window.pendingSpecialPackageId = null;
         window.specialPackagesLoaded = false;
         window.quotationLoaded = false;
+        function toggleModalFieldsForPackage(modalSelector, isPackageItem, allowedFieldSelectors = []) {
+          const modal = document.querySelector(modalSelector);
+          if (!modal) return;
+          const inputs = modal.querySelectorAll("input, select, textarea");
+          inputs.forEach(input => {
+            const isAllowed = allowedFieldSelectors.some(selector => {
+              const el = modal.querySelector(selector);
+              return el === input;
+            });
+            if (isPackageItem) {
+              input.disabled = !isAllowed;
+            } else {
+              input.disabled = false;
+            }
+          });
+        }
+
+        $(document).on('show.bs.modal', '#hotelModal, #addTourModal, #addExcursionModal, #addTransferModal, #flightModal, #othersModal, #addOthersModal', function () {
+          const fn = window.toggleModalFieldsForPackage || (typeof toggleModalFieldsForPackage === "function" ? toggleModalFieldsForPackage : null);
+          if (fn) {
+            fn(this, false);
+          }
+        });
+
 
         async function checkAndApplyPendingSpecialPackage() {
           if (window.specialPackagesLoaded && window.quotationLoaded && window.pendingSpecialPackageId) {
@@ -3158,7 +3182,7 @@
           }
 
           const packageBadge = isPackage
-            ? `<span class="badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
+            ? `<span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
             : "";
 
           const buttonsHtml = isPackage
@@ -3564,6 +3588,11 @@
           document.getElementById("excursionRemarks").disabled = false;
 
           // ✅ Ensure old selections do not persist
+          const isPackageItem = row.dataset.isPackageItem === "true";
+          setTimeout(() => {
+            toggleModalFieldsForPackage("#addExcursionModal", isPackageItem, ["#excursionDate"]);
+          }, 300);
+
           editingExcursionRow = row;
           $("#addExcursionModal").modal("show");
         }
@@ -3734,7 +3763,7 @@
           row.dataset.transferDate = formatToYYYYMMDD(transfer.date || "");
 
           const packageBadge = isPackage
-            ? `<span class="badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
+            ? `<span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
             : "";
 
           const buttonsHtml = isPackage
@@ -4439,6 +4468,11 @@
             });
 
           // Set editing row and show modal
+          const isPackageItem = row.dataset.isPackageItem === "true";
+          setTimeout(() => {
+            toggleModalFieldsForPackage("#addTransferModal", isPackageItem, ["#transferDate"]);
+          }, 300);
+
           editingTransferRow = row;
           $("#addTransferModal").modal("show");
         }
@@ -5435,7 +5469,7 @@
             : hotel.room_type || "";
 
           const hotelNameDisplay = isPackage
-            ? `${hotel.hotel_name || ""} <span class="badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
+            ? `${hotel.hotel_name || ""} <span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
             : hotel.hotel_name || "";
 
           const buttonsHtml = isPackage
@@ -6277,6 +6311,11 @@
             if (el) el.disabled = !canEdit;
           });
 
+          const isPackageItem = row.dataset.isPackageItem === "true";
+          setTimeout(() => {
+            toggleModalFieldsForPackage("#hotelModal", isPackageItem, ["#checkInDate", "#checkOutDate"]);
+          }, 300);
+
           editingHotelRow = row;
           $("#hotelModal").modal("show");
         }
@@ -7104,9 +7143,15 @@
                 response.status
               );
               if (!response.ok) {
-                const errorText = await response.text();
-                console.error("❌ Tour price API error:", errorText);
-                throw new Error(errorText);
+                let errorMsg = "Unable to calculate price.";
+                try {
+                  const errData = await response.json();
+                  errorMsg = errData.message || errorMsg;
+                } catch (_) {
+                  errorMsg = (await response.text()) || errorMsg;
+                }
+                console.error("❌ Tour price API error:", errorMsg);
+                throw new Error(errorMsg);
               }
               return response.json();
             })
@@ -7125,7 +7170,7 @@
             })
             .catch((error) => {
               console.error("❌ Error fetching tour price:", error);
-              alert(`Error: ${error.message}`);
+              alert(`⚠️ Tour Pricing Error:\n${error.message}\n\nPlease check the selected tour date and pricing setup in the Admin panel.`);
               document.getElementById("updatedTourPrice").value = 0;
             });
         }
@@ -7316,7 +7361,7 @@
               tot: tot,
               number_of_kids: numberOfKids,
               number_of_adults: numberOfAdults,
-              travel_date: travelDate, // Use travel_date for consistency
+              travel_date: travelDate,
               single_rooms: singleRooms,
               double_rooms: doubleRooms,
               triple_rooms: tripleRooms,
@@ -7336,9 +7381,15 @@
                   response.status
                 );
                 if (!response.ok) {
-                  const errorText = await response.text();
-                  console.error("❌ Manual tour price API error:", errorText);
-                  throw new Error(errorText);
+                  let errorMsg = "Unable to calculate price.";
+                  try {
+                    const errData = await response.json();
+                    errorMsg = errData.message || errorMsg;
+                  } catch (_) {
+                    errorMsg = (await response.text()) || errorMsg;
+                  }
+                  console.error("❌ Manual tour price API error:", errorMsg);
+                  throw new Error(errorMsg);
                 }
                 return response.json();
               })
@@ -7357,7 +7408,7 @@
               })
               .catch((error) => {
                 console.error("❌ Error fetching manual tour price:", error);
-                alert(`Error: ${error.message}`);
+                alert(`⚠️ Tour Pricing Error:\n${error.message}\n\nPlease check the selected tour date and pricing setup in the Admin panel.`);
                 document.getElementById("updatedTourPrice").value = 0;
               });
           });
@@ -7617,7 +7668,7 @@
           }
 
           const packageBadge = isPackage
-            ? `<span class="badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
+            ? `<span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
             : "";
 
           const buttonsHtml = isPackage
@@ -7653,7 +7704,7 @@
           row.innerHTML = `
                     <td>${tour.from_location || ""}</td>
                     <td>${tour.tour_name || ""} ${packageBadge}</td>
-                    <td>${tour.tot || ""}</td>
+                    <td>${isPackage ? "SIC" : (tour.tot || "")}</td>
                     <td>${tour.route || ""}</td>
                     <td>${totalPax}</td>
                     <td>${cleanRemarks}</td>
@@ -7675,7 +7726,8 @@
             let rowData = {};
             const cells = row.querySelectorAll("td");
 
-            rowData["tour_id"] = parseInt(row.dataset.tourId, 10) || 0;
+            const parsedTourId = parseInt(row.dataset.tourId, 10);
+            rowData["tour_id"] = isNaN(parsedTourId) || parsedTourId === 0 ? null : parsedTourId;
             console.log("Extracted Tour ID:", rowData["tour_id"]); // Debugging
 
             rowData["tour_name"] = cells[1]?.textContent.trim() || "";
@@ -7697,6 +7749,8 @@
             rowData["single_rooms"] = parseInt(row.dataset.singleRooms) || 0;
             rowData["double_rooms"] = parseInt(row.dataset.doubleRooms) || 0;
             rowData["triple_rooms"] = parseInt(row.dataset.tripleRooms) || 0;
+            rowData["number_of_adults"] =
+              parseInt(cells[4]?.textContent.trim()) || 0;
             rowData["total_cost"] =
               parseFloat(cells[6]?.textContent.trim()) || 0.0;
             rowData["discount"] = 0.0;
@@ -7883,6 +7937,11 @@
           document.getElementById("tourRemarks").disabled = false;
 
           // ✅ Set editing row reference
+          const isPackageItem = row.dataset.isPackageItem === "true";
+          setTimeout(() => {
+            toggleModalFieldsForPackage("#addTourModal", isPackageItem, ["#tourStartDate", "#tourEndDate"]);
+          }, 300);
+
           editingTourRow = row;
           $("#addTourModal").modal("show");
         }
@@ -7929,6 +7988,7 @@
             const endDateInput = document.getElementById("tourEndDate");
 
             // Set tourStartDate to tripStartDate or today's date
+            const today = new Date().toISOString().split('T')[0];
             startDateInput.value = tripStartDate ? tripStartDate : today;
             startDateInput.min = tripStartDate; // Prevent selecting past dates
 
@@ -8195,7 +8255,7 @@
           const eat = flight.eat || flight.arrival_time || "";
 
           const packageBadge = isPackage
-            ? `<span class="badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
+            ? `<span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
             : "";
 
           const buttonsHtml = isPackage
@@ -8508,6 +8568,11 @@
           if (flightCostField) {
             flightCostField.value = flight.total_cost || flight.final_cost || 0;
           }
+
+          const isPackageItem = row.dataset.isPackageItem === "true";
+          setTimeout(() => {
+            toggleModalFieldsForPackage("#flightModal", isPackageItem, ["#flightDate"]);
+          }, 300);
 
           editingFlightRow = row;
           $("#flightModal").modal("show");
@@ -9162,8 +9227,8 @@
                 rowData["trip_item_id"] = 0; // This should be assigned dynamically if needed
                 rowData["transfer_id"] = parseInt(row.dataset.transferId, 10) || 0; // Ensure TransferID
                 rowData["type_of_transfer"] = normalizeTransferDirection(row.dataset.typeOfTransfer || cells[1]?.textContent.trim() || "");
-                rowData["city"] = cells[2]?.textContent.trim();
-                rowData["transfer_description"] = cells[3]?.textContent.trim();
+                rowData["city"] = getCellText(cells[2]);
+                rowData["transfer_description"] = getCellText(cells[3]);
                 rowData["tot"] = cells[4]?.textContent.trim();
                 rowData["from_location"] = cells[5]?.textContent.trim();
                 rowData["to_location"] = cells[6]?.textContent.trim();
@@ -9196,12 +9261,13 @@
                 let rowData = {};
                 const cells = row.querySelectorAll("td");
 
-                rowData["tour_id"] = parseInt(row.dataset.tourId, 10) || 0;
+                const parsedTourId = parseInt(row.dataset.tourId, 10);
+                rowData["tour_id"] = isNaN(parsedTourId) || parsedTourId === 0 ? null : parsedTourId;
                 console.log("Extracted Tour ID:", rowData["tour_id"]); // Debugging
 
-                rowData["tour_name"] = cells[1]?.textContent.trim() || "";
+                rowData["tour_name"] = getCellText(cells[1]) || "";
                 rowData["tot"] = cells[2]?.textContent.trim() || "";
-                rowData["from_location"] = cells[0]?.textContent.trim() || "";
+                rowData["from_location"] = getCellText(cells[0]) || "";
                 rowData["route"] = cells[3]?.textContent.trim() || "";
                 rowData["flight_in"] = row.dataset.flightIn || "";
                 rowData["flight_out"] = row.dataset.flightOut || "";
@@ -9221,6 +9287,8 @@
                   parseInt(row.dataset.doubleRooms) || 0;
                 rowData["triple_rooms"] =
                   parseInt(row.dataset.tripleRooms) || 0;
+                rowData["number_of_adults"] =
+                  parseInt(cells[4]?.textContent.trim()) || 0;
                 rowData["total_cost"] =
                   parseFloat(cells[6]?.textContent.trim()) || 0.0;
                 rowData["price"] = rowData["total_cost"];
@@ -9283,6 +9351,14 @@
               return flightArray;
             }
 
+            // ✅ Helper: strip pkg-badge span from cell text
+            function getCellText(cell) {
+              if (!cell) return "";
+              const clone = cell.cloneNode(true);
+              clone.querySelectorAll(".pkg-badge").forEach(el => el.remove());
+              return clone.textContent.trim();
+            }
+
             function extractExcursionData(tableId) {
               const table = document.getElementById(tableId);
               const rows = table.querySelectorAll("tbody tr");
@@ -9297,8 +9373,8 @@
                   parseInt(row.getAttribute("data-excursion-id"), 10) || 0;
                 console.log("Extracted Excursion ID:", rowData["excursion_id"]); // Debugging
 
-                rowData["excursion_name"] = cells[2]?.textContent.trim() || "";
-                rowData["city"] = cells[1]?.textContent.trim() || "";
+                rowData["excursion_name"] = getCellText(cells[2]) || "";
+                rowData["city"] = getCellText(cells[1]) || "";
                 rowData["toe"] = cells[6]?.textContent.trim() || "";
                 rowData["date"] = formatToYYYYMMDD(
                   cells[0]?.textContent.trim() || ""
@@ -9333,8 +9409,8 @@
                 rowData["hotel_id"] = parseInt(row.dataset.hotelId, 10) || 0;
                 rowData["room_id"] = parseInt(row.dataset.roomId, 10) || 0;
                 rowData["hotel_name"] =
-                  row.dataset.hotelName || cells[3]?.textContent.trim() || "";
-                rowData["city"] = cells[2]?.textContent.trim() || "";
+                  row.dataset.hotelName || getCellText(cells[3]) || "";
+                rowData["city"] = getCellText(cells[2]) || "";
                 rowData["from_date"] = formatToYYYYMMDD(
                   cells[0]?.textContent.trim() || ""
                 );
@@ -9411,6 +9487,9 @@
                 rowData["discount"] = parseFloat(row.dataset.discount) || 0.0;
                 rowData["total_cost"] =
                   rowData["final_cost"] + rowData["discount"];
+                rowData["room_type"] = rowData["room_type_summary"];
+                rowData["price"] = rowData["total_cost"];
+                rowData["total_price"] = rowData["final_cost"];
 
                 // ✅ Invoice
                 rowData["invoice_reference"] =
@@ -9707,7 +9786,7 @@
           }
 
           const packageBadge = isPackage
-            ? `<span class="badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
+            ? `<span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
             : "";
 
           const buttonsHtml = isPackage
@@ -9942,6 +10021,11 @@
           document.getElementById("otherTotalPrice").value =
             otherService.total_price || otherService.cost || 0;
 
+          const isPackageItem = row.dataset.isPackageItem === "true";
+          setTimeout(() => {
+            toggleModalFieldsForPackage("#addOthersModal", isPackageItem, ["#otherDate"]);
+          }, 300);
+
           editingOtherRow = row;
           $("#addOthersModal").modal("show");
         }
@@ -10166,8 +10250,9 @@
             "flight": 1,
             "transfer": 2,
             "excursion": 3,
-            "hotel": 4,
-            "other": 5
+            "tour": 4,
+            "hotel": 5,
+            "other": 6
           };
           for (let i = 1; i <= pkg.duration; i++) {
             days[i].sort((a, b) => {
@@ -10232,6 +10317,8 @@
                   detailHtml = `<strong>🎯 Excursion:</strong> ${item.excursion_name || "TBD"}`;
                 } else if (item.item_type === "flight") {
                   detailHtml = `<strong>✈️ Flight:</strong> ${item.flight_airline || ""} ${item.flight_number || "TBD"} Route: ${item.flight_route || ""} (${item.departure_time || ""} -> ${item.arrival_time || ""})`;
+                } else if (item.item_type === "tour") {
+                  detailHtml = `<strong>🗺️ Tour:</strong> ${item.tour_name || item.description || "TBD"}`;
                 } else {
                   detailHtml = `<strong>📋 Other:</strong> ${item.other_description || item.description || "TBD"}`;
                 }
@@ -10460,7 +10547,7 @@
 
             const cleanRemarks = (item.remarks || "").replace(/\[Special Package\]/gi, "").trim();
             const remarksWithSig = item.remarks ? (item.remarks.includes("[Special Package]") ? item.remarks : `${item.remarks} [Special Package]`) : "[Special Package]";
-            const packageBadge = `<span class="badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`;
+            const packageBadge = `<span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`;
             const actionButtons = `
               <td>
                 <button disabled class="btn btn-sm btn-warning" style="opacity: 0.5; cursor: not-allowed; margin-right: 5px;">
@@ -10508,14 +10595,13 @@
               tr.dataset.transferId = item.transfer_id || 0;
               tr.dataset.transferDate = dateStr;
               tr.dataset.remarks = remarksWithSig;
-              tr.dataset.tot = "SIC";
+              tr.dataset.tot = item.transfer_type || "SIC";
 
               tr.innerHTML = `
                 <td>${dateStr}</td>
-                <td>${item.transfer_type || "Private"}</td>
-                <td>${item.city || "-"} ${packageBadge}</td>
-                <td>-</td>
-                <td>SIC</td>
+                <td>${item.city || "-"}</td>
+                <td>${item.transfer_description || item.description || "-"} ${packageBadge}</td>
+                <td>${item.transfer_type || "SIC"}</td>
                 <td>${item.from_location || "-"}</td>
                 <td>${item.to_location || "-"}</td>
                 <td><small>${cleanRemarks}</small></td>
@@ -10569,11 +10655,20 @@
               tr.dataset.isPackageItem = "true";
               tr.dataset.tourId = item.tour_id || "";
               tr.dataset.remarks = remarksWithSig;
+              tr.dataset.tourStartDate = dateStr;
+              tr.dataset.tourEndDate = dateStr;
+              tr.dataset.singleRooms = 0;
+              tr.dataset.doubleRooms = 0;
+              tr.dataset.tripleRooms = 0;
+              tr.dataset.flightIn = "";
+              tr.dataset.flightOut = "";
+              tr.dataset.arrivalTime = "";
+              tr.dataset.departureTime = "";
 
               tr.innerHTML = `
                 <td>${item.city || "-"}</td>
                 <td>${item.tour_name || "TBD"} ${packageBadge}</td>
-                <td>PVT</td>
+                <td>SIC</td>
                 <td>-</td>
                 <td>-</td>
                 <td><small>${cleanRemarks}</small></td>

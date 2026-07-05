@@ -290,6 +290,7 @@ export async function createQuotation(req, res, next) {
         const pkgTransfers = [];
         const pkgFlights = [];
         const pkgOthers = [];
+        const pkgTours = [];
 
         pkg.items.forEach(item => {
           const dayOffset = (item.day_number || 1) - 1;
@@ -356,6 +357,19 @@ export async function createQuotation(req, res, next) {
               price: item.price ? parseFloat(item.price) : 0,
               remarks: item.remarks ? `${item.remarks} [Special Package]` : "[Special Package]"
             });
+          } else if (item.item_type === 'tour') {
+            pkgTours.push({
+              tour_id: item.tour_id || null,
+              tour_name: item.tour_name,
+              city: item.city || "",
+              tot: "SIC",
+              from_date: dateStr,
+              to_date: dateStr,
+              number_of_adults: 0,
+              number_of_kids: 0,
+              price: item.price ? parseFloat(item.price) : 0,
+              remarks: item.remarks ? `${item.remarks} [Special Package]` : "[Special Package]"
+            });
           }
         });
 
@@ -378,7 +392,7 @@ export async function createQuotation(req, res, next) {
           data.transfer_items = pkgTransfers;
           data.flight_items = pkgFlights;
           data.other_items = pkgOthers;
-          data.tour_items = [];
+          data.tour_items = pkgTours;
         }
 
         if (data.total_amount === undefined && data.total_cost === undefined) {
@@ -490,7 +504,7 @@ export async function createQuotation(req, res, next) {
               trip_item_id: id, hotel_id: parseSafeInt(item.hotel_id), from_date: parseRequiredDate(item.from_date, tripFallbackDate),
               to_date: parseRequiredDate(item.to_date, tripFallbackDate), city: item.city, hotel_name: item.hotel_name,
               nights: parseSafeInt(item.nights) || 1, single_price: parseFloat(item.single_price) || 0, double_price: parseFloat(item.double_price) || 0,
-              extra_bed_price: parseFloat(item.extra_bed_price) || 0, room_type: item.room_type,
+              extra_bed_price: parseFloat(item.extra_bed_price) || 0, room_type: item.room_type || item.room_type_summary || null,
               abf_price: parseFloat(item.abf_price) || 0, lunch_price: parseFloat(item.lunch_price) || 0, dinner_price: parseFloat(item.dinner_price) || 0,
               promotions: parseSafeInt(item.promotions), tour_package: item.tour_package,
               notes: item.notes, approved: item.approved || false, declined: item.declined || false,
@@ -506,7 +520,7 @@ export async function createQuotation(req, res, next) {
               booking_status: item.booking_status || null,
               booking_remark: item.booking_remark || null,
               promotion_id: parseSafeInt(item.promotion_id),
-              total_price: item.total_price !== undefined ? parseFloat(item.total_price) : 0,
+              total_price: item.total_price !== undefined ? parseFloat(item.total_price) : (item.final_cost !== undefined ? parseFloat(item.final_cost) : 0),
               display_order: parseSafeInt(item.display_order) || 0,
               extra_adult_bed_count: item.extra_adult_bed_count || 0,
               extra_child_bed_count: item.extra_child_bed_count || 0,
@@ -781,6 +795,7 @@ export async function updateQuotation(req, res, next) {
           const pkgTransfers = [];
           const pkgFlights = [];
           const pkgOthers = [];
+          const pkgTours = [];
 
           pkg.items.forEach(item => {
             const dayOffset = (item.day_number || 1) - 1;
@@ -847,6 +862,19 @@ export async function updateQuotation(req, res, next) {
                 price: item.price ? parseFloat(item.price) : 0,
                 remarks: item.remarks ? `${item.remarks} [Special Package]` : "[Special Package]"
               });
+            } else if (item.item_type === 'tour') {
+              pkgTours.push({
+                tour_id: item.tour_id || null,
+                tour_name: item.tour_name,
+                city: item.city || "",
+                tot: "SIC",
+                from_date: dateStr,
+                to_date: dateStr,
+                number_of_adults: 0,
+                number_of_kids: 0,
+                price: item.price ? parseFloat(item.price) : 0,
+                remarks: item.remarks ? `${item.remarks} [Special Package]` : "[Special Package]"
+              });
             }
           });
 
@@ -869,7 +897,7 @@ export async function updateQuotation(req, res, next) {
             data.transfer_items = pkgTransfers;
             data.flight_items = pkgFlights;
             data.other_items = pkgOthers;
-            data.tour_items = [];
+            data.tour_items = pkgTours;
           }
 
           if (data.total_amount === undefined && data.total_cost === undefined) {
@@ -1009,7 +1037,7 @@ export async function updateQuotation(req, res, next) {
               trip_item_id: id, hotel_id: parseSafeInt(item.hotel_id), from_date: parseRequiredDate(item.from_date, tripFallbackDate),
               to_date: parseRequiredDate(item.to_date, tripFallbackDate), city: item.city, hotel_name: item.hotel_name,
               nights: parseSafeInt(item.nights) || 1, single_price: parseFloat(item.single_price) || 0, double_price: parseFloat(item.double_price) || 0,
-              extra_bed_price: parseFloat(item.extra_bed_price) || 0, room_type: item.room_type,
+              extra_bed_price: parseFloat(item.extra_bed_price) || 0, room_type: item.room_type || item.room_type_summary || null,
               abf_price: parseFloat(item.abf_price) || 0, lunch_price: parseFloat(item.lunch_price) || 0, dinner_price: parseFloat(item.dinner_price) || 0,
               promotions: parseSafeInt(item.promotions), tour_package: item.tour_package,
               notes: item.notes, approved: item.approved || false, declined: item.declined || false,
@@ -1025,7 +1053,7 @@ export async function updateQuotation(req, res, next) {
               booking_status: item.booking_status || null,
               booking_remark: item.booking_remark || null,
               promotion_id: parseSafeInt(item.promotion_id),
-              total_price: item.total_price !== undefined ? parseFloat(item.total_price) : 0,
+              total_price: item.total_price !== undefined ? parseFloat(item.total_price) : (item.final_cost !== undefined ? parseFloat(item.final_cost) : 0),
               display_order: parseSafeInt(item.display_order) || 0,
               extra_adult_bed_count: item.extra_adult_bed_count || 0,
               extra_child_bed_count: item.extra_child_bed_count || 0,

@@ -304,8 +304,8 @@ document.getElementById("transferTableBody").addEventListener("click", function 
   const row = event.target.closest("tr");
   if (!row) return;
 
-  // ✅ Block package items editing/deleting
-  if (row.dataset.isPackageItem === "true") {
+  // ✅ Block package items delete only, allow edit
+  if (row.dataset.isPackageItem === "true" && (event.target.classList.contains("deleteBtn") || event.target.closest(".deleteBtn"))) {
     return;
   }
 
@@ -366,6 +366,17 @@ document.getElementById("transferTableBody").addEventListener("click", function 
     document.getElementById("updatedTransferPrice").value = rowData.price || "N/A";
 
     editingTransferRow = row;
+
+    const isPackageItem = row.dataset.isPackageItem === "true";
+    if (isPackageItem) {
+      const totSelect = document.getElementById("transferToT");
+      if (totSelect) totSelect.value = "SIC";
+    }
+    setTimeout(() => {
+      if (typeof window.toggleModalFieldsForPackage === "function") {
+        window.toggleModalFieldsForPackage("#addTransferModal", isPackageItem, ["#transferDate"]);
+      }
+    }, 300);
 
     // Show modal first, then handle location setup
     $("#addTransferModal").modal("show");

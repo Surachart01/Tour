@@ -2619,6 +2619,31 @@
         // Initialize Bootstrap tooltips
         $('[data-toggle="tooltip"]').tooltip();
 
+        function toggleModalFieldsForPackage(modalSelector, isPackageItem, allowedFieldSelectors = []) {
+          const modal = document.querySelector(modalSelector);
+          if (!modal) return;
+          const inputs = modal.querySelectorAll("input, select, textarea");
+          inputs.forEach(input => {
+            const isAllowed = allowedFieldSelectors.some(selector => {
+              const el = modal.querySelector(selector);
+              return el === input;
+            });
+            if (isPackageItem) {
+              input.disabled = !isAllowed;
+            } else {
+              input.disabled = false;
+            }
+          });
+        window.toggleModalFieldsForPackage = toggleModalFieldsForPackage;
+
+        $(document).on('show.bs.modal', '#hotelModal, #addTourModal, #addExcursionModal, #addTransferModal, #flightModal, #othersModal, #addOthersModal', function () {
+          const fn = window.toggleModalFieldsForPackage || (typeof toggleModalFieldsForPackage === "function" ? toggleModalFieldsForPackage : null);
+          if (fn) {
+            fn(this, false);
+          }
+        });
+
+
         // Suppress Bootstrap button.js errors that interfere with other scripts
         window.addEventListener("error", function (e) {
           if (
@@ -4337,8 +4362,8 @@
             const row = event.target.closest("tr");
             if (!row) return;
 
-            // ✅ Block package items editing/deleting
-            if (row.dataset.isPackageItem === "true") {
+            // ✅ Block package items delete only, allow edit
+            if (row.dataset.isPackageItem === "true" && (event.target.classList.contains("deleteBtn") || event.target.closest(".deleteBtn"))) {
               return;
             }
 
@@ -4478,6 +4503,11 @@
                 rowData.allInclusiveNotes || "";
 
               editingHotelRow = row;
+
+              const isPackageItem = row.dataset.isPackageItem === "true";
+              setTimeout(() => {
+                toggleModalFieldsForPackage("#hotelModal", isPackageItem, ["#checkInDate", "#checkOutDate"]);
+              }, 300);
 
               // Show modal first, then handle location setup
               $("#hotelModal").modal("show");
@@ -5097,6 +5127,14 @@
             const remarks = document.getElementById("remark").value;
 
             // Fetch Data from Tables
+            // ✅ Helper: get cell text while stripping Special Package badge spans
+            function getCellText(cell) {
+              if (!cell) return "";
+              const clone = cell.cloneNode(true);
+              clone.querySelectorAll(".pkg-badge").forEach(el => el.remove());
+              return clone.textContent.trim();
+            }
+
             function extractTableData(tableId, columns) {
               const table = document.getElementById(tableId);
               const rows = table.querySelectorAll("tbody tr");
@@ -5296,8 +5334,8 @@
                 rowData["hotel_id"] = parseInt(row.dataset.hotelId, 10) || 0;
                 rowData["room_id"] = parseInt(row.dataset.roomId, 10) || 0;
                 rowData["hotel_name"] =
-                  row.dataset.hotelName || cells[3]?.textContent.trim() || "";
-                rowData["city"] = cells[2]?.textContent.trim() || "";
+                  row.dataset.hotelName || getCellText(cells[3]) || "";
+                rowData["city"] = getCellText(cells[2]) || "";
                 rowData["from_date"] = formatToYYYYMMDD(
                   cells[0]?.textContent.trim() || ""
                 );
@@ -5775,8 +5813,9 @@
             "flight": 1,
             "transfer": 2,
             "excursion": 3,
-            "hotel": 4,
-            "other": 5
+            "tour": 4,
+            "hotel": 5,
+            "other": 6
           };
           for (let i = 1; i <= pkg.duration; i++) {
             days[i].sort((a, b) => {
@@ -5841,6 +5880,8 @@
                   detailHtml = `<strong>🎯 Excursion:</strong> ${item.excursion_name || "TBD"}`;
                 } else if (item.item_type === "flight") {
                   detailHtml = `<strong>✈️ Flight:</strong> ${item.flight_airline || ""} ${item.flight_number || "TBD"} Route: ${item.flight_route || ""} (${item.departure_time || ""} -> ${item.arrival_time || ""})`;
+                } else if (item.item_type === "tour") {
+                  detailHtml = `<strong>🗺️ Tour:</strong> ${item.tour_name || item.description || "TBD"}`;
                 } else {
                   detailHtml = `<strong>📋 Other:</strong> ${item.other_description || item.description || "TBD"}`;
                 }
@@ -5946,13 +5987,13 @@
 
             const cleanRemarks = (item.remarks || "").replace(/\[Special Package\]/gi, "").trim();
             const remarksWithSig = item.remarks ? (item.remarks.includes("[Special Package]") ? item.remarks : `${item.remarks} [Special Package]`) : "[Special Package]";
-            const packageBadge = `<span class="badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`;
+            const packageBadge = `<span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`;
             const actionButtons = `
               <td>
-                <button disabled class="btn btn-sm btn-warning" style="opacity: 0.5; cursor: not-allowed; margin-right: 5px;">
+                <button class="btn btn-sm btn-warning editBtn" type="button" style="margin-right: 5px;">
                   <i class="fas fa-edit"></i>
                 </button>
-                <button disabled class="btn btn-sm btn-danger" style="opacity: 0.5; cursor: not-allowed;">
+                <button disabled class="btn btn-sm btn-danger deleteBtn" type="button" style="opacity: 0.5; cursor: not-allowed;">
                   <i class="fas fa-trash"></i>
                 </button>
               </td>
@@ -5998,14 +6039,13 @@
 
               tr.innerHTML = `
                 <td>${dateStr}</td>
-                <td>${item.transfer_type || "Private"}</td>
-                <td>${item.city || "-"} ${packageBadge}</td>
-                <td>-</td>
-                <td>SIC</td>
+                <td>${item.city || "-"}</td>
+                <td>${item.transfer_description || item.description || "-"} ${packageBadge}</td>
+                <td>${item.transfer_type || "SIC"}</td>
                 <td>${item.from_location || "-"}</td>
                 <td>${item.to_location || "-"}</td>
                 <td><small>${cleanRemarks}</small></td>
-                <td>${item.price || "-"}</td>
+                <td class="transfer-price">${item.price || "-"}</td>
                 ${actionButtons}
               `;
               tbody.appendChild(tr);
@@ -6080,7 +6120,14 @@
                 <td>${item.other_description || item.description || "TBD"} ${packageBadge}</td>
                 <td>${dateStr}</td>
                 <td>${item.price || "-"}</td>
-                ${actionButtons}
+                <td>
+                  <button class="btn btn-sm btn-warning editOtherBtn" type="button" style="margin-right: 5px;">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button disabled class="btn btn-sm btn-danger deleteOtherBtn" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
               `;
               tbody.appendChild(tr);
             }
@@ -6484,8 +6531,8 @@
             const row = event.target.closest("tr");
             if (!row) return;
 
-            // ✅ Block package items editing/deleting
-            if (row.dataset.isPackageItem === "true") {
+            // ✅ Block package items delete only, allow edit
+            if (row.dataset.isPackageItem === "true" && (event.target.classList.contains("deleteOtherBtn") || event.target.closest(".deleteOtherBtn"))) {
               return;
             }
 
@@ -6499,6 +6546,12 @@
               document.getElementById("otherTotalPrice").value = row.dataset.totalPrice || "";
 
               editingOtherRow = row;
+
+              const isPackageItem = row.dataset.isPackageItem === "true";
+              setTimeout(() => {
+                toggleModalFieldsForPackage("#othersModal", isPackageItem, ["#otherDate"]);
+              }, 300);
+
               $("#othersModal").modal("show");
             }
 
