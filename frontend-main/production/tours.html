@@ -31,11 +31,13 @@
 
     <style>
       .edit-btn,
+      .clone-btn,
       .delete-btn {
         cursor: pointer;
         white-space: nowrap;
       }
       /* Removed constraining CSS for sidebar-menu to allow proper submenu expansion */
+
 
       /* Sidebar scrolling - allow scroll when expanded, but not when collapsed */
       .left_col.scroll-view {
@@ -111,15 +113,25 @@
       #contenttable th:nth-child(7) {
         width: 15%;
       } /* Description */
-      #contenttable th:nth-child(8) {
-        width: 6%;
+      #contenttable th:nth-child(8),
+      #contenttable td:nth-child(8) {
+        width: 80px !important;
+        min-width: 80px !important;
+        text-align: center;
       } /* Edit */
-      #contenttable th:nth-child(9) {
-        width: 6%;
+      #contenttable th:nth-child(9),
+      #contenttable td:nth-child(9) {
+        width: 85px !important;
+        min-width: 85px !important;
+        text-align: center;
       } /* Clone */
-      #contenttable th:nth-child(10) {
-        width: 6%;
+      #contenttable th:nth-child(10),
+      #contenttable td:nth-child(10) {
+        width: 90px !important;
+        min-width: 90px !important;
+        text-align: center;
       } /* Delete */
+
     </style>
 
     <style>

@@ -19,6 +19,12 @@ function parseSafeInt(value, fallback = null) {
   return isNaN(parsed) ? fallback : parsed;
 }
 
+/** Ensure tot is always 'SIC' or 'PVT' (DB check constraint). Defaults to 'SIC'. */
+function parseTot(value, fallback = 'SIC') {
+  const v = (value || '').toString().trim().toUpperCase();
+  return (v === 'SIC' || v === 'PVT') ? v : fallback;
+}
+
 function generateQuotationNumber() {
   const now = new Date();
   const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
@@ -564,7 +570,7 @@ export async function createQuotation(req, res, next) {
           await tx.tour_trip_items.create({
             data: {
               trip_item_id: id, tour_id: parseSafeInt(item.tour_id), supplier_id: parseSafeInt(item.supplier_id),
-              tot: item.tot, from_location: item.from_location, to_location: item.to_location,
+              tot: parseTot(item.tot), from_location: item.from_location, to_location: item.to_location,
               number_of_adults: parseSafeInt(item.number_of_adults) || 0, number_of_kids: parseSafeInt(item.number_of_kids) || 0,
               from_date: parseRequiredDate(item.from_date, tripFallbackDate), to_date: parseRequiredDate(item.to_date, tripFallbackDate),
               flight_in: parseOptionalDate(item.flight_in),
@@ -587,7 +593,7 @@ export async function createQuotation(req, res, next) {
               transfer_id: parseSafeInt(item.transfer_id),
               from_location: item.from_location, to_location: item.to_location,
               from_date: transferDate, to_date: transferDate,
-              flight_number: item.flight_number, tot: item.tot,
+              flight_number: item.flight_number, tot: parseTot(item.tot),
               supplier_id: parseSafeInt(item.supplier_id), guide_name: item.guide_name,
               guide_contact: item.guide_contact, price: parseFloat(item.price) || 0,
               currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
@@ -1095,7 +1101,7 @@ export async function updateQuotation(req, res, next) {
           await tx.tour_trip_items.create({
             data: {
               trip_item_id: id, tour_id: parseSafeInt(item.tour_id), supplier_id: parseSafeInt(item.supplier_id),
-              tot: item.tot, from_location: item.from_location, to_location: item.to_location,
+              tot: parseTot(item.tot), from_location: item.from_location, to_location: item.to_location,
               number_of_adults: parseSafeInt(item.number_of_adults) || 0, number_of_kids: parseSafeInt(item.number_of_kids) || 0,
               from_date: parseRequiredDate(item.from_date, tripFallbackDate), to_date: parseRequiredDate(item.to_date, tripFallbackDate),
               flight_in: parseOptionalDate(item.flight_in),
@@ -1117,7 +1123,7 @@ export async function updateQuotation(req, res, next) {
               transfer_id: parseSafeInt(item.transfer_id),
               from_location: item.from_location, to_location: item.to_location,
               from_date: transferDate, to_date: transferDate,
-              flight_number: item.flight_number, tot: item.tot,
+              flight_number: item.flight_number, tot: parseTot(item.tot),
               supplier_id: parseSafeInt(item.supplier_id), guide_name: item.guide_name,
               guide_contact: item.guide_contact, price: parseFloat(item.price) || 0,
               currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,

@@ -363,8 +363,13 @@ export async function calculateTransfersCost(req, res, next) {
       include: { hotel_markup_percentages: true, currencies: true }
     });
 
+    const transferIdInt = parseInt(request.transfer_id);
+    if (!request.transfer_id || isNaN(transferIdInt) || transferIdInt <= 0) {
+      return res.status(400).send('transfer_id is required. Please select a transfer first.');
+    }
+
     const transfer = await prisma.transfers.findUnique({
-      where: { id: parseInt(request.transfer_id) },
+      where: { id: transferIdInt },
       include: { transfer_pricing: true }
     });
 

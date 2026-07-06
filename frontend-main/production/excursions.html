@@ -32,8 +32,10 @@
 
     <style>
       .edit-btn,
+      .clone-btn,
       .delete-btn {
         cursor: pointer;
+        white-space: nowrap;
       }
       /* Removed constraining CSS for sidebar-menu to allow proper submenu expansion */
 
@@ -82,26 +84,43 @@
 
       /* Table column width control */
       #datatable-buttons th:nth-child(1) {
+        width: 3%;
+      } /* # */
+      #datatable-buttons th:nth-child(2) {
         width: 10%;
       } /* City */
-      #datatable-buttons th:nth-child(2) {
+      #datatable-buttons th:nth-child(3) {
         width: 15%;
       } /* Name */
-      #datatable-buttons th:nth-child(3) {
+      #datatable-buttons th:nth-child(4) {
         width: 12%;
       } /* Valid Days */
-      #datatable-buttons th:nth-child(4) {
+      #datatable-buttons th:nth-child(5) {
         width: 15%;
       } /* Supplier Name */
-      #datatable-buttons th:nth-child(5) {
+      #datatable-buttons th:nth-child(6) {
         width: 30%;
       } /* Description */
-      #datatable-buttons th:nth-child(6) {
-        width: 9%;
+      #datatable-buttons th:nth-child(7),
+      #datatable-buttons td:nth-child(7) {
+        width: 80px !important;
+        min-width: 80px !important;
+        text-align: center;
       } /* Edit */
-      #datatable-buttons th:nth-child(7) {
-        width: 9%;
+      #datatable-buttons th:nth-child(8),
+      #datatable-buttons td:nth-child(8) {
+        width: 85px !important;
+        min-width: 85px !important;
+        text-align: center;
+      } /* Clone */
+      #datatable-buttons th:nth-child(9),
+      #datatable-buttons td:nth-child(9) {
+        width: 90px !important;
+        min-width: 90px !important;
+        text-align: center;
       } /* Delete */
+
+
     </style>
 
     <style>

@@ -28,11 +28,11 @@
       .navbar-right a {
         font-size: 1rem; /* Slightly increased for better readability */
       }
-    </style>
-
     <style>
       .edit-btn,
+      .clone-btn,
       .delete-btn {
+
         cursor: pointer;
         white-space: nowrap;
       }
@@ -83,29 +83,49 @@
 
       /* Table column width control */
       #datatable-buttons th:nth-child(1) {
-        width: 12%;
-      } /* City */
+        width: 3%;
+      } /* Checkbox */
       #datatable-buttons th:nth-child(2) {
-        width: 12%;
-      } /* Type */
+        width: 3%;
+      } /* # */
       #datatable-buttons th:nth-child(3) {
+        width: 10%;
+      } /* City */
+      #datatable-buttons th:nth-child(4) {
+        width: 8%;
+      } /* Type */
+      #datatable-buttons th:nth-child(5) {
         width: 15%;
       } /* Supplier */
-      #datatable-buttons th:nth-child(4) {
-        width: 12%;
-      } /* Departure */
-      #datatable-buttons th:nth-child(5) {
-        width: 12%;
-      } /* Arrive */
       #datatable-buttons th:nth-child(6) {
-        width: 25%;
-      } /* Description */
+        width: 15%;
+      } /* Departure */
       #datatable-buttons th:nth-child(7) {
-        width: 6%;
-      } /* Edit */
+        width: 15%;
+      } /* Arrival */
       #datatable-buttons th:nth-child(8) {
-        width: 6%;
+        width: 16%;
+      } /* Description */
+      #datatable-buttons th:nth-child(9),
+      #datatable-buttons td:nth-child(9) {
+        width: 80px !important;
+        min-width: 80px !important;
+        text-align: center;
+      } /* Edit */
+      #datatable-buttons th:nth-child(10),
+      #datatable-buttons td:nth-child(10) {
+        width: 85px !important;
+        min-width: 85px !important;
+        text-align: center;
+      } /* Clone */
+      #datatable-buttons th:nth-child(11),
+      #datatable-buttons td:nth-child(11) {
+        width: 90px !important;
+        min-width: 90px !important;
+        text-align: center;
       } /* Delete */
+
+
 
       /* Enhanced button hover effects */
       #addTransferButtonTop:hover {

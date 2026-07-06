@@ -25,196 +25,314 @@
     <!-- Custom Theme Style -->
     <link href="../build/css/custom.min.css" rel="stylesheet" />
     <link href="../build/css/custom.css" rel="stylesheet" />
+    
+    <!-- Google Fonts - Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
+      /* Hide Special Package item rows in main tables */
+      tr[data-is-package-item="true"] {
+        display: none !important;
+      }
+
+      /* Global Outfit font application */
+      body, input, select, textarea, button, table, label, h1, h2, h3, h4, h5, h6 {
+        font-family: 'Outfit', sans-serif !important;
+      }
+
+      body {
+        background-color: #f4f6f9 !important;
+      }
+
+      /* Premium Card & Containers */
+      .main-container-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(42, 63, 84, 0.06);
+        border: 1px solid rgba(225, 230, 239, 0.8);
+        overflow: hidden;
+      }
+
+      /* Premium section headers */
+      .form-section-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #2a3f54;
+        display: flex;
+        align-items: center;
+        margin-top: 25px;
+        margin-bottom: 8px;
+        letter-spacing: 0.3px;
+        position: relative;
+      }
+
+      .form-section-title i {
+        color: #1abb9c;
+        margin-right: 10px;
+        font-size: 1.25rem;
+      }
+
+      .form-section-divider {
+        margin-top: 4px;
+        margin-bottom: 20px;
+        border: 0;
+        height: 1px;
+        background: linear-gradient(to right, #1abb9c 0%, rgba(26, 187, 156, 0.1) 100%);
+      }
+
       /* Modern form enhancements */
+      .form-control {
+        height: 46px;
+        border-radius: 8px;
+        border: 1.5px solid #e1e6ef;
+        background-color: #fcfdfe;
+        color: #2c3e50;
+        font-size: 0.92rem;
+        font-weight: 400;
+        padding: 10px 15px;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .form-control:hover {
+        border-color: #bcd0e6;
+        background-color: #ffffff;
+      }
+
       .form-control:focus {
         border-color: #1abb9c !important;
-        box-shadow: 0 0 0 0.2rem rgba(26, 187, 156, 0.25) !important;
+        background-color: #ffffff;
+        box-shadow: 0 0 0 4px rgba(26, 187, 156, 0.15) !important;
+        outline: none;
+      }
+
+      textarea.form-control {
+        height: auto;
+        min-height: 110px;
+        resize: vertical;
+      }
+
+      .form-group label {
+        font-weight: 600;
+        color: #4a5e73;
+        margin-bottom: 6px;
+        font-size: 0.88rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .form-group label i {
+        font-size: 1rem;
+      }
+
+      /* Form static info (e.g. Agent Name) */
+      .form-control-static {
+        padding: 10px 15px;
+        background-color: #f1f3f7;
+        border-radius: 8px;
+        border: 1.5px solid #e1e6ef;
+        min-height: 46px;
+        font-weight: 600;
+        color: #2a3f54;
+        display: flex;
+        align-items: center;
+      }
+
+      /* Premium Buttons styling */
+      .btn {
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-size: 0.92rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
       }
 
       .btn-primary {
         background: linear-gradient(135deg, #1abb9c 0%, #16a085 100%);
         border: none;
-        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(26, 187, 156, 0.25);
       }
 
       .btn-primary:hover {
         background: linear-gradient(135deg, #16a085 0%, #138d75 100%);
         transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 6px 20px rgba(26, 187, 156, 0.35);
       }
 
       .btn-secondary {
-        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        background: #95a5a6;
         border: none;
-        transition: all 0.3s ease;
+        color: white;
       }
 
       .btn-secondary:hover {
-        background: linear-gradient(135deg, #7f8c8d 0%, #6c7b7d 100%);
+        background: #7f8c8d;
         transform: translateY(-1px);
       }
 
       .btn-success {
-        background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
         border: none;
-        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(46, 204, 113, 0.25);
       }
 
       .btn-success:hover {
-        background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+        background: linear-gradient(135deg, #27ae60 0%, #219653 100%);
         transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(46, 204, 113, 0.35);
       }
 
       .btn-warning {
-        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        background: linear-gradient(135deg, #f39c12 0%, #d35400 100%);
         border: none;
-        transition: all 0.3s ease;
+        color: white;
+        box-shadow: 0 4px 15px rgba(243, 156, 18, 0.25);
       }
 
       .btn-warning:hover {
-        background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+        background: linear-gradient(135deg, #e67e22 0%, #ca6f1e 100%);
         transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(243, 156, 18, 0.35);
+        color: white;
       }
 
       .btn-danger {
         background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
         border: none;
-        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(231, 76, 60, 0.25);
       }
 
       .btn-danger:hover {
-        background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+        background: linear-gradient(135deg, #c0392b 0%, #ad3a2f 100%);
         transform: translateY(-1px);
-      }
-
-      .form-control {
-        height: 45px;
-        border-radius: 6px;
-        border: 1px solid #ddd;
-        background-color: #fafbfc;
-        transition: all 0.3s ease;
-      }
-
-      .form-control:hover {
-        border-color: #1abb9c;
-      }
-
-      textarea.form-control {
-        height: auto;
-        min-height: 100px;
-      }
-
-      .form-group label {
-        font-weight: 600;
-        color: #34495e;
-        margin-bottom: 8px;
-      }
-
-      .modal-xl {
-        max-width: 90% !important;
-      }
-
-      /* Reduce form section padding */
-      .form-section {
-        margin-bottom: 15px;
-      }
-
-      .form-section h4 {
-        margin-bottom: 10px;
-        margin-top: 5px;
-        font-weight: 600;
-        color: #34495e;
-      }
-
-      .form-section hr {
-        margin-top: 5px;
-        margin-bottom: 15px;
-        border-color: #ecf0f1;
-      }
-
-      .form-group {
-        margin-bottom: 12px;
-      }
-
-      button[id*="addNew"][id*="CityBtn"] {
-        display: none !important;
-      }
-
-      /* Make specific headings black */
-      .form-section h4,
-      .card-header h5,
-      .pricing-summary h4 {
-        color: #34495e !important;
+        box-shadow: 0 6px 20px rgba(231, 76, 60, 0.35);
       }
 
       /* Cost input styling */
       .cost-input {
-        background-color: #fff3cd;
-        border-color: #ffeaa7;
+        background-color: #fffdec !important;
+        border-color: #f7e3a3 !important;
+        font-weight: bold;
+        color: #795548 !important;
+      }
+
+      .cost-input:focus {
+        box-shadow: 0 0 0 4px rgba(243, 156, 18, 0.15) !important;
+        border-color: #f39c12 !important;
+      }
+
+      /* Premium Table Design */
+      .table-responsive {
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #e1e6ef;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+        margin-bottom: 25px;
+      }
+
+      .table {
+        background: white;
+        margin-bottom: 0;
+      }
+
+      .table thead th {
+        background: linear-gradient(135deg, #2a3f54 0%, #1a2a3a 100%) !important;
+        color: white !important;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: none;
+        padding: 14px 16px;
+      }
+
+      .table tbody td {
+        padding: 12px 16px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f3f7;
+        color: #34495e;
+        font-size: 0.9rem;
+      }
+
+      .table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .table tbody tr:hover {
+        background-color: #fcfdfe;
+      }
+
+      /* Modal enhancements */
+      .modal-xl {
+        max-width: 90% !important;
       }
 
       .modal-content {
-        border-radius: 10px;
+        border-radius: 16px;
         border: none;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+        overflow: hidden;
       }
 
       .modal-header {
-        background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+        background: linear-gradient(135deg, #2a3f54 0%, #1f2f3f 100%);
         color: white;
-        border-radius: 10px 10px 0 0;
+        padding: 20px 25px;
         border-bottom: none;
       }
 
       .modal-title {
-        font-weight: 600;
+        font-weight: 700;
+        font-size: 1.25rem;
+        letter-spacing: 0.2px;
       }
 
       .close {
         color: white;
         opacity: 0.8;
         text-shadow: none;
+        font-size: 1.6rem;
+        outline: none !important;
+        transition: all 0.2s ease;
       }
 
       .close:hover {
         color: white;
         opacity: 1;
+        transform: scale(1.1);
       }
 
-      .input-group-append .btn {
-        height: 45px;
-        border-radius: 0 6px 6px 0;
+      .modal-body {
+        padding: 30px;
+        background-color: #f8fafc;
       }
 
-      /* Loading animation */
-      .fa-spin {
-        animation: fa-spin 1s infinite linear;
+      .modal-footer {
+        padding: 20px 25px;
+        background-color: #f1f4f8;
+        border-top: 1px solid #e1e6ef;
       }
 
-      .table {
-        background: white;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      }
-
-      .table thead th {
-        background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
-        color: white;
+      /* Special Badge and Utilities */
+      .badge.pkg-badge {
+        background: linear-gradient(135deg, #8e44ad 0%, #732d91 100%) !important;
+        box-shadow: 0 2px 6px rgba(142, 68, 173, 0.2);
+        font-family: 'Outfit', sans-serif;
         font-weight: 600;
-        border: none;
-        padding: 15px;
+        letter-spacing: 0.3px;
       }
 
-      .table tbody td {
-        padding: 12px 15px;
-        vertical-align: middle;
-        border-color: #ecf0f1;
-      }
-
-      .table tbody tr:hover {
-        background-color: #f8f9fa;
+      .pricing-summary {
+        background: #f8fafc;
+        border-radius: 12px;
+        border: 1px solid #e1e6ef;
+        padding: 20px;
       }
 
       @keyframes fa-spin {
@@ -290,15 +408,8 @@
       </div>
 
       <!-- Main content area -->
-      <div style="flex: 1; padding: 40px 60px; background: #ecf0f1">
-        <div
-          style="
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-          "
-        >
+      <div style="flex: 1; padding: 40px 60px; background: #f4f6f9">
+        <div class="main-container-card">
           <div style="padding: 40px">
             <form id="addTripForm" class="form-label-left input_mask">
               <div class="row">
@@ -350,8 +461,8 @@
               <!-- Client Information Section -->
               <div class="row form-section">
                 <div class="col-md-12">
-                  <h4><i class="fa fa-user"></i> Client Information</h4>
-                  <hr />
+                  <div class="form-section-title"><i class="fa fa-user"></i> Client Information</div>
+                  <div class="form-section-divider"></div>
                 </div>
               </div>
               <div class="row">
@@ -409,8 +520,8 @@
               <!-- Booking Details Section -->
               <div class="row form-section">
                 <div class="col-md-12">
-                  <h4><i class="fa fa-calendar"></i> Booking Details</h4>
-                  <hr />
+                  <div class="form-section-title"><i class="fa fa-calendar"></i> Booking Details</div>
+                  <div class="form-section-divider"></div>
                 </div>
               </div>
               <div class="row">
@@ -489,8 +600,8 @@
               <!-- Pricing Section -->
               <div class="row form-section">
                 <div class="col-md-12">
-                  <h4><i class="fa fa-money"></i> Pricing Details</h4>
-                  <hr />
+                  <div class="form-section-title"><i class="fa fa-money"></i> Pricing Details</div>
+                  <div class="form-section-divider"></div>
                 </div>
               </div>
               <div class="row">
@@ -582,8 +693,8 @@
               <!-- Services Selection Section -->
               <div class="row form-section">
                 <div class="col-md-12">
-                  <h4><i class="fa fa-cogs"></i> Services Selection</h4>
-                  <hr />
+                  <div class="form-section-title"><i class="fa fa-cogs"></i> Services Selection</div>
+                  <div class="form-section-divider"></div>
                 </div>
               </div>
 
@@ -897,27 +1008,77 @@
               </div>
 
               <div class="collapse" id="specialPackagesSection">
-                <div class="card card-body" style="border-left: 5px solid #9b59b6; padding: 20px 25px; margin: 10px 15px 20px 15px;">
-                  <h4 style="color: #9b59b6; font-weight: 700;"><i class="fa fa-gift"></i> Special Packages</h4>
-                  <p class="text-muted">Select a pre-made special package to import its itinerary items into this quotation.</p>
-                  <div class="row" style="background-color: #faf8fc; padding: 15px; border-radius: 8px; margin: 0 0 20px 0; border: 1px solid #f1ebf7;">
-                    <div class="col-md-6 form-group" style="margin-bottom: 0;">
-                      <label for="specialPackageFilterCity" style="font-weight: 600; color: #555;">
-                        <i class="fas fa-map-marker-alt" style="margin-right: 6px; color: #9b59b6"></i>
-                        Filter by City
-                      </label>
-                      <select id="specialPackageFilterCity" class="form-control" style="border-color: #d1b9e3;">
-                        <option value="">-- All Cities --</option>
-                      </select>
+                <div class="card card-body" style="border-left: 5px solid #9b59b6; padding: 20px 25px; margin: 10px 15px 20px 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(155, 89, 182, 0.05); border: 1px solid rgba(155, 89, 182, 0.15);">
+                  <h4 style="color: #8e44ad; font-weight: 700; display: flex; align-items: center; gap: 10px; margin-bottom: 8px;"><i class="fa fa-gift"></i> Special Packages</h4>
+                  <p class="text-muted" style="font-size: 0.9rem;">Select a pre-made special package to import its itinerary items into this quotation.</p>
+                  <div style="background: linear-gradient(135deg, #faf8fc 0%, #f5eefc 100%); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #e1d5f2; box-shadow: 0 4px 15px rgba(155, 89, 182, 0.05);">
+                    <h5 style="color: #8e44ad; font-weight: 700; margin-top: 0; margin-bottom: 15px; font-family: 'Outfit', sans-serif;">
+                      <i class="fas fa-search-location" style="margin-right: 8px;"></i> Agoda-Style Package Filters
+                    </h5>
+                    
+                    <div class="row">
+                      <!-- 1. Search text input -->
+                      <div class="col-md-4 form-group">
+                        <label for="specialPackageFilterSearch" style="font-weight: 600; color: #4a4a4a; font-size: 13px;">
+                          <i class="fas fa-search" style="margin-right: 6px; color: #9b59b6"></i> Search Name / Code
+                        </label>
+                        <input type="text" id="specialPackageFilterSearch" class="form-control" placeholder="e.g. Simply Bangkok, BAS" style="border-color: #d1b9e3; border-radius: 6px;" />
+                      </div>
+
+                      <!-- 2. City dropdown -->
+                      <div class="col-md-4 form-group">
+                        <label for="specialPackageFilterCity" style="font-weight: 600; color: #4a4a4a; font-size: 13px;">
+                          <i class="fas fa-map-marker-alt" style="margin-right: 6px; color: #9b59b6"></i> City
+                        </label>
+                        <select id="specialPackageFilterCity" class="form-control" style="border-color: #d1b9e3; border-radius: 6px;">
+                          <option value="">-- All Cities --</option>
+                        </select>
+                      </div>
+
+                      <!-- 3. Duration dropdown -->
+                      <div class="col-md-4 form-group">
+                        <label for="specialPackageFilterDuration" style="font-weight: 600; color: #4a4a4a; font-size: 13px;">
+                          <i class="fas fa-calendar-day" style="margin-right: 6px; color: #9b59b6"></i> Duration
+                        </label>
+                        <select id="specialPackageFilterDuration" class="form-control" style="border-color: #d1b9e3; border-radius: 6px;">
+                          <option value="">-- All Durations --</option>
+                        </select>
+                      </div>
                     </div>
-                    <div class="col-md-6 form-group" style="margin-bottom: 0;">
-                      <label for="specialPackageFilterDuration" style="font-weight: 600; color: #555;">
-                        <i class="fas fa-calendar-day" style="margin-right: 6px; color: #9b59b6"></i>
-                        Filter by Duration
-                      </label>
-                      <select id="specialPackageFilterDuration" class="form-control" style="border-color: #d1b9e3;">
-                        <option value="">-- All Durations --</option>
-                      </select>
+
+                    <div class="row" style="margin-top: 5px;">
+                      <!-- 4. Category dropdown -->
+                      <div class="col-md-4 form-group" style="margin-bottom: 0;">
+                        <label for="specialPackageFilterCategory" style="font-weight: 600; color: #4a4a4a; font-size: 13px;">
+                          <i class="fas fa-hotel" style="margin-right: 6px; color: #9b59b6"></i> Hotel Category
+                        </label>
+                        <select id="specialPackageFilterCategory" class="form-control" style="border-color: #d1b9e3; border-radius: 6px;">
+                          <option value="">-- All Categories --</option>
+                        </select>
+                      </div>
+
+                      <!-- 5. Valid Travel Date -->
+                      <div class="col-md-4 form-group" style="margin-bottom: 0;">
+                        <label for="specialPackageFilterDate" style="font-weight: 600; color: #4a4a4a; font-size: 13px;">
+                          <i class="fas fa-calendar-alt" style="margin-right: 6px; color: #9b59b6"></i> Travel Date (Validity)
+                        </label>
+                        <input type="date" id="specialPackageFilterDate" class="form-control" style="border-color: #d1b9e3; border-radius: 6px;" />
+                      </div>
+
+                      <!-- 6. Price range dropdown -->
+                      <div class="col-md-4 form-group" style="margin-bottom: 0;">
+                        <label for="specialPackageFilterMaxPrice" style="font-weight: 600; color: #4a4a4a; font-size: 13px;">
+                          <i class="fas fa-money-bill-wave" style="margin-right: 6px; color: #9b59b6"></i> Max Price (per Adult)
+                        </label>
+                        <select id="specialPackageFilterMaxPrice" class="form-control" style="border-color: #d1b9e3; border-radius: 6px;">
+                          <option value="">-- Any Price --</option>
+                          <option value="5000">Under 5,000 THB</option>
+                          <option value="10000">Under 10,000 THB</option>
+                          <option value="15000">Under 15,000 THB</option>
+                          <option value="20000">Under 20,000 THB</option>
+                          <option value="30000">Under 30,000 THB</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                   <div class="row">
@@ -2621,8 +2782,11 @@
         // Initialize Bootstrap tooltips
         $('[data-toggle="tooltip"]').tooltip();
 
-        function toggleModalFieldsForPackage(modalSelector, isPackageItem, allowedFieldSelectors = []) {
-          const modal = document.querySelector(modalSelector);
+        function toggleModalFieldsForPackage(modalSelectorOrEl, isPackageItem, allowedFieldSelectors = []) {
+          // Accept either a CSS selector string or a DOM element directly
+          const modal = (typeof modalSelectorOrEl === 'string')
+            ? document.querySelector(modalSelectorOrEl)
+            : modalSelectorOrEl;
           if (!modal) return;
           const inputs = modal.querySelectorAll("input, select, textarea");
           inputs.forEach(input => {
@@ -2636,6 +2800,7 @@
               input.disabled = false;
             }
           });
+        }
         window.toggleModalFieldsForPackage = toggleModalFieldsForPackage;
 
         $(document).on('show.bs.modal', '#hotelModal, #addTourModal, #addExcursionModal, #addTransferModal, #flightModal, #othersModal, #addOthersModal', function () {
@@ -5024,7 +5189,10 @@
           toggleInput("tripleRoom", "tripleRoomCount");
         });
         let today = new Date();
-        let todayISO = today.toISOString().split("T")[0]; // Format YYYY-MM-DD
+        let year = today.getFullYear();
+        let month = String(today.getMonth() + 1).padStart(2, '0');
+        let day = String(today.getDate()).padStart(2, '0');
+        let todayISO = `${year}-${month}-${day}`;
 
         let bookingDateInput = document.getElementById("bookingDate");
         let tripStartDateInput = document.getElementById("tripStartDate");
@@ -5155,6 +5323,12 @@
           .addEventListener("click", function (event) {
             event.preventDefault();
 
+            const form = document.getElementById("addTripForm");
+            if (form && !form.checkValidity()) {
+              form.reportValidity();
+              return;
+            }
+
             const token = localStorage.getItem("token"); // Retrieve the authentication token
 
             if (!token) {
@@ -5215,30 +5389,42 @@
               rows.forEach((row) => {
                 let rowData = {};
                 const cells = row.querySelectorAll("td");
+                const isPackage = row.dataset.isPackageItem === "true";
 
                 // Ensure correct ISO format for date fields
                 const transferDate = getCellDateValue(cells[0]).substring(0, 10) || row.dataset.transferDate || "";
-                rowData["trip_item_id"] = 0; // This should be assigned dynamically if needed
-                rowData["transfer_id"] =
-                  parseInt(row.dataset.transferId, 10) || 0; // Ensure TransferID
-                rowData["transfer_description"] = cells[2]?.textContent.trim();
-                rowData["city"] = cells[1]?.textContent.trim();
-                rowData["from_location"] = cells[4]?.textContent.trim();
-                rowData["to_location"] = cells[5]?.textContent.trim();
+                rowData["trip_item_id"] = 0;
+                rowData["transfer_id"] = parseInt(row.dataset.transferId, 10) || 0;
+
+                // Prefer dataset.tot (always 'SIC' or 'PVT') over cell text to avoid check constraint
+                const totFromDataset = (row.dataset.tot || "").trim();
+                const totFromCell3 = cells[3]?.textContent.trim() || "";
+                const totCandidate = totFromDataset || totFromCell3;
+                rowData["tot"] = (totCandidate === "SIC" || totCandidate === "PVT") ? totCandidate : "SIC";
+
+                // Column layout (same for both normal and package rows in add_trip.html):
+                // col0=date, col1=city, col2=description, col3=tot, col4=from, col5=to, col6=remarks, col7=price
+                rowData["transfer_description"] = cells[2]?.textContent.trim() || "";
+                rowData["city"] = cells[1]?.textContent.trim() || "";
+                rowData["from_location"] = cells[4]?.textContent.trim() || "";
+                rowData["to_location"] = cells[5]?.textContent.trim() || "";
+                let remarks = cells[6]?.textContent.trim() || "";
+                if (isPackage && !remarks.includes("[Special Package]")) {
+                  remarks = remarks ? `${remarks} [Special Package]` : "[Special Package]";
+                }
+                rowData["remarks"] = remarks;
+                rowData["total_cost"] = parseFloat(cells[7]?.textContent.trim()) || 0.0;
+
                 rowData["date"] = formatToYYYYMMDD(transferDate);
                 rowData["flight_time"] = row.dataset.flightTime || "";
                 rowData["pickup_time"] = row.dataset.pickupTime || "";
                 rowData["flight_number"] = row.dataset.transferFlight || "";
-                rowData["tot"] = cells[3]?.textContent.trim();
-                rowData["remarks"] = cells[6]?.textContent.trim() || "";
-                rowData["total_cost"] =
-                  parseFloat(cells[7]?.textContent.trim()) || 0.0;
                 rowData["price"] = rowData["total_cost"];
-                rowData["discount"] = 0.0; // Default to 0
-                rowData["final_cost"] = rowData["total_cost"]; // Set default final cost
-                rowData["notify_supplier"] = false; // Default false
-                rowData["created_at"] = new Date().toISOString(); // Capture current timestamp
-                rowData["updated_at"] = new Date().toISOString(); // Capture current timestamp
+                rowData["discount"] = 0.0;
+                rowData["final_cost"] = rowData["total_cost"];
+                rowData["notify_supplier"] = false;
+                rowData["created_at"] = new Date().toISOString();
+                rowData["updated_at"] = new Date().toISOString();
 
                 dataArray.push(rowData);
               });
@@ -5270,7 +5456,11 @@
                 rowData["to_date"] = formatToYYYYMMDD(
                   getCellDateValue(cells[1]) || row.dataset.tourEndDate || ""
                 );
-                rowData["remarks"] = cells[7]?.textContent.trim() || "";
+                let remarks = cells[7]?.textContent.trim() || "";
+                if (row.dataset.isPackageItem === "true" && !remarks.includes("[Special Package]")) {
+                  remarks = remarks ? `${remarks} [Special Package]` : "[Special Package]";
+                }
+                rowData["remarks"] = remarks;
                 rowData["single_rooms"] =
                   parseInt(row.dataset.singleRooms) || 0;
                 rowData["double_rooms"] =
@@ -5639,13 +5829,16 @@
         function populateSpecialPackageFilters(packages) {
           const citySelect = document.getElementById("specialPackageFilterCity");
           const durationSelect = document.getElementById("specialPackageFilterDuration");
+          const categorySelect = document.getElementById("specialPackageFilterCategory");
           if (!citySelect || !durationSelect) return;
           
           citySelect.innerHTML = '<option value="">-- All Cities --</option>';
           durationSelect.innerHTML = '<option value="">-- All Durations --</option>';
+          if (categorySelect) categorySelect.innerHTML = '<option value="">-- All Categories --</option>';
           
           const citiesSet = new Set();
           const durationsSet = new Set();
+          const categoriesSet = new Set();
           
           packages.forEach(pkg => {
             if (pkg.city) {
@@ -5656,6 +5849,10 @@
             }
             if (pkg.duration !== undefined && pkg.duration !== null) {
               durationsSet.add(pkg.duration);
+            }
+            if (pkg.category) {
+              const trimmedCat = pkg.category.trim();
+              if (trimmedCat) categoriesSet.add(trimmedCat);
             }
           });
           
@@ -5672,6 +5869,15 @@
             opt.textContent = `${dur} Day${dur > 1 ? "s" : ""}`;
             durationSelect.appendChild(opt);
           });
+
+          if (categorySelect) {
+            Array.from(categoriesSet).sort().forEach(cat => {
+              const opt = document.createElement("option");
+              opt.value = cat;
+              opt.textContent = cat;
+              categorySelect.appendChild(opt);
+            });
+          }
         }
 
         function renderSpecialPackagesSelect(filteredPackages) {
@@ -5700,30 +5906,66 @@
         }
 
         function handleSpecialPackageFilterChange() {
+          const searchFilter = document.getElementById("specialPackageFilterSearch")?.value.trim().toLowerCase() || "";
           const cityFilter = document.getElementById("specialPackageFilterCity")?.value || "";
           const durationFilter = document.getElementById("specialPackageFilterDuration")?.value || "";
+          const categoryFilter = document.getElementById("specialPackageFilterCategory")?.value || "";
+          const dateFilter = document.getElementById("specialPackageFilterDate")?.value || "";
+          const maxPriceFilter = document.getElementById("specialPackageFilterMaxPrice")?.value || "";
           
           const filtered = allSpecialPackages.filter(pkg => {
-            let cityMatch = true;
+            // 1. Search text filter (matches name or code)
+            if (searchFilter) {
+              const nameMatch = (pkg.name || "").toLowerCase().includes(searchFilter);
+              const codeMatch = (pkg.code || "").toLowerCase().includes(searchFilter);
+              if (!nameMatch && !codeMatch) return false;
+            }
+
+            // 2. City filter
             if (cityFilter) {
-              if (!pkg.city) {
-                cityMatch = false;
-              } else {
-                const cities = pkg.city.split(",").map(c => c.trim().toLowerCase());
-                cityMatch = cities.includes(cityFilter.toLowerCase());
+              if (!pkg.city) return false;
+              const cities = pkg.city.split(",").map(c => c.trim().toLowerCase());
+              if (!cities.includes(cityFilter.toLowerCase())) return false;
+            }
+            
+            // 3. Duration filter
+            if (durationFilter) {
+              if (String(pkg.duration) !== durationFilter) return false;
+            }
+
+            // 4. Category filter
+            if (categoryFilter) {
+              if ((pkg.category || "").trim().toLowerCase() !== categoryFilter.toLowerCase()) return false;
+            }
+
+            // 5. Travel Date filter (checks validity range)
+            if (dateFilter) {
+              const selectedDate = new Date(dateFilter);
+              if (pkg.valid_from) {
+                const fromDate = new Date(pkg.valid_from);
+                if (selectedDate < fromDate) return false;
+              }
+              if (pkg.valid_to) {
+                const toDate = new Date(pkg.valid_to);
+                if (selectedDate > toDate) return false;
               }
             }
-            
-            let durationMatch = true;
-            if (durationFilter) {
-              durationMatch = String(pkg.duration) === durationFilter;
+
+            // 6. Max Price filter
+            if (maxPriceFilter) {
+              const maxPriceLimit = parseFloat(maxPriceFilter);
+              const adultPrice = parseFloat(pkg.price_per_adult) || 0;
+              const dblPrice = parseFloat(pkg.price_dbl) || 0;
+              const minPkgPrice = Math.min(adultPrice, dblPrice) || adultPrice || dblPrice;
+              if (minPkgPrice > maxPriceLimit) return false;
             }
             
-            return cityMatch && durationMatch;
+            return true;
           });
           
           renderSpecialPackagesSelect(filtered);
         }
+
 
         function updateSpecialPackagePriceDisplay(pkg) {
           const sglInput = document.getElementById("specialPackageSglPrice");
@@ -5747,6 +5989,7 @@
           const flightsTable = document.getElementById("flightsTableBody");
           if (flightsTable) {
             flightsTable.querySelectorAll("tr").forEach(row => {
+              if (row.dataset.isPackageItem === "true") return;
               const cells = row.querySelectorAll("td");
               if (cells[8]) sum += parseFloat(cells[8].textContent.trim()) || 0;
             });
@@ -5755,6 +5998,7 @@
           const transfersTable = document.getElementById("transferTableBody");
           if (transfersTable) {
             transfersTable.querySelectorAll("tr").forEach(row => {
+              if (row.dataset.isPackageItem === "true") return;
               const cells = row.querySelectorAll("td");
               if (cells[8]) sum += parseFloat(cells[8].textContent.trim()) || 0;
             });
@@ -5763,6 +6007,7 @@
           const hotelsTable = document.getElementById("hotelsTableBody");
           if (hotelsTable) {
             hotelsTable.querySelectorAll("tr").forEach(row => {
+              if (row.dataset.isPackageItem === "true") return;
               const cells = row.querySelectorAll("td");
               if (cells[9]) sum += parseFloat(cells[9].textContent.trim()) || 0;
             });
@@ -5771,6 +6016,7 @@
           const excursionsTable = document.getElementById("excursionTableBody");
           if (excursionsTable) {
             excursionsTable.querySelectorAll("tr").forEach(row => {
+              if (row.dataset.isPackageItem === "true") return;
               const cells = row.querySelectorAll("td");
               if (cells[7]) sum += parseFloat(cells[7].textContent.trim()) || 0;
             });
@@ -5779,6 +6025,7 @@
           const toursTable = document.getElementById("tourTableBody");
           if (toursTable) {
             toursTable.querySelectorAll("tr").forEach(row => {
+              if (row.dataset.isPackageItem === "true") return;
               const cells = row.querySelectorAll("td");
               if (cells[6]) sum += parseFloat(cells[6].textContent.trim()) || 0;
             });
@@ -5787,6 +6034,7 @@
           const othersTable = document.getElementById("othersTableBody");
           if (othersTable) {
             othersTable.querySelectorAll("tr").forEach(row => {
+              if (row.dataset.isPackageItem === "true") return;
               const cells = row.querySelectorAll("td");
               if (cells[2]) sum += parseFloat(cells[2].textContent.trim()) || 0;
             });
@@ -5844,6 +6092,13 @@
             previewContainer.style.display = "none";
             return;
           }
+
+          // Make sure every item has a tempIndex
+          pkg.items.forEach((item, index) => {
+            if (item.tempIndex === undefined) {
+              item.tempIndex = index;
+            }
+          });
 
           const baseDateStr = document.getElementById("tripStartDate").value;
           const baseDate = baseDateStr ? new Date(baseDateStr) : new Date();
@@ -5909,9 +6164,22 @@
                 itemDiv.style.marginBottom = "6px";
                 itemDiv.style.fontSize = "0.85rem";
 
-                const dayOffset = (item.day_number || 1) - 1;
-                const itemDate = new Date(baseDate.getTime() + dayOffset * 24 * 60 * 60 * 1000);
-                const dateStr = itemDate.toLocaleDateString("en-GB").replace(/\//g, "-");
+                let itemDateVal = "";
+                const hiddenRow = document.querySelector(`tr[data-package-item-index="${item.tempIndex}"]`);
+                if (hiddenRow) {
+                  const dateInput = hiddenRow.querySelector("input[type='date']");
+                  if (dateInput) {
+                    itemDateVal = dateInput.value;
+                  }
+                }
+
+                if (!itemDateVal) {
+                  const dayOffset = (item.day_number || 1) - 1;
+                  const itemDate = new Date(baseDate.getTime() + dayOffset * 24 * 60 * 60 * 1000);
+                  itemDateVal = itemDate.toISOString().substring(0, 10);
+                }
+
+                const dateInputHtml = `<input type="date" class="form-control form-control-sm inline-package-preview-date" data-item-index="${item.tempIndex}" value="${itemDateVal}" style="display: inline-block; width: 130px; margin-left: 10px; padding: 2px 5px; height: 26px; font-size: 0.75rem; vertical-align: middle;">`;
 
                 const typeTag = document.createElement("div");
                 typeTag.style.fontSize = "0.7rem";
@@ -5919,7 +6187,7 @@
                 typeTag.style.textTransform = "uppercase";
                 typeTag.style.color = "#9b59b6";
                 typeTag.style.marginBottom = "2px";
-                typeTag.innerHTML = `${item.item_type} <span style="float: right; color: #73879c; font-weight: normal; text-transform: none;">Date: ${dateStr}</span>`;
+                typeTag.innerHTML = `${item.item_type} <span style="float: right; color: #73879c; font-weight: normal; text-transform: none;">Date: ${dateInputHtml}</span>`;
                 itemDiv.appendChild(typeTag);
 
                 let detailHtml = "";
@@ -6031,7 +6299,11 @@
           const baseDateStr = document.getElementById("tripStartDate").value;
           const baseDate = baseDateStr ? new Date(baseDateStr) : new Date();
 
-          pkg.items.forEach(item => {
+          pkg.items.forEach((item, index) => {
+            if (item.tempIndex === undefined) {
+              item.tempIndex = index;
+            }
+
             const dayOffset = (item.day_number || 1) - 1;
             const itemDate = new Date(baseDate.getTime() + dayOffset * 24 * 60 * 60 * 1000);
             const dateStr = itemDate.toLocaleDateString("en-GB").replace(/\//g, "-");
@@ -6057,6 +6329,7 @@
               const tbody = document.getElementById("hotelsTableBody");
               const tr = document.createElement("tr");
               tr.dataset.isPackageItem = "true";
+              tr.dataset.packageItemIndex = item.tempIndex;
               tr.dataset.hotelId = item.hotel_id || 0;
               tr.dataset.roomId = item.room_id || 0;
               tr.dataset.roomTypes = JSON.stringify([{ room_type: item.room_type || "", adults: 2, children: 0 }]);
@@ -6083,6 +6356,7 @@
               const tbody = document.getElementById("transferTableBody");
               const tr = document.createElement("tr");
               tr.dataset.isPackageItem = "true";
+              tr.dataset.packageItemIndex = item.tempIndex;
               tr.dataset.transferId = item.transfer_id || 0;
               tr.dataset.transferDate = dateStr;
               tr.dataset.remarks = remarksWithSig;
@@ -6104,6 +6378,7 @@
               const tbody = document.getElementById("excursionTableBody");
               const tr = document.createElement("tr");
               tr.dataset.isPackageItem = "true";
+              tr.dataset.packageItemIndex = item.tempIndex;
               tr.dataset.excursionId = item.excursion_id || 0;
               tr.dataset.remarks = remarksWithSig;
               tr.dataset.toe = "SIC";
@@ -6124,6 +6399,7 @@
               const tbody = document.getElementById("flightsTableBody");
               const tr = document.createElement("tr");
               tr.dataset.isPackageItem = "true";
+              tr.dataset.packageItemIndex = item.tempIndex;
               tr.dataset.remarks = remarksWithSig;
 
               tr.innerHTML = `
@@ -6144,6 +6420,7 @@
               const tbody = document.getElementById("tourTableBody");
               const tr = document.createElement("tr");
               tr.dataset.isPackageItem = "true";
+              tr.dataset.packageItemIndex = item.tempIndex;
               tr.dataset.tourId = item.tour_id || "";
               tr.dataset.remarks = remarksWithSig;
               tr.dataset.tourStartDate = dateStr;
@@ -6166,6 +6443,7 @@
               const tbody = document.getElementById("othersTableBody");
               const tr = document.createElement("tr");
               tr.dataset.isPackageItem = "true";
+              tr.dataset.packageItemIndex = item.tempIndex;
               tr.dataset.description = item.other_description || item.description || "TBD";
               tr.dataset.date = dateStr;
               tr.dataset.totalPrice = item.price || 0;
@@ -6223,6 +6501,10 @@
         document.getElementById("specialPackageSelect").addEventListener("change", handleSpecialPackageChange);
         document.getElementById("specialPackageFilterCity").addEventListener("change", handleSpecialPackageFilterChange);
         document.getElementById("specialPackageFilterDuration").addEventListener("change", handleSpecialPackageFilterChange);
+        document.getElementById("specialPackageFilterSearch").addEventListener("input", handleSpecialPackageFilterChange);
+        document.getElementById("specialPackageFilterCategory").addEventListener("change", handleSpecialPackageFilterChange);
+        document.getElementById("specialPackageFilterDate").addEventListener("change", handleSpecialPackageFilterChange);
+        document.getElementById("specialPackageFilterMaxPrice").addEventListener("change", handleSpecialPackageFilterChange);
         document.getElementById("tripStartDate").addEventListener("change", function() {
           if (document.getElementById("specialPackageSelect").value) {
             handleSpecialPackageChange();
@@ -6783,6 +7065,31 @@
           const tbody = document.getElementById(id);
           if (tbody) {
             priceObserver.observe(tbody, { childList: true, subtree: true, characterData: true });
+          }
+        });
+
+        $(document).on("change", ".inline-package-preview-date", function () {
+          const index = this.getAttribute("data-item-index");
+          const newVal = this.value;
+
+          const hiddenRow = document.querySelector(`tr[data-package-item-index="${index}"]`);
+          if (hiddenRow) {
+            const checkinInput = hiddenRow.querySelector(".inline-hotel-checkin");
+            const checkoutInput = hiddenRow.querySelector(".inline-hotel-checkout");
+            if (checkinInput && checkoutInput) {
+              checkinInput.value = newVal;
+              const nights = parseInt(hiddenRow.dataset.nights) || 1;
+              const dateObj = new Date(newVal);
+              const checkoutObj = new Date(dateObj.getTime() + nights * 24 * 60 * 60 * 1000);
+              checkoutInput.value = checkoutObj.toISOString().substring(0, 10);
+              $(checkinInput).trigger("change");
+            } else {
+              const dateInput = hiddenRow.querySelector("input[type='date']");
+              if (dateInput) {
+                dateInput.value = newVal;
+                $(dateInput).trigger("change");
+              }
+            }
           }
         });
       });
