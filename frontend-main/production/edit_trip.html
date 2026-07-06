@@ -956,6 +956,8 @@
                     <table class="table table-bordered" id="tourTable">
                       <thead>
                         <tr>
+                          <th>Start Date</th>
+                          <th>End Date</th>
                           <th>City</th>
                           <th>Name</th>
                           <th>ToT</th>
@@ -3216,7 +3218,7 @@
               `;
 
           row.innerHTML = `
-                  <td>${excursion.date || ""}</td>
+                  <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(excursion.date || '')}"></td>
                   <td>${excursion.city || ""} ${packageBadge}</td>
                   <td>${excursion.excursion_name || ""}</td>
                   <td>${excursion.event_time || ""}</td>
@@ -3797,7 +3799,7 @@
               `;
 
           row.innerHTML = `
-                <td>${transfer.date || ""}<br>${transfer.flight_number || ""}</td>
+                <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(transfer.date || '')}"><br>${transfer.flight_number || ""}</td>
                 <td>${normalizedType}</td>
                 <td>${transfer.city || ""} ${packageBadge}</td>
                 <td>${transfer.transfer_description || ""}</td>
@@ -5510,8 +5512,8 @@
             </div>`;
 
           row.innerHTML = `
-                <td>${hotel.from_date || ""}</td>
-                <td>${hotel.to_date || ""}</td>
+                <td><input type="date" class="form-control form-control-sm inline-date-picker inline-hotel-checkin" value="${formatToYYYYMMDD(hotel.from_date || '')}"></td>
+                <td><input type="date" class="form-control form-control-sm inline-date-picker inline-hotel-checkout" value="${formatToYYYYMMDD(hotel.to_date || '')}"></td>
                 <td>${hotel.city || ""}</td>
                 <td>${hotelNameDisplay}</td>
                 <td>${roomTypeSummary}</td>
@@ -5866,11 +5868,45 @@
           const roomTypeSummary = roomTypes
             .map((rt) => `${rt.room_type} (${rt.adults}A${rt.children}C)`)
             .join(", ");
+          const isPkg = editingHotelRow.dataset.isPackageItem === "true";
+          const pkgBadge = isPkg
+            ? ` <span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
+            : "";
+          const btns = isPkg
+            ? `
+                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
+                    <button class="btn btn-sm btn-warning edit-hotel" type="button">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <span class="tooltip-text">Edit</span>
+                  </div>
+                  <div class="tooltip-btn" style="display: inline-block;">
+                    <button disabled class="btn btn-sm btn-danger delete-hotel" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                    <span class="tooltip-text">Delete Locked</span>
+                  </div>
+              `
+            : `
+                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
+                    <button class="btn btn-sm btn-warning edit-hotel" type="button">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <span class="tooltip-text">Edit</span>
+                  </div>
+                  <div class="tooltip-btn" style="display: inline-block;">
+                    <button class="btn btn-sm btn-danger delete-hotel" type="button">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                    <span class="tooltip-text">Delete</span>
+                  </div>
+              `;
+
           editingHotelRow.innerHTML = `
-            <td>${formatToDDMMYYYY(updatedHotel.check_in_date)}</td>
-            <td>${formatToDDMMYYYY(updatedHotel.check_out_date)}</td>
+            <td><input type="date" class="form-control form-control-sm inline-date-picker inline-hotel-checkin" value="${formatToYYYYMMDD(updatedHotel.check_in_date)}"></td>
+            <td><input type="date" class="form-control form-control-sm inline-date-picker inline-hotel-checkout" value="${formatToYYYYMMDD(updatedHotel.check_out_date)}"></td>
             <td>${updatedHotel.city}</td>
-            <td>${updatedHotel.hotel_name}</td>
+            <td>${updatedHotel.hotel_name}${pkgBadge}</td>
             <td>${roomTypeSummary}</td>
             <td>${updatedHotel.nights}</td>
             <td>${updatedHotel.single_rooms}</td>
@@ -5878,18 +5914,7 @@
             <td>${updatedHotel.promotion}</td>
             <td class="hotel-price">${updatedHotel.total_cost}</td>
             <td>
-              <div class="tooltip-btn">
-                <button class="btn btn-sm btn-warning edit-hotel" type="button">
-                  <i class="fa fa-edit"></i>
-                </button>
-                <span class="tooltip-text">Edit</span>
-                </div>
-                <div class="tooltip-btn">
-                  <button class="btn btn-sm btn-danger delete-hotel" type="button">
-                    <i class="fa fa-trash"></i>
-                  </button>
-                  <span class="tooltip-text">Delete</span>
-                </div>
+              ${btns}
             </td>
           `;
 
@@ -7702,6 +7727,8 @@
               `;
 
           row.innerHTML = `
+                    <td><input type="date" class="form-control form-control-sm inline-date-picker inline-tour-start-date" value="${formatToYYYYMMDD(tour.from_date || '')}"></td>
+                    <td><input type="date" class="form-control form-control-sm inline-date-picker inline-tour-end-date" value="${formatToYYYYMMDD(tour.to_date || '')}"></td>
                     <td>${tour.from_location || ""}</td>
                     <td>${tour.tour_name || ""} ${packageBadge}</td>
                     <td>${isPackage ? "SIC" : (tour.tot || "")}</td>
@@ -8289,7 +8316,7 @@
               `;
 
           row.innerHTML = `
-                  <td>${flightDate}</td>
+                  <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(flightDate)}"></td>
                   <td>${flightAirline} ${packageBadge}</td>
                   <td>${flight.flight_number || ""}</td>
                   <td>${flight.in_or_out || ""}</td>
@@ -8633,6 +8660,53 @@
           // Return null for invalid formats
           return null;
         }
+
+        function getCellDateValue(cell) {
+          if (!cell) return "";
+          const input = cell.querySelector("input[type='date']");
+          if (input) return input.value;
+          return cell.textContent.trim();
+        }
+        window.getCellDateValue = getCellDateValue;
+
+        // Inline date inputs event delegation
+        $(document).on("change", ".inline-date-picker", function () {
+          const row = this.closest("tr");
+          if (!row) return;
+          const tableId = row.closest("tbody")?.id;
+          const val = this.value;
+
+          if (tableId === "hotelsTableBody") {
+            const checkInInput = row.querySelector(".inline-hotel-checkin")?.value || "";
+            const checkOutInput = row.querySelector(".inline-hotel-checkout")?.value || "";
+            if (checkInInput) row.dataset.checkInDate = checkInInput;
+            if (checkOutInput) row.dataset.checkOutDate = checkOutInput;
+
+            if (checkInInput && checkOutInput) {
+              const diffTime = new Date(checkOutInput) - new Date(checkInInput);
+              const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              if (nights >= 0) {
+                row.dataset.nights = nights;
+                const nightsCell = row.cells[5];
+                if (nightsCell) nightsCell.textContent = nights;
+              }
+            }
+          } else if (tableId === "transferTableBody") {
+            row.dataset.transferDate = val;
+          } else if (tableId === "excursionTableBody") {
+            row.dataset.date = val;
+          } else if (tableId === "flightsTableBody") {
+            row.dataset.flightDate = val;
+          } else if (tableId === "othersTableBody") {
+            row.dataset.date = val;
+          } else if (tableId === "tourTableBody") {
+            if (this.classList.contains("inline-tour-start-date")) {
+              row.dataset.tourStartDate = val;
+            } else if (this.classList.contains("inline-tour-end-date")) {
+              row.dataset.tourEndDate = val;
+            }
+          }
+        });
 
         function formatTimeToHHMM(timeStr) {
           if (!timeStr) return "";
@@ -9222,7 +9296,7 @@
                 const cells = row.querySelectorAll("td");
 
                 // Ensure correct ISO format for date fields
-                const transferDate = row.dataset.transferDate || formatToYYYYMMDD(cells[0]?.textContent.trim().substring(0, 10));
+                const transferDate = getCellDateValue(cells[0]).substring(0, 10) || row.dataset.transferDate || "";
                 // rowData["id"] = parseInt(row.dataset.transferId, 10) || 0; // Ensure ID
                 rowData["trip_item_id"] = 0; // This should be assigned dynamically if needed
                 rowData["transfer_id"] = parseInt(row.dataset.transferId, 10) || 0; // Ensure TransferID
@@ -9265,21 +9339,21 @@
                 rowData["tour_id"] = isNaN(parsedTourId) || parsedTourId === 0 ? null : parsedTourId;
                 console.log("Extracted Tour ID:", rowData["tour_id"]); // Debugging
 
-                rowData["tour_name"] = getCellText(cells[1]) || "";
-                rowData["tot"] = cells[2]?.textContent.trim() || "";
-                rowData["from_location"] = getCellText(cells[0]) || "";
-                rowData["route"] = cells[3]?.textContent.trim() || "";
+                rowData["tour_name"] = getCellText(cells[3]) || "";
+                rowData["tot"] = cells[4]?.textContent.trim() || "";
+                rowData["from_location"] = getCellText(cells[2]) || "";
+                rowData["route"] = cells[5]?.textContent.trim() || "";
                 rowData["flight_in"] = row.dataset.flightIn || "";
                 rowData["flight_out"] = row.dataset.flightOut || "";
                 rowData["flight_info"] = row.dataset.flightInfo || "";
                 rowData["arrival_time"] = row.dataset.arrivalTime || "";
                 rowData["departure_time"] = row.dataset.departureTime || "";
-                rowData["remarks"] = cells[5]?.textContent.trim() || "";
+                rowData["remarks"] = cells[7]?.textContent.trim() || "";
                 rowData["from_date"] = formatToYYYYMMDD(
-                  row.dataset.tourStartDate || ""
+                  getCellDateValue(cells[0]) || row.dataset.tourStartDate || ""
                 );
                 rowData["to_date"] = formatToYYYYMMDD(
-                  row.dataset.tourEndDate || ""
+                  getCellDateValue(cells[1]) || row.dataset.tourEndDate || ""
                 );
                 rowData["single_rooms"] =
                   parseInt(row.dataset.singleRooms) || 0;
@@ -9288,9 +9362,9 @@
                 rowData["triple_rooms"] =
                   parseInt(row.dataset.tripleRooms) || 0;
                 rowData["number_of_adults"] =
-                  parseInt(cells[4]?.textContent.trim()) || 0;
+                  parseInt(cells[6]?.textContent.trim()) || 0;
                 rowData["total_cost"] =
-                  parseFloat(cells[6]?.textContent.trim()) || 0.0;
+                  parseFloat(cells[8]?.textContent.trim()) || 0.0;
                 rowData["price"] = rowData["total_cost"];
                 rowData["discount"] = 0.0;
                 rowData["final_cost"] = rowData["total_cost"];
@@ -9312,7 +9386,7 @@
                 const cells = row.querySelectorAll("td");
 
                 // ✅ Map cells to backend field names
-                const dateValue = cells[0]?.textContent.trim() || "";
+                const dateValue = getCellDateValue(cells[0]) || "";
                 const formattedDate = formatToYYYYMMDD(dateValue);
 
                 flightData["flight_airline"] = cells[1]?.textContent.trim() || ""; // Airline name (backend: flight_airline)
@@ -9377,7 +9451,7 @@
                 rowData["city"] = getCellText(cells[1]) || "";
                 rowData["toe"] = cells[6]?.textContent.trim() || "";
                 rowData["date"] = formatToYYYYMMDD(
-                  cells[0]?.textContent.trim() || ""
+                  getCellDateValue(cells[0]) || ""
                 );
                 rowData["event_time"] = cells[3]?.textContent.trim() || "";
                 rowData["hotel"] = cells[4]?.textContent.trim() || "";
@@ -9412,10 +9486,10 @@
                   row.dataset.hotelName || getCellText(cells[3]) || "";
                 rowData["city"] = getCellText(cells[2]) || "";
                 rowData["from_date"] = formatToYYYYMMDD(
-                  cells[0]?.textContent.trim() || ""
+                  getCellDateValue(cells[0]) || ""
                 );
                 rowData["to_date"] = formatToYYYYMMDD(
-                  cells[1]?.textContent.trim() || ""
+                  getCellDateValue(cells[1]) || ""
                 );
 
                 // ✅ Room summary and promotion
@@ -9542,7 +9616,7 @@
 
                 rowData["description"] = cells[0]?.textContent.trim() || "";
                 rowData["date"] = formatToYYYYMMDD(
-                  cells[1]?.textContent.trim() || ""
+                  getCellDateValue(cells[1]) || ""
                 );
                 rowData["total_price"] =
                   parseFloat(cells[2]?.textContent.trim()) || 0.0;
@@ -9821,7 +9895,7 @@
 
           row.innerHTML = `
             <td>${other.description || ""} ${packageBadge}</td>
-            <td>${other.date || ""}</td>
+            <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(other.date || '')}"></td>
             <td>${other.total_price || other.cost || 0}</td>
             <td>
               ${buttonsHtml}
@@ -10575,8 +10649,8 @@
               tr.dataset.notes = remarksWithSig;
 
               tr.innerHTML = `
-                <td>${dateStr}</td>
-                <td>${checkoutStr}</td>
+                <td><input type="date" class="form-control form-control-sm inline-date-picker inline-hotel-checkin" value="${formatToYYYYMMDD(dateStr)}"></td>
+                <td><input type="date" class="form-control form-control-sm inline-date-picker inline-hotel-checkout" value="${formatToYYYYMMDD(checkoutStr)}"></td>
                 <td>${item.city || "-"}</td>
                 <td>${item.hotel_name || "TBD"} ${packageBadge}</td>
                 <td>${item.room_type || "-"}</td>
@@ -10598,7 +10672,7 @@
               tr.dataset.tot = item.transfer_type || "SIC";
 
               tr.innerHTML = `
-                <td>${dateStr}</td>
+                <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(dateStr)}"></td>
                 <td>${item.city || "-"}</td>
                 <td>${item.transfer_description || item.description || "-"} ${packageBadge}</td>
                 <td>${item.transfer_type || "SIC"}</td>
@@ -10618,7 +10692,7 @@
               tr.dataset.toe = "SIC";
 
               tr.innerHTML = `
-                <td>${dateStr}</td>
+                <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(dateStr)}"></td>
                 <td>${item.city || "-"}</td>
                 <td>${item.excursion_name || "TBD"} ${packageBadge}</td>
                 <td>-</td>
@@ -10636,7 +10710,7 @@
               tr.dataset.remarks = remarksWithSig;
 
               tr.innerHTML = `
-                <td>${dateStr}</td>
+                <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(dateStr)}"></td>
                 <td>${item.flight_airline || "-"} ${packageBadge}</td>
                 <td>${item.flight_number || "TBD"}</td>
                 <td>-</td>
@@ -10666,6 +10740,8 @@
               tr.dataset.departureTime = "";
 
               tr.innerHTML = `
+                <td><input type="date" class="form-control form-control-sm inline-date-picker inline-tour-start-date" value="${formatToYYYYMMDD(dateStr)}"></td>
+                <td><input type="date" class="form-control form-control-sm inline-date-picker inline-tour-end-date" value="${formatToYYYYMMDD(dateStr)}"></td>
                 <td>${item.city || "-"}</td>
                 <td>${item.tour_name || "TBD"} ${packageBadge}</td>
                 <td>SIC</td>
@@ -10687,7 +10763,7 @@
 
               tr.innerHTML = `
                 <td>${item.other_description || item.description || "TBD"} ${packageBadge}</td>
-                <td>${dateStr}</td>
+                <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(dateStr)}"></td>
                 <td>${item.price || "-"}</td>
                 ${actionButtons}
               `;

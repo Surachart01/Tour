@@ -798,6 +798,8 @@
                     <table class="table table-bordered" id="tourTable">
                       <thead>
                         <tr>
+                          <th>Start Date</th>
+                          <th>End Date</th>
                           <th>City</th>
                           <th>Name</th>
                           <th>ToT</th>
@@ -4275,8 +4277,8 @@
             .join(", ");
 
           newRow.innerHTML = `
-              <td>${formatToDDMMYYYY(hotel.checkInDate)}</td>
-              <td>${formatToDDMMYYYY(hotel.checkOutDate)}</td>
+              <td><input type="date" class="form-control form-control-sm inline-date-picker inline-hotel-checkin" value="${formatToYYYYMMDD(hotel.checkInDate)}"></td>
+              <td><input type="date" class="form-control form-control-sm inline-date-picker inline-hotel-checkout" value="${formatToYYYYMMDD(hotel.checkOutDate)}"></td>
               <td>${hotel.city}</td>
               <td>${hotel.hotel}</td>
               <td>${roomTypeSummary}</td>
@@ -4308,8 +4310,10 @@
           const roomTypeSummary = hotel.roomTypes
             .map((rt) => `${rt.room_type} (${rt.adults}A${rt.children}C)`)
             .join(", ");
-          row.cells[0].textContent = formatToDDMMYYYY(hotel.checkInDate);
-          row.cells[1].textContent = formatToDDMMYYYY(hotel.checkOutDate);
+          const checkInInput = row.cells[0].querySelector("input");
+          if (checkInInput) checkInInput.value = formatToYYYYMMDD(hotel.checkInDate);
+          const checkOutInput = row.cells[1].querySelector("input");
+          if (checkOutInput) checkOutInput.value = formatToYYYYMMDD(hotel.checkOutDate);
           row.cells[2].textContent = hotel.city;
           row.cells[3].textContent = hotel.hotel;
           row.cells[4].textContent = roomTypeSummary;
@@ -5098,6 +5102,53 @@
           return null;
         }
 
+        function getCellDateValue(cell) {
+          if (!cell) return "";
+          const input = cell.querySelector("input[type='date']");
+          if (input) return input.value;
+          return cell.textContent.trim();
+        }
+        window.getCellDateValue = getCellDateValue;
+
+        // Inline date inputs event delegation
+        $(document).on("change", ".inline-date-picker", function () {
+          const row = this.closest("tr");
+          if (!row) return;
+          const tableId = row.closest("tbody")?.id;
+          const val = this.value;
+
+          if (tableId === "hotelsTableBody") {
+            const checkInInput = row.querySelector(".inline-hotel-checkin")?.value || "";
+            const checkOutInput = row.querySelector(".inline-hotel-checkout")?.value || "";
+            if (checkInInput) row.dataset.checkInDate = checkInInput;
+            if (checkOutInput) row.dataset.checkOutDate = checkOutInput;
+
+            if (checkInInput && checkOutInput) {
+              const diffTime = new Date(checkOutInput) - new Date(checkInInput);
+              const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              if (nights >= 0) {
+                row.dataset.nights = nights;
+                const nightsCell = row.cells[5];
+                if (nightsCell) nightsCell.textContent = nights;
+              }
+            }
+          } else if (tableId === "transferTableBody") {
+            row.dataset.transferDate = val;
+          } else if (tableId === "excursionTableBody") {
+            row.dataset.date = val;
+          } else if (tableId === "flightsTableBody") {
+            row.dataset.flightDate = val;
+          } else if (tableId === "othersTableBody") {
+            row.dataset.date = val;
+          } else if (tableId === "tourTableBody") {
+            if (this.classList.contains("inline-tour-start-date")) {
+              row.dataset.tourStartDate = val;
+            } else if (this.classList.contains("inline-tour-end-date")) {
+              row.dataset.tourEndDate = val;
+            }
+          }
+        });
+
         // Save Trip Functionality
         document
           .getElementById("submitTrip")
@@ -5166,7 +5217,7 @@
                 const cells = row.querySelectorAll("td");
 
                 // Ensure correct ISO format for date fields
-                const transferDate = row.dataset.transferDate || cells[0]?.textContent.trim().substring(0, 10);
+                const transferDate = getCellDateValue(cells[0]).substring(0, 10) || row.dataset.transferDate || "";
                 rowData["trip_item_id"] = 0; // This should be assigned dynamically if needed
                 rowData["transfer_id"] =
                   parseInt(row.dataset.transferId, 10) || 0; // Ensure TransferID
@@ -5207,19 +5258,19 @@
                 rowData["tour_id"] = parseInt(row.dataset.tourId, 10) || 0;
                 console.log("Extracted Tour ID:", rowData["tour_id"]); // Debugging
 
-                rowData["tour_name"] = cells[1]?.textContent.trim() || "";
-                rowData["tot"] = cells[2]?.textContent.trim() || "";
-                rowData["from_location"] = cells[0]?.textContent.trim() || "";
-                rowData["route"] = cells[3]?.textContent.trim() || "";
+                rowData["tour_name"] = getCellText(cells[3]) || "";
+                rowData["tot"] = cells[4]?.textContent.trim() || "";
+                rowData["from_location"] = getCellText(cells[2]) || "";
+                rowData["route"] = cells[5]?.textContent.trim() || "";
                 rowData["flight_in"] = row.dataset.flightIn || "";
                 rowData["flight_out"] = row.dataset.flightOut || "";
                 rowData["from_date"] = formatToYYYYMMDD(
-                  row.dataset.tourStartDate || ""
+                  getCellDateValue(cells[0]) || row.dataset.tourStartDate || ""
                 );
                 rowData["to_date"] = formatToYYYYMMDD(
-                  row.dataset.tourEndDate || ""
+                  getCellDateValue(cells[1]) || row.dataset.tourEndDate || ""
                 );
-                rowData["remarks"] = cells[5]?.textContent.trim() || "";
+                rowData["remarks"] = cells[7]?.textContent.trim() || "";
                 rowData["single_rooms"] =
                   parseInt(row.dataset.singleRooms) || 0;
                 rowData["double_rooms"] =
@@ -5229,7 +5280,7 @@
                 rowData["arrival_time"] = row.dataset.arrivalTime || "";
                 rowData["departure_time"] = row.dataset.departureTime || "";
                 rowData["total_cost"] =
-                  parseFloat(cells[6]?.textContent.trim()) || 0.0;
+                  parseFloat(cells[8]?.textContent.trim()) || 0.0;
                 rowData["price"] = rowData["total_cost"];
                 rowData["discount"] = 0.0;
                 rowData["final_cost"] = rowData["total_cost"];
@@ -5257,7 +5308,7 @@
                 flightData["in_or_out"] = cells[3]?.textContent.trim() || ""; // Flight In/Out
                 flightData["route"] = cells[4]?.textContent.trim() || ""; // Flight Route
                 flightData["flight_date"] = formatToYYYYMMDD(
-                  cells[0]?.textContent.trim() || ""
+                  getCellDateValue(cells[0]) || ""
                 ); // Convert date format
                 flightData["departure_time"] =
                   cells[5]?.textContent.trim() || ""; // Departure Time
@@ -5302,7 +5353,7 @@
                 rowData["city"] = cells[1]?.textContent.trim() || "";
                 rowData["toe"] = cells[6]?.textContent.trim() || "";
                 rowData["date"] = formatToYYYYMMDD(
-                  cells[0]?.textContent.trim() || ""
+                  getCellDateValue(cells[0]) || ""
                 );
                 rowData["event_time"] = cells[3]?.textContent.trim() || "";
                 rowData["hotel"] = cells[4]?.textContent.trim() || "";
@@ -5337,10 +5388,10 @@
                   row.dataset.hotelName || getCellText(cells[3]) || "";
                 rowData["city"] = getCellText(cells[2]) || "";
                 rowData["from_date"] = formatToYYYYMMDD(
-                  cells[0]?.textContent.trim() || ""
+                  getCellDateValue(cells[0]) || ""
                 );
                 rowData["to_date"] = formatToYYYYMMDD(
-                  cells[1]?.textContent.trim() || ""
+                  getCellDateValue(cells[1]) || ""
                 );
 
                 // ✅ Room summary and promotion
@@ -6015,8 +6066,8 @@
               tr.dataset.notes = remarksWithSig;
 
               tr.innerHTML = `
-                <td>${dateStr}</td>
-                <td>${checkoutStr}</td>
+                <td><input type="date" class="form-control form-control-sm inline-date-picker inline-hotel-checkin" value="${formatToYYYYMMDD(dateStr)}"></td>
+                <td><input type="date" class="form-control form-control-sm inline-date-picker inline-hotel-checkout" value="${formatToYYYYMMDD(checkoutStr)}"></td>
                 <td>${item.city || "-"}</td>
                 <td>${item.hotel_name || "TBD"} ${packageBadge}</td>
                 <td>${item.room_type || "-"}</td>
@@ -6038,7 +6089,7 @@
               tr.dataset.tot = "SIC";
 
               tr.innerHTML = `
-                <td>${dateStr}</td>
+                <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(dateStr)}"></td>
                 <td>${item.city || "-"}</td>
                 <td>${item.transfer_description || item.description || "-"} ${packageBadge}</td>
                 <td>${item.transfer_type || "SIC"}</td>
@@ -6058,7 +6109,7 @@
               tr.dataset.toe = "SIC";
 
               tr.innerHTML = `
-                <td>${dateStr}</td>
+                <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(dateStr)}"></td>
                 <td>${item.city || "-"}</td>
                 <td>${item.excursion_name || "TBD"} ${packageBadge}</td>
                 <td>-</td>
@@ -6076,7 +6127,7 @@
               tr.dataset.remarks = remarksWithSig;
 
               tr.innerHTML = `
-                <td>${dateStr}</td>
+                <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(dateStr)}"></td>
                 <td>${item.flight_airline || "-"} ${packageBadge}</td>
                 <td>${item.flight_number || "TBD"}</td>
                 <td>-</td>
@@ -6095,11 +6146,15 @@
               tr.dataset.isPackageItem = "true";
               tr.dataset.tourId = item.tour_id || "";
               tr.dataset.remarks = remarksWithSig;
+              tr.dataset.tourStartDate = dateStr;
+              tr.dataset.tourEndDate = dateStr;
 
               tr.innerHTML = `
+                <td><input type="date" class="form-control form-control-sm inline-date-picker inline-tour-start-date" value="${formatToYYYYMMDD(dateStr)}"></td>
+                <td><input type="date" class="form-control form-control-sm inline-date-picker inline-tour-end-date" value="${formatToYYYYMMDD(dateStr)}"></td>
                 <td>${item.city || "-"}</td>
                 <td>${item.tour_name || "TBD"} ${packageBadge}</td>
-                <td>PVT</td>
+                <td>SIC</td>
                 <td>-</td>
                 <td>-</td>
                 <td><small>${cleanRemarks}</small></td>
@@ -6118,7 +6173,7 @@
 
               tr.innerHTML = `
                 <td>${item.other_description || item.description || "TBD"} ${packageBadge}</td>
-                <td>${dateStr}</td>
+                <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(dateStr)}"></td>
                 <td>${item.price || "-"}</td>
                 <td>
                   <button class="btn btn-sm btn-warning editOtherBtn" type="button" style="margin-right: 5px;">

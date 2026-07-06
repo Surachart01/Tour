@@ -774,6 +774,8 @@ document.addEventListener("DOMContentLoaded", function () {
     newRow.dataset.tourEndDate = tour.tourEndDate;
 
     newRow.innerHTML = `
+      <td><input type="date" class="form-control form-control-sm inline-date-picker inline-tour-start-date" value="${formatToYYYYMMDD(tour.tourStartDate || '')}"></td>
+      <td><input type="date" class="form-control form-control-sm inline-date-picker inline-tour-end-date" value="${formatToYYYYMMDD(tour.tourEndDate || '')}"></td>
       <td>${tour.tourCity}</td>
       <td>${tour.tourName}</td>
       <td>${tour.tourToT}</td>
@@ -799,13 +801,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Function to update an existing tour row
   function updateTourRow(row, tour) {
-    row.cells[0].textContent = tour.tourCity;
-    row.cells[1].textContent = tour.tourName;
-    row.cells[2].textContent = tour.tourToT;
-    row.cells[3].textContent = tour.route || "";
-    row.cells[4].textContent = tour.pax;
-    row.cells[5].textContent = tour.remarks || "";
-    row.cells[6].textContent = tour.price ? `${tour.price}` : "N/A";
+    const startInput = row.cells[0].querySelector("input");
+    if (startInput) startInput.value = formatToYYYYMMDD(tour.tourStartDate || '');
+    const endInput = row.cells[1].querySelector("input");
+    if (endInput) endInput.value = formatToYYYYMMDD(tour.tourEndDate || '');
+
+    row.cells[2].textContent = tour.tourCity;
+    row.cells[3].textContent = tour.tourName;
+    row.cells[4].textContent = tour.tourToT;
+    row.cells[5].textContent = tour.route || "";
+    row.cells[6].textContent = tour.pax;
+    row.cells[7].textContent = tour.remarks || "";
+    row.cells[8].textContent = tour.price ? `${tour.price}` : "N/A";
 
     row.dataset.tourId = tour.tour_id;
     row.dataset.singleRooms = tour.singleRoomCount;
