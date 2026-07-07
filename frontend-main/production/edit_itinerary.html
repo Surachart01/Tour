@@ -4177,19 +4177,22 @@
             alert("Failed to load trip details.");
           });
 
-        // **Toggle Sections**: Only One Visible at a Time
-        const sectionButtons = document.querySelectorAll(".btn-group button");
-        const collapsibleSections = document.querySelectorAll(".collapse");
+        // Toggle sections independently (allowing multiple sections to be open)
+        $(".btn-group button").on("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          const target = $(this).data("target");
+          $(target).collapse("toggle");
+        });
 
-        sectionButtons.forEach((button) => {
-          button.addEventListener("click", function () {
-            // Hide all sections
-            collapsibleSections.forEach((section) => {
-              if (section.id !== button.dataset.target.replace("#", "")) {
-                section.classList.remove("show");
-              }
-            });
-          });
+        // Sync button active class with collapse state
+        $(document).on("show.bs.collapse", ".collapse", function () {
+          const id = $(this).attr("id");
+          $(`.btn-group button[data-target="#${id}"]`).addClass("active");
+        });
+        $(document).on("hide.bs.collapse", ".collapse", function () {
+          const id = $(this).attr("id");
+          $(`.btn-group button[data-target="#${id}"]`).removeClass("active");
         });
       });
     </script>

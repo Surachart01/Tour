@@ -3754,7 +3754,7 @@
           }
 
           row.innerHTML = `
-                  <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(excursion.date || '')}"></td>
+                  <td data-date="${formatToYYYYMMDD(excursion.date || '')}">${formatDateDisplay(excursion.date || '')}</td>
                   <td>${excursion.city || ""} ${packageBadge}</td>
                   <td>${excursion.excursion_name || ""}</td>
                   <td>${excursion.event_time || ""}</td>
@@ -4400,7 +4400,7 @@
           }
 
           row.innerHTML = `
-                <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(transfer.date || '')}"><br>${transfer.flight_number || ""}</td>
+                <td data-date="${formatToYYYYMMDD(transfer.date || '')}">${formatDateDisplay(transfer.date || '')}<br>${transfer.flight_number || ""}</td>
                 <td>${normalizedType}</td>
                 <td>${transfer.city || ""} ${packageBadge}</td>
                 <td>${transfer.transfer_description || ""}</td>
@@ -6174,8 +6174,8 @@
           }
 
           row.innerHTML = `
-                <td><input type="date" class="form-control form-control-sm inline-date-picker inline-hotel-checkin" value="${formatToYYYYMMDD(hotel.from_date || '')}"></td>
-                <td><input type="date" class="form-control form-control-sm inline-date-picker inline-hotel-checkout" value="${formatToYYYYMMDD(hotel.to_date || '')}"></td>
+                <td data-date="${formatToYYYYMMDD(hotel.from_date || '')}">${formatDateDisplay(hotel.from_date || '')}</td>
+                <td data-date="${formatToYYYYMMDD(hotel.to_date || '')}">${formatDateDisplay(hotel.to_date || '')}</td>
                 <td>${hotel.city || ""}</td>
                 <td>${hotelNameDisplay}</td>
                 <td>${roomTypeSummary}</td>
@@ -6574,8 +6574,8 @@
               `;
 
           editingHotelRow.innerHTML = `
-            <td><input type="date" class="form-control form-control-sm inline-date-picker inline-hotel-checkin" value="${formatToYYYYMMDD(updatedHotel.check_in_date)}"></td>
-            <td><input type="date" class="form-control form-control-sm inline-date-picker inline-hotel-checkout" value="${formatToYYYYMMDD(updatedHotel.check_out_date)}"></td>
+            <td data-date="${formatToYYYYMMDD(updatedHotel.check_in_date)}">${formatDateDisplay(updatedHotel.check_in_date)}</td>
+            <td data-date="${formatToYYYYMMDD(updatedHotel.check_out_date)}">${formatDateDisplay(updatedHotel.check_out_date)}</td>
             <td>${updatedHotel.city}</td>
             <td>${updatedHotel.hotel_name}${pkgBadge}</td>
             <td>${roomTypeSummary}</td>
@@ -8554,8 +8554,8 @@
           }
 
           row.innerHTML = `
-                    <td><input type="date" class="form-control form-control-sm inline-date-picker inline-tour-start-date" value="${formatToYYYYMMDD(tour.from_date || '')}"></td>
-                    <td><input type="date" class="form-control form-control-sm inline-date-picker inline-tour-end-date" value="${formatToYYYYMMDD(tour.to_date || '')}"></td>
+                    <td data-date="${formatToYYYYMMDD(tour.from_date || '')}">${formatDateDisplay(tour.from_date || '')}</td>
+                    <td data-date="${formatToYYYYMMDD(tour.to_date || '')}">${formatDateDisplay(tour.to_date || '')}</td>
                     <td>${tour.from_location || ""}</td>
                     <td>${tour.tour_name || ""} ${packageBadge}</td>
                     <td>${isPackage ? "SIC" : (tour.tot || "")}</td>
@@ -9157,7 +9157,7 @@
               `;
 
           row.innerHTML = `
-                  <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(flightDate)}"></td>
+                  <td data-date="${formatToYYYYMMDD(flightDate)}">${formatDateDisplay(flightDate)}</td>
                   <td>${flightAirline} ${packageBadge}</td>
                   <td>${flight.flight_number || ""}</td>
                   <td>${flight.in_or_out || ""}</td>
@@ -9502,11 +9502,38 @@
           return null;
         }
 
+        function formatDateDisplay(dateString) {
+          if (!dateString) return "";
+          const cleanDate = dateString.split("T")[0];
+          const parts = cleanDate.split("-");
+          if (parts.length === 3) {
+            const [year, month, day] = parts;
+            return `${day}/${month}/${year}`;
+          }
+          const slashParts = cleanDate.split("/");
+          if (slashParts.length === 3) {
+            const [day, month, year] = slashParts;
+            return `${day}/${month}/${year}`;
+          }
+          return dateString;
+        }
+        window.formatDateDisplay = formatDateDisplay;
+
         function getCellDateValue(cell) {
           if (!cell) return "";
+          if (cell.dataset.date) return cell.dataset.date;
           const input = cell.querySelector("input[type='date']");
           if (input) return input.value;
-          return cell.textContent.trim();
+          
+          // Parse textContent if no data-date or input is found
+          const text = cell.textContent.trim();
+          const cleanText = text.split("\n")[0].trim();
+          const parts = cleanText.split("/");
+          if (parts.length === 3) {
+            const [day, month, year] = parts;
+            return `${year}-${month}-${day}`;
+          }
+          return cleanText;
         }
         window.getCellDateValue = getCellDateValue;
 
@@ -10043,35 +10070,22 @@
             }
           });
 
-        // **Toggle Sections**: Only One Visible at a Time
-        const sectionButtons = document.querySelectorAll(".btn-group button");
-        const collapsibleSections = document.querySelectorAll(".collapse");
+        // Toggle sections independently (allowing multiple sections to be open)
+        $(".btn-group button").on("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          const target = $(this).data("target");
+          $(target).collapse("toggle");
+        });
 
-        sectionButtons.forEach((button) => {
-          button.addEventListener("click", function (event) {
-            event.preventDefault(); // Prevent page jump
-            event.stopPropagation(); // Stop event bubbling
-
-            const targetId = button
-              .getAttribute("data-target")
-              .replace("#", "");
-            const targetSection = document.getElementById(targetId);
-
-            if (!targetSection) return;
-
-            // Hide all other sections first
-            collapsibleSections.forEach((section) => {
-              if (
-                section.id !== targetId &&
-                section.classList.contains("show")
-              ) {
-                section.classList.remove("show");
-              }
-            });
-
-            // Manually toggle the target section since we prevented default
-            targetSection.classList.toggle("show");
-          });
+        // Sync button active class with collapse state
+        $(document).on("show.bs.collapse", ".collapse", function () {
+          const id = $(this).attr("id");
+          $(`.btn-group button[data-target="#${id}"]`).addClass("active");
+        });
+        $(document).on("hide.bs.collapse", ".collapse", function () {
+          const id = $(this).attr("id");
+          $(`.btn-group button[data-target="#${id}"]`).removeClass("active");
         });
         document
           .getElementById("submitTrip")
@@ -10774,7 +10788,7 @@
 
           row.innerHTML = `
             <td>${other.description || ""} ${packageBadge}</td>
-            <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(other.date || '')}"></td>
+            <td data-date="${formatToYYYYMMDD(other.date || '')}">${formatDateDisplay(other.date || '')}</td>
             <td>${other.total_price || other.cost || 0}</td>
             <td>
               ${buttonsHtml}
@@ -11310,9 +11324,9 @@
                 let itemDateVal = "";
                 const hiddenRow = document.querySelector(`tr[data-package-item-index="${item.tempIndex}"]`);
                 if (hiddenRow) {
-                  const dateInput = hiddenRow.querySelector("input[type='date']");
-                  if (dateInput) {
-                    itemDateVal = dateInput.value;
+                  const dateCell = hiddenRow.cells[0];
+                  if (dateCell && dateCell.dataset.date) {
+                    itemDateVal = dateCell.dataset.date;
                   }
                 }
 
@@ -11596,8 +11610,8 @@
               tr.dataset.notes = remarksWithSig;
 
               tr.innerHTML = `
-                <td><input type="date" class="form-control form-control-sm inline-date-picker inline-hotel-checkin" value="${formatToYYYYMMDD(dateStr)}"></td>
-                <td><input type="date" class="form-control form-control-sm inline-date-picker inline-hotel-checkout" value="${formatToYYYYMMDD(checkoutStr)}"></td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
+                <td data-date="${formatToYYYYMMDD(checkoutStr)}">${formatDateDisplay(checkoutStr)}</td>
                 <td>${item.city || "-"}</td>
                 <td>${item.hotel_name || "TBD"} ${packageBadge}</td>
                 <td>${item.room_type || "-"}</td>
@@ -11620,7 +11634,7 @@
               tr.dataset.tot = item.transfer_type || "SIC";
 
               tr.innerHTML = `
-                <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(dateStr)}"></td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
                 <td>-</td>
                 <td>${item.city || "-"} ${packageBadge}</td>
                 <td>${item.transfer_description || item.description || "-"}</td>
@@ -11642,7 +11656,7 @@
               tr.dataset.toe = "SIC";
 
               tr.innerHTML = `
-                <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(dateStr)}"></td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
                 <td>${item.city || "-"}</td>
                 <td>${item.excursion_name || "TBD"} ${packageBadge}</td>
                 <td>-</td>
@@ -11661,7 +11675,7 @@
               tr.dataset.remarks = remarksWithSig;
 
               tr.innerHTML = `
-                <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(dateStr)}"></td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
                 <td>${item.flight_airline || "-"} ${packageBadge}</td>
                 <td>${item.flight_number || "TBD"}</td>
                 <td>-</td>
@@ -11692,8 +11706,8 @@
               tr.dataset.departureTime = "";
 
               tr.innerHTML = `
-                <td><input type="date" class="form-control form-control-sm inline-date-picker inline-tour-start-date" value="${formatToYYYYMMDD(dateStr)}"></td>
-                <td><input type="date" class="form-control form-control-sm inline-date-picker inline-tour-end-date" value="${formatToYYYYMMDD(dateStr)}"></td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
                 <td>${item.city || "-"}</td>
                 <td>${item.tour_name || "TBD"} ${packageBadge}</td>
                 <td>SIC</td>
@@ -11716,7 +11730,7 @@
 
               tr.innerHTML = `
                 <td>${item.other_description || item.description || "TBD"} ${packageBadge}</td>
-                <td><input type="date" class="form-control form-control-sm inline-date-picker" value="${formatToYYYYMMDD(dateStr)}"></td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
                 <td>${item.price || "-"}</td>
                 ${actionButtons}
               `;
@@ -11785,20 +11799,31 @@
 
           const hiddenRow = document.querySelector(`tr[data-package-item-index="${index}"]`);
           if (hiddenRow) {
-            const checkinInput = hiddenRow.querySelector(".inline-hotel-checkin");
-            const checkoutInput = hiddenRow.querySelector(".inline-hotel-checkout");
-            if (checkinInput && checkoutInput) {
-              checkinInput.value = newVal;
+            const isHotel = hiddenRow.closest("tbody")?.id === "hotelsTableBody";
+            const isTour = hiddenRow.closest("tbody")?.id === "tourTableBody";
+
+            const cell0 = hiddenRow.cells[0];
+            if (cell0) {
+              cell0.dataset.date = newVal;
+              cell0.innerHTML = formatDateDisplay(newVal);
+            }
+
+            if (isHotel) {
               const nights = parseInt(hiddenRow.dataset.nights) || 1;
               const dateObj = new Date(newVal);
               const checkoutObj = new Date(dateObj.getTime() + nights * 24 * 60 * 60 * 1000);
-              checkoutInput.value = checkoutObj.toISOString().substring(0, 10);
-              $(checkinInput).trigger("change");
-            } else {
-              const dateInput = hiddenRow.querySelector("input[type='date']");
-              if (dateInput) {
-                dateInput.value = newVal;
-                $(dateInput).trigger("change");
+              const checkoutVal = checkoutObj.toISOString().substring(0, 10);
+              
+              const cell1 = hiddenRow.cells[1];
+              if (cell1) {
+                cell1.dataset.date = checkoutVal;
+                cell1.innerHTML = formatDateDisplay(checkoutVal);
+              }
+            } else if (isTour) {
+              const cell1 = hiddenRow.cells[1];
+              if (cell1) {
+                cell1.dataset.date = newVal;
+                cell1.innerHTML = formatDateDisplay(newVal);
               }
             }
           }

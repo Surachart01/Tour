@@ -1996,6 +1996,12 @@
             }
           });
 
+        // Set default booking date to today
+        const bookingDateInput = document.getElementById("bookingDate");
+        if (bookingDateInput && !bookingDateInput.value) {
+          bookingDateInput.value = new Date().toISOString().split("T")[0];
+        }
+
         // Initial setup - set minimum date on page load
         updateTripStartDateMin();
 
