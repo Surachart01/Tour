@@ -1057,7 +1057,7 @@
                           <th>Date</th>
                           <th>City</th>
                           <th>Name</th>
-                          <th>Arrival Time</th>
+                          <th>Pickup Time</th>
                           <th>Hotel</th>
                           <th>Remarks</th>
                           <th>ToE</th>
@@ -1575,8 +1575,15 @@
           <div class="modal-body">
             <form id="transferForm">
               <div class="form-row">
+                <!-- Country * -->
+                <div class="form-group col-md-3">
+                  <label for="transferCountry">Country *</label>
+                  <select class="form-control" id="transferCountry" required>
+                    <option value="" disabled selected>Select Country</option>
+                  </select>
+                </div>
                  <!-- City * -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="transferCity">City *</label>
                   <select
                     class="form-control city-dropdown-transfer"
@@ -1588,7 +1595,7 @@
                   </select>
                 </div>
                 <!-- Date * -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="transferDate">Date *</label>
                   <input
                     type="date"
@@ -1598,7 +1605,7 @@
                   />
                 </div>
                 <!-- Transfer Direction Type -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="transferDirectionType">Transfer Type</label>
                   <select class="form-control" id="transferDirectionType">
                     <option value="">Select Type</option>
@@ -1753,8 +1760,15 @@
           <div class="modal-body">
             <form id="excursionForm">
               <div class="form-row">
+                <!-- Country * -->
+                <div class="form-group col-md-3">
+                  <label for="excursionCountry">Country *</label>
+                  <select class="form-control" id="excursionCountry" required>
+                    <option value="" disabled selected>Select Country</option>
+                  </select>
+                </div>
                 <!-- City Dropdown -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="excursionCity">City *</label>
                   <select
                     id="excursionCity"
@@ -1766,7 +1780,7 @@
                   </select>
                 </div>
                 <!-- Date -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="excursionDate">Date *</label>
                   <input
                     type="date"
@@ -1776,7 +1790,7 @@
                   />
                 </div>
                 <!-- Excursion Dropdown -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="excursionName">Excursion *</label>
                   <select
                     id="excursionName"
@@ -1798,9 +1812,9 @@
                     required
                   />
                 </div>
-                <!-- Arrival Time -->
+                <!-- Pickup Time -->
                 <div class="form-group col-md-4">
-                  <label for="excursionPickupTime">Arrival Time</label>
+                  <label for="excursionPickupTime">Pickup Time</label>
                   <input
                     type="time"
                     class="form-control"
@@ -1894,8 +1908,15 @@
           <div class="modal-body">
             <form id="tourForm">
               <div class="form-row">
+                <!-- Country -->
+                <div class="form-group col-md-3">
+                  <label for="tourCountry">Country *</label>
+                  <select class="form-control" id="tourCountry" required>
+                    <option value="" disabled selected>Select Country</option>
+                  </select>
+                </div>
                 <!-- Start City -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="city">Start City *</label>
                   <select
                     class="form-control city-dropdown-tour"
@@ -1906,7 +1927,7 @@
                   </select>
                 </div>
                 <!-- Start Date -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="tourStartDate">Start Date</label>
                   <input
                     type="date"
@@ -1916,7 +1937,7 @@
                   />
                 </div>
                 <!-- End Date -->
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                   <label for="tourEndDate">End Date</label>
                   <input
                     type="date"
@@ -2164,8 +2185,15 @@
                       required
                     />
                   </div>
-                  <!-- City Dropdown -->
-                  <div class="form-group col-md-3">
+                   <!-- Country Dropdown -->
+                   <div class="form-group col-md-3">
+                     <label for="hotelCountry">Country *</label>
+                     <select class="form-control" id="hotelCountry" required>
+                       <option value="" disabled selected>Select Country</option>
+                     </select>
+                   </div>
+                   <!-- City Dropdown -->
+                   <div class="form-group col-md-3">
                     <label for="hotelCity">City *</label>
                     <select
                       id="hotelCity"
@@ -2579,6 +2607,7 @@
     <!-- Custom Scripts -->
     <script src="../build/js/custom.min.js"></script>
     <script src="js/config.js"></script>
+    <script src="js/locationCache.js"></script>
     <!-- Tour Hotels Management -->
     <script src="js/tour-hotels-api.js"></script>
     <script src="js/tour-hotels-ui.js"></script>
@@ -2823,44 +2852,27 @@
           return "TH"; // Default fallback country
         }
 
-        async function populateCitiesDropdown(selector) {
-          try {
-            // Get user's profile country first
-            const countryCode = await getProfileCountry();
-            console.log(`Loading cities for country: ${countryCode}`);
-
-            const response = await fetch(
-              `${Endpoint}/api/v1/locations/countries/${countryCode}/cities`,
-              {
-                method: "GET",
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  "Content-Type": "application/json",
-                },
+        async function setCountryAndCityForEdit(countryDropdownId, cityDropdownId, cityName) {
+          if (window.LocationCache) {
+            const countryCode = await LocationCache.findCountryForCity(cityName);
+            if (countryCode) {
+              const countryDropdown = document.getElementById(countryDropdownId);
+              if (countryDropdown) {
+                countryDropdown.value = countryCode;
+                await LocationCache.populateCitiesDropdown(countryCode, cityDropdownId);
+                const cityDropdown = document.getElementById(cityDropdownId);
+                if (cityDropdown) {
+                  cityDropdown.value = cityName;
+                }
               }
-            );
-
-            if (!response.ok) {
-              // Fallback to global cities if country-specific fails
-              console.warn(
-                `Country-specific cities failed, falling back to global cities`
-              );
-              return populateGlobalCities(selector);
+            } else {
+              // Fallback: populate all cities if country cannot be determined
+              await LocationCache.populateAllCitiesDropdown(`#${cityDropdownId}`);
+              const cityDropdown = document.getElementById(cityDropdownId);
+              if (cityDropdown) {
+                cityDropdown.value = cityName;
+              }
             }
-
-            const data = await response.json();
-            console.log(
-              "Country-filtered cities response for",
-              selector,
-              ":",
-              data
-            );
-
-            populateCityDropdowns(selector, data);
-          } catch (error) {
-            console.error("Error in populateCitiesDropdown:", error);
-            // Fallback to global cities
-            populateGlobalCities(selector);
           }
         }
 
@@ -3607,8 +3619,8 @@
             const excursionDateInput = document.getElementById("excursionDate");
 
             if (tripStartDateInput.value) {
-              excursionDateInput.min = tripStartDateInput.value; // ✅ Set min date
-              excursionDateInput.value = tripStartDateInput.value; // ✅ Default to Trip Start Date
+              excursionDateInput.min = tripStartDateInput.value; // ✅ Set min date only, no default
+              excursionDateInput.value = ""; // ✅ Always start empty so user must explicitly pick a date
             }
 
             $("#addExcursionModal").modal("show"); // Show the excursion modal
@@ -3724,8 +3736,7 @@
           let formattedDate = formatToYYYYMMDD(excursion.excursionDate);
 
           // ✅ Populate input fields
-          document.getElementById("excursionCity").value =
-            excursion.excursionCity;
+          setCountryAndCityForEdit("excursionCountry", "excursionCity", excursion.excursionCity);
           document.getElementById("excursionDate").value = formattedDate;
           document.getElementById("typeOfExcursion").value =
             excursion.typeOfExcursion;
@@ -4564,25 +4575,7 @@
           let formattedDate = formatToYYYYMMDD(transfer.transferDate);
 
           // ✅ Populate modal fields with fresh data
-          const cityDropdown = document.getElementById("transferCity");
-          if (cityDropdown) {
-            let cityFound = false;
-            for (let i = 0; i < cityDropdown.options.length; i++) {
-              if (cityDropdown.options[i].value.toLowerCase() === (transfer.transferCity || "").toLowerCase()) {
-                cityDropdown.selectedIndex = i;
-                cityFound = true;
-                break;
-              }
-            }
-            if (!cityFound && transfer.transferCity) {
-              console.log("⚠️ City not found in dropdown options, adding manually:", transfer.transferCity);
-              const option = document.createElement("option");
-              option.value = transfer.transferCity;
-              option.textContent = transfer.transferCity;
-              option.selected = true;
-              cityDropdown.appendChild(option);
-            }
-          }
+          setCountryAndCityForEdit("transferCountry", "transferCity", transfer.transferCity);
           document.getElementById("transferDate").value = formattedDate;
           document.getElementById("transferFrom").value =
             transfer.transferFrom || "";
@@ -6421,7 +6414,7 @@
             document.getElementById("hotelPax").value = adult + child;
           }
 
-          document.getElementById("hotelCity").value = hotel.city;
+          setCountryAndCityForEdit("hotelCountry", "hotelCity", hotel.city);
           document.getElementById("checkInDate").value = hotel.check_in_date;
           document.getElementById("checkOutDate").value = hotel.check_out_date;
           document.getElementById("hotelType").value = hotel.hotel_id;
@@ -8064,7 +8057,7 @@
           console.log("Loaded Tour Data for Editing:", tour);
 
           // ✅ Populate modal fields with extracted data
-          document.getElementById("city").value = tour.from_location;
+          setCountryAndCityForEdit("tourCountry", "city", tour.from_location);
           document.getElementById("tourToT").value = tour.tot;
           document.getElementById("tourStartDate").value = tour.tourStartDate;
           document.getElementById("tourEndDate").value = tour.tourEndDate;
@@ -9012,11 +9005,55 @@
           return timeStr;
         }
 
-        // Populate cities on page load for all relevant dropdowns
-        populateCitiesDropdown(".city-dropdown-transfer");
-        populateCitiesDropdown(".city-dropdown-hotel");
-        populateCitiesDropdown(".city-dropdown-excursion");
-        populateCitiesDropdown(".city-dropdown-tour");
+        // Initialize LocationCache dropdowns and country change handlers
+        async function initializeLocationDropdowns() {
+          if (window.LocationCache) {
+            console.log("Populating country dropdowns...");
+            // Populate all country dropdowns
+            await Promise.all([
+              LocationCache.populateCountriesDropdown("transferCountry"),
+              LocationCache.populateCountriesDropdown("excursionCountry"),
+              LocationCache.populateCountriesDropdown("tourCountry"),
+              LocationCache.populateCountriesDropdown("hotelCountry"),
+            ]);
+
+            // Add country change handlers
+            document.getElementById("transferCountry")?.addEventListener("change", function () {
+              const selectedCountry = this.value;
+              console.log("Transfer country changed to:", selectedCountry);
+              if (selectedCountry) {
+                LocationCache.populateCitiesDropdown(selectedCountry, "transferCity");
+              }
+            });
+
+            document.getElementById("excursionCountry")?.addEventListener("change", function () {
+              const selectedCountry = this.value;
+              console.log("Excursion country changed to:", selectedCountry);
+              if (selectedCountry) {
+                LocationCache.populateCitiesDropdown(selectedCountry, "excursionCity");
+              }
+            });
+
+            document.getElementById("tourCountry")?.addEventListener("change", function () {
+              const selectedCountry = this.value;
+              console.log("Tour country changed to:", selectedCountry);
+              if (selectedCountry) {
+                LocationCache.populateCitiesDropdown(selectedCountry, "city");
+              }
+            });
+
+            document.getElementById("hotelCountry")?.addEventListener("change", function () {
+              const selectedCountry = this.value;
+              console.log("Hotel country changed to:", selectedCountry);
+              if (selectedCountry) {
+                LocationCache.populateCitiesDropdown(selectedCountry, "hotelCity");
+              }
+            });
+          } else {
+            console.error("LocationCache not available");
+          }
+        }
+        initializeLocationDropdowns();
 
         function convertToISODate(dateString) {
           if (!dateString) return "";

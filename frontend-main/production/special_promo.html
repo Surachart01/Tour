@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Special Promo</title>
+
+    <!-- Bootstrap -->
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <link
+      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="../vendors/font-awesome/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <link href="../vendors/nprogress/nprogress.css" rel="stylesheet" />
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
+
+    <style>
+      .nav_title span,
+      .profile_info span,
+      .profile_info h2,
+      .side-menu a,
+      .navbar-right a {
+        font-size: 1rem;
+      }
+      .left_col.scroll-view {
+        overflow-y: auto;
+        max-height: 100vh;
+      }
+      body.nav-sm .left_col.scroll-view {
+        overflow-y: visible;
+        max-height: none;
+      }
+      
+      /* Premium Design Elements for Special Promo */
+      .promo-container {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        padding: 30px;
+        margin-top: 20px;
+      }
+      
+      .promo-header {
+        border-bottom: 2px solid #f4f6f7;
+        padding-bottom: 15px;
+        margin-bottom: 25px;
+      }
+      
+      .promo-header h2 {
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 0;
+      }
+      
+      .promo-header p {
+        color: #7f8c8d;
+        margin: 5px 0 0 0;
+      }
+      
+      .agent-select-box {
+        border: 1px solid #dcdde1;
+        border-radius: 8px;
+        max-height: 250px;
+        overflow-y: auto;
+        padding: 15px;
+        background: #fcfcfc;
+      }
+      
+      .agent-item {
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: background 0.2s;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+      }
+      
+      .agent-item:hover {
+        background: #f1f2f6;
+      }
+      
+      .agent-item input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        margin-right: 12px;
+        cursor: pointer;
+      }
+      
+      .dropzone-area {
+        border: 2px dashed #9b59b6;
+        border-radius: 8px;
+        padding: 30px;
+        text-align: center;
+        background: #f9f6fc;
+        cursor: pointer;
+        transition: background 0.3s, border-color 0.3s;
+      }
+      
+      .dropzone-area:hover {
+        background: #f3ebf7;
+        border-color: #8e44ad;
+      }
+      
+      .dropzone-icon {
+        font-size: 40px;
+        color: #9b59b6;
+        margin-bottom: 10px;
+      }
+      
+      .attachment-list {
+        margin-top: 15px;
+      }
+      
+      .attachment-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 15px;
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        margin-bottom: 8px;
+      }
+      
+      .attachment-file-info {
+        display: flex;
+        align-items: center;
+      }
+      
+      .attachment-file-info i {
+        font-size: 20px;
+        margin-right: 10px;
+      }
+      
+      .file-pdf { color: #e74c3c; }
+      .file-word { color: #3498db; }
+      .file-excel { color: #2ecc71; }
+      .file-powerpoint { color: #e67e22; }
+      .file-other { color: #95a5a6; }
+      
+      .remove-attachment-btn {
+        background: none;
+        border: none;
+        color: #e74c3c;
+        cursor: pointer;
+        font-size: 16px;
+        transition: color 0.2s;
+      }
+      
+      .remove-attachment-btn:hover {
+        color: #c0392b;
+      }
+      
+      .btn-send-promo {
+        background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        border: none;
+        color: white;
+        font-weight: 700;
+        padding: 12px 30px;
+        border-radius: 8px;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      
+      .btn-send-promo:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(142, 68, 173, 0.4);
+        color: white;
+      }
+    </style>
+  </head>
+
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+        <!-- Sidebar -->
+        <div class="col-md-3 left_col">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border: 0">
+              <a href="index.html" class="site_title"
+                ><i class="fa fa-paw"></i> <span>VeraThailandia!</span></a
+              >
+            </div>
+
+            <div class="clearfix"></div>
+
+            <!-- menu profile quick info -->
+            <div class="profile clearfix">
+              <div class="profile_pic">
+                <img
+                  src="images/verathailandlogo.png"
+                  alt="..."
+                  class="img-circle profile_img"
+                />
+              </div>
+              <div class="profile_info">
+                <span>Welcome,</span>
+                <h2 id="profileName"></h2>
+              </div>
+            </div>
+            <!-- /menu profile quick info -->
+
+            <br />
+
+            <!-- sidebar menu -->
+            <div
+              id="sidebar-menu"
+              class="main_menu_side hidden-print main_menu"
+            >
+              <div class="menu_section">
+                <h3>General</h3>
+                <ul class="nav side-menu">
+                  <li>
+                    <a href="index.html"
+                      ><i class="fa fa-home"></i> Home
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li>
+                    <a
+                      ><i class="fa fa-edit"></i> Control-Panel
+                      <span class="fa fa-chevron-down"></span
+                    ></a>
+                    <ul class="nav child_menu">
+                      <li><a href="activities.html">Activities</a></li>
+                      <li><a href="agents.html">Agents</a></li>
+                      <li><a href="booking.html">Bookings</a></li>
+                      <li><a href="city_info.html">City Information</a></li>
+                      <li><a href="excursion_description.html">Excursion Description</a></li>
+                      <li><a href="excursions.html">Excursions</a></li>
+                      <li><a href="hotels.html">Hotels</a></li>
+                      <li><a href="markup.html">Markups</a></li>
+                      <li><a href="othercharges.html">Other Charges</a></li>
+                      <li><a href="special_packages.html">Special Packages</a></li>
+                      <li><a href="stop_sale.html">Stop Sale</a></li>
+                      <li><a href="special_promo.html">Special Promo</a></li>
+                      <li><a href="suppliers.html">Suppliers</a></li>
+                      <li><a href="tools.html">Tools</a></li>
+                      <li><a href="tour_description.html">Tour Description</a></li>
+                      <li><a href="tours.html">Tours</a></li>
+                      <li><a href="transfers.html">Transfers</a></li>
+                      <li><a href="users.html">Users</a></li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="trip.html"
+                      ><i class="fa fa-book"></i> Quotation
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                  <li>
+                    <a href="payment.html"
+                      ><i class="fa fa-pencil-square-o"></i> Payment
+                      <span class="label label-success pull-right"></span
+                    ></a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- /sidebar menu -->
+          </div>
+        </div>
+        <!-- /Sidebar -->
+
+        <!-- Top navigation -->
+        <div class="top_nav">
+          <div class="nav_menu">
+            <div class="nav toggle">
+              <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+            </div>
+            <nav class="nav navbar-nav">
+              <ul class="navbar-right">
+                <li class="nav-item dropdown open" style="padding-left: 15px">
+                  <a
+                    href="javascript:;"
+                    class="user-profile dropdown-toggle"
+                    aria-haspopup="true"
+                    id="navbarDropdown"
+                    data-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    <img
+                      src="images/verathailandlogo.png"
+                      alt=""
+                    />
+                    <span id="navProfileName"></span>
+                  </a>
+                  <div
+                    class="dropdown-menu dropdown-usermenu pull-right"
+                    aria-labelledby="navbarDropdown"
+                  >
+                    <a class="dropdown-item" href="profile.html"
+                      ><i class="fa fa-user pull-right"></i> Profile</a
+                    >
+                    <a class="dropdown-item" href="logout.html"
+                      ><i class="fa fa-sign-out pull-right"></i> Log Out</a
+                    >
+                  </div>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+        <!-- /Top navigation -->
+
+        <!-- Page content -->
+        <div class="right_col" role="main">
+          <div class="promo-container">
+            <div class="promo-header">
+              <h2><i class="fa fa-paper-plane text-primary mr-2" style="color: #9b59b6 !important;"></i> Special Hotel Promo</h2>
+              <p>Prepare and send special hotel promotions & details directly to your B2B agents.</p>
+            </div>
+
+            <form id="promoEmailForm">
+              <div class="row">
+                <!-- Left Column: Recipient Configuration -->
+                <div class="col-md-5 form-group">
+                  <label class="h6 font-weight-bold text-secondary">
+                    <i class="fa fa-users mr-2"></i> Select B2B Agents
+                  </label>
+                  <div class="d-flex justify-content-between mb-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnSelectAllAgents">Select All</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnDeselectAllAgents">Clear All</button>
+                  </div>
+                  <div class="agent-select-box" id="agentSelectBox">
+                    <div class="text-muted text-center py-4">Loading agents...</div>
+                  </div>
+                  
+                  <div class="mt-4">
+                    <label class="h6 font-weight-bold text-secondary">
+                      <i class="fa fa-envelope-o mr-2"></i> Custom Recipient Emails (Optional)
+                    </label>
+                    <input type="text" class="form-control" id="customEmails" placeholder="comma-separated emails (e.g. agent1@mail.com, agent2@mail.com)" style="border-radius: 6px;" />
+                  </div>
+
+                  <div class="mt-4">
+                    <label class="h6 font-weight-bold text-secondary">
+                      <i class="fa fa-envelope mr-2"></i> CC Email (Optional)
+                    </label>
+                    <input type="email" class="form-control" id="ccEmail" placeholder="cc@example.com" style="border-radius: 6px;" />
+                  </div>
+                </div>
+
+                <!-- Right Column: Subject, Body, and Attachments -->
+                <div class="col-md-7">
+                  <div class="form-group">
+                    <label class="h6 font-weight-bold text-secondary">
+                      <i class="fa fa-tag mr-2"></i> Email Subject
+                    </label>
+                    <input type="text" class="form-control" id="emailSubject" placeholder="Enter promotion subject..." required style="border-radius: 6px;" />
+                  </div>
+
+                  <div class="form-group mt-4">
+                    <label class="h6 font-weight-bold text-secondary">
+                      <i class="fa fa-align-left mr-2"></i> Promotion Details (Email Body)
+                    </label>
+                    <textarea class="form-control" id="emailBody" rows="8" placeholder="Type your promotion details here..." required style="border-radius: 6px;"></textarea>
+                  </div>
+
+                  <div class="form-group mt-4">
+                    <label class="h6 font-weight-bold text-secondary">
+                      <i class="fa fa-paperclip mr-2"></i> Attach Promotion Files
+                    </label>
+                    <div class="dropzone-area" id="dropzoneArea">
+                      <div class="dropzone-icon">
+                        <i class="fa fa-cloud-upload"></i>
+                      </div>
+                      <h5>Drag & Drop files here or click to upload</h5>
+                      <p class="text-muted small">Supports PDF, Word (DOC/DOCX), Excel (XLS/XLSX), PowerPoint (PPT/PPTX)</p>
+                      <input type="file" id="promoFileInput" multiple style="display: none;" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" />
+                    </div>
+
+                    <div class="attachment-list" id="attachmentList">
+                      <!-- List of attached files will render here -->
+                    </div>
+                  </div>
+
+                  <div class="mt-4 text-right">
+                    <button type="submit" class="btn btn-send-promo btn-lg" id="btnSendPromo">
+                      <i class="fa fa-paper-plane mr-2"></i> Send Promotion
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+        <!-- /Page content -->
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- NProgress -->
+    <script src="../vendors/nprogress/nprogress.js"></script>
+    <!-- Custom Theme Scripts -->
+    <script src="../build/js/custom.min.js"></script>
+    <!-- Configurations and Helpers -->
+    <script src="js/config.js"></script>
+    <script src="js/common/role-permissions.js"></script>
+    <!-- Special Promo Logic -->
+    <script src="js/special_promo.js"></script>
+  </body>
+</html>

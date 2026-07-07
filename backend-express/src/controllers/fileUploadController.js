@@ -8,7 +8,12 @@ if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const subDir = req.params.type || 'general';
+    let subDir = req.params.type || 'general';
+    if (!req.params.type) {
+      if (req.path.includes('/logo')) subDir = 'logo';
+      else if (req.path.includes('/document')) subDir = 'document';
+      else if (req.path.includes('/avatar')) subDir = 'avatar';
+    }
     const dir = path.join(UPLOAD_DIR, subDir);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     cb(null, dir);

@@ -114,6 +114,71 @@ async function validateHotelAvailability(tx, hotelItems) {
   }
 }
 
+async function validateTourAvailability(tx, tourItems, tripFallbackDate) {
+  if (!tourItems || tourItems.length === 0) return;
+
+  for (const item of tourItems) {
+    const tourIdParsed = parseSafeInt(item.tour_id);
+    if (!tourIdParsed) continue;
+
+    const fromDate = parseRequiredDate(item.from_date, tripFallbackDate);
+    const toDate = parseRequiredDate(item.to_date, tripFallbackDate);
+    const tourDisplayName = item.tour_name || `Tour ID ${tourIdParsed}`;
+
+    // Check if there is an active tour stop sale overlapping with travel dates
+    const activeStopSale = await tx.tour_stop_sales.findFirst({
+      where: {
+        tour_id: tourIdParsed,
+        stopped: true,
+        start_date: { lte: toDate },
+        end_date: { gte: fromDate },
+        deleted_at: null
+      }
+    });
+
+    if (activeStopSale) {
+      const formattedFrom = fromDate.toISOString().slice(0, 10);
+      const formattedTo = toDate.toISOString().slice(0, 10);
+      throw new Error(`quotation creation failed: Tour '${tourDisplayName}' is not available for the requested dates (${formattedFrom} to ${formattedTo}). This tour is currently on stop sale. Please select a different tour or adjust your travel dates`);
+    }
+  }
+}
+
+async function validateSpecialPackageAvailability(tx, packageId, tripStartDate) {
+  if (!packageId) return;
+
+  const pkg = await tx.special_packages.findUnique({
+    where: { id: packageId },
+    select: { name: true, duration: true }
+  });
+
+  if (!pkg) return;
+
+  const fromDate = new Date(tripStartDate);
+  fromDate.setHours(0,0,0,0);
+  
+  const toDate = new Date(fromDate);
+  toDate.setDate(fromDate.getDate() + (pkg.duration || 1));
+  toDate.setHours(0,0,0,0);
+
+  // Check if there is an active stop sale overlapping with the trip stay dates
+  const activeStopSale = await tx.special_package_stop_sales.findFirst({
+    where: {
+      special_package_id: packageId,
+      stopped: true,
+      start_date: { lte: toDate },
+      end_date: { gte: fromDate },
+      deleted_at: null
+    }
+  });
+
+  if (activeStopSale) {
+    const formattedFrom = fromDate.toISOString().slice(0, 10);
+    const formattedTo = toDate.toISOString().slice(0, 10);
+    throw new Error(`quotation creation failed: Special Package '${pkg.name}' is not available for the requested dates (${formattedFrom} to ${formattedTo}). This package is currently on stop sale. Please select a different package or adjust your travel dates`);
+  }
+}
+
 async function calculateCancellationDeadlineFromSuppliers(tx, tripStartDate, transferItems, excursionItems, tourItems) {
   let mostRestrictive = null;
 
@@ -458,6 +523,8 @@ export async function createQuotation(req, res, next) {
 
     const createdTrip = await prisma.$transaction(async (tx) => {
       await validateHotelAvailability(tx, hotelItems);
+      await validateTourAvailability(tx, tourItems, trip_start_date);
+      await validateSpecialPackageAvailability(tx, finalSpecialPackageId, trip_start_date);
 
       const trip = await tx.trips.create({
         data: {
@@ -974,6 +1041,10 @@ export async function updateQuotation(req, res, next) {
       }
 
       const tripFallbackDate = final_trip_start_date && !isNaN(new Date(final_trip_start_date).getTime()) ? new Date(final_trip_start_date) : new Date();
+
+      await validateTourAvailability(tx, tourItems, tripFallbackDate);
+      const packageIdToValidate = finalSpecialPackageId !== undefined ? finalSpecialPackageId : existing.special_package_id;
+      await validateSpecialPackageAvailability(tx, packageIdToValidate, tripFallbackDate);
 
       if (final_trip_start_date) {
         if (!payment_deadline) {

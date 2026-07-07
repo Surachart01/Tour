@@ -1016,7 +1016,7 @@ function createServiceTableHTML(serviceType, services, optionId) {
             tableHeaders = `
                 <th>Excursion</th>
                 <th>Date</th>
-                <th>Arrival Time</th>
+                <th>Pickup Time</th>
                 <th>Hotel</th>
                 <th>Cost</th>
                 <th>Remarks</th>

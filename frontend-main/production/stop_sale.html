@@ -167,7 +167,8 @@
                       <li><a href="markup.html">Markups</a></li>
                       <!-- <li><a href="operations.html">Operations</a></li> -->
                       <li><a href="othercharges.html">Other Charges</a></li>
-                      <!-- <li><a href="stop_sale.html">Stop Sale</a></li> -->
+                      <!-- <li><a href="stop_sale.html">Stop Sale</a></li>
+                      <li><a href="special_promo.html">Special Promo</a></li> -->
                       <li><a href="suppliers.html">Suppliers</a></li>
                       <li><a href="tools.html">Tools</a></li>
                       <li><a href="tour_description.html">Tour Description</a></li><li><a href="tours.html">Tours</a></li>
@@ -284,8 +285,24 @@
               <h3 style="font-weight: 700; color: #2a3f54; margin: 0;"><i class="fa fa-ban" style="color: #e74c3c; margin-right: 10px;"></i> Stop Sale Control Panel</h3>
             </div>
             
-            <!-- Filters row -->
-            <div class="row">
+            <!-- Nav tabs -->
+            <ul class="nav nav-tabs bar_tabs mb-4" id="stopSaleTabs" role="tablist" style="border-bottom: 2px solid #ddd;">
+              <li class="nav-item" style="margin-bottom: -2px;">
+                <a class="nav-link active" id="hotel-tab" data-toggle="tab" href="#hotelStopSale" role="tab" aria-controls="hotelStopSale" aria-selected="true" style="font-weight: 600; padding: 12px 20px;"><i class="fas fa-hotel mr-2" style="color: #28a745;"></i>Hotel Stop Sales</a>
+              </li>
+              <li class="nav-item" style="margin-bottom: -2px;">
+                <a class="nav-link" id="tour-tab" data-toggle="tab" href="#tourStopSale" role="tab" aria-controls="tourStopSale" aria-selected="false" style="font-weight: 600; padding: 12px 20px;"><i class="fas fa-route mr-2" style="color: #007bff;"></i>Tour Stop Sales</a>
+              </li>
+              <li class="nav-item" style="margin-bottom: -2px;">
+                <a class="nav-link" id="special-package-tab" data-toggle="tab" href="#specialPackageStopSale" role="tab" aria-controls="specialPackageStopSale" aria-selected="false" style="font-weight: 600; padding: 12px 20px;"><i class="fas fa-gift mr-2" style="color: #9b59b6;"></i>Special Package Stop Sales</a>
+              </li>
+            </ul>
+
+            <div class="tab-content" id="stopSaleTabsContent">
+              <!-- HOTEL STOP SALES TAB -->
+              <div class="tab-pane fade show active" id="hotelStopSale" role="tabpanel" aria-labelledby="hotel-tab">
+                <!-- Filters row -->
+                <div class="row">
               <div class="col-md-3 form-group" style="position: relative;">
                 <label style="font-weight: 600; color: #555;"><i class="fas fa-map-marker-alt" style="margin-right: 6px; color: #007bff;"></i> Select City</label>
                 <input
@@ -390,7 +407,212 @@
                 </div>
               </div>
             </div>
+              </div> <!-- End Hotel Stop Sale Tab -->
 
+              <!-- TOUR STOP SALES TAB -->
+              <div class="tab-pane fade" id="tourStopSale" role="tabpanel" aria-labelledby="tour-tab">
+                <!-- Tour Filters row -->
+                <div class="row">
+                  <div class="col-md-3 form-group" style="position: relative;">
+                    <label style="font-weight: 600; color: #555;"><i class="fas fa-map-marker-alt" style="margin-right: 6px; color: #007bff;"></i> Select City</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder="Type to search city..."
+                      id="tourCitySearchInput"
+                      style="border-radius: 6px;"
+                      autocomplete="off"
+                    />
+                    <ul class="list-group" id="tourCityDropdownMenu" style="max-height: 250px; overflow-y: auto; position: absolute; z-index: 1000; width: 94%; display: none; margin-top: 8px; border-radius: 6px; border: 1px solid #ddd; background: #fff;">
+                      <!-- Tour Cities populated dynamically -->
+                    </ul>
+                  </div>
+
+                  <div class="col-md-3 form-group">
+                    <label style="font-weight: 600; color: #555;"><i class="fas fa-tags" style="margin-right: 6px; color: #9b59b6;"></i> Tour Category</label>
+                    <select id="tourCategoryFilter" class="form-control" style="border-radius: 6px;">
+                      <option value="All">All Categories</option>
+                    </select>
+                  </div>
+                  
+                  <div class="col-md-3 form-group" style="position: relative;">
+                    <label style="font-weight: 600; color: #555;"><i class="fas fa-route" style="margin-right: 6px; color: #28a745;"></i> Select Tour</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder="Type to search tour..."
+                      id="tourSearchInput"
+                      style="border-radius: 6px;"
+                      autocomplete="off"
+                    />
+                    <ul class="list-group" id="tourList" style="max-height: 200px; overflow-y: auto; margin-top: 8px; border-radius: 6px; border: 1px solid #ddd; display: none; position: absolute; z-index: 1000; width: 94%; background: #fff;">
+                      <!-- Tours populated dynamically -->
+                    </ul>
+                  </div>
+
+                  <!-- Attach file and Notify Toggle for Tours -->
+                  <div class="col-md-3 form-group">
+                    <div class="custom-control custom-checkbox" style="margin-top: 32px;">
+                      <input type="checkbox" class="custom-control-input" id="notifyAgentsCheckboxTour">
+                      <label class="custom-control-label" for="notifyAgentsCheckboxTour" style="font-weight: 600; color: #555; cursor: pointer;">
+                        <i class="fas fa-envelope" style="color: #9b59b6; margin-right: 4px;"></i> Send Email to Agents
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Interactive Calendar & Tour Stop/Start Panel -->
+                <div class="row mt-4" id="calendarSectionTour" style="display: none;">
+                  <!-- Calendar Column (left) -->
+                  <div class="col-md-8">
+                    <div style="border: 1px solid #eef2f7; border-radius: 12px; padding: 20px; background-color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+                      <!-- Calendar Header -->
+                      <div class="d-flex justify-content-between align-items-center mb-3">
+                        <button class="btn btn-outline-secondary btn-sm" id="prevMonthBtnTour" style="border-radius: 6px;"><i class="fas fa-chevron-left"></i></button>
+                        <h4 style="font-weight: 700; color: #2a3f54; margin: 0;" id="calendarMonthTitleTour">June 2026</h4>
+                        <button class="btn btn-outline-secondary btn-sm" id="nextMonthBtnTour" style="border-radius: 6px;"><i class="fas fa-chevron-right"></i></button>
+                      </div>
+                      <!-- Calendar Grid -->
+                      <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; text-align: center; font-weight: 600; font-size: 13px; color: #777; margin-bottom: 10px;">
+                        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                      </div>
+                      <div id="calendarGridTour" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;">
+                        <!-- Calendar days populated dynamically -->
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Controls Column (right) -->
+                  <div class="col-md-4">
+                    <div style="border: 1px solid #eef2f7; border-radius: 12px; padding: 20px; background-color: #fafbfc; height: 100%;">
+                      <h4 style="font-weight: 700; color: #2a3f54; margin-top: 0; margin-bottom: 20px;"><i class="fas fa-sliders-h" style="color: #007bff; margin-right: 8px;"></i> Actions</h4>
+                      
+                      <div class="form-group">
+                        <label style="font-weight: 600; color: #555;">From Date</label>
+                        <input type="date" class="form-control" id="fromDateInputTour" style="border-radius: 6px;" />
+                      </div>
+                      
+                      <div class="form-group">
+                        <label style="font-weight: 600; color: #555;">To Date</label>
+                        <input type="date" class="form-control" id="toDateInputTour" style="border-radius: 6px;" />
+                      </div>
+
+                      <div class="form-group mt-3">
+                        <div class="custom-control custom-checkbox">
+                          <input type="checkbox" class="custom-control-input" id="notifyAgentsCheckboxTour" checked />
+                          <label class="custom-control-label" for="notifyAgentsCheckboxTour" style="cursor: pointer; font-weight: 600; color: #555;"><i class="fas fa-envelope mr-1" style="color: #007bff;"></i> Send Email to Agents</label>
+                        </div>
+                      </div>
+
+                      <div style="margin-top: 20px;">
+                        <button class="btn btn-danger btn-block btn-lg" id="btnStopSaleTour" style="border-radius: 8px; font-weight: 700; padding: 12px; margin-bottom: 12px;">
+                          <i class="fas fa-ban mr-2"></i> Stop Sale (Close)
+                        </button>
+                        <button class="btn btn-success btn-block btn-lg" id="btnStartSaleTour" style="border-radius: 8px; font-weight: 700; padding: 12px;">
+                          <i class="fas fa-check-circle mr-2"></i> Start Sale (Open)
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div> <!-- End Tour Stop Sale Tab -->
+
+              <!-- SPECIAL PACKAGE STOP SALES TAB -->
+              <div class="tab-pane fade" id="specialPackageStopSale" role="tabpanel" aria-labelledby="special-package-tab">
+                <!-- Filters row -->
+                <div class="row">
+                  <div class="col-md-3 form-group" style="position: relative;">
+                    <label style="font-weight: 600; color: #555;"><i class="fas fa-map-marker-alt" style="margin-right: 6px; color: #007bff;"></i> Select City</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder="Type to search city..."
+                      id="pkgCitySearchInput"
+                      style="border-radius: 6px;"
+                      autocomplete="off"
+                    />
+                    <ul class="list-group" id="pkgCityDropdownMenu" style="max-height: 250px; overflow-y: auto; position: absolute; z-index: 1000; width: 94%; display: none; margin-top: 8px; border-radius: 6px; border: 1px solid #ddd; background: #fff;">
+                      <!-- Tour Cities populated dynamically -->
+                    </ul>
+                  </div>
+
+                  <div class="col-md-3 form-group">
+                    <label style="font-weight: 600; color: #555;"><i class="fas fa-tags" style="margin-right: 6px; color: #9b59b6;"></i> Category</label>
+                    <select id="pkgCategoryFilter" class="form-control" style="border-radius: 6px;">
+                      <option value="All">All Categories</option>
+                    </select>
+                  </div>
+                  
+                  <div class="col-md-4 form-group" style="position: relative;">
+                    <label style="font-weight: 600; color: #555;"><i class="fas fa-gift" style="margin-right: 6px; color: #ff9f43;"></i> Select Special Package</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder="Type to search package..."
+                      id="pkgSearchInput"
+                      style="border-radius: 6px;"
+                      autocomplete="off"
+                    />
+                    <ul class="list-group" id="pkgList" style="max-height: 200px; overflow-y: auto; margin-top: 8px; border-radius: 6px; border: 1px solid #ddd; display: none; position: absolute; z-index: 1000; width: 94%; background: #fff;">
+                      <!-- Packages populated dynamically -->
+                    </ul>
+                  </div>
+
+                  <!-- Send Email Toggle -->
+                  <div class="col-md-2 form-group d-flex align-items-end" style="padding-bottom: 8px;">
+                    <div class="custom-control custom-checkbox">
+                      <input type="checkbox" class="custom-control-input" id="notifyAgentsCheckboxPkg" checked />
+                      <label class="custom-control-label" for="notifyAgentsCheckboxPkg" style="cursor: pointer; font-weight: 600; color: #555;"><i class="fas fa-envelope mr-1" style="color: #6c5ce7;"></i> Send Email to Agents</label>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Calendar Row -->
+                <div class="row mt-4" id="calendarSectionPkg" style="display: none; justify-content: space-between;">
+                  <!-- Calendar Card -->
+                  <div class="col-md-8">
+                    <div class="card" style="border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: none; padding: 20px; background: #fff;">
+                      <div class="d-flex justify-content-between align-items-center mb-4">
+                        <button class="btn btn-outline-secondary btn-sm" id="prevMonthBtnPkg" style="border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-chevron-left"></i></button>
+                        <h4 id="calendarMonthTitlePkg" style="font-weight: 700; color: #2a3f54; margin: 0;"></h4>
+                        <button class="btn btn-outline-secondary btn-sm" id="nextMonthBtnPkg" style="border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-chevron-right"></i></button>
+                      </div>
+                      
+                      <!-- Calendar Grid -->
+                      <div id="calendarGridPkg" class="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; text-align: center;">
+                        <!-- Days render dynamically -->
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Actions Card -->
+                  <div class="col-md-4">
+                    <div class="card" style="border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: none; padding: 20px; background: #fdfefe; height: 100%;">
+                      <h4 style="font-weight: 700; color: #2a3f54; border-bottom: 2px solid #f1f1f1; padding-bottom: 10px; margin-bottom: 20px;"><i class="fas fa-sliders-h mr-2" style="color: #9b59b6;"></i> Actions</h4>
+                      
+                      <div class="form-group">
+                        <label style="font-weight: 600; color: #555;">From Date</label>
+                        <input type="date" class="form-control" id="fromDateInputPkg" style="border-radius: 6px;" />
+                      </div>
+                      
+                      <div class="form-group mt-3">
+                        <label style="font-weight: 600; color: #555;">To Date</label>
+                        <input type="date" class="form-control" id="toDateInputPkg" style="border-radius: 6px;" />
+                      </div>
+
+                      <div style="margin-top: 30px;">
+                        <button class="btn btn-danger btn-block btn-lg" id="btnStopSalePkg" style="border-radius: 8px; font-weight: 700; padding: 12px; margin-bottom: 12px;">
+                          <i class="fas fa-ban mr-2"></i> Stop Sale (Close)
+                        </button>
+                        <button class="btn btn-success btn-block btn-lg" id="btnStartSalePkg" style="border-radius: 8px; font-weight: 700; padding: 12px;">
+                          <i class="fas fa-check-circle mr-2"></i> Start Sale (Open)
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div> <!-- End Special Package Stop Sale Tab -->
+            </div> <!-- End tab-content -->
           </div>
         </div>
         <!-- /Page content -->

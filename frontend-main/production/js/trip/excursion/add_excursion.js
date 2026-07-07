@@ -5,8 +5,8 @@ document.getElementById("addExcursionBtn").addEventListener("click", function() 
   const excursionDateInput = document.getElementById("excursionDate");
 
   if (tripStartDateInput.value) {
-    excursionDateInput.min = tripStartDateInput.value; // ✅ Set min date
-    excursionDateInput.value = tripStartDateInput.value; // ✅ Default to Trip Start Date
+    excursionDateInput.min = tripStartDateInput.value; // ✅ Set min date only, no default value
+    excursionDateInput.value = ""; // ✅ Always start empty so user must explicitly pick a date
   }
 
   $("#addExcursionModal").modal("show"); // Show the excursion modal

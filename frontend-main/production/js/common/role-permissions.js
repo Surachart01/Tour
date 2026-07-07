@@ -97,6 +97,7 @@ function applyModulePermissions() {
     "analytics.html": "analytics",
     "city_info.html": "city_info",
     "stop_sale.html": "stop_sale",
+    "special_promo.html": "special_promo",
     "tools.html": "tools",
     "othercharges.html": "other_charges",
     "add_othercharges.html": "other_charges",
@@ -177,8 +178,22 @@ function applyModulePermissions() {
     }
   }
 
+  // Hide Special Promo card on Home page for non-admin users
+  if (role !== "admin" && role !== "superadmin") {
+    const promoCard = document.getElementById("specialPromoShortcutCard");
+    if (promoCard) {
+      promoCard.style.display = "none";
+    }
+  }
+
   // Protect against direct URL access
   const currentPage = window.location.pathname.substring(window.location.pathname.lastIndexOf("/") + 1);
+  if (currentPage === "special_promo.html" && role !== "admin" && role !== "superadmin") {
+    alert("You do not have permission to access this page.");
+    window.location.href = "index.html";
+    return;
+  }
+
   const currentKey = mapping[currentPage];
   if (currentKey && permissions[currentKey] === false) {
     alert("You do not have permission to access this page.");

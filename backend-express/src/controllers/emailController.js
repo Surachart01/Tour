@@ -1,3 +1,4 @@
+import path from 'path';
 import nodemailer from 'nodemailer';
 // Email service - configurable via env vars
 const transporter = nodemailer.createTransport({
@@ -9,12 +10,28 @@ const transporter = nodemailer.createTransport({
 
 export async function sendEmail(req, res, next) {
   try {
-    const { to, cc, subject, body, html } = req.body;
+    const { to, cc, subject, body, html, attachments } = req.body;
     if (!to || !subject) return res.status(400).send('to and subject are required');
     if (!process.env.SMTP_USER) return res.json({ success: true, message: 'Email service not configured (SMTP_USER not set)' });
+
+    const nodemailerAttachments = [];
+    if (attachments && Array.isArray(attachments)) {
+      for (const att of attachments) {
+        if (att.url) {
+          const relativePath = att.url.startsWith('/') ? att.url.substring(1) : att.url;
+          const absolutePath = path.join(process.cwd(), relativePath);
+          nodemailerAttachments.push({
+            filename: att.filename || path.basename(absolutePath),
+            path: absolutePath
+          });
+        }
+      }
+    }
+
     await transporter.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER, to, cc, subject,
-      text: body || '', html: html || body || ''
+      text: body || '', html: html || body || '',
+      attachments: nodemailerAttachments
     });
     return res.json({ success: true, message: 'Email sent successfully' });
   } catch (err) { next(err); }
