@@ -988,3 +988,12 @@ model special_package_stop_sales {
   @@unique([special_package_id, start_date, end_date])
 }
 
+model special_promos {
+  id          Int      @id @default(autoincrement())
+  subject     String   @db.VarChar(255)
+  body        String   @db.Text
+  recipients  String   @db.Text
+  attachments String?  @db.Text
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+}
+

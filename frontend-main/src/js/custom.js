@@ -69,6 +69,9 @@ function init_sidebar() {
             <li>
               <a href="analytics.html"><i class="fa fa-bar-chart"></i> Analytics</a>
             </li>
+            <li>
+              <a href="special_promo.html"><i class="fa fa-bullhorn"></i> Special Promo</a>
+            </li>
           </ul>
         </div>
       `;

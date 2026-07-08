@@ -179,7 +179,7 @@ function applyModulePermissions() {
   }
 
   // Hide Special Promo card on Home page for non-admin users
-  if (role !== "admin" && role !== "superadmin") {
+  if (role !== "admin" && role !== "superadmin" && role !== "agent") {
     const promoCard = document.getElementById("specialPromoShortcutCard");
     if (promoCard) {
       promoCard.style.display = "none";
@@ -188,7 +188,7 @@ function applyModulePermissions() {
 
   // Protect against direct URL access
   const currentPage = window.location.pathname.substring(window.location.pathname.lastIndexOf("/") + 1);
-  if (currentPage === "special_promo.html" && role !== "admin" && role !== "superadmin") {
+  if (currentPage === "special_promo.html" && role !== "admin" && role !== "superadmin" && role !== "agent") {
     alert("You do not have permission to access this page.");
     window.location.href = "index.html";
     return;

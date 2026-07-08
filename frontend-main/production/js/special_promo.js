@@ -14,38 +14,61 @@ document.addEventListener("DOMContentLoaded", () => {
   const agentSelectBox = document.getElementById("agentSelectBox");
   const customEmailsInput = document.getElementById("customEmails");
   const ccEmailInput = document.getElementById("ccEmail");
-  const emailSubjectInput = document.getElementById("emailSubject");
-  const emailBodyInput = document.getElementById("emailBody");
+  const emailSubjectInput = document.getElementById("promoSubject");
+  const emailBodyInput = document.getElementById("promoBody");
   
   const dropzoneArea = document.getElementById("dropzoneArea");
   const promoFileInput = document.getElementById("promoFileInput");
-  const attachmentList = document.getElementById("attachmentList");
+  const attachmentList = document.getElementById("fileList");
   
   const btnSelectAllAgents = document.getElementById("btnSelectAllAgents");
   const btnDeselectAllAgents = document.getElementById("btnDeselectAllAgents");
   const promoForm = document.getElementById("promoEmailForm");
   const btnSendPromo = document.getElementById("btnSendPromo");
 
-  // Fetch B2B Agents list
-  fetch(`${Endpoint}/api/v1/agents/`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json"
-    }
-  })
-    .then(res => {
-      if (!res.ok) throw new Error("Failed to load agents list");
-      return res.json();
+  // Role-based visibility
+  const role = localStorage.getItem("role");
+  const promoCreateCard = document.getElementById("promoCreateCard");
+  const historyTitle = document.getElementById("historyTitle");
+  const historySubtitle = document.getElementById("historySubtitle");
+
+  if (role === "agent") {
+    if (promoCreateCard) promoCreateCard.style.display = "none";
+    
+    const headerTitle = document.querySelector(".promo-header h2");
+    const headerDesc = document.querySelector(".promo-header p");
+    if (headerTitle) headerTitle.innerHTML = '<i class="fa fa-bullhorn text-primary mr-2" style="color: #9b59b6 !important;"></i> Special Promotions';
+    if (headerDesc) headerDesc.textContent = 'View and download special hotel promotions, news, and details sent by administrator.';
+    
+    if (historyTitle) historyTitle.innerHTML = '<i class="fa fa-history text-primary mr-2" style="color: #9b59b6 !important;"></i> Received Promotions';
+    if (historySubtitle) historySubtitle.textContent = 'Review promotions and details sent by administrator.';
+  } else {
+    if (historyTitle) historyTitle.innerHTML = '<i class="fa fa-history text-primary mr-2" style="color: #9b59b6 !important;"></i> Sent Promotions History';
+    if (historySubtitle) historySubtitle.textContent = 'Review promotions and details sent to your B2B agents.';
+  }
+
+  // Fetch B2B Agents list (only for admins)
+  if (role !== "agent") {
+    fetch(`${Endpoint}/api/v1/agents/`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      }
     })
-    .then(data => {
-      allAgents = data || [];
-      renderAgentsList(allAgents);
-    })
-    .catch(err => {
-      console.error(err);
-      agentSelectBox.innerHTML = '<div class="text-danger text-center py-4">Error loading agents list</div>';
-    });
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to load agents list");
+        return res.json();
+      })
+      .then(data => {
+        allAgents = data || [];
+        renderAgentsList(allAgents);
+      })
+      .catch(err => {
+        console.error(err);
+        agentSelectBox.innerHTML = '<div class="text-danger text-center py-4">Error loading agents list</div>';
+      });
+  }
 
   // Render agents list
   function renderAgentsList(agents) {
@@ -58,24 +81,82 @@ document.addEventListener("DOMContentLoaded", () => {
     agents.forEach(agent => {
       if (!agent.email) return; // Skip if no email
 
-      const item = document.createElement("div");
-      item.className = "agent-item mb-1";
+      const emails = agent.email.split(/[,;]/).map(e => e.trim()).filter(e => e);
+      if (emails.length === 0) return;
+
+      const groupDiv = document.createElement("div");
+      groupDiv.className = "agent-group-container mb-3";
+      groupDiv.setAttribute("data-agent-name", agent.name.toLowerCase());
       
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.value = agent.email;
-      checkbox.id = `agentCheckbox_${agent.id}`;
-      checkbox.className = "agent-cb";
+      const title = document.createElement("div");
+      title.style.fontWeight = "600";
+      title.style.color = "#34495e";
+      title.style.fontSize = "0.95rem";
+      title.style.marginBottom = "5px";
+      title.textContent = agent.name;
+      groupDiv.appendChild(title);
 
-      const label = document.createElement("label");
-      label.htmlFor = `agentCheckbox_${agent.id}`;
-      label.className = "m-0 flex-grow-1";
-      label.style.cursor = "pointer";
-      label.textContent = `${agent.name} (${agent.email})`;
+      emails.forEach((email, idx) => {
+        const item = document.createElement("div");
+        item.className = "agent-item mb-1";
+        item.style.paddingLeft = "15px";
+        item.setAttribute("data-email", email.toLowerCase());
+        
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.value = email;
+        checkbox.id = `agentCheckbox_${agent.id}_${idx}`;
+        checkbox.className = "agent-cb";
+        checkbox.checked = true; // Checked by default!
 
-      item.appendChild(checkbox);
-      item.appendChild(label);
-      agentSelectBox.appendChild(item);
+        const label = document.createElement("label");
+        label.htmlFor = `agentCheckbox_${agent.id}_${idx}`;
+        label.className = "m-0 flex-grow-1";
+        label.style.cursor = "pointer";
+        label.textContent = email;
+
+        item.appendChild(checkbox);
+        item.appendChild(label);
+        groupDiv.appendChild(item);
+      });
+
+      agentSelectBox.appendChild(groupDiv);
+    });
+  }
+
+  // Toggle checkbox on row click
+  $(document).on("click", ".agent-item", function (e) {
+    if (e.target.tagName !== "INPUT" && e.target.tagName !== "LABEL") {
+      const cb = this.querySelector(".agent-cb");
+      if (cb) cb.checked = !cb.checked;
+    }
+  });
+
+  // Search / filter agents
+  const searchAgents = document.getElementById("searchAgents");
+  if (searchAgents) {
+    searchAgents.addEventListener("input", function () {
+      const query = this.value.toLowerCase().trim();
+      document.querySelectorAll(".agent-group-container").forEach(group => {
+        const name = group.getAttribute("data-agent-name");
+        let hasVisibleEmail = false;
+
+        group.querySelectorAll(".agent-item").forEach(item => {
+          const email = item.getAttribute("data-email");
+          if (name.includes(query) || email.includes(query)) {
+            item.style.display = "flex";
+            hasVisibleEmail = true;
+          } else {
+            item.style.display = "none";
+          }
+        });
+
+        if (hasVisibleEmail) {
+          group.style.display = "block";
+        } else {
+          group.style.display = "none";
+        }
+      });
     });
   }
 
@@ -218,81 +299,184 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Handle Form Submit
-  promoForm.addEventListener("submit", (e) => {
-    e.preventDefault();
+  if (promoForm) {
+    promoForm.addEventListener("submit", (e) => {
+      e.preventDefault();
 
-    // 1. Gather recipients
-    const selectedEmails = Array.from(document.querySelectorAll(".agent-cb:checked")).map(cb => cb.value);
-    
-    const customEmailsText = customEmailsInput.value.trim();
-    if (customEmailsText) {
-      const customEmails = customEmailsText.split(",").map(em => em.trim()).filter(em => em);
-      selectedEmails.push(...customEmails);
-    }
+      // 1. Gather recipients
+      const selectedEmails = Array.from(document.querySelectorAll(".agent-cb:checked")).map(cb => cb.value);
+      
+      const customEmailsText = customEmailsInput.value.trim();
+      if (customEmailsText) {
+        const customEmails = customEmailsText.split(",").map(em => em.trim()).filter(em => em);
+        selectedEmails.push(...customEmails);
+      }
 
-    if (selectedEmails.length === 0) {
-      alert("Please select at least one agent or enter a custom recipient email.");
-      return;
-    }
+      if (selectedEmails.length === 0) {
+        alert("Please select at least one agent or enter a custom recipient email.");
+        return;
+      }
 
-    // 2. Validate form fields
-    const subject = emailSubjectInput.value.trim();
-    const body = emailBodyInput.value.trim();
-    const cc = ccEmailInput.value.trim();
+      // 2. Validate form fields
+      const subject = emailSubjectInput.value.trim();
+      const body = emailBodyInput.value.trim();
+      const cc = ccEmailInput.value.trim();
 
-    if (!subject || !body) {
-      alert("Subject and Body fields are required.");
-      return;
-    }
+      if (!subject || !body) {
+        alert("Subject and Body fields are required.");
+        return;
+      }
 
-    // Disable button & show loading state
-    btnSendPromo.disabled = true;
-    const originalText = btnSendPromo.innerHTML;
-    btnSendPromo.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> Sending...';
+      // Disable button & show loading state
+      btnSendPromo.disabled = true;
+      const originalText = btnSendPromo.innerHTML;
+      btnSendPromo.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> Sending...';
 
-    // 3. Construct payload
-    const payload = {
-      to: [...new Set(selectedEmails)].join(", "),
-      cc: cc || undefined,
-      subject: subject,
-      body: body,
-      attachments: attachedFiles.map(f => ({
-        filename: f.original_name,
-        url: f.url
-      }))
-    };
+      // 3. Construct payload
+      const payload = {
+        to: [...new Set(selectedEmails)].join(", "),
+        cc: cc || undefined,
+        subject: subject,
+        body: body,
+        attachments: attachedFiles.map(f => ({
+          filename: f.original_name,
+          url: f.url
+        }))
+      };
 
-    // 4. Send Request
-    fetch(`${Endpoint}/api/v1/email/send`, {
-      method: "POST",
+      // 4. Send Request
+      fetch(`${Endpoint}/api/v1/email/promo`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      })
+        .then(res => {
+          if (!res.ok) throw new Error("Failed to send promotion email");
+          return res.json();
+        })
+        .then(data => {
+          alert("Promotion email sent successfully!");
+          
+          // Reset form & state
+          promoForm.reset();
+          attachedFiles = [];
+          attachmentList.innerHTML = "";
+          document.querySelectorAll(".agent-cb").forEach(cb => cb.checked = false);
+
+          // Reload history
+          loadPromoHistory();
+        })
+        .catch(err => {
+          console.error(err);
+          alert("Error sending email: " + err.message);
+        })
+        .finally(() => {
+          btnSendPromo.disabled = false;
+          btnSendPromo.innerHTML = originalText;
+        });
+    });
+  }
+
+  // Fetch and render promo history
+  function loadPromoHistory() {
+    const promoHistoryLoading = document.getElementById("promoHistoryLoading");
+    const promoHistoryContent = document.getElementById("promoHistoryContent");
+    const promoHistoryTableBody = document.getElementById("promoHistoryTableBody");
+
+    if (!promoHistoryTableBody) return;
+
+    fetch(`${Endpoint}/api/v1/email/promos`, {
+      method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
+      }
     })
       .then(res => {
-        if (!res.ok) throw new Error("Failed to send promotion email");
+        if (!res.ok) throw new Error("Failed to fetch promos");
         return res.json();
       })
       .then(data => {
-        alert("Promotion email sent successfully!");
-        
-        // Reset form & state
-        promoForm.reset();
-        attachedFiles = [];
-        attachmentList.innerHTML = "";
-        document.querySelectorAll(".agent-cb").forEach(cb => cb.checked = false);
+        if (promoHistoryLoading) promoHistoryLoading.style.display = "none";
+        if (promoHistoryContent) promoHistoryContent.style.display = "block";
+
+        promoHistoryTableBody.innerHTML = "";
+        if (data.length === 0) {
+          promoHistoryTableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No promotions found</td></tr>';
+          return;
+        }
+
+        data.forEach(promo => {
+          const row = document.createElement("tr");
+
+          // Date column
+          const dateTd = document.createElement("td");
+          dateTd.style.whiteSpace = "nowrap";
+          dateTd.textContent = new Date(promo.created_at).toLocaleString('th-TH', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          row.appendChild(dateTd);
+
+          // Subject column
+          const subjectTd = document.createElement("td");
+          subjectTd.style.fontWeight = "600";
+          subjectTd.style.color = "#2c3e50";
+          subjectTd.textContent = promo.subject;
+          
+          if (role !== "agent") {
+            const recipsDiv = document.createElement("div");
+            recipsDiv.className = "text-muted small mt-1";
+            recipsDiv.style.fontWeight = "normal";
+            recipsDiv.innerHTML = `<i class="fa fa-paper-plane-o mr-1"></i> To: ${promo.recipients}`;
+            subjectTd.appendChild(recipsDiv);
+          }
+          row.appendChild(subjectTd);
+
+          // Body details column
+          const bodyTd = document.createElement("td");
+          bodyTd.style.whiteSpace = "pre-wrap";
+          bodyTd.textContent = promo.body;
+          row.appendChild(bodyTd);
+
+          // Attachments column
+          const attTd = document.createElement("td");
+          if (promo.attachments && promo.attachments.length > 0) {
+            promo.attachments.forEach(att => {
+              const link = document.createElement("a");
+              link.href = `${Endpoint}${att.url}`;
+              link.target = "_blank";
+              link.className = "btn btn-sm btn-outline-info d-block text-left mb-1 text-truncate";
+              link.style.maxWidth = "180px";
+              
+              const iconClass = getFileIconClass(att.filename);
+              link.innerHTML = `<i class="fa ${iconClass} mr-1"></i> ${att.filename}`;
+              attTd.appendChild(link);
+            });
+          } else {
+            attTd.innerHTML = '<span class="text-muted small">No attachments</span>';
+          }
+          row.appendChild(attTd);
+
+          promoHistoryTableBody.appendChild(row);
+        });
       })
       .catch(err => {
         console.error(err);
-        alert("Error sending email: " + err.message);
-      })
-      .finally(() => {
-        btnSendPromo.disabled = false;
-        btnSendPromo.innerHTML = originalText;
+        if (promoHistoryLoading) {
+          promoHistoryLoading.innerHTML = '<div class="text-danger"><i class="fa fa-exclamation-triangle fa-2x"></i><p class="mt-2">Error loading promotions history</p></div>';
+        }
       });
-  });
+  }
+
+  // Load history initially
+  loadPromoHistory();
 
   // Retrieve and show username
   const username = localStorage.getItem("username");

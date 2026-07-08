@@ -32,11 +32,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-      /* Hide Special Package item rows in main tables */
-      tr[data-is-package-item="true"] {
-        display: none !important;
-      }
-
       /* Global Outfit font application */
       body, input, select, textarea, button, table, label, h1, h2, h3, h4, h5, h6 {
         font-family: 'Outfit', sans-serif !important;
@@ -1194,7 +1189,7 @@
                   <p class="text-muted" style="font-size: 0.9rem;">Select a pre-made special package to import its itinerary items into this quotation.</p>
                   <div style="background: linear-gradient(135deg, #faf8fc 0%, #f5eefc 100%); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #e1d5f2; box-shadow: 0 4px 15px rgba(155, 89, 182, 0.05);">
                     <h5 style="color: #8e44ad; font-weight: 700; margin-top: 0; margin-bottom: 15px; font-family: 'Outfit', sans-serif;">
-                      <i class="fas fa-search-location" style="margin-right: 8px;"></i> Agoda-Style Package Filters
+                      <i class="fas fa-search-location" style="margin-right: 8px;"></i> Package Filters
                     </h5>
                     
                     <div class="row">
@@ -3687,10 +3682,10 @@
           const buttonsHtml = isPackage
             ? `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button class="btn btn-sm btn-warning edit-excursion" type="button">
+                    <button disabled class="btn btn-sm btn-warning edit-excursion" type="button" style="opacity: 0.5; cursor: not-allowed;">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <span class="tooltip-text">Edit</span>
+                    <span class="tooltip-text">Edit Locked</span>
                   </div>
                   <div class="tooltip-btn" style="display: inline-block;">
                     <button disabled class="btn btn-sm btn-danger delete-excursion" type="button" style="opacity: 0.5; cursor: not-allowed;">
@@ -3765,8 +3760,12 @@
             row.style.backgroundColor = "#F5B7B1"; // Light red
           }
 
+          const dateCell = isPackage
+            ? `<input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(excursion.date || '')}" data-item-index="${row.dataset.packageItemIndex || ''}">`
+            : formatDateDisplay(excursion.date || '');
+
           row.innerHTML = `
-                  <td data-date="${formatToYYYYMMDD(excursion.date || '')}">${formatDateDisplay(excursion.date || '')}</td>
+                  <td data-date="${formatToYYYYMMDD(excursion.date || '')}">${dateCell}</td>
                   <td>${excursion.city || ""} ${packageBadge}</td>
                   <td>${excursion.excursion_name || ""}</td>
                   <td>${excursion.event_time || ""}</td>
@@ -4332,10 +4331,10 @@
           const buttonsHtml = isPackage
             ? `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button class="btn btn-sm btn-warning edit-transfer" type="button">
+                    <button disabled class="btn btn-sm btn-warning edit-transfer" type="button" style="opacity: 0.5; cursor: not-allowed;">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <span class="tooltip-text">Edit</span>
+                    <span class="tooltip-text">Edit Locked</span>
                   </div>
                   <div class="tooltip-btn" style="display: inline-block;">
                     <button disabled class="btn btn-sm btn-danger delete-transfer" type="button" style="opacity: 0.5; cursor: not-allowed;">
@@ -4410,8 +4409,12 @@
             row.style.backgroundColor = "#F5B7B1"; // Light red
           }
 
+          const dateCell = isPackage
+            ? `<input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(transfer.date || '')}" data-item-index="${row.dataset.packageItemIndex || ''}">`
+            : formatDateDisplay(transfer.date || '');
+
           row.innerHTML = `
-                <td data-date="${formatToYYYYMMDD(transfer.date || '')}">${formatDateDisplay(transfer.date || '')}<br>${transfer.flight_number || ""}</td>
+                <td data-date="${formatToYYYYMMDD(transfer.date || '')}">${dateCell}<br>${transfer.flight_number || ""}</td>
                 <td>${normalizedType}</td>
                 <td>${transfer.city || ""} ${packageBadge}</td>
                 <td>${transfer.transfer_description || ""}</td>
@@ -6088,10 +6091,10 @@
           const buttonsHtml = isPackage
             ? `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button class="btn btn-sm btn-warning edit-hotel" type="button">
+                    <button disabled class="btn btn-sm btn-warning edit-hotel" type="button" style="opacity: 0.5; cursor: not-allowed;">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <span class="tooltip-text">Edit</span>
+                    <span class="tooltip-text">Edit Locked</span>
                   </div>
                   <div class="tooltip-btn" style="display: inline-block;">
                     <button disabled class="btn btn-sm btn-danger delete-hotel" type="button" style="opacity: 0.5; cursor: not-allowed;">
@@ -6166,9 +6169,17 @@
             row.style.backgroundColor = "#F5B7B1"; // Light red
           }
 
+          const checkInCell = isPackage
+            ? `<input type="date" class="form-control form-control-sm inline-date-picker inline-hotel-checkin inline-package-preview-date" value="${formatToYYYYMMDD(hotel.from_date || '')}" data-item-index="${row.dataset.packageItemIndex || ''}">`
+            : formatDateDisplay(hotel.from_date || '');
+
+          const checkOutCell = isPackage
+            ? `<input type="date" class="form-control form-control-sm inline-hotel-checkout" value="${formatToYYYYMMDD(hotel.to_date || '')}" disabled>`
+            : formatDateDisplay(hotel.to_date || '');
+
           row.innerHTML = `
-                <td data-date="${formatToYYYYMMDD(hotel.from_date || '')}">${formatDateDisplay(hotel.from_date || '')}</td>
-                <td data-date="${formatToYYYYMMDD(hotel.to_date || '')}">${formatDateDisplay(hotel.to_date || '')}</td>
+                <td data-date="${formatToYYYYMMDD(hotel.from_date || '')}">${checkInCell}</td>
+                <td data-date="${formatToYYYYMMDD(hotel.to_date || '')}">${checkOutCell}</td>
                 <td>${hotel.city || ""}</td>
                 <td>${hotelNameDisplay}</td>
                 <td>${roomTypeSummary}</td>
@@ -8468,10 +8479,10 @@
           const buttonsHtml = isPackage
             ? `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button class="btn btn-sm btn-warning edit-tour" type="button">
+                    <button disabled class="btn btn-sm btn-warning edit-tour" type="button" style="opacity: 0.5; cursor: not-allowed;">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <span class="tooltip-text">Edit</span>
+                    <span class="tooltip-text">Edit Locked</span>
                   </div>
                   <div class="tooltip-btn" style="display: inline-block;">
                     <button disabled class="btn btn-sm btn-danger delete-tour" type="button" style="opacity: 0.5; cursor: not-allowed;">
@@ -8546,9 +8557,17 @@
             row.style.backgroundColor = "#F5B7B1"; // Light red
           }
 
+          const startDateCell = isPackage
+            ? `<input type="date" class="form-control form-control-sm inline-date-picker inline-tour-start-date inline-package-preview-date" value="${formatToYYYYMMDD(tour.from_date || '')}" data-item-index="${row.dataset.packageItemIndex || ''}">`
+            : formatDateDisplay(tour.from_date || '');
+
+          const endDateCell = isPackage
+            ? `<input type="date" class="form-control form-control-sm inline-tour-end-date" value="${formatToYYYYMMDD(tour.to_date || '')}" disabled>`
+            : formatDateDisplay(tour.to_date || '');
+
           row.innerHTML = `
-                    <td data-date="${formatToYYYYMMDD(tour.from_date || '')}">${formatDateDisplay(tour.from_date || '')}</td>
-                    <td data-date="${formatToYYYYMMDD(tour.to_date || '')}">${formatDateDisplay(tour.to_date || '')}</td>
+                    <td data-date="${formatToYYYYMMDD(tour.from_date || '')}">${startDateCell}</td>
+                    <td data-date="${formatToYYYYMMDD(tour.to_date || '')}">${endDateCell}</td>
                     <td>${tour.from_location || ""}</td>
                     <td>${tour.tour_name || ""} ${packageBadge}</td>
                     <td>${isPackage ? "SIC" : (tour.tot || "")}</td>
@@ -9122,10 +9141,10 @@
           const buttonsHtml = isPackage
             ? `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button class="btn btn-sm btn-warning edit-flight" type="button">
+                    <button disabled class="btn btn-sm btn-warning edit-flight" type="button" style="opacity: 0.5; cursor: not-allowed;">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <span class="tooltip-text">Edit</span>
+                    <span class="tooltip-text">Edit Locked</span>
                   </div>
                   <div class="tooltip-btn" style="display: inline-block;">
                     <button disabled class="btn btn-sm btn-danger delete-flight" type="button" style="opacity: 0.5; cursor: not-allowed;">
@@ -9149,8 +9168,12 @@
                   </div>
               `;
 
+          const dateCell = isPackage
+            ? `<input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(flightDate)}" data-item-index="${row.dataset.packageItemIndex || ''}">`
+            : formatDateDisplay(flightDate);
+
           row.innerHTML = `
-                  <td data-date="${formatToYYYYMMDD(flightDate)}">${formatDateDisplay(flightDate)}</td>
+                  <td data-date="${formatToYYYYMMDD(flightDate)}">${dateCell}</td>
                   <td>${flightAirline} ${packageBadge}</td>
                   <td>${flight.flight_number || ""}</td>
                   <td>${flight.in_or_out || ""}</td>
@@ -9514,9 +9537,9 @@
 
         function getCellDateValue(cell) {
           if (!cell) return "";
-          if (cell.dataset.date) return cell.dataset.date;
           const input = cell.querySelector("input[type='date']");
           if (input) return input.value;
+          if (cell.dataset.date) return cell.dataset.date;
           
           // Parse textContent if no data-date or input is found
           const text = cell.textContent.trim();
@@ -10796,10 +10819,10 @@
           const buttonsHtml = isPackage
             ? `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button class="btn btn-sm btn-warning edit-other" type="button">
+                    <button disabled class="btn btn-sm btn-warning edit-other" type="button" style="opacity: 0.5; cursor: not-allowed;">
                       <i class="fa fa-edit"></i>
                     </button>
-                    <span class="tooltip-text">Edit</span>
+                    <span class="tooltip-text">Edit Locked</span>
                   </div>
                   <div class="tooltip-btn" style="display: inline-block;">
                     <button disabled class="btn btn-sm btn-danger delete-other" type="button" style="opacity: 0.5; cursor: not-allowed;">
@@ -10823,9 +10846,13 @@
                   </div>
               `;
 
+          const dateCell = isPackage
+            ? `<input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(other.date || '')}" data-item-index="${row.dataset.packageItemIndex || ''}">`
+            : formatDateDisplay(other.date || '');
+
           row.innerHTML = `
             <td>${other.description || ""} ${packageBadge}</td>
-            <td data-date="${formatToYYYYMMDD(other.date || '')}">${formatDateDisplay(other.date || '')}</td>
+            <td data-date="${formatToYYYYMMDD(other.date || '')}">${dateCell}</td>
             <td>${other.total_price || other.cost || 0}</td>
             <td>
               ${buttonsHtml}
@@ -11628,7 +11655,22 @@
             const cleanRemarks = (item.remarks || "").replace(/\[Special Package\]/gi, "").trim();
             const remarksWithSig = item.remarks ? (item.remarks.includes("[Special Package]") ? item.remarks : `${item.remarks} [Special Package]`) : "[Special Package]";
             const packageBadge = `<span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`;
-            const actionButtons = `<td></td>`;
+            const actionButtons = `
+              <td>
+                <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
+                  <button disabled class="btn btn-sm btn-warning editBtn" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <span class="tooltip-text">Edit Locked</span>
+                </div>
+                <div class="tooltip-btn" style="display: inline-block;">
+                  <button disabled class="btn btn-sm btn-danger deleteBtn" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                  <span class="tooltip-text">Delete Locked</span>
+                </div>
+              </td>
+            `;
 
             if (item.item_type === 'hotel') {
               const checkoutDate = new Date(itemDate.getTime() + (item.nights || 1) * 24 * 60 * 60 * 1000);
@@ -11647,8 +11689,12 @@
               tr.dataset.notes = remarksWithSig;
 
               tr.innerHTML = `
-                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
-                <td data-date="${formatToYYYYMMDD(checkoutStr)}">${formatDateDisplay(checkoutStr)}</td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">
+                  <input type="date" class="form-control form-control-sm inline-date-picker inline-hotel-checkin inline-package-preview-date" value="${formatToYYYYMMDD(dateStr)}" data-item-index="${item.tempIndex}">
+                </td>
+                <td data-date="${formatToYYYYMMDD(checkoutStr)}">
+                  <input type="date" class="form-control form-control-sm inline-hotel-checkout" value="${formatToYYYYMMDD(checkoutStr)}" disabled>
+                </td>
                 <td>${item.city || "-"}</td>
                 <td>${item.hotel_name || "TBD"} ${packageBadge}</td>
                 <td>${item.room_type || "-"}</td>
@@ -11671,7 +11717,9 @@
               tr.dataset.tot = item.transfer_type || "SIC";
 
               tr.innerHTML = `
-                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">
+                  <input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(dateStr)}" data-item-index="${item.tempIndex}">
+                </td>
                 <td>-</td>
                 <td>${item.city || "-"} ${packageBadge}</td>
                 <td>${item.transfer_description || item.description || "-"}</td>
@@ -11693,7 +11741,9 @@
               tr.dataset.toe = "SIC";
 
               tr.innerHTML = `
-                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">
+                  <input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(dateStr)}" data-item-index="${item.tempIndex}">
+                </td>
                 <td>${item.city || "-"}</td>
                 <td>${item.excursion_name || "TBD"} ${packageBadge}</td>
                 <td>-</td>
@@ -11712,7 +11762,9 @@
               tr.dataset.remarks = remarksWithSig;
 
               tr.innerHTML = `
-                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">
+                  <input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(dateStr)}" data-item-index="${item.tempIndex}">
+                </td>
                 <td>${item.flight_airline || "-"} ${packageBadge}</td>
                 <td>${item.flight_number || "TBD"}</td>
                 <td>-</td>
@@ -11743,8 +11795,12 @@
               tr.dataset.departureTime = "";
 
               tr.innerHTML = `
-                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
-                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">
+                  <input type="date" class="form-control form-control-sm inline-date-picker inline-tour-start-date inline-package-preview-date" value="${formatToYYYYMMDD(dateStr)}" data-item-index="${item.tempIndex}">
+                </td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">
+                  <input type="date" class="form-control form-control-sm inline-tour-end-date" value="${formatToYYYYMMDD(dateStr)}" disabled>
+                </td>
                 <td>${item.city || "-"}</td>
                 <td>${item.tour_name || "TBD"} ${packageBadge}</td>
                 <td>SIC</td>
@@ -11767,9 +11823,24 @@
 
               tr.innerHTML = `
                 <td>${item.other_description || item.description || "TBD"} ${packageBadge}</td>
-                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">
+                  <input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(dateStr)}" data-item-index="${item.tempIndex}">
+                </td>
                 <td>${item.price || "-"}</td>
-                ${actionButtons}
+                <td>
+                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
+                    <button disabled class="btn btn-sm btn-warning editOtherBtn" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <span class="tooltip-text">Edit Locked</span>
+                  </div>
+                  <div class="tooltip-btn" style="display: inline-block;">
+                    <button disabled class="btn btn-sm btn-danger deleteOtherBtn" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                    <span class="tooltip-text">Delete Locked</span>
+                  </div>
+                </td>
               `;
               tbody.appendChild(tr);
             }
@@ -11832,17 +11903,27 @@
 
         $(document).on("change", ".inline-package-preview-date", function () {
           const index = this.getAttribute("data-item-index");
+          if (!index) return;
           const newVal = this.value;
+
+          // Sync all inputs on the page with the same item index
+          document.querySelectorAll(`.inline-package-preview-date[data-item-index="${index}"]`).forEach(input => {
+            if (input.value !== newVal) {
+              input.value = newVal;
+            }
+          });
 
           const hiddenRow = document.querySelector(`tr[data-package-item-index="${index}"]`);
           if (hiddenRow) {
             const isHotel = hiddenRow.closest("tbody")?.id === "hotelsTableBody";
             const isTour = hiddenRow.closest("tbody")?.id === "tourTableBody";
+            const isOther = hiddenRow.closest("tbody")?.id === "othersTableBody";
 
-            const cell0 = hiddenRow.cells[0];
-            if (cell0) {
-              cell0.dataset.date = newVal;
-              cell0.innerHTML = formatDateDisplay(newVal);
+            const dateCell = isOther ? hiddenRow.cells[1] : hiddenRow.cells[0];
+            if (dateCell) {
+              dateCell.dataset.date = newVal;
+              const input = dateCell.querySelector("input[type='date']");
+              if (input) input.value = newVal;
             }
 
             if (isHotel) {
@@ -11854,14 +11935,28 @@
               const cell1 = hiddenRow.cells[1];
               if (cell1) {
                 cell1.dataset.date = checkoutVal;
-                cell1.innerHTML = formatDateDisplay(checkoutVal);
+                const checkoutInput = cell1.querySelector(".inline-hotel-checkout");
+                if (checkoutInput) checkoutInput.value = checkoutVal;
               }
+              hiddenRow.dataset.checkInDate = newVal;
+              hiddenRow.dataset.checkOutDate = checkoutVal;
             } else if (isTour) {
               const cell1 = hiddenRow.cells[1];
               if (cell1) {
                 cell1.dataset.date = newVal;
-                cell1.innerHTML = formatDateDisplay(newVal);
+                const endInput = cell1.querySelector(".inline-tour-end-date");
+                if (endInput) endInput.value = newVal;
               }
+              hiddenRow.dataset.tourStartDate = newVal;
+              hiddenRow.dataset.tourEndDate = newVal;
+            } else if (isOther) {
+              hiddenRow.dataset.date = newVal;
+            } else if (hiddenRow.closest("tbody")?.id === "transferTableBody") {
+              hiddenRow.dataset.transferDate = newVal;
+            } else if (hiddenRow.closest("tbody")?.id === "flightsTableBody") {
+              hiddenRow.dataset.flightDate = newVal;
+            } else if (hiddenRow.closest("tbody")?.id === "excursionTableBody") {
+              hiddenRow.dataset.date = newVal;
             }
           }
         });

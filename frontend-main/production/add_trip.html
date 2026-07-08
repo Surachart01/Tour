@@ -32,11 +32,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-      /* Hide Special Package item rows in main tables */
-      tr[data-is-package-item="true"] {
-        display: none !important;
-      }
-
       /* Global Outfit font application */
       body, input, select, textarea, button, table, label, h1, h2, h3, h4, h5, h6 {
         font-family: 'Outfit', sans-serif !important;
@@ -1013,7 +1008,7 @@
                   <p class="text-muted" style="font-size: 0.9rem;">Select a pre-made special package to import its itinerary items into this quotation.</p>
                   <div style="background: linear-gradient(135deg, #faf8fc 0%, #f5eefc 100%); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #e1d5f2; box-shadow: 0 4px 15px rgba(155, 89, 182, 0.05);">
                     <h5 style="color: #8e44ad; font-weight: 700; margin-top: 0; margin-bottom: 15px; font-family: 'Outfit', sans-serif;">
-                      <i class="fas fa-search-location" style="margin-right: 8px;"></i> Agoda-Style Package Filters
+                      <i class="fas fa-search-location" style="margin-right: 8px;"></i> Package Filters
                     </h5>
                     
                     <div class="row">
@@ -5296,9 +5291,9 @@
 
         function getCellDateValue(cell) {
           if (!cell) return "";
-          if (cell.dataset.date) return cell.dataset.date;
           const input = cell.querySelector("input[type='date']");
           if (input) return input.value;
+          if (cell.dataset.date) return cell.dataset.date;
           
           // Parse textContent if no data-date or input is found
           const text = cell.textContent.trim();
@@ -5347,6 +5342,66 @@
               row.dataset.tourStartDate = val;
             } else if (this.classList.contains("inline-tour-end-date")) {
               row.dataset.tourEndDate = val;
+            }
+          }
+        });
+
+        $(document).on("change", ".inline-package-preview-date", function () {
+          const index = this.getAttribute("data-item-index");
+          if (!index) return;
+          const newVal = this.value;
+
+          // Sync all inputs on the page with the same item index
+          document.querySelectorAll(`.inline-package-preview-date[data-item-index="${index}"]`).forEach(input => {
+            if (input.value !== newVal) {
+              input.value = newVal;
+            }
+          });
+
+          const hiddenRow = document.querySelector(`tr[data-package-item-index="${index}"]`);
+          if (hiddenRow) {
+            const isHotel = hiddenRow.closest("tbody")?.id === "hotelsTableBody";
+            const isTour = hiddenRow.closest("tbody")?.id === "tourTableBody";
+            const isOther = hiddenRow.closest("tbody")?.id === "othersTableBody";
+
+            const dateCell = isOther ? hiddenRow.cells[1] : hiddenRow.cells[0];
+            if (dateCell) {
+              dateCell.dataset.date = newVal;
+              const input = dateCell.querySelector("input[type='date']");
+              if (input) input.value = newVal;
+            }
+
+            if (isHotel) {
+              const nights = parseInt(hiddenRow.dataset.nights) || 1;
+              const dateObj = new Date(newVal);
+              const checkoutObj = new Date(dateObj.getTime() + nights * 24 * 60 * 60 * 1000);
+              const checkoutVal = checkoutObj.toISOString().substring(0, 10);
+              
+              const cell1 = hiddenRow.cells[1];
+              if (cell1) {
+                cell1.dataset.date = checkoutVal;
+                const checkoutInput = cell1.querySelector(".inline-hotel-checkout");
+                if (checkoutInput) checkoutInput.value = checkoutVal;
+              }
+              hiddenRow.dataset.checkInDate = newVal;
+              hiddenRow.dataset.checkOutDate = checkoutVal;
+            } else if (isTour) {
+              const cell1 = hiddenRow.cells[1];
+              if (cell1) {
+                cell1.dataset.date = newVal;
+                const endInput = cell1.querySelector(".inline-tour-end-date");
+                if (endInput) endInput.value = newVal;
+              }
+              hiddenRow.dataset.tourStartDate = newVal;
+              hiddenRow.dataset.tourEndDate = newVal;
+            } else if (isOther) {
+              hiddenRow.dataset.date = newVal;
+            } else if (hiddenRow.closest("tbody")?.id === "transferTableBody") {
+              hiddenRow.dataset.transferDate = newVal;
+            } else if (hiddenRow.closest("tbody")?.id === "flightsTableBody") {
+              hiddenRow.dataset.flightDate = newVal;
+            } else if (hiddenRow.closest("tbody")?.id === "excursionTableBody") {
+              hiddenRow.dataset.date = newVal;
             }
           }
         });
@@ -5904,8 +5959,9 @@
             durationSelect.appendChild(opt);
           });
 
+          // Fixed hotel category options: Standard → Superior → Deluxe
           if (categorySelect) {
-            Array.from(categoriesSet).sort().forEach(cat => {
+            ["Standard", "Superior", "Deluxe"].forEach(cat => {
               const opt = document.createElement("option");
               opt.value = cat;
               opt.textContent = cat;
@@ -6347,10 +6403,10 @@
             const packageBadge = `<span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`;
             const actionButtons = `
               <td>
-                <button class="btn btn-sm btn-warning editBtn" type="button" style="margin-right: 5px;">
+                <button disabled class="btn btn-sm btn-warning editBtn" type="button" style="opacity: 0.5; cursor: not-allowed; margin-right: 5px;" title="Edit Locked">
                   <i class="fas fa-edit"></i>
                 </button>
-                <button disabled class="btn btn-sm btn-danger deleteBtn" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                <button disabled class="btn btn-sm btn-danger deleteBtn" type="button" style="opacity: 0.5; cursor: not-allowed;" title="Delete Locked">
                   <i class="fas fa-trash"></i>
                 </button>
               </td>
@@ -6373,8 +6429,12 @@
               tr.dataset.notes = remarksWithSig;
 
               tr.innerHTML = `
-                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
-                <td data-date="${formatToYYYYMMDD(checkoutStr)}">${formatDateDisplay(checkoutStr)}</td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">
+                  <input type="date" class="form-control form-control-sm inline-date-picker inline-hotel-checkin inline-package-preview-date" value="${formatToYYYYMMDD(dateStr)}" data-item-index="${item.tempIndex}">
+                </td>
+                <td data-date="${formatToYYYYMMDD(checkoutStr)}">
+                  <input type="date" class="form-control form-control-sm inline-hotel-checkout" value="${formatToYYYYMMDD(checkoutStr)}" disabled>
+                </td>
                 <td>${item.city || "-"}</td>
                 <td>${item.hotel_name || "TBD"} ${packageBadge}</td>
                 <td>${item.room_type || "-"}</td>
@@ -6397,7 +6457,9 @@
               tr.dataset.tot = "SIC";
 
               tr.innerHTML = `
-                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">
+                  <input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(dateStr)}" data-item-index="${item.tempIndex}">
+                </td>
                 <td>${item.city || "-"}</td>
                 <td>${item.transfer_description || item.description || "-"} ${packageBadge}</td>
                 <td>${item.transfer_type || "SIC"}</td>
@@ -6418,7 +6480,9 @@
               tr.dataset.toe = "SIC";
 
               tr.innerHTML = `
-                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">
+                  <input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(dateStr)}" data-item-index="${item.tempIndex}">
+                </td>
                 <td>${item.city || "-"}</td>
                 <td>${item.excursion_name || "TBD"} ${packageBadge}</td>
                 <td>-</td>
@@ -6437,7 +6501,9 @@
               tr.dataset.remarks = remarksWithSig;
 
               tr.innerHTML = `
-                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">
+                  <input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(dateStr)}" data-item-index="${item.tempIndex}">
+                </td>
                 <td>${item.flight_airline || "-"} ${packageBadge}</td>
                 <td>${item.flight_number || "TBD"}</td>
                 <td>-</td>
@@ -6461,8 +6527,12 @@
               tr.dataset.tourEndDate = dateStr;
 
               tr.innerHTML = `
-                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
-                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">
+                  <input type="date" class="form-control form-control-sm inline-date-picker inline-tour-start-date inline-package-preview-date" value="${formatToYYYYMMDD(dateStr)}" data-item-index="${item.tempIndex}">
+                </td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">
+                  <input type="date" class="form-control form-control-sm inline-tour-end-date" value="${formatToYYYYMMDD(dateStr)}" disabled>
+                </td>
                 <td>${item.city || "-"}</td>
                 <td>${item.tour_name || "TBD"} ${packageBadge}</td>
                 <td>SIC</td>
@@ -6485,13 +6555,15 @@
 
               tr.innerHTML = `
                 <td>${item.other_description || item.description || "TBD"} ${packageBadge}</td>
-                <td data-date="${formatToYYYYMMDD(dateStr)}">${formatDateDisplay(dateStr)}</td>
+                <td data-date="${formatToYYYYMMDD(dateStr)}">
+                  <input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(dateStr)}" data-item-index="${item.tempIndex}">
+                </td>
                 <td>${item.price || "-"}</td>
                 <td>
-                  <button class="btn btn-sm btn-warning editOtherBtn" type="button" style="margin-right: 5px;">
+                  <button disabled class="btn btn-sm btn-warning editOtherBtn" type="button" style="opacity: 0.5; cursor: not-allowed; margin-right: 5px;" title="Edit Locked">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button disabled class="btn btn-sm btn-danger deleteOtherBtn" type="button" style="opacity: 0.5; cursor: not-allowed;">
+                  <button disabled class="btn btn-sm btn-danger deleteOtherBtn" type="button" style="opacity: 0.5; cursor: not-allowed;" title="Delete Locked">
                     <i class="fas fa-trash"></i>
                   </button>
                 </td>

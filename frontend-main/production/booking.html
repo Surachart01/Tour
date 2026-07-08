@@ -521,22 +521,22 @@
         <footer></footer>
         <!-- /Footer -->
 
-        <!-- Email Summary Modal -->
+        <!-- Day-by-Day Itinerary & Supplier Email Modal -->
         <div class="modal fade" id="emailModal" tabindex="-1" role="dialog" aria-hidden="true">
           <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
               <div class="modal-header" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 18px 24px;">
                 <h5 class="modal-title" style="font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 18px; display: inline-block;">
-                  <i class="fa fa-envelope-o"></i> Hotel Email Reservation Summary
+                  <i class="fa fa-list-alt"></i> Day-by-Day Itinerary & Supplier Email
                 </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8; font-size: 24px; padding: 18px 24px; margin: -18px -24px -18px auto; background: transparent; border: none; float: right;">
                   <span aria-hidden="true">&times;</span>
                 </button>
               </div>
-              <div class="modal-body" style="padding: 24px;">
+              <div class="modal-body" style="padding: 24px; max-height: 600px; overflow-y: auto;">
                 <div id="emailModalLoading" style="text-align: center; padding: 40px 0;">
                   <i class="fa fa-spinner fa-spin fa-3x" style="color: #6366f1; margin-bottom: 15px;"></i>
-                  <p style="color: #64748b; font-size: 15px; font-weight: 500;">Retrieving hotel stays information...</p>
+                  <p style="color: #64748b; font-size: 15px; font-weight: 500;">Retrieving booking details...</p>
                 </div>
                 <div id="emailModalContent" style="display: none;">
                   <div style="margin-bottom: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
@@ -551,28 +551,22 @@
                       </tr>
                     </table>
                   </div>
-                  <h6 style="font-family: 'Outfit', sans-serif; font-weight: 600; color: #0f172a; margin-bottom: 15px; font-size: 16px;">Grouped Hotel Stays</h6>
-                  <div class="table-responsive">
-                    <table class="table table-bordered" style="font-size: 14px; margin-bottom: 0;">
-                      <thead style="background: #f1f5f9; color: #334155; font-weight: 600;">
-                        <tr>
-                          <th>Hotel Name</th>
-                          <th>Room Type</th>
-                          <th>Stay Dates</th>
-                          <th style="width: 100px; text-align: center;">Nights</th>
-                          <th style="width: 100px; text-align: center;">Status</th>
-                          <th style="width: 120px; text-align: center;">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody id="emailModalTableBody">
-                        <!-- Dynamic hotel stays list -->
-                      </tbody>
-                    </table>
+                  
+                  <div id="emailModalItineraryContainer">
+                    <!-- Dynamic day-by-day itinerary with checkboxes -->
                   </div>
                 </div>
               </div>
-              <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 15px 24px;">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal" style="border-radius: 6px; font-weight: 500; padding: 8px 16px;">Close</button>
+              <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 15px 24px; display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" class="btn btn-success" id="modalBulkEmailBtn" style="background-color: #1abc9c; border-color: #1abc9c; font-weight: 500; padding: 8px 16px; border-radius: 6px;">
+                  <i class="fa fa-envelope"></i> Bulk Email
+                </button>
+                <button type="button" class="btn btn-primary" id="modalPrintItineraryBtn" style="background-color: #34495e; border-color: #34495e; font-weight: 500; padding: 8px 16px; border-radius: 6px;">
+                  <i class="fa fa-print"></i> Print
+                </button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" style="border-radius: 6px; font-weight: 500; padding: 8px 16px;">
+                  Close
+                </button>
               </div>
             </div>
           </div>
@@ -817,6 +811,13 @@
             return;
           }
 
+          const bulkEmailDirectBtn = event.target.closest(".bulk-email-direct-btn");
+          if (bulkEmailDirectBtn) {
+            const tripId = bulkEmailDirectBtn.getAttribute("data-id");
+            sendBulkEmailDirect(tripId, bulkEmailDirectBtn);
+            return;
+          }
+
           const invoiceBtn = event.target.closest(".invoice-btn");
           if (invoiceBtn) {
             const tripId = invoiceBtn.getAttribute("data-id");
@@ -836,8 +837,12 @@
           }
         });
 
-        // Open Email Reservation Summary Modal
+        let activeTripIdForEmail = null;
+        let activeTripDataForEmail = null;
+
+        // Open Day-by-Day Itinerary & Supplier Email Modal
         function openEmailModal(tripId) {
+          activeTripIdForEmail = tripId;
           $("#emailModalLoading").show();
           $("#emailModalContent").hide();
           $("#emailModal").modal("show");
@@ -853,83 +858,193 @@
             return res.json();
           })
           .then(trip => {
+            activeTripDataForEmail = trip;
             $("#emailModalRef").text(trip.booking_reference || trip.id);
             $("#emailModalClient").text(trip.client_name);
 
-            const hotelItems = trip.hotel_trip_items || [];
-            const tbody = document.getElementById("emailModalTableBody");
-            tbody.innerHTML = "";
+            const container = document.getElementById("emailModalItineraryContainer");
+            container.innerHTML = "";
 
-            if (hotelItems.length === 0) {
-              tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted" style="padding: 20px;">No hotels booked for this trip.</td></tr>`;
+            // Gather all items
+            const allItems = [];
+            
+            // Consolidate hotel stays first
+            const stays = consolidateHotelStays(trip.hotel_trip_items || []);
+            stays.forEach(stay => {
+              allItems.push({
+                ...stay,
+                item_type: "hotel",
+                from_date: stay.from_date
+              });
+            });
+
+            (trip.transfer_trip_items || []).forEach(item => {
+              allItems.push({
+                ...item,
+                item_type: "transfer",
+                from_date: item.from_date || item.date
+              });
+            });
+
+            (trip.excursion_trip_items || []).forEach(item => {
+              allItems.push({
+                ...item,
+                item_type: "excursion",
+                from_date: item.from_date || item.date
+              });
+            });
+
+            (trip.tour_trip_items || []).forEach(item => {
+              allItems.push({
+                ...item,
+                item_type: "tour",
+                from_date: item.from_date
+              });
+            });
+
+            (trip.flight_trip_items || []).forEach(item => {
+              allItems.push({
+                ...item,
+                item_type: "flight",
+                from_date: item.from_date || item.date
+              });
+            });
+
+            (trip.other_trip_items || []).forEach(item => {
+              allItems.push({
+                ...item,
+                item_type: "other",
+                from_date: item.date || item.from_date
+              });
+            });
+
+            const tripStartStr = trip.start_date || trip.trip_start_date;
+            const tripStart = tripStartStr ? new Date(tripStartStr.split("T")[0]) : null;
+
+            // Group by Day number
+            const days = {};
+            allItems.forEach(item => {
+              let dayNum = 1;
+              if (tripStart && item.from_date) {
+                const itemDate = new Date(item.from_date.split ? item.from_date.split("T")[0] : item.from_date);
+                const diffTime = itemDate.getTime() - tripStart.getTime();
+                const diffDays = Math.floor(diffTime / (24 * 60 * 60 * 1000));
+                dayNum = diffDays + 1;
+              }
+              if (dayNum < 1) dayNum = 1;
+              if (!days[dayNum]) days[dayNum] = [];
+              days[dayNum].push(item);
+            });
+
+            const sortedDays = Object.keys(days).sort((a, b) => Number(a) - Number(b));
+
+            if (sortedDays.length === 0) {
+              container.innerHTML = `<div class="alert alert-warning text-center">No items found for this booking.</div>`;
               $("#emailModalLoading").hide();
               $("#emailModalContent").show();
               return;
             }
 
-            // Consolidate hotel stays client-side
-            const stays = consolidateHotelStays(hotelItems);
-
-            stays.forEach((stay) => {
-              const row = document.createElement("tr");
-
-              const fromStr = new Date(stay.from_date).toLocaleDateString("en-GB").replace(/\//g, "-");
-              const toStr = new Date(stay.to_date).toLocaleDateString("en-GB").replace(/\//g, "-");
-
-              const statusBadge = stay.email_sent 
-                ? `<span class="badge badge-success" style="padding: 5px 10px; border-radius: 4px; font-weight: 500; background-color: #28a745; color: white;">Sent</span>`
-                : `<span class="badge badge-warning" style="padding: 5px 10px; border-radius: 4px; font-weight: 500; background-color: #f39c12; color: white;">Not Sent</span>`;
-
-              row.innerHTML = `
-                <td style="font-weight: 600; color: #334155; vertical-align: middle;">${stay.hotel_name}</td>
-                <td style="vertical-align: middle;">${stay.room_type}</td>
-                <td style="vertical-align: middle;">${fromStr} to ${toStr}</td>
-                <td style="text-align: center; vertical-align: middle; font-weight: 600;">${stay.nights}</td>
-                <td style="text-align: center; vertical-align: middle;">${statusBadge}</td>
-                <td style="text-align: center; vertical-align: middle;">
-                  <button class="btn btn-primary btn-sm send-hotel-email-btn" 
-                          data-trip-id="${tripId}" 
-                          data-item-ids="${stay.itemIds.join('_')}" 
-                          style="border-radius: 4px; font-weight: 500; padding: 4px 10px; transition: all 0.2s ease;">
-                    <i class="fa fa-paper-plane"></i> Send
-                  </button>
-                </td>
-              `;
-              tbody.appendChild(row);
+            // Sort items inside each day chronologically by item_type priority
+            const typePriority = {
+              "flight": 1,
+              "transfer": 2,
+              "excursion": 3,
+              "hotel": 4,
+              "tour": 5,
+              "other": 6
+            };
+            sortedDays.forEach(dNum => {
+              days[dNum].sort((a, b) => {
+                const priorityA = typePriority[a.item_type] || 99;
+                const priorityB = typePriority[b.item_type] || 99;
+                return priorityA - priorityB;
+              });
             });
 
-            // Bind click handler for send-hotel-email-btn
-            $(".send-hotel-email-btn").off("click").on("click", function() {
-              const btn = $(this);
-              const tId = btn.attr("data-trip-id");
-              const itemIds = btn.attr("data-item-ids");
+            const getDayDateStr = (dNum) => {
+              if (!tripStart) return "";
+              const dDate = new Date(tripStart.getTime() + (dNum - 1) * 24 * 60 * 60 * 1000);
+              return dDate.toLocaleDateString("en-GB").replace(/\//g, "-");
+            };
 
-              if (!confirm("Are you sure you want to send reservation email to this hotel?")) {
-                return;
-              }
+            sortedDays.forEach(dNum => {
+              const dayDiv = document.createElement("div");
+              dayDiv.style.marginBottom = "20px";
+              dayDiv.innerHTML = `<h5 class="font-weight-bold" style="color: #1abb9c; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 12px; font-size: 16px;">Day ${dNum} <span style="font-size: 0.85rem; color: #73879c; margin-left: 10px; font-weight: normal;">(${getDayDateStr(dNum)})</span></h5>`;
 
-              btn.prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Sending...');
+              days[dNum].forEach(item => {
+                const itemDiv = document.createElement("div");
+                itemDiv.style.display = "flex";
+                itemDiv.style.alignItems = "center";
+                itemDiv.style.padding = "10px 15px";
+                itemDiv.style.marginBottom = "8px";
+                itemDiv.style.borderRadius = "6px";
+                itemDiv.style.backgroundColor = "#f9f9f9";
+                itemDiv.style.border = "1px solid #eef2f3";
 
-              fetch(`${Endpoint}/api/v1/bookings/${tId}/notify/hotel/group_${itemIds}`, {
-                method: "POST",
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  "Content-Type": "application/json"
+                let details = "";
+                let badgeColor = "#1abb9c";
+                let supportsEmail = false;
+
+                if (item.item_type === "hotel") {
+                  details = `🏨 <strong>Hotel:</strong> ${item.hotel_name || "TBD"} ${item.room_type ? `(${item.room_type})` : ""} - ${item.nights || 1} Night(s) in ${item.city || ""}`;
+                  badgeColor = "#2ecc71";
+                  supportsEmail = true;
+                } else if (item.item_type === "transfer") {
+                  details = `🚐 <strong>Transfer (${item.transfer_type || item.tot || "SIC"}):</strong> From ${item.from_location || "TBD"} to ${item.to_location || "TBD"} ${item.pickup_time ? `at ${item.pickup_time}` : ""}`;
+                  badgeColor = "#9b59b6";
+                  supportsEmail = true;
+                } else if (item.item_type === "excursion") {
+                  details = `🎯 <strong>Excursion:</strong> ${item.excursion_name || "TBD"} (${item.city || "TBD"})`;
+                  badgeColor = "#e67e22";
+                  supportsEmail = true;
+                } else if (item.item_type === "tour") {
+                  details = `🗺️ <strong>Tour:</strong> ${item.tour_name || "TBD"} (${item.city || "TBD"})`;
+                  badgeColor = "#1abc9c";
+                  supportsEmail = true;
+                } else if (item.item_type === "flight") {
+                  details = `✈️ <strong>Flight:</strong> ${item.flight_airline || ""} ${item.flight_number || "TBD"} Route: ${item.route || item.flight_route || ""} (${item.departure_time || ""} -> ${item.arrival_time || ""})`;
+                  badgeColor = "#3498db";
+                } else {
+                  details = `📋 <strong>Other:</strong> ${item.description || item.other_description || "TBD"}`;
+                  badgeColor = "#95a5a6";
                 }
-              })
-              .then(res => {
-                if (!res.ok) throw new Error("Failed to send reservation email");
-                return res.json();
-              })
-              .then(data => {
-                alert("Email sent successfully!");
-                // Refresh modal details
-                openEmailModal(tId);
-              })
-              .catch(err => {
-                alert(`Error: ${err.message}`);
-                btn.prop("disabled", false).html('<i class="fa fa-paper-plane"></i> Send');
+
+                if (item.remarks) {
+                  details += `<br/><small class="text-info">Remarks: ${item.remarks}</small>`;
+                }
+
+                let checkboxHtml = `<div style="width: 33px; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                  <i class="fa fa-info-circle" style="color: #bdc3c7; font-size: 16px;" title="This item type does not support supplier emailing."></i>
+                </div>`;
+
+                if (supportsEmail) {
+                  const statusBadge = item.email_sent 
+                    ? `<span class="badge badge-success" style="background-color: #28a745; color: white; margin-left: 10px; font-size: 0.7rem;">Sent</span>`
+                    : `<span class="badge badge-warning" style="background-color: #f39c12; color: white; margin-left: 10px; font-size: 0.7rem;">Not Sent</span>`;
+                  
+                  details += statusBadge;
+
+                  checkboxHtml = `
+                    <div style="margin-right: 15px; display: flex; align-items: center;">
+                      <input type="checkbox" class="modal-bulk-email-checkbox" data-id="${item.itemIds ? item.itemIds.join('_') : item.id}" data-type="${item.item_type}" style="width: 18px; height: 18px; cursor: pointer;" checked />
+                    </div>
+                  `;
+                }
+
+                itemDiv.innerHTML = `
+                  ${checkboxHtml}
+                  <div style="flex: 1;">
+                    <span class="badge" style="background-color: ${badgeColor}; color: white; margin-bottom: 4px; font-size: 0.7rem;">${item.item_type.toUpperCase()}</span>
+                    <div style="font-size: 0.9rem; color: #2C3E50;">${details}</div>
+                  </div>
+                `;
+
+                dayDiv.appendChild(itemDiv);
               });
+
+              container.appendChild(dayDiv);
             });
 
             $("#emailModalLoading").hide();
@@ -940,6 +1055,384 @@
             $("#emailModal").modal("hide");
           });
         }
+
+        // Send bulk emails for selected items in the modal
+        async function sendBulkEmailFromModal(tripId) {
+          const checked = document.querySelectorAll(".modal-bulk-email-checkbox:checked");
+          if (checked.length === 0) {
+            alert("Please select at least one item to email.");
+            return;
+          }
+
+          if (!confirm(`Are you sure you want to send supplier emails for the ${checked.length} selected item(s)?`)) {
+            return;
+          }
+
+          const bulkEmailBtn = document.getElementById("modalBulkEmailBtn");
+          const originalHtml = bulkEmailBtn.innerHTML;
+          bulkEmailBtn.disabled = true;
+          bulkEmailBtn.innerHTML = `<i class="fa fa-spinner fa-spin"></i> Sending...`;
+
+          const byType = { hotel: [], transfer: [], excursion: [], tour: [] };
+          checked.forEach(cb => {
+            const id = cb.getAttribute("data-id");
+            const type = cb.getAttribute("data-type");
+            byType[type].push(id);
+          });
+
+          let successCount = 0;
+          let failCount = 0;
+
+          try {
+            // 1. Send hotels (consolidated)
+            if (byType.hotel.length > 0) {
+              const allHotelItemIds = [];
+              byType.hotel.forEach(idStr => {
+                idStr.split("_").forEach(id => {
+                  if (id) allHotelItemIds.push(id);
+                });
+              });
+
+              if (allHotelItemIds.length > 0) {
+                const itemID = `group_${allHotelItemIds.join("_")}`;
+                try {
+                  const res = await fetch(`${Endpoint}/api/v1/bookings/${tripId}/notify/hotel/${itemID}`, {
+                    method: "POST",
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                      "Content-Type": "application/json"
+                    }
+                  });
+                  if (!res.ok) throw new Error("Failed to send hotel bulk email");
+                  successCount += byType.hotel.length;
+                } catch (e) {
+                  console.error(e);
+                  failCount += byType.hotel.length;
+                }
+              }
+            }
+
+            // 2. Send transfers
+            for (const id of byType.transfer) {
+              try {
+                const res = await fetch(`${Endpoint}/api/v1/bookings/${tripId}/notify/transfer/${id}`, {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                  }
+                });
+                if (!res.ok) throw new Error("Failed to send transfer email");
+                successCount++;
+              } catch (e) {
+                console.error(e);
+                failCount++;
+              }
+            }
+
+            // 3. Send excursions
+            for (const id of byType.excursion) {
+              try {
+                const res = await fetch(`${Endpoint}/api/v1/bookings/${tripId}/notify/excursion/${id}`, {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                  }
+                });
+                if (!res.ok) throw new Error("Failed to send excursion email");
+                successCount++;
+              } catch (e) {
+                console.error(e);
+                failCount++;
+              }
+            }
+
+            // 4. Send tours
+            for (const id of byType.tour) {
+              try {
+                const res = await fetch(`${Endpoint}/api/v1/bookings/${tripId}/notify/tour/${id}`, {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                  }
+                });
+                if (!res.ok) throw new Error("Failed to send tour email");
+                successCount++;
+              } catch (e) {
+                console.error(e);
+                failCount++;
+              }
+            }
+
+            if (failCount === 0) {
+              alert(`Successfully sent ${successCount} supplier email notification(s)!`);
+            } else {
+              alert(`Sent ${successCount} supplier email notification(s). Failed for ${failCount} item(s).`);
+            }
+            openEmailModal(tripId);
+
+          } catch (err) {
+            console.error(err);
+            alert("Error sending bulk email: " + err.message);
+          } finally {
+            bulkEmailBtn.disabled = false;
+            bulkEmailBtn.innerHTML = originalHtml;
+          }
+        }
+
+        // Direct Bulk Email from table row — sends ALL items without opening modal
+        async function sendBulkEmailDirect(tripId, btn) {
+          if (!confirm("Send supplier emails for ALL Hotels, Transfers, Excursions, and Tours in this booking?")) return;
+
+          const originalHtml = btn.innerHTML;
+          btn.disabled = true;
+          btn.innerHTML = `<i class="fa fa-spinner fa-spin"></i>`;
+
+          let successCount = 0;
+          let failCount = 0;
+          const types = ["hotel", "transfer", "excursion", "tour"];
+
+          try {
+            for (const type of types) {
+              try {
+                const res = await fetch(`${Endpoint}/api/v1/bookings/${tripId}/notify/${type}/all`, {
+                  method: "POST",
+                  headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
+                });
+                if (res.ok) {
+                  successCount++;
+                } else {
+                  failCount++;
+                }
+              } catch (e) {
+                console.error(`Error sending ${type} emails:`, e);
+                failCount++;
+              }
+            }
+
+            if (failCount === 0) {
+              alert(`✅ Supplier emails sent successfully for all items!`);
+            } else {
+              alert(`Sent ${successCount} type(s) successfully. ${failCount} type(s) had issues (may have no items).`);
+            }
+          } catch (err) {
+            alert("Error: " + err.message);
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+          }
+        }
+
+        // Print Day-by-Day Itinerary for booking
+        function printBookingItinerary(trip) {
+          const tripStartStr = trip.start_date || trip.trip_start_date;
+          const tripStart = tripStartStr ? new Date(tripStartStr.split("T")[0]) : null;
+
+          const allItems = [];
+          const stays = consolidateHotelStays(trip.hotel_trip_items || []);
+          stays.forEach(stay => {
+            allItems.push({
+              ...stay,
+              item_type: "hotel",
+              from_date: stay.from_date
+            });
+          });
+
+          (trip.transfer_trip_items || []).forEach(item => {
+            allItems.push({
+              ...item,
+              item_type: "transfer",
+              from_date: item.from_date || item.date
+            });
+          });
+
+          (trip.excursion_trip_items || []).forEach(item => {
+            allItems.push({
+              ...item,
+              item_type: "excursion",
+              from_date: item.from_date || item.date
+            });
+          });
+
+          (trip.tour_trip_items || []).forEach(item => {
+            allItems.push({
+              ...item,
+              item_type: "tour",
+              from_date: item.from_date
+            });
+          });
+
+          (trip.flight_trip_items || []).forEach(item => {
+            allItems.push({
+              ...item,
+              item_type: "flight",
+              from_date: item.from_date || item.date
+            });
+          });
+
+          (trip.other_trip_items || []).forEach(item => {
+            allItems.push({
+              ...item,
+              item_type: "other",
+              from_date: item.date || item.from_date
+            });
+          });
+
+          const days = {};
+          allItems.forEach(item => {
+            let dayNum = 1;
+            if (tripStart && item.from_date) {
+              const itemDate = new Date(item.from_date.split ? item.from_date.split("T")[0] : item.from_date);
+              const diffTime = itemDate.getTime() - tripStart.getTime();
+              const diffDays = Math.floor(diffTime / (24 * 60 * 60 * 1000));
+              dayNum = diffDays + 1;
+            }
+            if (dayNum < 1) dayNum = 1;
+            if (!days[dayNum]) days[dayNum] = [];
+            days[dayNum].push(item);
+          });
+
+          const duration = Object.keys(days).length > 0 ? Math.max(...Object.keys(days).map(Number)) : 1;
+
+          const typePriority = {
+            "flight": 1,
+            "transfer": 2,
+            "excursion": 3,
+            "hotel": 4,
+            "tour": 5,
+            "other": 6
+          };
+          for (let i = 1; i <= duration; i++) {
+            if (days[i]) {
+              days[i].sort((a, b) => {
+                const priorityA = typePriority[a.item_type] || 99;
+                const priorityB = typePriority[b.item_type] || 99;
+                return priorityA - priorityB;
+              });
+            }
+          }
+
+          const getDayDateStr = (dNum) => {
+            if (!tripStart) return "";
+            const dDate = new Date(tripStart.getTime() + (dNum - 1) * 24 * 60 * 60 * 1000);
+            return dDate.toLocaleDateString("en-GB").replace(/\//g, "-");
+          };
+
+          let itineraryHtml = "";
+          for (let d = 1; d <= duration; d++) {
+            itineraryHtml += `<div style="margin-bottom: 20px; border-left: 3px solid #1abb9c; padding-left: 15px; page-break-inside: avoid;">`;
+            itineraryHtml += `<h4 style="margin: 0 0 10px 0; color: #2a3f54;">Day ${d} <span style="font-size: 0.9rem; color: #73879c; font-weight: normal;">(${getDayDateStr(d)})</span></h4>`;
+            const itemsList = days[d] || [];
+            if (itemsList.length === 0) {
+              itineraryHtml += `<p style="color: #6c757d; font-size: 0.9rem;">No specific activities or services scheduled for this day.</p>`;
+            } else {
+              itemsList.forEach(item => {
+                let detailHtml = "";
+                if (item.item_type === "hotel") {
+                  detailHtml = `<strong>🏨 Hotel:</strong> ${item.hotel_name || "TBD"} ${item.room_type ? `(${item.room_type})` : ""} - ${item.nights || 1} Night(s) in ${item.city || ""}`;
+                } else if (item.item_type === "transfer") {
+                  detailHtml = `<strong>🚐 Transfer (${item.transfer_type || item.tot || "SIC"}):</strong> From ${item.from_location || "TBD"} to ${item.to_location || "TBD"} ${item.pickup_time ? `at ${item.pickup_time}` : ""}`;
+                } else if (item.item_type === "excursion") {
+                  detailHtml = `<strong>🎯 Excursion:</strong> ${item.excursion_name || "TBD"}`;
+                } else if (item.item_type === "tour") {
+                  detailHtml = `<strong>🗺️ Tour:</strong> ${item.tour_name || "TBD"} in ${item.city || ""}`;
+                } else if (item.item_type === "flight") {
+                  detailHtml = `<strong>✈️ Flight:</strong> ${item.flight_airline || ""} ${item.flight_number || "TBD"} Route: ${item.route || item.flight_route || ""} (${item.departure_time || ""} -> ${item.arrival_time || ""})`;
+                } else {
+                  detailHtml = `<strong>📋 Other:</strong> ${item.description || item.other_description || "TBD"}`;
+                }
+                if (item.remarks) {
+                  detailHtml += `<br/><small style="color: #17a2b8;">Remarks: ${item.remarks}</small>`;
+                }
+                itineraryHtml += `
+                    <div style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 10px; margin-bottom: 8px; font-size: 0.9rem; page-break-inside: avoid;">
+                      <div style="font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: #1abb9c; margin-bottom: 4px;">${item.item_type}</div>
+                      <div>${detailHtml}</div>
+                    </div>
+                  `;
+              });
+            }
+            itineraryHtml += `</div>`;
+          }
+
+          const printWindow = window.open("", "_blank");
+          printWindow.document.write(`
+              <html>
+                <head>
+                  <title>Print - Day-by-Day Itinerary</title>
+                  <style>
+                    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; padding: 20px; line-height: 1.6; }
+                    h1, h2, h3, h4 { color: #2a3f54; margin-top: 0; }
+                    .header-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                    .header-table td { padding: 8px; vertical-align: top; border-bottom: 1px solid #eee; }
+                    .col-half { width: 50%; }
+                    hr { border: 0; border-top: 1px solid #ddd; margin: 20px 0; }
+                    @media print {
+                      .no-print { display: none; }
+                      body { padding: 0; }
+                    }
+                  </style>
+                </head>
+                <body>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h1>Day-by-Day Itinerary</h1>
+                    <button class="no-print" onclick="window.print()" style="padding: 8px 16px; background-color: #1abb9c; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Print This Page</button>
+                  </div>
+                  
+                  <table class="header-table">
+                    <tr>
+                      <td class="col-half">
+                        <strong>Booking Reference:</strong> ${trip.booking_reference || trip.id}<br/>
+                        <strong>Client Name:</strong> ${trip.client_name || "-"}<br/>
+                        <strong>Contact Info:</strong> ${trip.client_phone || "-"} / ${trip.client_email || "-"}
+                      </td>
+                      <td class="col-half">
+                        <strong>Trip Start Date:</strong> ${tripStartStr ? new Date(tripStartStr).toLocaleDateString("en-GB").replace(/\//g, "-") : "-"}<br/>
+                        <strong>Adults:</strong> ${trip.number_of_adults || 0}<br/>
+                        <strong>Children:</strong> ${trip.number_of_kids || 0}
+                      </td>
+                    </tr>
+                  </table>
+
+                  ${trip.remarks ? `
+                  <h3>Remarks</h3>
+                  <div style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; font-size: 0.95rem; margin-bottom: 20px; white-space: pre-wrap;">
+                    ${trip.remarks}
+                  </div>` : ''}
+
+                  <hr/>
+                  <h2>Itinerary</h2>
+                  <div>
+                    ${itineraryHtml}
+                  </div>
+
+                  <script>
+                    window.onload = function() {
+                      setTimeout(function() {
+                        window.print();
+                      }, 500);
+                    };
+                  <\/script>
+                </body>
+              </html>
+            `);
+          printWindow.document.close();
+        }
+
+        // Bind global action buttons for the upgraded modal
+        document.getElementById("modalBulkEmailBtn")?.addEventListener("click", function() {
+          if (activeTripIdForEmail) {
+            sendBulkEmailFromModal(activeTripIdForEmail);
+          }
+        });
+
+        document.getElementById("modalPrintItineraryBtn")?.addEventListener("click", function() {
+          if (activeTripDataForEmail) {
+            printBookingItinerary(activeTripDataForEmail);
+          }
+        });
 
         // Consolidation logic for hotel stays
         function consolidateHotelStays(hotelItems) {
@@ -1164,7 +1657,8 @@
                <button class="btn table-action-btn view-btn" data-id="${trip.id}" title="View"><i class="fa fa-eye"></i></button>
                <button class="btn table-action-btn edit-btn" data-id="${trip.id}" title="Edit"><i class="fa fa-edit"></i></button>
                <button class="btn table-action-btn save-btn print-btn" data-id="${trip.id}" title="Save PDF"><i class="fa fa-save"></i></button>
-               <button class="btn table-action-btn email-btn" data-id="${trip.id}" title="Notify Hotels"><i class="fa fa-envelope"></i></button>
+               <button class="btn table-action-btn email-btn" data-id="${trip.id}" title="View Itinerary & Email"><i class="fa fa-envelope"></i></button>
+               <button class="btn table-action-btn bulk-email-direct-btn" data-id="${trip.id}" title="Bulk Email All Suppliers" style="background-color: #1abc9c; color: #fff; border-color: #1abc9c;"><i class="fa fa-send"></i></button>
                <button class="btn table-action-btn invoice-btn" data-id="${trip.id}" title="Invoice"><i class="fa fa-file-text-o"></i></button>
                <button class="btn table-action-btn summary-btn" data-id="${trip.id}" title="Booking Confirmation"><i class="fa fa-list-alt"></i></button>
              </td>
