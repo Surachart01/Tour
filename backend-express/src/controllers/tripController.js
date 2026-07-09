@@ -1464,7 +1464,7 @@ export async function confirmBooking(req, res, next) {
       where: { id },
       data: {
         approved: true,
-        status: 'Approved',
+        status: 'Confirmed',
         updated_at: new Date()
       }
     });

@@ -8,7 +8,7 @@ import {
   listPaymentInfoFromBookings, listPaymentInfoByDateRange,
   listItinerary, updateInvoiceNumber
 } from '../controllers/tripController.js';
-import { generateQuotationPDF, generateReceiptPDF, generateTripPDF, generateTripServicesPDF, notifySupplierOrHotel, sendQuotationEmail } from '../controllers/pdfController.js';
+import { generateQuotationPDF, generateReceiptPDF, generateTripPDF, generateTripServicesPDF, notifyAgentBookingConfirmed, notifySupplierOrHotel, sendQuotationEmail } from '../controllers/pdfController.js';
 
 const router = express.Router();
 router.use(validateJWT);
@@ -44,6 +44,7 @@ router.get('/bookings/:id/receipt', authorize('admin'), generateReceiptPDF);
 router.get('/bookings/:id', authorize('admin'), getBooking);
 router.put('/bookings/:id', authorize('admin'), updateBooking);
 router.post('/bookings/:id/confirm', authorize('admin'), confirmBooking);
+router.post('/bookings/:id/notify-agent', authorize('admin'), notifyAgentBookingConfirmed);
 router.post('/bookings/:id/approveItem/:itemType/:itemID', authorize('admin'), approveItem);
 router.post('/bookings/:id/declineItem/:itemType/:itemID', authorize('admin'), declineItem);
 router.post('/bookings/:id/notify/:itemType/:itemID', authorize('admin'), notifySupplierOrHotel);

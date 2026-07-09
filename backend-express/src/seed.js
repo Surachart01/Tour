@@ -153,10 +153,10 @@ async function main() {
     console.warn('⚠️ Warning dropping users_google_id_key constraint:', err.message);
   }
 
-  console.log('🔧 Fixing out-of-range markup_percentage values in hotel_markup_percentages...');
+  console.log('🔧 Ensuring hotel markup amounts support fixed THB ranges...');
   try {
-    await prisma.$executeRawUnsafe('UPDATE hotel_markup_percentages SET markup_percentage = 99.99 WHERE markup_percentage > 999.99');
-    console.log('✅ Capped out-of-range markup percentages to 99.99.');
+    await prisma.$executeRawUnsafe('ALTER TABLE hotel_markup_percentages ALTER COLUMN markup_percentage TYPE numeric(10,2)');
+    console.log('✅ Hotel markup amount column supports fixed THB values.');
   } catch (err) {
     console.warn('⚠️ Warning updating markup_percentage:', err.message);
   }

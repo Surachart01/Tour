@@ -13,6 +13,11 @@ function applyMarkup(basePrice, markupValue, markupUnit) {
   return Math.ceil(finalPrice / 10) * 10;
 }
 
+function applyFixedMarkup(basePrice, markupValue) {
+  const finalPrice = basePrice + markupValue;
+  return Math.round(finalPrice * 100) / 100;
+}
+
 export function calculateMarkedUpPrice(basePrice, markupGroup, serviceType, markups) {
   const parsedPrice = parseFloat(basePrice);
   if (isNaN(parsedPrice) || parsedPrice === 0) {
@@ -26,14 +31,14 @@ export function calculateMarkedUpPrice(basePrice, markupGroup, serviceType, mark
   let finalPrice;
   switch (serviceType) {
     case 'hotel': {
-      // Find matching hotel markup percentage tier
+      // Hotel markup ranges are fixed THB amounts per room/per night.
       const hotelMarkup = (markup.hotel_markup_percentages || []).find(
-        hm => basePrice >= parseFloat(hm.price_from) && basePrice <= parseFloat(hm.price_to)
+        hm => parsedPrice >= parseFloat(hm.price_from) && parsedPrice <= parseFloat(hm.price_to)
       );
       if (!hotelMarkup) {
-        return basePrice;
+        return parsedPrice;
       }
-      finalPrice = applyMarkup(basePrice, parseFloat(hotelMarkup.markup_percentage), '%');
+      finalPrice = applyFixedMarkup(parsedPrice, parseFloat(hotelMarkup.markup_percentage || 0));
       break;
     }
     case 'excursion':
@@ -170,39 +175,39 @@ export function calculateMarkupRoomType(roomType, markupGroup, markups) {
   rt.single_price = calculateMarkedUpPrice(parseFloat(rt.single_price || 0), markupGroup, 'hotel', markups);
   rt.double_price = calculateMarkedUpPrice(parseFloat(rt.double_price || 0), markupGroup, 'hotel', markups);
   if (parseFloat(rt.extra_bed_adult || 0) > 0) {
-    rt.extra_bed_adult = calculateMarkedUpPrice(parseFloat(rt.extra_bed_adult || 0), markupGroup, 'hotel', markups);
+    rt.extra_bed_adult = parseFloat(rt.extra_bed_adult || 0);
   }
   if (parseFloat(rt.extra_bed_child || 0) > 0) {
-    rt.extra_bed_child = calculateMarkedUpPrice(parseFloat(rt.extra_bed_child || 0), markupGroup, 'hotel', markups);
+    rt.extra_bed_child = parseFloat(rt.extra_bed_child || 0);
   }
   if (parseFloat(rt.extra_bed_shared || 0) > 0) {
-    rt.extra_bed_shared = calculateMarkedUpPrice(parseFloat(rt.extra_bed_shared || 0), markupGroup, 'hotel', markups);
+    rt.extra_bed_shared = parseFloat(rt.extra_bed_shared || 0);
   }
 
   if (parseFloat(rt.food_adult_all_inclusive || 0) > 0) {
-    rt.food_adult_all_inclusive = calculateMarkedUpPrice(parseFloat(rt.food_adult_all_inclusive || 0), markupGroup, 'hotel', markups);
+    rt.food_adult_all_inclusive = parseFloat(rt.food_adult_all_inclusive || 0);
   }
   if (parseFloat(rt.food_adult_abf || 0) > 0) {
-    rt.food_adult_abf = calculateMarkedUpPrice(parseFloat(rt.food_adult_abf || 0), markupGroup, 'hotel', markups);
+    rt.food_adult_abf = parseFloat(rt.food_adult_abf || 0);
   }
   if (parseFloat(rt.food_adult_lunch || 0) > 0) {
-    rt.food_adult_lunch = calculateMarkedUpPrice(parseFloat(rt.food_adult_lunch || 0), markupGroup, 'hotel', markups);
+    rt.food_adult_lunch = parseFloat(rt.food_adult_lunch || 0);
   }
   if (parseFloat(rt.food_adult_dinner || 0) > 0) {
-    rt.food_adult_dinner = calculateMarkedUpPrice(parseFloat(rt.food_adult_dinner || 0), markupGroup, 'hotel', markups);
+    rt.food_adult_dinner = parseFloat(rt.food_adult_dinner || 0);
   }
 
   if (parseFloat(rt.food_child_all_inclusive || 0) > 0) {
-    rt.food_child_all_inclusive = calculateMarkedUpPrice(parseFloat(rt.food_child_all_inclusive || 0), markupGroup, 'hotel', markups);
+    rt.food_child_all_inclusive = parseFloat(rt.food_child_all_inclusive || 0);
   }
   if (parseFloat(rt.food_child_abf || 0) > 0) {
-    rt.food_child_abf = calculateMarkedUpPrice(parseFloat(rt.food_child_abf || 0), markupGroup, 'hotel', markups);
+    rt.food_child_abf = parseFloat(rt.food_child_abf || 0);
   }
   if (parseFloat(rt.food_child_lunch || 0) > 0) {
-    rt.food_child_lunch = calculateMarkedUpPrice(parseFloat(rt.food_child_lunch || 0), markupGroup, 'hotel', markups);
+    rt.food_child_lunch = parseFloat(rt.food_child_lunch || 0);
   }
   if (parseFloat(rt.food_child_dinner || 0) > 0) {
-    rt.food_child_dinner = calculateMarkedUpPrice(parseFloat(rt.food_child_dinner || 0), markupGroup, 'hotel', markups);
+    rt.food_child_dinner = parseFloat(rt.food_child_dinner || 0);
   }
   return rt;
 }

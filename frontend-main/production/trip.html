@@ -107,6 +107,11 @@
         border-left: 4px solid #2ecc71 !important;
       }
 
+      .row-status-confirmed {
+        border-left: 4px solid #22c55e !important;
+        background-color: #e9fbe7 !important;
+      }
+
       .row-status-cancelled {
         border-left: 4px solid #e74c3c !important;
       }
@@ -133,6 +138,10 @@
       .badge-status-approved {
         background-color: #e8f8f0;
         color: #2ecc71;
+      }
+      .badge-status-confirmed {
+        background-color: #16a34a;
+        color: #ffffff;
       }
       .badge-status-cancelled {
         background-color: #fce8e6;
@@ -456,6 +465,7 @@
               >
                 <option value="all">All Status</option>
                 <option value="Pending">Pending</option>
+                <option value="Confirmed">Confirmed</option>
                 <option value="Approved">Approved</option>
                 <option value="Declined">Declined</option>
                 <option value="InProgress">InProgress</option>
@@ -942,7 +952,9 @@
             row.className = "quotation-row";
 
             // Apply left border color indicator based on status
-            if (trip.status === "Approved") {
+            if (trip.status === "Confirmed") {
+              row.classList.add("row-status-confirmed");
+            } else if (trip.status === "Approved") {
               row.classList.add("row-status-approved");
             } else if (trip.status === "Declined" || trip.status === "Cancelled") {
               row.classList.add("row-status-cancelled");
@@ -954,7 +966,7 @@
 
              // Also tint row background slightly if client booking reference is present (for visual cue)
              const hasBookingRef = (trip.client_booking || trip.booking_reference) && (trip.client_booking || trip.booking_reference).trim() !== "";
-             if (hasBookingRef && trip.status !== "Approved" && trip.status !== "Cancelled" && trip.status !== "Declined" && trip.status !== "InProgress") {
+             if (hasBookingRef && trip.status !== "Confirmed" && trip.status !== "Approved" && trip.status !== "Cancelled" && trip.status !== "Declined" && trip.status !== "InProgress") {
                row.style.backgroundColor = "#fffef0"; 
              }
 
@@ -1007,7 +1019,9 @@
  
              // Status Badge rendering
              let statusBadge = '';
-             if (trip.status === "Approved") {
+             if (trip.status === "Confirmed") {
+               statusBadge = `<span class="badge-status badge-status-confirmed">CONFIRMED</span>`;
+             } else if (trip.status === "Approved") {
                statusBadge = `<span class="badge-status badge-status-approved">Approved</span>`;
              } else if (trip.status === "Declined" || trip.status === "Cancelled") {
                statusBadge = `<span class="badge-status badge-status-cancelled">${trip.status}</span>`;
@@ -1021,7 +1035,7 @@
                ? `<button class="btn-action btn-action-notify notify-hotels-btn" data-id="${trip.id}" data-quotation-ref="${escapedRef}" title="Notify Hotels & Stay Summaries"><i class="fa fa-bell-o"></i></button>`
                : '';
  
-             const proformaButton = (role === 'agent' && trip.status === 'Approved')
+             const proformaButton = (role === 'agent' && (trip.status === 'Approved' || trip.status === 'Confirmed'))
                ? `<button class="btn-action btn-action-save print-btn proforma-btn" data-id="${trip.id}" title="Print Proforma Invoice" style="color: #9b59b6 !important; border-color: #9b59b6 !important;"><i class="fa fa-file-text-o"></i></button>`
                : '';
  

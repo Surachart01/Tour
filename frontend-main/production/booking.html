@@ -105,11 +105,18 @@
       .table-action-btn.invoice-btn:hover { background: #fde68a !important; transform: translateY(-1px) !important; }
       .table-action-btn.summary-btn { background: #f0fdf4 !important; color: #16a34a !important; }
       .table-action-btn.summary-btn:hover { background: #dcfce7 !important; transform: translateY(-1px) !important; }
+      .table-action-btn:disabled {
+        opacity: 0.45 !important;
+        cursor: not-allowed !important;
+        transform: none !important;
+      }
       /* InProgress row */
       .row-inprogress { background-color: #ebf5fb !important; border-left: 4px solid #3498db !important; }
+      .row-confirmed { background-color: #e9fbe7 !important; border-left: 4px solid #22c55e !important; }
       /* Status badges */
       .status-badge { display:inline-block; padding:3px 9px; border-radius:50px; font-size:11px; font-weight:600; white-space:nowrap; }
       .status-badge.approved { background:#d4edda; color:#155724; }
+      .status-badge.confirmed { background:#16a34a; color:#ffffff; }
       .status-badge.declined { background:#f8d7da; color:#721c24; }
       .status-badge.inprogress { background:#cce5ff; color:#004085; }
       .status-badge.pending { background:#fff3cd; color:#856404; }
@@ -357,6 +364,7 @@
                 title="Filter by Status"
               >
                 <option value="all">All Status</option>
+                <option value="Confirmed">Confirmed</option>
                 <option value="Approved">Approved</option>
                 <option value="InProgress">InProgress</option>
                 <option value="Declined">Declined</option>
@@ -831,6 +839,13 @@
             return;
           }
 
+          const notifyAgentBtn = event.target.closest(".notify-agent-btn");
+          if (notifyAgentBtn) {
+            const tripId = notifyAgentBtn.getAttribute("data-id");
+            notifyAgentBookingConfirmed(tripId, notifyAgentBtn);
+            return;
+          }
+
           const summaryBtn = event.target.closest(".summary-btn");
           if (summaryBtn) {
             const tripId = summaryBtn.getAttribute("data-id");
@@ -838,6 +853,42 @@
             return;
           }
         });
+
+        async function notifyAgentBookingConfirmed(tripId, button) {
+          if (!tripId) {
+            alert("Invalid booking ID.");
+            return;
+          }
+
+          if (!confirm("Notify the agent that this booking is confirmed?")) {
+            return;
+          }
+
+          const originalHtml = button.innerHTML;
+          button.disabled = true;
+          button.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+
+          try {
+            const response = await fetch(`${Endpoint}/api/v1/bookings/${tripId}/notify-agent`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) {
+              throw new Error(result.message || "Failed to notify agent.");
+            }
+            alert(result.message || "Agent notification sent successfully.");
+          } catch (error) {
+            console.error("Error notifying agent:", error);
+            alert(error.message);
+          } finally {
+            button.disabled = false;
+            button.innerHTML = originalHtml;
+          }
+        }
 
         let activeTripIdForEmail = null;
         let activeTripDataForEmail = null;
@@ -1666,8 +1717,11 @@
 
             // Apply row color based on status
             const isInProgress = trip.status === "InProgress";
+            const isConfirmed = trip.status === "Confirmed";
             if (isInProgress) {
               row.classList.add("row-inprogress");
+            } else if (isConfirmed) {
+              row.classList.add("row-confirmed");
             } else if (trip.status === "Approved") {
               row.style.backgroundColor = "rgba(34,197,94,0.08)";
             } else if (trip.status === "Declined" || trip.status === "Cancelled") {
@@ -1686,9 +1740,12 @@
             }
 
             // Status badge + optional agent remark
-            let statusClass = isInProgress ? "inprogress" : (trip.status === "Approved" ? "approved" : (trip.status === "Declined" || trip.status === "Cancelled" ? "declined" : "pending"));
+            let statusClass = isConfirmed ? "confirmed" : (isInProgress ? "inprogress" : (trip.status === "Approved" ? "approved" : (trip.status === "Declined" || trip.status === "Cancelled" ? "declined" : "pending")));
+            const statusText = isConfirmed ? "CONFIRMED" : trip.status;
             const remarkHtml = isInProgress ? `<button type="button" class="remark-agent" data-toggle="tooltip" data-placement="top" title="New Agent Request"><i class="fa fa-bell-o"></i></button>` : "";
-            const statusHtml = `<div class="status-stack"><span class="status-badge ${statusClass}">${trip.status}</span>${remarkHtml}</div>`;
+            const statusHtml = `<div class="status-stack"><span class="status-badge ${statusClass}">${statusText}</span>${remarkHtml}</div>`;
+            const notifyAgentDisabled = isConfirmed ? "" : " disabled";
+            const notifyAgentTitle = isConfirmed ? "Notify Agent" : "Booking must be confirmed first";
 
             row.innerHTML = `
             <td style="font-weight: 500;">${(trip.agent && trip.agent.name) || (trip.agents && trip.agents.name) || "N/A"}</td>
@@ -1708,7 +1765,7 @@
                <button class="btn table-action-btn email-btn" data-id="${trip.id}" title="View Itinerary & Email"><i class="fa fa-envelope"></i></button>
                <button class="btn table-action-btn bulk-email-direct-btn" data-id="${trip.id}" title="Bulk Email All Suppliers" style="background-color: #1abc9c; color: #fff; border-color: #1abc9c;"><i class="fa fa-send"></i></button>
                <button class="btn table-action-btn invoice-btn" data-id="${trip.id}" title="Invoice"><i class="fa fa-file-text-o"></i></button>
-               <button class="btn table-action-btn summary-btn" data-id="${trip.id}" title="Booking Confirmation"><i class="fa fa-list-alt"></i></button>
+               <button class="btn table-action-btn summary-btn notify-agent-btn" data-id="${trip.id}" title="${notifyAgentTitle}"${notifyAgentDisabled}><i class="fa fa-bell"></i></button>
              </td>
         `;
 

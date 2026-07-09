@@ -745,9 +745,9 @@
               totalPages = Math.ceil(filteredTrips.length / rowsPerPage);
               currentPage = 1;
 
-              // Filter only approved trips for itinerary
+              // Filter only approved or confirmed trips for itinerary
               const approvedTrips = filteredTrips.filter(
-                (trip) => trip.status === "Approved"
+                (trip) => trip.status === "Approved" || trip.status === "Confirmed"
               );
               updateFilterStatus(approvedTrips.length);
               renderTrips();
@@ -771,9 +771,9 @@
         function renderTrips() {
           tripTableBody.innerHTML = "";
 
-          // ✅ Filter trips where status is "Approved"
+          // ✅ Filter trips where status is "Approved" or "Confirmed"
           const approvedTrips = filteredTrips.filter(
-            (trip) => trip.status === "Approved"
+            (trip) => trip.status === "Approved" || trip.status === "Confirmed"
           );
 
           const start = (currentPage - 1) * rowsPerPage;

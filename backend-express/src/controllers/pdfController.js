@@ -111,6 +111,89 @@ export async function generateReceiptPDF(req, res, next) {
 export async function generateTripPDF(req, res, next) { return generateQuotationPDF(req, res, next); }
 export async function generateTripServicesPDF(req, res, next) { return generateQuotationPDF(req, res, next); }
 
+export async function notifyAgentBookingConfirmed(req, res, next) {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: 'Invalid booking ID' });
+
+    const trip = await prisma.trips.findUnique({
+      where: { id },
+      include: { agents: true }
+    });
+    if (!trip) return res.status(404).json({ message: 'Booking not found' });
+    if (trip.status !== 'Confirmed') {
+      return res.status(400).json({ message: 'The booking must be confirmed before notifying the agent.' });
+    }
+
+    const agentEmail = trip.agents?.email;
+    if (!agentEmail) return res.status(400).json({ message: 'Agent email is missing.' });
+
+    const escapeHtml = (value) => String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+    const formatDate = (value) => {
+      if (!value) return 'N/A';
+      const date = new Date(value);
+      if (isNaN(date.getTime())) return 'N/A';
+      return date.toLocaleDateString('en-GB').replace(/\//g, '-');
+    };
+
+    const bookingRef = trip.booking_reference || `BK${trip.id}`;
+    const agentName = trip.agents?.name || 'Agent';
+    const subject = `Booking Confirmed - ${bookingRef} - ${trip.client_name || 'Client'}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; color: #1f2937; line-height: 1.6;">
+        <h2 style="color: #0f766e; margin-bottom: 12px;">Booking Confirmed</h2>
+        <p>Dear ${escapeHtml(agentName)},</p>
+        <p>We are pleased to inform you that the booking below has been confirmed.</p>
+        <table cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; max-width: 620px; border: 1px solid #dbe5ec;">
+          <tr><td style="background: #f8fafc; font-weight: 700; width: 190px;">Booking Reference</td><td>${escapeHtml(bookingRef)}</td></tr>
+          <tr><td style="background: #f8fafc; font-weight: 700;">Client Name</td><td>${escapeHtml(trip.client_name || 'N/A')}</td></tr>
+          <tr><td style="background: #f8fafc; font-weight: 700;">Trip Start Date</td><td>${formatDate(trip.trip_start_date)}</td></tr>
+          <tr><td style="background: #f8fafc; font-weight: 700;">Pax</td><td>${Number(trip.number_of_adults || 0) + Number(trip.number_of_kids || 0)}</td></tr>
+          <tr><td style="background: #f8fafc; font-weight: 700;">Final Cost</td><td>${escapeHtml(trip.final_amount || 0)}</td></tr>
+        </table>
+        <p style="margin-top: 18px;">Our reservations team has confirmed the required services. Please contact us if you need any further assistance.</p>
+        <p>Best regards,<br><strong>Verathailandia Reservations Team</strong></p>
+      </div>
+    `;
+    const text = [
+      `Dear ${agentName},`,
+      '',
+      'We are pleased to inform you that the booking below has been confirmed.',
+      `Booking Reference: ${bookingRef}`,
+      `Client Name: ${trip.client_name || 'N/A'}`,
+      `Trip Start Date: ${formatDate(trip.trip_start_date)}`,
+      `Pax: ${Number(trip.number_of_adults || 0) + Number(trip.number_of_kids || 0)}`,
+      `Final Cost: ${trip.final_amount || 0}`,
+      '',
+      'Best regards,',
+      'Verathailandia Reservations Team'
+    ].join('\n');
+
+    if (!process.env.SMTP_USER) {
+      return res.json({
+        success: true,
+        message: 'Agent notification prepared. Email service is not configured.',
+        preview: { to: agentEmail, subject, html }
+      });
+    }
+
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to: agentEmail,
+      subject,
+      text,
+      html
+    });
+
+    return res.json({ success: true, message: 'Agent notification sent successfully.', to: agentEmail });
+  } catch (err) { next(err); }
+}
+
 // Notify supplier/hotel about approved item
 export async function notifySupplierOrHotel(req, res, next) {
   try {
