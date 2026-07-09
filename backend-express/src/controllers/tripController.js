@@ -1424,6 +1424,59 @@ export async function updateBooking(req, res, next) {
   return updateQuotation(req, res, next);
 }
 
+export async function confirmBooking(req, res, next) {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: 'Invalid booking ID' });
+
+    const trip = await prisma.trips.findUnique({
+      where: { id },
+      include: {
+        hotel_trip_items: { select: { id: true, approved: true } },
+        transfer_trip_items: { select: { id: true, approved: true } },
+        excursion_trip_items: { select: { id: true, approved: true } }
+      }
+    });
+
+    if (!trip) return res.status(404).json({ message: 'Booking not found' });
+
+    const serviceItems = [
+      ...(trip.hotel_trip_items || []),
+      ...(trip.transfer_trip_items || []),
+      ...(trip.excursion_trip_items || [])
+    ];
+    const unconfirmedItems = serviceItems.filter((item) => !item.approved);
+
+    if (serviceItems.length === 0) {
+      return res.status(400).json({
+        message: 'Add hotel, transfer or excursion services before confirming the booking.'
+      });
+    }
+
+    if (unconfirmedItems.length > 0) {
+      return res.status(400).json({
+        message: 'All hotel, transfer and excursion services must be confirmed first.',
+        unconfirmed_count: unconfirmedItems.length
+      });
+    }
+
+    const updated = await prisma.trips.update({
+      where: { id },
+      data: {
+        approved: true,
+        status: 'Approved',
+        updated_at: new Date()
+      }
+    });
+
+    return res.json({
+      status: 'confirmed',
+      message: 'Booking confirmed successfully.',
+      booking: updated
+    });
+  } catch (err) { next(err); }
+}
+
 export async function approveItem(req, res, next) {
   try {
     const { itemType, itemID } = req.params;

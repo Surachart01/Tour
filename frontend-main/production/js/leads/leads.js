@@ -842,7 +842,7 @@ function getLeadActionButtons(lead) {
     <button class="btn btn-warning btn-sm edit-lead-btn" data-id="${lead.id}" title="Edit">
       <i class="fa fa-edit"></i>
     </button>
-    <button class="btn btn-primary btn-sm send-lead-btn" data-id="${lead.id}" title="${lead.email_sent ? 'Resend Email' : 'Send Email'}">
+    <button class="btn btn-primary btn-sm send-lead-btn" data-id="${lead.id}" data-email-sent="${lead.email_sent ? 'true' : 'false'}" title="${lead.email_sent ? 'Resend Email' : 'Send Email'}">
       <i class="fa fa-envelope"></i>
     </button>
   `;
@@ -869,7 +869,7 @@ function getLeadGroupActionButtons(group) {
     <button class="btn btn-warning btn-sm edit-group-btn" data-id="${group.id}" title="Edit">
       <i class="fa fa-edit"></i>
     </button>
-    <button class="btn btn-primary btn-sm send-group-btn" data-id="${group.id}" title="${group.email_sent ? 'Resend Email' : 'Send Email'}">
+    <button class="btn btn-primary btn-sm send-group-btn" data-id="${group.id}" data-email-sent="${group.email_sent ? 'true' : 'false'}" title="${group.email_sent ? 'Resend Email' : 'Send Email'}">
       <i class="fa fa-envelope"></i>
     </button>
   `;
@@ -1193,13 +1193,18 @@ async function previewLeadGroup(groupId) {
 }
 
 async function sendLeadEmail(leadId) {
-  if (!confirm('Are you sure you want to send this lead email to the client?')) {
+  const lead = leads.find(l => l.id == leadId);
+  const alreadySent = lead?.email_sent === true || lead?.email_sent === 'true';
+  const confirmMessage = alreadySent
+    ? 'This lead email has already been sent to the client.\n\nSending again may duplicate the client email. Do you still want to resend?'
+    : 'Are you sure you want to send this lead email to the client?';
+
+  if (!confirm(confirmMessage)) {
     return;
   }
 
   try {
     console.log(`Sending email for lead ${leadId}`);
-    const lead = leads.find(l => l.id == leadId);
     const templateType = lead?.template_type || 'standard';
     
     await apiCall(`/proposals/${leadId}/send-email`, 'POST', {
@@ -1214,7 +1219,13 @@ async function sendLeadEmail(leadId) {
 }
 
 async function sendLeadGroupEmail(groupId) {
-  if (!confirm('Are you sure you want to send this lead group email to the client?')) {
+  const group = leadGroups.find(g => g.id == groupId);
+  const alreadySent = group?.email_sent === true || group?.email_sent === 'true';
+  const confirmMessage = alreadySent
+    ? 'This lead group email has already been sent to the client.\n\nSending again may duplicate the client email. Do you still want to resend?'
+    : 'Are you sure you want to send this lead group email to the client?';
+
+  if (!confirm(confirmMessage)) {
     return;
   }
 

@@ -3,7 +3,7 @@ import { validateJWT, authorize } from '../middleware/auth.js';
 import {
   createQuotation, listQuotations, listQuotationsByDateRange, getQuotation,
   updateQuotation, finalizeQuotation, cancelQuotation, deleteQuotation,
-  listBookings, listBookingsByDateRange, getBooking, updateBooking,
+  listBookings, listBookingsByDateRange, getBooking, updateBooking, confirmBooking,
   approveItem, declineItem, getPaymentInfo, updatePaymentInfo,
   listPaymentInfoFromBookings, listPaymentInfoByDateRange,
   listItinerary, updateInvoiceNumber
@@ -43,6 +43,7 @@ router.get('/bookings/:id/generate-pdf', authorize('admin'), generateQuotationPD
 router.get('/bookings/:id/receipt', authorize('admin'), generateReceiptPDF);
 router.get('/bookings/:id', authorize('admin'), getBooking);
 router.put('/bookings/:id', authorize('admin'), updateBooking);
+router.post('/bookings/:id/confirm', authorize('admin'), confirmBooking);
 router.post('/bookings/:id/approveItem/:itemType/:itemID', authorize('admin'), approveItem);
 router.post('/bookings/:id/declineItem/:itemType/:itemID', authorize('admin'), declineItem);
 router.post('/bookings/:id/notify/:itemType/:itemID', authorize('admin'), notifySupplierOrHotel);

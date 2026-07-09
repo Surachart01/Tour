@@ -1042,7 +1042,7 @@
                    <button class="btn-action btn-action-edit edit-btn" data-id="${trip.id}" title="Edit Quotation"><i class="fa fa-edit"></i></button>
                    ${actionButton}
                    <button class="btn-action btn-action-save print-btn" data-id="${trip.id}" title="Save / Download PDF"><i class="fa fa-save"></i></button>
-                   <button class="btn-action btn-action-client email-btn" data-id="${trip.id}" data-client-name="${escapedName}" data-quotation-ref="${escapedRef}" title="${emailTitle}"><i class="fa ${emailIcon}"></i></button>
+                   <button class="btn-action btn-action-client email-btn" data-id="${trip.id}" data-email-sent="${trip.email_sent ? "true" : "false"}" data-client-name="${escapedName}" data-quotation-ref="${escapedRef}" title="${emailTitle}"><i class="fa ${emailIcon}"></i></button>
                    ${proformaButton}
                    ${notifyButton}
                  </div>
@@ -1482,7 +1482,7 @@
                     : `<span class="badge badge-warning text-white" style="background-color: #f0ad4e;"><i class="fa fa-clock-o"></i> Pending</span>`;
                   
                   const actionBtn = `
-                    <button class="btn btn-info btn-xs notif-send-single-btn" data-id="${item.id}" data-trip-id="${booking.id}">
+                    <button class="btn btn-info btn-xs notif-send-single-btn" data-id="${item.id}" data-trip-id="${booking.id}" data-email-sent="${item.email_sent ? "true" : "false"}">
                       ${item.email_sent ? '<i class="fa fa-refresh"></i> Resend' : '<i class="fa fa-envelope"></i> Send'}
                     </button>
                   `;
@@ -1513,6 +1513,11 @@
           const itemId = btn.attr("data-id");
           const tripId = btn.attr("data-trip-id");
           const originalText = btn.html();
+          const alreadySent = btn.attr("data-email-sent") === "true";
+
+          if (alreadySent && !confirm("This hotel reservation email has already been sent.\n\nSending again may duplicate the supplier email. Do you still want to resend?")) {
+            return;
+          }
 
           btn.html('<i class="fa fa-spinner fa-spin"></i> Sending...').prop("disabled", true);
 
@@ -1529,7 +1534,7 @@
           })
           .then(data => {
             alert("Reservation email sent successfully!");
-            btn.html('<i class="fa fa-refresh"></i> Resend').prop("disabled", false);
+            btn.html('<i class="fa fa-refresh"></i> Resend').attr("data-email-sent", "true").prop("disabled", false);
             btn.closest("tr").find(".status-cell").html(`<span class="badge badge-success"><i class="fa fa-check"></i> Sent</span>`);
           })
           .catch(err => {
@@ -1544,8 +1549,15 @@
           const btn = $(this);
           const tripId = btn.attr("data-trip-id");
           const originalText = btn.html();
+          const alreadySentCount = $("#notifHotelsTable tbody .notif-send-single-btn").filter(function () {
+            return $(this).attr("data-email-sent") === "true";
+          }).length;
 
-          if (!confirm("Are you sure you want to send reservation emails to all hotels for this trip?")) {
+          const confirmMessage = alreadySentCount > 0
+            ? `${alreadySentCount} hotel reservation email(s) have already been sent.\n\nSending all again may duplicate supplier emails. Do you still want to resend all hotel emails?`
+            : "Are you sure you want to send reservation emails to all hotels for this trip?";
+
+          if (!confirm(confirmMessage)) {
             return;
           }
 
@@ -1568,7 +1580,7 @@
             $("#notifHotelsTable tbody tr").each(function () {
               const tr = $(this);
               tr.find(".status-cell").html(`<span class="badge badge-success"><i class="fa fa-check"></i> Sent</span>`);
-              tr.find(".notif-send-single-btn").html('<i class="fa fa-refresh"></i> Resend');
+              tr.find(".notif-send-single-btn").html('<i class="fa fa-refresh"></i> Resend').attr("data-email-sent", "true");
             });
           })
           .catch(err => {
@@ -1587,6 +1599,11 @@
 
           if (!to || !subject) {
             alert("Recipient email and subject are required.");
+            return;
+          }
+
+          const currentTrip = trips.find(t => t.id == tripId) || filteredTrips.find(t => t.id == tripId);
+          if (currentTrip && currentTrip.email_sent && !confirm("This quotation has already been emailed to the client.\n\nSending again may duplicate the client email. Do you still want to resend?")) {
             return;
           }
 

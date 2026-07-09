@@ -842,6 +842,28 @@
         let activeTripIdForEmail = null;
         let activeTripDataForEmail = null;
 
+        function hasSupplierEmailBeenSent(value) {
+          return value === true || value === "true" || value === 1 || value === "1";
+        }
+
+        function confirmSupplierEmailSend(alreadySentCount, totalCount, itemLabel = "item") {
+          if (alreadySentCount > 0) {
+            return confirm(
+              `${alreadySentCount} selected ${alreadySentCount === 1 ? itemLabel : `${itemLabel}s`} already ${alreadySentCount === 1 ? "has" : "have"} supplier email sent.\n\nSending again may duplicate emails to suppliers. Do you still want to resend?`
+            );
+          }
+          return confirm(`Are you sure you want to send supplier emails for the ${totalCount} selected item(s)?`);
+        }
+
+        function getSupplierEmailItemsFromTrip(trip) {
+          return [
+            ...(trip.hotel_trip_items || trip.hotels || []),
+            ...(trip.transfer_trip_items || trip.transfers || []),
+            ...(trip.excursion_trip_items || trip.excursions || []),
+            ...(trip.tour_trip_items || trip.tours || []),
+          ];
+        }
+
         // Open Day-by-Day Itinerary & Supplier Email Modal
         function openEmailModal(tripId) {
           activeTripIdForEmail = tripId;
@@ -1022,7 +1044,8 @@
                 </div>`;
 
                 if (supportsEmail) {
-                  const statusBadge = item.email_sent 
+                  const itemAlreadySent = hasSupplierEmailBeenSent(item.email_sent) || hasSupplierEmailBeenSent(item.email_sent_any);
+                  const statusBadge = itemAlreadySent
                     ? `<span class="badge badge-success" style="background-color: #28a745; color: white; margin-left: 10px; font-size: 0.7rem;">Sent</span>`
                     : `<span class="badge badge-warning" style="background-color: #f39c12; color: white; margin-left: 10px; font-size: 0.7rem;">Not Sent</span>`;
                   
@@ -1030,7 +1053,7 @@
 
                   checkboxHtml = `
                     <div style="margin-right: 15px; display: flex; align-items: center;">
-                      <input type="checkbox" class="modal-bulk-email-checkbox" data-id="${item.itemIds ? item.itemIds.join('_') : item.id}" data-type="${item.item_type}" style="width: 18px; height: 18px; cursor: pointer;" checked />
+                      <input type="checkbox" class="modal-bulk-email-checkbox" data-id="${item.itemIds ? item.itemIds.join('_') : item.id}" data-type="${item.item_type}" data-email-sent="${itemAlreadySent ? "true" : "false"}" style="width: 18px; height: 18px; cursor: pointer;" checked />
                     </div>
                   `;
                 }
@@ -1066,7 +1089,8 @@
             return;
           }
 
-          if (!confirm(`Are you sure you want to send supplier emails for the ${checked.length} selected item(s)?`)) {
+          const alreadySentCount = Array.from(checked).filter(cb => hasSupplierEmailBeenSent(cb.dataset.emailSent)).length;
+          if (!confirmSupplierEmailSend(alreadySentCount, checked.length)) {
             return;
           }
 
@@ -1186,7 +1210,27 @@
 
         // Direct Bulk Email from table row — sends ALL items without opening modal
         async function sendBulkEmailDirect(tripId, btn) {
-          if (!confirm("Send supplier emails for ALL Hotels, Transfers, Excursions, and Tours in this booking?")) return;
+          let alreadySentCount = 0;
+          let totalEmailItems = 0;
+          try {
+            const detailRes = await fetch(`${Endpoint}/api/v1/bookings/${tripId}`, {
+              method: "GET",
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            if (detailRes.ok) {
+              const trip = await detailRes.json();
+              const emailItems = getSupplierEmailItemsFromTrip(trip);
+              totalEmailItems = emailItems.length;
+              alreadySentCount = emailItems.filter(item => hasSupplierEmailBeenSent(item.email_sent)).length;
+            }
+          } catch (e) {
+            console.warn("Could not check previous supplier email status before direct bulk email:", e);
+          }
+
+          const confirmMessage = alreadySentCount > 0
+            ? `${alreadySentCount} supplier email item(s) in this booking have already been sent.\n\nSending all again may duplicate emails to suppliers. Do you still want to resend all supplier emails?`
+            : `Send supplier emails for ALL Hotels, Transfers, Excursions, and Tours in this booking${totalEmailItems ? ` (${totalEmailItems} item(s))` : ""}?`;
+          if (!confirm(confirmMessage)) return;
 
           const originalHtml = btn.innerHTML;
           btn.disabled = true;
@@ -1465,7 +1509,8 @@
                 currentStay.to_date = itemTo;
                 currentStay.nights += item.nights || 1;
                 currentStay.itemIds.push(item.id);
-                // Group is considered sent if all individual items are sent
+                currentStay.email_sent_any = currentStay.email_sent_any || hasSupplierEmailBeenSent(item.email_sent);
+                // Group is considered fully sent if all individual items are sent
                 currentStay.email_sent = currentStay.email_sent && item.email_sent;
               } else {
                 if (currentStay) {
@@ -1479,7 +1524,8 @@
                   to_date: itemTo,
                   nights: item.nights || 1,
                   itemIds: [item.id],
-                  email_sent: item.email_sent
+                  email_sent: item.email_sent,
+                  email_sent_any: hasSupplierEmailBeenSent(item.email_sent)
                 };
               }
             }
