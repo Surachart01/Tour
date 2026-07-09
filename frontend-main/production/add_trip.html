@@ -6623,7 +6623,7 @@
           const totalPax = adult + child;
           
           if (totalPax === 0) {
-            alert("กรุณาระบุจำนวนผู้เดินทาง (Adults / Children) ก่อนเลือกประเภทราคา / Please specify the number of travelers before selecting prices.");
+            alert("Please specify the number of travelers (Adults / Children) before selecting prices.");
             if (isCheckboxChange) {
               checkboxElement.checked = false;
               const input = document.getElementById(changedInputId);
@@ -6651,7 +6651,7 @@
           const coveredPax = (sglRooms * 1) + (dblRooms * 2) + (tplRooms * 3);
           
           if (coveredPax > totalPax) {
-            alert("จำนวนคนในประเภทราคาที่เลือก (SGL=1, DB=2, TP=3) รวมกันได้ " + coveredPax + " คน เกินจำนวนผู้เดินทางทั้งหมด (" + totalPax + " คน)\nSelected price capacity exceeds the total number of travelers.");
+            alert("Selected price capacity (SGL=1, DB=2, TP=3) covers " + coveredPax + " travelers, which exceeds the total number of travelers (" + totalPax + ").");
             if (isCheckboxChange) {
               checkboxElement.checked = false;
               const input = document.getElementById(changedInputId);
@@ -6706,7 +6706,7 @@
                 const coveredPax = (sglRooms * 1) + (dblRooms * 2) + (tplRooms * 3);
                 
                 if (coveredPax > totalPax) {
-                  alert("จำนวนผู้เดินทางไม่สอดคล้องกับประเภทราคาที่ระบุ ระบบได้ทำการรีเซ็ตประเภทราคาที่เลือกใหม่ / Traveler count is less than selected price capacity. Resetting price selections.");
+                  alert("Traveler count is less than the selected price capacity. Price selections have been reset.");
                   resetSpecialPackageRoomSelection();
                 }
               }

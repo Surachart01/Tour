@@ -762,7 +762,7 @@ export async function listQuotations(req, res, next) {
     const trips = await prisma.trips.findMany({
       where,
       include: { agents: true },
-      orderBy: { created_at: 'desc' }
+      orderBy: [{ updated_at: 'desc' }, { created_at: 'desc' }]
     });
     return res.json(trips.map(mapTripResponse));
   } catch (err) { next(err); }
@@ -779,7 +779,7 @@ export async function listQuotationsByDateRange(req, res, next) {
     if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       where.user_id = claims.user_id;
     }
-    const trips = await prisma.trips.findMany({ where, include: { agents: true }, orderBy: { created_at: 'desc' } });
+    const trips = await prisma.trips.findMany({ where, include: { agents: true }, orderBy: [{ updated_at: 'desc' }, { created_at: 'desc' }] });
     return res.json(trips.map(mapTripResponse));
   } catch (err) { next(err); }
 }
@@ -1299,6 +1299,7 @@ export async function finalizeQuotation(req, res, next) {
       updateData.declined = false;
       updateData.status = 'Approved';
     }
+    updateData.updated_at = new Date();
 
     const trip = await prisma.trips.update({
       where: { id },
@@ -1353,9 +1354,9 @@ export async function deleteQuotation(req, res, next) {
 export async function listBookings(req, res, next) {
   try {
     const bookings = await prisma.trips.findMany({
-      where: { approved: true },
+      where: { OR: [{ approved: true }, { status: 'InProgress' }] },
       include: { agents: true },
-      orderBy: { created_at: 'desc' }
+      orderBy: [{ updated_at: 'desc' }, { created_at: 'desc' }]
     });
     return res.json(bookings);
   } catch (err) { next(err); }
@@ -1365,14 +1366,14 @@ export async function listBookingsByDateRange(req, res, next) {
   try {
     const { from_date, to_date } = req.query;
     const claims = req.user;
-    const where = { approved: true };
+    const where = { OR: [{ approved: true }, { status: 'InProgress' }] };
     if (from_date && to_date) {
       where.created_at = { gte: new Date(from_date), lte: new Date(to_date) };
     }
     if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       where.agent_id = claims.agent_id || 0;
     }
-    const bookings = await prisma.trips.findMany({ where, include: { agents: true }, orderBy: { created_at: 'desc' } });
+    const bookings = await prisma.trips.findMany({ where, include: { agents: true }, orderBy: [{ updated_at: 'desc' }, { created_at: 'desc' }] });
     return res.json(bookings);
   } catch (err) { next(err); }
 }
@@ -1415,7 +1416,7 @@ export async function getBooking(req, res, next) {
       }
     });
     if (!trip) return res.status(404).send('Booking not found');
-    return res.json(trip);
+    return res.json(mapTripResponse(trip));
   } catch (err) { next(err); }
 }
 

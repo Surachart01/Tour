@@ -1677,7 +1677,7 @@
                 const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
                 const d = new Date(selectedDate);
                 const dayName = dayNames[d.getDay()];
-                alert(`ไม่มี Excursion ที่สามารถใช้งานได้ในวัน${dayName} (${selectedDate}) สำหรับเมืองนี้`);
+                alert(`No excursions are available on ${dayName} (${selectedDate}) for this city.`);
                 return;
               }
               excursions.forEach((excursion) => {

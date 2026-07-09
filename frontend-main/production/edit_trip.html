@@ -212,7 +212,8 @@
       /* Premium Table Design */
       .table-responsive {
         border-radius: 12px;
-        overflow: hidden;
+        overflow-x: auto;
+        overflow-y: visible;
         border: 1px solid #e1e6ef;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
         margin-bottom: 25px;
@@ -221,6 +222,9 @@
       .table {
         background: white;
         margin-bottom: 0;
+        width: 100%;
+        table-layout: fixed;
+        min-width: 0;
       }
 
       .table thead th {
@@ -231,15 +235,24 @@
         text-transform: uppercase;
         letter-spacing: 0.5px;
         border: none;
-        padding: 14px 16px;
+        padding: 12px 8px;
+        text-align: center;
+        white-space: normal;
+        overflow-wrap: break-word;
+        line-height: 1.25;
       }
 
       .table tbody td {
-        padding: 12px 16px;
+        padding: 10px 8px;
         vertical-align: middle;
         border-bottom: 1px solid #f1f3f7;
         color: #34495e;
         font-size: 0.9rem;
+        text-align: center;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: normal;
+        line-height: 1.35;
       }
 
       .table tbody tr:last-child td {
@@ -249,6 +262,114 @@
       .table tbody tr:hover {
         background-color: #fcfdfe;
       }
+
+      .table input[type="date"].inline-date-picker,
+      .table input[type="date"].inline-package-preview-date,
+      .table input[type="date"].inline-hotel-checkin,
+      .table input[type="date"].inline-hotel-checkout,
+      .table input[type="date"].inline-tour-start-date,
+      .table input[type="date"].inline-tour-end-date {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        height: 36px;
+        padding: 6px 4px;
+        text-align: center;
+        display: inline-block;
+        box-sizing: border-box;
+        font-size: 0.82rem;
+      }
+
+      .table .badge.pkg-badge {
+        display: inline-block;
+        margin-top: 4px;
+        white-space: nowrap;
+      }
+
+      .table td:last-child {
+        white-space: normal;
+      }
+
+      .table td:last-child > div {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+
+      .table .btn-sm {
+        min-width: 36px;
+        min-height: 34px;
+        padding: 7px 10px;
+      }
+
+      #hotelsTable { width: 100%; min-width: 0; max-width: 100%; }
+      #hotelsTable th:nth-child(1), #hotelsTable td:nth-child(1),
+      #hotelsTable th:nth-child(2), #hotelsTable td:nth-child(2) { width: 10%; }
+      #hotelsTable th:nth-child(3), #hotelsTable td:nth-child(3) { width: 9%; }
+      #hotelsTable th:nth-child(4), #hotelsTable td:nth-child(4) { width: 14%; }
+      #hotelsTable th:nth-child(5), #hotelsTable td:nth-child(5) { width: 12%; }
+      #hotelsTable th:nth-child(6), #hotelsTable td:nth-child(6) { width: 6%; }
+      #hotelsTable th:nth-child(7), #hotelsTable td:nth-child(7),
+      #hotelsTable th:nth-child(8), #hotelsTable td:nth-child(8) { width: 9%; }
+      #hotelsTable th:nth-child(9), #hotelsTable td:nth-child(9) { width: 9%; }
+      #hotelsTable th:nth-child(10), #hotelsTable td:nth-child(10) { width: 6%; }
+      #hotelsTable th:nth-child(11), #hotelsTable td:nth-child(11) { width: 6%; }
+
+      #transferTable { width: 100%; min-width: 0; max-width: 100%; }
+      #transferTable th:nth-child(1), #transferTable td:nth-child(1) { width: 11%; }
+      #transferTable th:nth-child(2), #transferTable td:nth-child(2) { width: 10%; }
+      #transferTable th:nth-child(3), #transferTable td:nth-child(3) { width: 9%; }
+      #transferTable th:nth-child(4), #transferTable td:nth-child(4) { width: 19%; }
+      #transferTable th:nth-child(5), #transferTable td:nth-child(5) { width: 5%; }
+      #transferTable th:nth-child(6), #transferTable td:nth-child(6),
+      #transferTable th:nth-child(7), #transferTable td:nth-child(7) { width: 10%; }
+      #transferTable th:nth-child(8), #transferTable td:nth-child(8) { width: 12%; }
+      #transferTable th:nth-child(9), #transferTable td:nth-child(9) { width: 6%; }
+      #transferTable th:nth-child(10), #transferTable td:nth-child(10) { width: 8%; }
+
+      #excursionTable { width: 100%; min-width: 0; max-width: 100%; }
+      #excursionTable th:nth-child(1), #excursionTable td:nth-child(1) { width: 11%; }
+      #excursionTable th:nth-child(2), #excursionTable td:nth-child(2) { width: 10%; }
+      #excursionTable th:nth-child(3), #excursionTable td:nth-child(3) { width: 22%; }
+      #excursionTable th:nth-child(4), #excursionTable td:nth-child(4) { width: 8%; }
+      #excursionTable th:nth-child(5), #excursionTable td:nth-child(5) { width: 13%; }
+      #excursionTable th:nth-child(6), #excursionTable td:nth-child(6) { width: 15%; }
+      #excursionTable th:nth-child(7), #excursionTable td:nth-child(7) { width: 5%; }
+      #excursionTable th:nth-child(8), #excursionTable td:nth-child(8) { width: 6%; }
+      #excursionTable th:nth-child(9), #excursionTable td:nth-child(9) { width: 10%; }
+
+      #tourTable { width: 100%; min-width: 0; max-width: 100%; }
+      #tourTable th:nth-child(1), #tourTable td:nth-child(1),
+      #tourTable th:nth-child(2), #tourTable td:nth-child(2) { width: 11%; }
+      #tourTable th:nth-child(3), #tourTable td:nth-child(3) { width: 8%; }
+      #tourTable th:nth-child(4), #tourTable td:nth-child(4) { width: 20%; }
+      #tourTable th:nth-child(5), #tourTable td:nth-child(5) { width: 5%; }
+      #tourTable th:nth-child(6), #tourTable td:nth-child(6) { width: 13%; }
+      #tourTable th:nth-child(7), #tourTable td:nth-child(7) { width: 5%; }
+      #tourTable th:nth-child(8), #tourTable td:nth-child(8) { width: 15%; }
+      #tourTable th:nth-child(9), #tourTable td:nth-child(9) { width: 6%; }
+      #tourTable th:nth-child(10), #tourTable td:nth-child(10) { width: 6%; }
+
+      #flightsTable { width: 100%; min-width: 0; max-width: 100%; }
+      #flightsTable th:nth-child(1), #flightsTable td:nth-child(1) { width: 10%; }
+      #flightsTable th:nth-child(2), #flightsTable td:nth-child(2) { width: 13%; }
+      #flightsTable th:nth-child(3), #flightsTable td:nth-child(3) { width: 8%; }
+      #flightsTable th:nth-child(4), #flightsTable td:nth-child(4) { width: 6%; }
+      #flightsTable th:nth-child(5), #flightsTable td:nth-child(5) { width: 14%; }
+      #flightsTable th:nth-child(6), #flightsTable td:nth-child(6),
+      #flightsTable th:nth-child(7), #flightsTable td:nth-child(7) { width: 6%; }
+      #flightsTable th:nth-child(8), #flightsTable td:nth-child(8) { width: 10%; }
+      #flightsTable th:nth-child(9), #flightsTable td:nth-child(9) { width: 6%; }
+      #flightsTable th:nth-child(10), #flightsTable td:nth-child(10) { width: 14%; }
+      #flightsTable th:nth-child(11), #flightsTable td:nth-child(11) { width: 7%; }
+
+      #othersTable { width: 100%; min-width: 0; max-width: 100%; }
+      #othersTable th:nth-child(1), #othersTable td:nth-child(1) { width: 55%; }
+      #othersTable th:nth-child(2), #othersTable td:nth-child(2) { width: 15%; }
+      #othersTable th:nth-child(3), #othersTable td:nth-child(3) { width: 15%; }
+      #othersTable th:nth-child(4), #othersTable td:nth-child(4) { width: 15%; }
 
       /* Modal enhancements */
       .modal-xl {
@@ -2619,6 +2740,87 @@
         window.pendingSpecialPackageId = null;
         window.specialPackagesLoaded = false;
         window.quotationLoaded = false;
+        function getCurrentRole() {
+          return (localStorage.getItem("role") || "").trim().toLowerCase();
+        }
+
+        function canModifySpecialPackageItems() {
+          const role = getCurrentRole();
+          return role === "admin" || role === "superadmin";
+        }
+
+        function renderRowActionButtons(editClass, deleteClass, isPackageItem = false) {
+          const isLocked = isPackageItem && !canModifySpecialPackageItems();
+          const disabledAttr = isLocked ? " disabled" : "";
+          const lockedStyle = isLocked ? ' style="opacity: 0.5; cursor: not-allowed;"' : "";
+          const editTip = isLocked ? "Edit Locked" : "Edit";
+          const deleteTip = isLocked ? "Delete Locked" : "Delete";
+
+          return `
+                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
+                    <button${disabledAttr} class="btn btn-sm btn-warning ${editClass}" type="button"${lockedStyle}>
+                      <i class="fa fa-edit"></i>
+                    </button>
+                    <span class="tooltip-text">${editTip}</span>
+                  </div>
+                  <div class="tooltip-btn" style="display: inline-block;">
+                    <button${disabledAttr} class="btn btn-sm btn-danger ${deleteClass}" type="button"${lockedStyle}>
+                      <i class="fa fa-trash"></i>
+                    </button>
+                    <span class="tooltip-text">${deleteTip}</span>
+                  </div>
+              `;
+        }
+
+        function renderRowActionCell(editClass, deleteClass, isPackageItem = false) {
+          return `<td>${renderRowActionButtons(editClass, deleteClass, isPackageItem)}</td>`;
+        }
+
+        function getCellText(cell) {
+          if (!cell) return "";
+          const clone = cell.cloneNode(true);
+          clone.querySelectorAll(".pkg-badge").forEach(el => el.remove());
+          return clone.textContent.trim();
+        }
+
+        const SPECIAL_PACKAGE_SIGNATURE = "[Special Package]";
+
+        function isSpecialPackageRow(row) {
+          return row?.dataset?.isPackageItem === "true";
+        }
+
+        function getSpecialPackageBadgeHtml() {
+          return `<span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`;
+        }
+
+        function stripSpecialPackageSignature(value) {
+          return (value || "").replace(/\[Special Package\]/gi, "").trim();
+        }
+
+        function withSpecialPackageSignature(value) {
+          const cleanValue = stripSpecialPackageSignature(value);
+          return cleanValue ? `${cleanValue} ${SPECIAL_PACKAGE_SIGNATURE}` : SPECIAL_PACKAGE_SIGNATURE;
+        }
+
+        function getPackageAwareRemarks(row, value = "") {
+          return isSpecialPackageRow(row) ? withSpecialPackageSignature(value) : stripSpecialPackageSignature(value);
+        }
+
+        function renderPackageAwareDateCell(row, value, inputClass = "inline-package-preview-date", disabled = false) {
+          const formattedValue = formatToYYYYMMDD(value || "");
+          if (!isSpecialPackageRow(row)) {
+            return value || "";
+          }
+          const disabledAttr = disabled ? " disabled" : "";
+          return `<input type="date" class="form-control form-control-sm inline-date-picker ${inputClass}" value="${formattedValue}" data-item-index="${row.dataset.packageItemIndex || ""}"${disabledAttr}>`;
+        }
+
+        function isLockedPackageDelete(row, event, deleteClass) {
+          return isSpecialPackageRow(row) &&
+            !canModifySpecialPackageItems() &&
+            (event.target.classList.contains(deleteClass) || event.target.closest(`.${deleteClass}`));
+        }
+
         function toggleModalFieldsForPackage(modalSelectorOrEl, isPackageItem, allowedFieldSelectors = []) {
           // Accept either a CSS selector string or a DOM element directly
           const modal = (typeof modalSelectorOrEl === 'string')
@@ -2631,7 +2833,7 @@
               const el = modal.querySelector(selector);
               return el === input;
             });
-            if (isPackageItem) {
+            if (isPackageItem && !canModifySpecialPackageItems()) {
               input.disabled = !isAllowed;
             } else {
               input.disabled = false;
@@ -3348,31 +3550,26 @@
           console.log("Updating Excursion:", excursion);
 
           // Update dataset on the row
+          const isPkg = isSpecialPackageRow(editingExcursionRow);
+          excursion.remarks = getPackageAwareRemarks(editingExcursionRow, excursion.remarks);
+          editingExcursionRow.dataset.remarks = excursion.remarks;
           editingExcursionRow.dataset.excursionId = newExcursionId;
 
           // ✅ Update row directly
+          const pkgBadge = isPkg ? ` ${getSpecialPackageBadgeHtml()}` : "";
+          const dateCell = renderPackageAwareDateCell(editingExcursionRow, excursion.date);
+          const buttonsHtml = renderRowActionButtons("edit-excursion", "delete-excursion", isPkg);
           editingExcursionRow.innerHTML = `
-                <td>${excursion.date}</td>
-                <td>${excursion.city}</td>
+                <td data-date="${formatToYYYYMMDD(excursion.date || "")}">${dateCell}</td>
+                <td>${excursion.city}${pkgBadge}</td>
                 <td>${excursion.excursion_name}</td>
                 <td>${excursion.event_time}</td>
                 <td>${excursion.hotel}</td>
-                <td>${excursion.remarks}</td>
-                <td>${excursion.toe}</td>
+                <td>${stripSpecialPackageSignature(excursion.remarks)}</td>
+                <td>${isPkg ? "SIC" : excursion.toe}</td>
                 <td class="excursion-price">${excursion.total_cost}</td>
                 <td>
-                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button class="btn btn-sm btn-warning edit-excursion" type="button">
-                      <i class="fa fa-edit"></i>
-                    </button>
-                    <span class="tooltip-text">Edit</span>
-                  </div>
-                  <div class="tooltip-btn" style="display: inline-block;">
-                    <button class="btn btn-sm btn-danger delete-excursion" type="button">
-                      <i class="fa fa-trash"></i>
-                    </button>
-                    <span class="tooltip-text">Delete</span>
-                  </div>
+                  ${buttonsHtml}
                 </td>
             `;
 
@@ -3430,35 +3627,7 @@
             ? `<span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
             : "";
 
-          const buttonsHtml = isPackage
-            ? `
-                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button disabled class="btn btn-sm btn-warning edit-excursion" type="button" style="opacity: 0.5; cursor: not-allowed;">
-                      <i class="fa fa-edit"></i>
-                    </button>
-                    <span class="tooltip-text">Edit Locked</span>
-                  </div>
-                  <div class="tooltip-btn" style="display: inline-block;">
-                    <button disabled class="btn btn-sm btn-danger delete-excursion" type="button" style="opacity: 0.5; cursor: not-allowed;">
-                      <i class="fa fa-trash"></i>
-                    </button>
-                    <span class="tooltip-text">Delete Locked</span>
-                  </div>
-              `
-            : `
-                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button class="btn btn-sm btn-warning edit-excursion" type="button">
-                      <i class="fa fa-edit"></i>
-                    </button>
-                    <span class="tooltip-text">Edit</span>
-                  </div>
-                  <div class="tooltip-btn" style="display: inline-block;">
-                    <button class="btn btn-sm btn-danger delete-excursion" type="button">
-                      <i class="fa fa-trash"></i>
-                    </button>
-                    <span class="tooltip-text">Delete</span>
-                  </div>
-              `;
+          const buttonsHtml = renderRowActionButtons("edit-excursion", "delete-excursion", isPackage);
 
           const dateCell = isPackage
             ? `<input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(excursion.date || '')}" data-item-index="${row.dataset.packageItemIndex || ''}">`
@@ -3500,7 +3669,7 @@
             rowData["date"] = formatToYYYYMMDD(cells[0]?.textContent.trim());
             rowData["event_time"] = cells[3]?.textContent.trim() || "";
             rowData["hotel"] = cells[4]?.textContent.trim() || "";
-            rowData["remarks"] = cells[5]?.textContent.trim() || "";
+            rowData["remarks"] = getPackageAwareRemarks(row, cells[5]?.textContent.trim() || "");
             rowData["total_cost"] =
               parseFloat(cells[7]?.textContent.trim()) || 0.0;
             rowData["price"] = rowData["total_cost"];
@@ -3703,7 +3872,7 @@
             if (!row) return;
 
             // ✅ Block package items delete only, allow edit
-            if (row.dataset.isPackageItem === "true" && (event.target.classList.contains("delete-excursion") || event.target.closest(".delete-excursion"))) {
+            if (isLockedPackageDelete(row, event, "delete-excursion")) {
               return;
             }
 
@@ -4015,35 +4184,7 @@
             ? `<span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
             : "";
 
-          const buttonsHtml = isPackage
-            ? `
-                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button disabled class="btn btn-sm btn-warning edit-transfer" type="button" style="opacity: 0.5; cursor: not-allowed;">
-                      <i class="fa fa-edit"></i>
-                    </button>
-                    <span class="tooltip-text">Edit Locked</span>
-                  </div>
-                  <div class="tooltip-btn" style="display: inline-block;">
-                    <button disabled class="btn btn-sm btn-danger delete-transfer" type="button" style="opacity: 0.5; cursor: not-allowed;">
-                      <i class="fa fa-trash"></i>
-                    </button>
-                    <span class="tooltip-text">Delete Locked</span>
-                  </div>
-              `
-            : `
-                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button class="btn btn-sm btn-warning edit-transfer" type="button">
-                      <i class="fa fa-edit"></i>
-                    </button>
-                    <span class="tooltip-text">Edit</span>
-                  </div>
-                  <div class="tooltip-btn" style="display: inline-block;">
-                    <button class="btn btn-sm btn-danger delete-transfer" type="button">
-                      <i class="fa fa-trash"></i>
-                    </button>
-                    <span class="tooltip-text">Delete</span>
-                  </div>
-              `;
+          const buttonsHtml = renderRowActionButtons("edit-transfer", "delete-transfer", isPackage);
 
           const dateCell = isPackage
             ? `<input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(transfer.date || '')}" data-item-index="${row.dataset.packageItemIndex || ''}">`
@@ -4497,6 +4638,8 @@
           console.log("Updating Transfer:", updatedTransfer);
 
           // ✅ Update `data-*` attributes to store latest values
+          const isPkg = isSpecialPackageRow(editingTransferRow);
+          updatedTransfer.remarks = getPackageAwareRemarks(editingTransferRow, updatedTransfer.remarks);
           editingTransferRow.dataset.id = id || "";
           editingTransferRow.dataset.transferId = transferId || 0;
           editingTransferRow.dataset.flightTime =
@@ -4504,6 +4647,7 @@
           editingTransferRow.dataset.transferFlight =
             updatedTransfer.flight_number || "";
           editingTransferRow.dataset.typeOfTransfer = normalizedType;
+          editingTransferRow.dataset.remarks = updatedTransfer.remarks;
 
           let displayPickupTime = formatTimeToHHMM(updatedTransfer.pickup_time || updatedTransfer.flight_time || "");
           if (!displayPickupTime && updatedTransfer.flight_number && typeof flightsArray !== "undefined") {
@@ -4518,29 +4662,21 @@
           editingTransferRow.dataset.transferDate = formatToYYYYMMDD(document.getElementById("transferDate").value);
 
           // ✅ Update row directly in the table
+          const pkgBadge = isPkg ? ` ${getSpecialPackageBadgeHtml()}` : "";
+          const dateCell = renderPackageAwareDateCell(editingTransferRow, updatedTransfer.date);
+          const buttonsHtml = renderRowActionButtons("edit-transfer", "delete-transfer", isPkg);
           editingTransferRow.innerHTML = `
-                  <td>${updatedTransfer.date}<br>${updatedTransfer.flight_number || ""}</td>
+                  <td data-date="${formatToYYYYMMDD(updatedTransfer.date || "")}">${dateCell}<br>${updatedTransfer.flight_number || ""}</td>
                   <td>${normalizedType}</td>
-                  <td>${updatedTransfer.city}</td>
+                  <td>${updatedTransfer.city}${pkgBadge}</td>
                   <td>${updatedTransfer.transfer_description}</td>
-                  <td>${updatedTransfer.tot}</td>
+                  <td>${isPkg ? "SIC" : updatedTransfer.tot}</td>
                   <td>${updatedTransfer.from_location}</td>
                   <td>${updatedTransfer.to_location}</td>
-                  <td>${updatedTransfer.remarks}</td>
+                  <td>${stripSpecialPackageSignature(updatedTransfer.remarks)}</td>
                   <td class="transfer-price">${updatedTransfer.final_cost}</td>
                   <td>
-                    <div class="tooltip-btn">
-                      <button class="btn btn-sm btn-warning edit-transfer" type="button">
-                        <i class="fa fa-edit"></i>
-                      </button>
-                      <span class="tooltip-text">Edit</span>
-                    </div>
-                    <div class="tooltip-btn">
-                      <button class="btn btn-sm btn-danger delete-transfer" type="button">
-                        <i class="fa fa-trash"></i>
-                      </button>
-                      <span class="tooltip-text">Delete</span>
-                    </div>
+                    ${buttonsHtml}
                   </td>
                 `;
 
@@ -4736,7 +4872,7 @@
             if (!row) return;
 
             // ✅ Block package items delete only, allow edit
-            if (row.dataset.isPackageItem === "true" && (event.target.classList.contains("delete-transfer") || event.target.closest(".delete-transfer"))) {
+            if (isLockedPackageDelete(row, event, "delete-transfer")) {
               return;
             }
 
@@ -5718,35 +5854,7 @@
             ? `${hotel.hotel_name || ""} <span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
             : hotel.hotel_name || "";
 
-          const buttonsHtml = isPackage
-            ? `
-                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button disabled class="btn btn-sm btn-warning edit-hotel" type="button" style="opacity: 0.5; cursor: not-allowed;">
-                      <i class="fa fa-edit"></i>
-                    </button>
-                    <span class="tooltip-text">Edit Locked</span>
-                  </div>
-                  <div class="tooltip-btn" style="display: inline-block;">
-                    <button disabled class="btn btn-sm btn-danger delete-hotel" type="button" style="opacity: 0.5; cursor: not-allowed;">
-                      <i class="fa fa-trash"></i>
-                    </button>
-                    <span class="tooltip-text">Delete Locked</span>
-                  </div>
-              `
-            : `
-                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button class="btn btn-sm btn-warning edit-hotel" type="button">
-                      <i class="fa fa-edit"></i>
-                    </button>
-                    <span class="tooltip-text">Edit</span>
-                  </div>
-                  <div class="tooltip-btn" style="display: inline-block;">
-                    <button class="btn btn-sm btn-danger delete-hotel" type="button">
-                      <i class="fa fa-trash"></i>
-                    </button>
-                    <span class="tooltip-text">Delete</span>
-                  </div>
-              `;
+          const buttonsHtml = renderRowActionButtons("edit-hotel", "delete-hotel", isPackage);
 
           const confirmBtnHtml = `<div class="tooltip-btn" style="display:inline-block;margin-right:5px;">
               <button class="btn btn-sm ${confirmBtnClass} confirm-hotel-row" type="button">
@@ -6071,6 +6179,10 @@
             room_types: roomTypes,
           };
 
+          const isPkg = isSpecialPackageRow(editingHotelRow);
+          updatedHotel.remarks = getPackageAwareRemarks(editingHotelRow, updatedHotel.remarks);
+          updatedHotel.notes = updatedHotel.remarks;
+
           console.log("Updating Hotel:", updatedHotel);
 
           // ✅ Store in dataset
@@ -6120,39 +6232,10 @@
           const roomTypeSummary = roomTypes
             .map((rt) => `${rt.room_type} (${rt.adults}A${rt.children}C)`)
             .join(", ");
-          const isPkg = editingHotelRow.dataset.isPackageItem === "true";
           const pkgBadge = isPkg
             ? ` <span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
             : "";
-          const btns = isPkg
-            ? `
-                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button class="btn btn-sm btn-warning edit-hotel" type="button">
-                      <i class="fa fa-edit"></i>
-                    </button>
-                    <span class="tooltip-text">Edit</span>
-                  </div>
-                  <div class="tooltip-btn" style="display: inline-block;">
-                    <button disabled class="btn btn-sm btn-danger delete-hotel" type="button" style="opacity: 0.5; cursor: not-allowed;">
-                      <i class="fa fa-trash"></i>
-                    </button>
-                    <span class="tooltip-text">Delete Locked</span>
-                  </div>
-              `
-            : `
-                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button class="btn btn-sm btn-warning edit-hotel" type="button">
-                      <i class="fa fa-edit"></i>
-                    </button>
-                    <span class="tooltip-text">Edit</span>
-                  </div>
-                  <div class="tooltip-btn" style="display: inline-block;">
-                    <button class="btn btn-sm btn-danger delete-hotel" type="button">
-                      <i class="fa fa-trash"></i>
-                    </button>
-                    <span class="tooltip-text">Delete</span>
-                  </div>
-              `;
+          const btns = renderRowActionButtons("edit-hotel", "delete-hotel", isPkg);
 
           editingHotelRow.innerHTML = `
             <td data-date="${formatToYYYYMMDD(updatedHotel.check_in_date)}">${formatDateDisplay(updatedHotel.check_in_date)}</td>
@@ -6301,6 +6384,11 @@
 
           const hotelId = parseInt(row.dataset.hotelId, 10) || 0;
           if (!hotelId) {
+            if (row.dataset.isPackageItem === "true") {
+              row.remove();
+              updateUIPriceFields();
+              return;
+            }
             console.error("Error: Hotel ID missing in row dataset.");
             alert("Error: Hotel ID is missing!");
             return;
@@ -6721,7 +6809,7 @@
             }
 
             // ✅ Block package items delete only, allow edit
-            if (row.dataset.isPackageItem === "true" && (event.target.classList.contains("delete-hotel") || event.target.closest(".delete-hotel"))) {
+            if (isLockedPackageDelete(row, event, "delete-hotel")) {
               return;
             }
 
@@ -7949,35 +8037,7 @@
             ? `<span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
             : "";
 
-          const buttonsHtml = isPackage
-            ? `
-                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button disabled class="btn btn-sm btn-warning edit-tour" type="button" style="opacity: 0.5; cursor: not-allowed;">
-                      <i class="fa fa-edit"></i>
-                    </button>
-                    <span class="tooltip-text">Edit Locked</span>
-                  </div>
-                  <div class="tooltip-btn" style="display: inline-block;">
-                    <button disabled class="btn btn-sm btn-danger delete-tour" type="button" style="opacity: 0.5; cursor: not-allowed;">
-                      <i class="fa fa-trash"></i>
-                    </button>
-                    <span class="tooltip-text">Delete Locked</span>
-                  </div>
-              `
-            : `
-                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button class="btn btn-sm btn-warning edit-tour" type="button">
-                      <i class="fa fa-edit"></i>
-                    </button>
-                    <span class="tooltip-text">Edit</span>
-                  </div>
-                  <div class="tooltip-btn" style="display: inline-block;">
-                    <button class="btn btn-sm btn-danger delete-tour" type="button">
-                      <i class="fa fa-trash"></i>
-                    </button>
-                    <span class="tooltip-text">Delete</span>
-                  </div>
-              `;
+          const buttonsHtml = renderRowActionButtons("edit-tour", "delete-tour", isPackage);
 
           const startDateCell = isPackage
             ? `<input type="date" class="form-control form-control-sm inline-date-picker inline-tour-start-date inline-package-preview-date" value="${formatToYYYYMMDD(tour.from_date || '')}" data-item-index="${row.dataset.packageItemIndex || ''}">`
@@ -8018,29 +8078,30 @@
             rowData["tour_id"] = isNaN(parsedTourId) || parsedTourId === 0 ? null : parsedTourId;
             console.log("Extracted Tour ID:", rowData["tour_id"]); // Debugging
 
-            rowData["tour_name"] = cells[1]?.textContent.trim() || "";
-            rowData["tot"] = cells[2]?.textContent.trim() || "";
-            rowData["from_location"] = cells[0]?.textContent.trim() || "";
-            rowData["route"] = cells[3]?.textContent.trim() || "";
+            const isPackage = isSpecialPackageRow(row);
+            rowData["tour_name"] = getCellText(cells[isPackage ? 3 : 1]) || "";
+            rowData["tot"] = cells[isPackage ? 4 : 2]?.textContent.trim() || "";
+            rowData["from_location"] = getCellText(cells[isPackage ? 2 : 0]) || "";
+            rowData["route"] = cells[isPackage ? 5 : 3]?.textContent.trim() || "";
             rowData["flight_in"] = row.dataset.flightIn || "";
             rowData["flight_out"] = row.dataset.flightOut || "";
             rowData["flight_info"] = row.dataset.flightInfo || "";
             rowData["arrival_time"] = row.dataset.arrivalTime || "";
             rowData["departure_time"] = row.dataset.departureTime || "";
-            rowData["remarks"] = cells[5]?.textContent.trim() || "";
+            rowData["remarks"] = getPackageAwareRemarks(row, cells[isPackage ? 7 : 5]?.textContent.trim() || "");
             rowData["from_date"] = formatToYYYYMMDD(
-              row.dataset.tourStartDate || ""
+              getCellDateValue(cells[0]) || row.dataset.tourStartDate || ""
             );
             rowData["to_date"] = formatToYYYYMMDD(
-              row.dataset.tourEndDate || ""
+              getCellDateValue(cells[1]) || row.dataset.tourEndDate || ""
             );
             rowData["single_rooms"] = parseInt(row.dataset.singleRooms) || 0;
             rowData["double_rooms"] = parseInt(row.dataset.doubleRooms) || 0;
             rowData["triple_rooms"] = parseInt(row.dataset.tripleRooms) || 0;
             rowData["number_of_adults"] =
-              parseInt(cells[4]?.textContent.trim()) || 0;
+              parseInt(cells[isPackage ? 6 : 4]?.textContent.trim()) || 0;
             rowData["total_cost"] =
-              parseFloat(cells[6]?.textContent.trim()) || 0.0;
+              parseFloat(cells[isPackage ? 8 : 6]?.textContent.trim()) || 0.0;
             rowData["discount"] = 0.0;
             rowData["final_cost"] = rowData["total_cost"];
 
@@ -8241,7 +8302,7 @@
             if (!row) return;
 
             // ✅ Block package items delete only, allow edit
-            if (row.dataset.isPackageItem === "true" && (event.target.classList.contains("delete-tour") || event.target.closest(".delete-tour"))) {
+            if (isLockedPackageDelete(row, event, "delete-tour")) {
               return;
             }
 
@@ -8324,45 +8385,51 @@
           console.log("Updating Tour:", updatedTour);
 
           // ✅ Update `data-*` attributes to store latest values
+          const isPkg = isSpecialPackageRow(editingTourRow);
+          updatedTour.remarks = getPackageAwareRemarks(editingTourRow, updatedTour.remarks);
           editingTourRow.dataset.flightIn = updatedTour.flight_in || "";
           editingTourRow.dataset.flightOut = updatedTour.flight_out || "";
           editingTourRow.dataset.arrivalTime = updatedTour.arrival_time || "";
           editingTourRow.dataset.departureTime =
             updatedTour.departure_time || "";
-          editingTourRow.dataset.tourStartDate = formatToDDMMYYYY(
-            updatedTour.tourStartDate
-          );
-          editingTourRow.dataset.tourEndDate = formatToDDMMYYYY(
-            updatedTour.tourEndDate
-          );
+          editingTourRow.dataset.tourStartDate = document.getElementById("tourStartDate").value;
+          editingTourRow.dataset.tourEndDate = document.getElementById("tourEndDate").value;
+          editingTourRow.dataset.remarks = updatedTour.remarks;
           editingTourRow.dataset.singleRooms = updatedTour.single_rooms;
           editingTourRow.dataset.doubleRooms = updatedTour.double_rooms;
           editingTourRow.dataset.tripleRooms = updatedTour.triple_rooms;
 
           // ✅ Update row directly in the table
-          editingTourRow.innerHTML = `
-          <td>${updatedTour.city}</td>
-          <td>${updatedTour.tour_name}</td>
-          <td>${updatedTour.tot}</td>
-          <td>${updatedTour.route || "N/A"}</td>
-          <td>${updatedTour.pax}</td>
-          <td>${updatedTour.remarks || ""}</td>
-          <td class="tour-price">${updatedTour.price}</td>
-          <td>
-            <div class="tooltip-btn">
-              <button class="btn btn-sm btn-warning edit-tour" type="button">
-                <i class="fa fa-edit"></i>
-              </button>
-              <span class="tooltip-text">Edit</span>
-            </div>
-            <div class="tooltip-btn">
-              <button class="btn btn-sm btn-danger delete-tour" type="button">
-                <i class="fa fa-trash"></i>
-              </button>
-              <span class="tooltip-text">Delete</span>
-            </div>
-          </td>
-        `;
+          const buttonsHtml = renderRowActionButtons("edit-tour", "delete-tour", isPkg);
+          if (isPkg) {
+            const startDateCell = renderPackageAwareDateCell(editingTourRow, editingTourRow.dataset.tourStartDate, "inline-tour-start-date inline-package-preview-date");
+            const endDateCell = renderPackageAwareDateCell(editingTourRow, editingTourRow.dataset.tourEndDate, "inline-tour-end-date", true);
+            editingTourRow.innerHTML = `
+              <td data-date="${formatToYYYYMMDD(editingTourRow.dataset.tourStartDate || "")}">${startDateCell}</td>
+              <td data-date="${formatToYYYYMMDD(editingTourRow.dataset.tourEndDate || "")}">${endDateCell}</td>
+              <td>${updatedTour.city}</td>
+              <td>${updatedTour.tour_name} ${getSpecialPackageBadgeHtml()}</td>
+              <td>SIC</td>
+              <td>${updatedTour.route || "N/A"}</td>
+              <td>${updatedTour.pax}</td>
+              <td>${stripSpecialPackageSignature(updatedTour.remarks)}</td>
+              <td class="tour-price">${updatedTour.price}</td>
+              <td>${buttonsHtml}</td>
+            `;
+          } else {
+            editingTourRow.innerHTML = `
+              <td>${updatedTour.city}</td>
+              <td>${updatedTour.tour_name}</td>
+              <td>${updatedTour.tot}</td>
+              <td>${updatedTour.route || "N/A"}</td>
+              <td>${updatedTour.pax}</td>
+              <td>${updatedTour.remarks || ""}</td>
+              <td class="tour-price">${updatedTour.price}</td>
+              <td>
+                ${buttonsHtml}
+              </td>
+            `;
+          }
 
           // ✅ Ensure `toursArray` is updated
           const index = toursArray.findIndex((t) => t.tour_id === tourId);
@@ -8373,6 +8440,7 @@
           // ✅ Reset editing row and close modal
           editingTourRow = null;
           $("#addTourModal").modal("hide");
+          updateUIPriceFields();
         }
 
         document
@@ -8547,35 +8615,7 @@
             ? `<span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
             : "";
 
-          const buttonsHtml = isPackage
-            ? `
-                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button disabled class="btn btn-sm btn-warning edit-flight" type="button" style="opacity: 0.5; cursor: not-allowed;">
-                      <i class="fa fa-edit"></i>
-                    </button>
-                    <span class="tooltip-text">Edit Locked</span>
-                  </div>
-                  <div class="tooltip-btn" style="display: inline-block;">
-                    <button disabled class="btn btn-sm btn-danger delete-flight" type="button" style="opacity: 0.5; cursor: not-allowed;">
-                      <i class="fa fa-trash"></i>
-                    </button>
-                    <span class="tooltip-text">Delete Locked</span>
-                  </div>
-              `
-            : `
-                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button class="btn btn-sm btn-warning edit-flight" type="button">
-                      <i class="fa fa-edit"></i>
-                    </button>
-                    <span class="tooltip-text">Edit</span>
-                  </div>
-                  <div class="tooltip-btn" style="display: inline-block;">
-                    <button class="btn btn-sm btn-danger delete-flight" type="button">
-                      <i class="fa fa-trash"></i>
-                    </button>
-                    <span class="tooltip-text">Delete</span>
-                  </div>
-              `;
+          const buttonsHtml = renderRowActionButtons("edit-flight", "delete-flight", isPackage);
 
           const dateCell = isPackage
             ? `<input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(flightDate)}" data-item-index="${row.dataset.packageItemIndex || ''}">`
@@ -8727,6 +8767,9 @@
             final_cost: flight.final_cost,
           };
 
+          const isPkg = isSpecialPackageRow(editingFlightRow);
+          updatedFlight.remarks = getPackageAwareRemarks(editingFlightRow, updatedFlight.remarks);
+
           console.log("Updating Flight:", updatedFlight);
 
           // Update dataset attributes before innerHTML replacement
@@ -8734,13 +8777,17 @@
           editingFlightRow.dataset.totalCost = updatedFlight.total_cost;
           editingFlightRow.dataset.discount = updatedFlight.discount;
           editingFlightRow.dataset.finalCost = updatedFlight.final_cost;
+          editingFlightRow.dataset.remarks = updatedFlight.remarks;
 
           const flightDate = (updatedFlight.from_date || "").split("T")[0];
+          const dateCell = renderPackageAwareDateCell(editingFlightRow, flightDate);
+          const pkgBadge = isPkg ? ` ${getSpecialPackageBadgeHtml()}` : "";
+          const buttonsHtml = renderRowActionButtons("edit-flight", "delete-flight", isPkg);
 
           // ✅ Update row directly instead of inserting a duplicate
           editingFlightRow.innerHTML = `
-              <td>${flightDate}</td>
-              <td>${updatedFlight.flight_airline}</td>
+              <td data-date="${formatToYYYYMMDD(flightDate)}">${dateCell}</td>
+              <td>${updatedFlight.flight_airline}${pkgBadge}</td>
               <td>${updatedFlight.flight_number}</td>
               <td>${updatedFlight.in_or_out}</td>
               <td>${updatedFlight.route}</td>
@@ -8748,20 +8795,9 @@
               <td>${updatedFlight.eat}</td>
               <td>${updatedFlight.issued_by}</td>
               <td class="flight-cost">${updatedFlight.final_cost || updatedFlight.total_cost}</td>
-              <td>${updatedFlight.remarks}</td>
+              <td>${stripSpecialPackageSignature(updatedFlight.remarks)}</td>
               <td>
-                <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                  <button class="btn btn-sm btn-warning edit-flight" type="button">
-                    <i class="fa fa-edit"></i>
-                  </button>
-                  <span class="tooltip-text">Edit</span>
-                </div>
-                <div class="tooltip-btn" style="display: inline-block;">
-                  <button class="btn btn-sm btn-danger delete-flight" type="button">
-                    <i class="fa fa-trash"></i>
-                  </button>
-                  <span class="tooltip-text">Delete</span>
-                </div>
+                ${buttonsHtml}
               </td>
           `;
 
@@ -8784,7 +8820,7 @@
             if (!row) return;
 
             // ✅ Block package items delete only, allow edit
-            if (row.dataset.isPackageItem === "true" && (event.target.classList.contains("delete-flight") || event.target.closest(".delete-flight"))) {
+            if (isLockedPackageDelete(row, event, "delete-flight")) {
               return;
             }
 
@@ -8816,6 +8852,27 @@
                 f.flight_number === flightNumber &&
                 (f.from_date || f.date || f.flight_date || "").split("T")[0] === flightDateDisplay
             );
+          }
+
+          if (!flight && row.dataset.isPackageItem === "true") {
+            const flightDateValue = getCellDateValue(row.cells[0]) || row.dataset.flightDate || "";
+            flight = {
+              id: row.dataset.id || `package-flight-${row.dataset.packageItemIndex || Date.now()}`,
+              flight_airline: getCellText(row.cells[1]) || "",
+              flight_number: row.cells[2]?.textContent.trim() || "",
+              in_or_out: row.cells[3]?.textContent.trim() || "",
+              route: row.cells[4]?.textContent.trim() || "",
+              edt: row.cells[5]?.textContent.trim() || "",
+              eat: row.cells[6]?.textContent.trim() || "",
+              issued_by: row.cells[7]?.textContent.trim() || "",
+              remarks: row.cells[9]?.textContent.trim() || "",
+              from_date: formatToYYYYMMDD(flightDateValue),
+              total_cost: parseFloat(row.cells[8]?.textContent.trim()) || 0,
+              final_cost: parseFloat(row.cells[8]?.textContent.trim()) || 0,
+              discount: 0,
+            };
+            row.dataset.id = flight.id;
+            flightsArray.push(flight);
           }
 
           if (!flight) {
@@ -9697,7 +9754,7 @@
                 rowData["flight_info"] = row.dataset.flightInfo || "";
                 rowData["arrival_time"] = row.dataset.arrivalTime || "";
                 rowData["departure_time"] = row.dataset.departureTime || "";
-                rowData["remarks"] = cells[7]?.textContent.trim() || "";
+                rowData["remarks"] = getPackageAwareRemarks(row, cells[7]?.textContent.trim() || "");
                 rowData["from_date"] = formatToYYYYMMDD(
                   getCellDateValue(cells[0]) || row.dataset.tourStartDate || ""
                 );
@@ -9738,8 +9795,8 @@
                 const dateValue = getCellDateValue(cells[0]) || "";
                 const formattedDate = formatToYYYYMMDD(dateValue);
 
-                flightData["flight_airline"] = cells[1]?.textContent.trim() || ""; // Airline name (backend: flight_airline)
-                flightData["flight_name"]    = cells[1]?.textContent.trim() || ""; // Keep alias
+                flightData["flight_airline"] = getCellText(cells[1]) || ""; // Airline name (backend: flight_airline)
+                flightData["flight_name"]    = getCellText(cells[1]) || ""; // Keep alias
                 flightData["flight_number"]  = cells[2]?.textContent.trim() || "";
                 flightData["in_or_out"]      = cells[3]?.textContent.trim() || "";
                 flightData["route"]          = cells[4]?.textContent.trim() || "";
@@ -9748,7 +9805,7 @@
                 flightData["departure_time"] = cells[5]?.textContent.trim() || ""; // Keep alias
                 flightData["arrival_time"]   = cells[6]?.textContent.trim() || ""; // Keep alias
                 flightData["issued_by"]      = cells[7]?.textContent.trim() || "";
-                flightData["remarks"]        = cells[9]?.textContent.trim() || "";
+                flightData["remarks"]        = getPackageAwareRemarks(row, cells[9]?.textContent.trim() || "");
 
                 // ✅ Date fields - backend reads: item.from_date || item.flight_date || item.date
                 flightData["flight_date"] = formattedDate;
@@ -9804,7 +9861,7 @@
                 );
                 rowData["event_time"] = cells[3]?.textContent.trim() || "";
                 rowData["hotel"] = cells[4]?.textContent.trim() || "";
-                rowData["remarks"] = cells[5]?.textContent.trim() || "";
+                rowData["remarks"] = getPackageAwareRemarks(row, cells[5]?.textContent.trim() || "");
                 rowData["total_cost"] =
                   parseFloat(cells[7]?.textContent.trim()) || 0.0;
                 rowData["price"] = rowData["total_cost"];
@@ -9862,7 +9919,8 @@
                 rowData["dinner_notes"] = row.dataset.dinnerNotes || "";
                 rowData["all_inclusive_notes"] =
                   row.dataset.allInclusiveNotes || "";
-                rowData["notes"] = row.dataset.notes || "";
+                rowData["notes"] = getPackageAwareRemarks(row, row.dataset.notes || "");
+                rowData["remarks"] = rowData["notes"];
 
                 // ✅ Meal Days
                 rowData["days_abf"] = parseInt(row.dataset.abfDays, 10) || 0;
@@ -9963,12 +10021,14 @@
                 let rowData = {};
                 const cells = row.querySelectorAll("td");
 
-                rowData["description"] = cells[0]?.textContent.trim() || "";
+                rowData["description"] = getCellText(cells[0]) || "";
                 rowData["date"] = formatToYYYYMMDD(
                   getCellDateValue(cells[1]) || ""
                 );
                 rowData["total_price"] =
                   parseFloat(cells[2]?.textContent.trim()) || 0.0;
+                rowData["price"] = rowData["total_price"];
+                rowData["remarks"] = getPackageAwareRemarks(row, row.dataset.remarks || "");
 
                 dataArray.push(rowData);
               });
@@ -10213,35 +10273,7 @@
             ? `<span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
             : "";
 
-          const buttonsHtml = isPackage
-            ? `
-                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button disabled class="btn btn-sm btn-warning edit-other" type="button" style="opacity: 0.5; cursor: not-allowed;">
-                      <i class="fa fa-edit"></i>
-                    </button>
-                    <span class="tooltip-text">Edit Locked</span>
-                  </div>
-                  <div class="tooltip-btn" style="display: inline-block;">
-                    <button disabled class="btn btn-sm btn-danger delete-other" type="button" style="opacity: 0.5; cursor: not-allowed;">
-                      <i class="fa fa-trash"></i>
-                    </button>
-                    <span class="tooltip-text">Delete Locked</span>
-                  </div>
-              `
-            : `
-                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button class="btn btn-sm btn-warning edit-other" type="button">
-                      <i class="fa fa-edit"></i>
-                    </button>
-                    <span class="tooltip-text">Edit</span>
-                  </div>
-                  <div class="tooltip-btn" style="display: inline-block;">
-                    <button class="btn btn-sm btn-danger delete-other" type="button">
-                      <i class="fa fa-trash"></i>
-                    </button>
-                    <span class="tooltip-text">Delete</span>
-                  </div>
-              `;
+          const buttonsHtml = renderRowActionButtons("edit-other", "delete-other", isPackage);
 
           const dateCell = isPackage
             ? `<input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(other.date || '')}" data-item-index="${row.dataset.packageItemIndex || ''}">`
@@ -10360,23 +10392,20 @@
         function updateOtherServiceRow(otherService) {
           if (!editingOtherRow) return;
 
+          const isPkg = isSpecialPackageRow(editingOtherRow);
+          otherService.remarks = getPackageAwareRemarks(editingOtherRow, otherService.remarks || editingOtherRow.dataset.remarks || "");
+          editingOtherRow.dataset.remarks = otherService.remarks;
+          editingOtherRow.dataset.totalPrice = otherService.total_price || 0;
+          const pkgBadge = isPkg ? ` ${getSpecialPackageBadgeHtml()}` : "";
+          const dateCell = renderPackageAwareDateCell(editingOtherRow, otherService.date);
+          const buttonsHtml = renderRowActionButtons("edit-other", "delete-other", isPkg);
+
           editingOtherRow.innerHTML = `
-            <td>${otherService.description}</td>
-            <td>${otherService.date}</td>
+            <td>${otherService.description}${pkgBadge}</td>
+            <td data-date="${formatToYYYYMMDD(otherService.date || "")}">${dateCell}</td>
             <td>${otherService.total_price}</td>
             <td>
-              <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                <button class="btn btn-sm btn-warning edit-other" type="button">
-                  <i class="fa fa-edit"></i>
-                </button>
-                <span class="tooltip-text">Edit</span>
-              </div>
-              <div class="tooltip-btn" style="display: inline-block;">
-                <button class="btn btn-sm btn-danger delete-other" type="button">
-                  <i class="fa fa-trash"></i>
-                </button>
-                <span class="tooltip-text">Delete</span>
-              </div>
+              ${buttonsHtml}
             </td>
           `;
 
@@ -10398,7 +10427,7 @@
             if (!row) return;
 
             // ✅ Block package items delete only, allow edit
-            if (row.dataset.isPackageItem === "true" && (event.target.classList.contains("delete-other") || event.target.closest(".delete-other"))) {
+            if (isLockedPackageDelete(row, event, "delete-other")) {
               return;
             }
 
@@ -10414,6 +10443,11 @@
           const otherId = row.dataset.otherId;
 
           if (!otherId) {
+            if (row.dataset.isPackageItem === "true") {
+              row.remove();
+              updateUIPriceFields();
+              return;
+            }
             console.error("Error: Other service ID missing in row dataset.");
             alert("Error: Other service ID is missing!");
             return;
@@ -10429,16 +10463,30 @@
           });
 
           if (!otherService) {
-            console.error("Error: Other service not found in array:", otherId);
-            console.log("Available others in array:", othersArray);
-            console.log(
-              "Looking for otherId:",
-              otherId,
-              "type:",
-              typeof otherId
-            );
-            alert(`Error: Other service not found! Looking for ID: ${otherId}`);
-            return;
+            if (row.dataset.isPackageItem === "true") {
+              otherService = {
+                id: otherId || `package-other-${row.dataset.packageItemIndex || Date.now()}`,
+                other_id: row.dataset.otherId || 0,
+                description: getCellText(row.cells[0]) || row.dataset.description || "",
+                date: getCellDateValue(row.cells[1]) || row.dataset.date || "",
+                total_price: parseFloat(row.cells[2]?.textContent.trim()) || parseFloat(row.dataset.totalPrice) || 0,
+                cost: parseFloat(row.cells[2]?.textContent.trim()) || parseFloat(row.dataset.totalPrice) || 0,
+                remarks: row.dataset.remarks || "[Special Package]",
+              };
+              row.dataset.otherId = otherService.id;
+              othersArray.push(otherService);
+            } else {
+              console.error("Error: Other service not found in array:", otherId);
+              console.log("Available others in array:", othersArray);
+              console.log(
+                "Looking for otherId:",
+                otherId,
+                "type:",
+                typeof otherId
+              );
+              alert(`Error: Other service not found! Looking for ID: ${otherId}`);
+              return;
+            }
           }
 
           document.getElementById("otherDescription").value =
@@ -10901,7 +10949,7 @@
           const totalPax = adult + child;
           
           if (totalPax === 0) {
-            alert("กรุณาระบุจำนวนผู้เดินทาง (Adults / Children) ก่อนเลือกประเภทราคา / Please specify the number of travelers before selecting prices.");
+            alert("Please specify the number of travelers (Adults / Children) before selecting prices.");
             if (isCheckboxChange) {
               checkboxElement.checked = false;
               const input = document.getElementById(changedInputId);
@@ -10929,7 +10977,7 @@
           const coveredPax = (sglRooms * 1) + (dblRooms * 2) + (tplRooms * 3);
           
           if (coveredPax > totalPax) {
-            alert("จำนวนคนในประเภทราคาที่เลือก (SGL=1, DB=2, TP=3) รวมกันได้ " + coveredPax + " คน เกินจำนวนผู้เดินทางทั้งหมด (" + totalPax + " คน)\nSelected price capacity exceeds the total number of travelers.");
+            alert("Selected price capacity (SGL=1, DB=2, TP=3) covers " + coveredPax + " travelers, which exceeds the total number of travelers (" + totalPax + ").");
             if (isCheckboxChange) {
               checkboxElement.checked = false;
               const input = document.getElementById(changedInputId);
@@ -10980,7 +11028,7 @@
             const coveredPax = (sglRooms * 1) + (dblRooms * 2) + (tplRooms * 3);
             
             if (coveredPax > totalPax) {
-              alert("จำนวนผู้เดินทางไม่สอดคล้องกับประเภทราคาที่ระบุ ระบบได้ทำการรีเซ็ตประเภทราคาที่เลือกใหม่ / Traveler count is less than selected price capacity. Resetting price selections.");
+              alert("Traveler count is less than the selected price capacity. Price selections have been reset.");
               resetSpecialPackageRoomSelection();
             }
           }
@@ -11053,22 +11101,18 @@
             const cleanRemarks = (item.remarks || "").replace(/\[Special Package\]/gi, "").trim();
             const remarksWithSig = item.remarks ? (item.remarks.includes("[Special Package]") ? item.remarks : `${item.remarks} [Special Package]`) : "[Special Package]";
             const packageBadge = `<span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`;
-            const actionButtons = `
-              <td>
-                <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                  <button disabled class="btn btn-sm btn-warning editBtn" type="button" style="opacity: 0.5; cursor: not-allowed;">
-                    <i class="fas fa-edit"></i>
-                  </button>
-                  <span class="tooltip-text">Edit Locked</span>
-                </div>
-                <div class="tooltip-btn" style="display: inline-block;">
-                  <button disabled class="btn btn-sm btn-danger deleteBtn" type="button" style="opacity: 0.5; cursor: not-allowed;">
-                    <i class="fas fa-trash"></i>
-                  </button>
-                  <span class="tooltip-text">Delete Locked</span>
-                </div>
-              </td>
-            `;
+            const packageActionCell = (itemType) => {
+              const classMap = {
+                hotel: ["edit-hotel", "delete-hotel"],
+                transfer: ["edit-transfer", "delete-transfer"],
+                excursion: ["edit-excursion", "delete-excursion"],
+                flight: ["edit-flight", "delete-flight"],
+                tour: ["edit-tour", "delete-tour"],
+                other: ["edit-other", "delete-other"],
+              };
+              const [editClass, deleteClass] = classMap[itemType] || ["edit-other", "delete-other"];
+              return renderRowActionCell(editClass, deleteClass, true);
+            };
 
             if (item.item_type === 'hotel') {
               const checkoutDate = new Date(itemDate.getTime() + (item.nights || 1) * 24 * 60 * 60 * 1000);
@@ -11101,7 +11145,7 @@
                 <td>-</td>
                 <td>-</td>
                 <td>${item.price || "-"}</td>
-                ${actionButtons}
+                ${packageActionCell("hotel")}
               `;
               tbody.appendChild(tr);
             } else if (item.item_type === 'transfer') {
@@ -11126,7 +11170,7 @@
                 <td>${item.to_location || "-"}</td>
                 <td><small>${cleanRemarks}</small></td>
                 <td class="transfer-price">${item.price || "-"}</td>
-                ${actionButtons}
+                ${packageActionCell("transfer")}
               `;
               tbody.appendChild(tr);
             } else if (item.item_type === 'excursion') {
@@ -11149,7 +11193,7 @@
                 <td><small>${cleanRemarks}</small></td>
                 <td>SIC</td>
                 <td>${item.price || "-"}</td>
-                ${actionButtons}
+                ${packageActionCell("excursion")}
               `;
               tbody.appendChild(tr);
             } else if (item.item_type === 'flight') {
@@ -11172,7 +11216,7 @@
                 <td>-</td>
                 <td>${item.price || "-"}</td>
                 <td><small>${cleanRemarks}</small></td>
-                ${actionButtons}
+                ${packageActionCell("flight")}
               `;
               tbody.appendChild(tr);
             } else if (item.item_type === 'tour') {
@@ -11206,7 +11250,7 @@
                 <td>-</td>
                 <td><small>${cleanRemarks}</small></td>
                 <td>${item.price || "-"}</td>
-                ${actionButtons}
+                ${packageActionCell("tour")}
               `;
               tbody.appendChild(tr);
             } else if (item.item_type === 'other') {
@@ -11225,20 +11269,7 @@
                   <input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(dateStr)}" data-item-index="${item.tempIndex}">
                 </td>
                 <td>${item.price || "-"}</td>
-                <td>
-                  <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button disabled class="btn btn-sm btn-warning editOtherBtn" type="button" style="opacity: 0.5; cursor: not-allowed;">
-                      <i class="fas fa-edit"></i>
-                    </button>
-                    <span class="tooltip-text">Edit Locked</span>
-                  </div>
-                  <div class="tooltip-btn" style="display: inline-block;">
-                    <button disabled class="btn btn-sm btn-danger deleteOtherBtn" type="button" style="opacity: 0.5; cursor: not-allowed;">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                    <span class="tooltip-text">Delete Locked</span>
-                  </div>
-                </td>
+                ${packageActionCell("other")}
               `;
               tbody.appendChild(tr);
             }
@@ -11269,8 +11300,14 @@
             if (tbody) {
               const buttons = tbody.querySelectorAll("button, a");
               buttons.forEach(b => {
-                b.disabled = !enabled;
+                const row = b.closest("tr");
+                const isLockedPackageButton = row?.dataset?.isPackageItem === "true" && !canModifySpecialPackageItems();
+                b.disabled = isLockedPackageButton || !enabled;
                 b.style.display = enabled ? "" : "none";
+                if (isLockedPackageButton) {
+                  b.style.opacity = "0.5";
+                  b.style.cursor = "not-allowed";
+                }
               });
             }
           });
@@ -11362,4 +11399,3 @@
     </script>
   </body>
 </html>
-

@@ -108,13 +108,15 @@
       /* InProgress row */
       .row-inprogress { background-color: #ebf5fb !important; border-left: 4px solid #3498db !important; }
       /* Status badges */
-      .status-badge { display:inline-block; padding:3px 9px; border-radius:50px; font-size:11px; font-weight:600; }
+      .status-badge { display:inline-block; padding:3px 9px; border-radius:50px; font-size:11px; font-weight:600; white-space:nowrap; }
       .status-badge.approved { background:#d4edda; color:#155724; }
       .status-badge.declined { background:#f8d7da; color:#721c24; }
       .status-badge.inprogress { background:#cce5ff; color:#004085; }
       .status-badge.pending { background:#fff3cd; color:#856404; }
       /* Agent request remark chip */
-      .remark-agent { display:inline-block; margin-top:3px; font-size:10px; background:#fff3cd; color:#856404; border:1px solid #ffc107; border-radius:4px; padding:1px 6px; }
+      .status-stack { display:flex; align-items:center; gap:6px; flex-wrap:nowrap; white-space:nowrap; }
+      .remark-agent { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; padding:0; font-size:12px; line-height:1; background:#fff3cd; color:#856404; border:1px solid #ffc107; border-radius:999px; white-space:nowrap; cursor:pointer; }
+      .remark-agent:hover { background:#ffe8a1; color:#6f4d00; }
       /* Agent request alert banner */
       #agentRequestBanner { display:none; margin-bottom:10px; padding:10px 15px; background:linear-gradient(135deg,#fff3cd,#ffe8a1); border:1px solid #ffc107; border-radius:8px; color:#5a4000; font-size:13px; align-items:center; gap:10px; }
       #agentRequestBanner i { font-size:16px; color:#e67e22; }
@@ -436,7 +438,7 @@
                   <div id="agentRequestBanner" style="display:none; margin-bottom:10px; padding:10px 15px; background:linear-gradient(135deg,#fff3cd,#ffe8a1); border:1px solid #ffc107; border-radius:8px; color:#5a4000; font-size:13px; align-items:center; gap:10px;">
                     <i class="fa fa-bell" style="font-size:16px;color:#e67e22;"></i>
                     <span id="agentRequestBannerText"></span>
-                    <span style="margin-left:auto;font-size:11px;opacity:.7;">คลิกดูรายการสีฟ้าด้านล่าง</span>
+                    <span style="margin-left:auto;font-size:11px;opacity:.7;">See the highlighted blue items below</span>
                   </div>
                   <div class="row">
                     <div class="col-sm-12">
@@ -621,8 +623,8 @@
         let currentDateRange = { start: null, end: null };
 
         // Sorting state
-        let currentSortColumn = "booking_reference";
-        let currentSortDirection = "asc"; // 'asc', 'desc', 'none'
+        let currentSortColumn = "updated_at";
+        let currentSortDirection = "desc"; // 'asc', 'desc', 'none'
 
         // Initialize page
         function initializePage() {
@@ -1639,8 +1641,8 @@
 
             // Status badge + optional agent remark
             let statusClass = isInProgress ? "inprogress" : (trip.status === "Approved" ? "approved" : (trip.status === "Declined" || trip.status === "Cancelled" ? "declined" : "pending"));
-            const remarkHtml = isInProgress ? `<br><span class="remark-agent"><i class="fa fa-bell-o"></i> New Agent Request</span>` : "";
-            const statusHtml = `<span class="status-badge ${statusClass}">${trip.status}</span>${remarkHtml}`;
+            const remarkHtml = isInProgress ? `<button type="button" class="remark-agent" data-toggle="tooltip" data-placement="top" title="New Agent Request"><i class="fa fa-bell-o"></i></button>` : "";
+            const statusHtml = `<div class="status-stack"><span class="status-badge ${statusClass}">${trip.status}</span>${remarkHtml}</div>`;
 
             row.innerHTML = `
             <td style="font-weight: 500;">${(trip.agent && trip.agent.name) || (trip.agents && trip.agents.name) || "N/A"}</td>
@@ -1667,6 +1669,18 @@
             tripTableBody.appendChild(row);
           });
 
+          if (window.jQuery && $.fn.tooltip) {
+            const tooltipItems = $('[data-toggle="tooltip"]');
+            try {
+              tooltipItems.tooltip("dispose");
+            } catch (error) {
+              try {
+                tooltipItems.tooltip("destroy");
+              } catch (destroyError) {}
+            }
+            tooltipItems.tooltip();
+          }
+
           updatePaginationButtons();
 
           // Show/update agent request banner (counts ALL InProgress in full trips array)
@@ -1675,7 +1689,7 @@
           const inProgressCount = trips.filter(t => t.status === "InProgress").length;
           if (banner && bannerText) {
             if (inProgressCount > 0) {
-              bannerText.textContent = `มีคำขอยืนยันการจองใหม่จาก Agent จำนวน ${inProgressCount} รายการ รอการอนุมัติจาก Admin`;
+              bannerText.textContent = `There ${inProgressCount === 1 ? "is" : "are"} ${inProgressCount} new booking confirmation request${inProgressCount === 1 ? "" : "s"} from agents awaiting admin approval`;
               banner.style.display = "flex";
             } else {
               banner.style.display = "none";
@@ -1847,6 +1861,10 @@
                   valueA = refA.number;
                   valueB = refB.number;
                 }
+                break;
+              case "updated_at":
+                valueA = new Date(a.updated_at || a.created_at || 0);
+                valueB = new Date(b.updated_at || b.created_at || 0);
                 break;
               default:
                 return 0;

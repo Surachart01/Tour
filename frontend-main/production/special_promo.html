@@ -163,6 +163,53 @@
       .remove-attachment-btn:hover {
         color: #c0392b;
       }
+
+      .custom-email-entry {
+        display: flex;
+        gap: 8px;
+      }
+
+      .custom-email-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .custom-email-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        max-width: 100%;
+        padding: 5px 8px 5px 10px;
+        border: 1px solid #dcdde1;
+        border-radius: 999px;
+        background: #f8f9fa;
+        color: #34495e;
+        font-size: 12px;
+      }
+
+      .custom-email-chip span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .remove-custom-email-btn {
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background: #e74c3c;
+        color: #fff;
+        cursor: pointer;
+        line-height: 20px;
+        text-align: center;
+      }
+
+      .remove-custom-email-btn:hover {
+        background: #c0392b;
+      }
       
       .btn-send-promo {
         background: linear-gradient(135deg, #9b59b6, #8e44ad);
@@ -346,7 +393,14 @@
                       <label class="h6 font-weight-bold text-secondary">
                         <i class="fa fa-envelope-o mr-2"></i> Custom Recipient Emails (Optional)
                       </label>
-                      <input type="text" class="form-control" id="customEmails" placeholder="comma-separated emails (e.g. agent1@mail.com, agent2@mail.com)" style="border-radius: 6px;" />
+                      <div class="custom-email-entry">
+                        <input type="email" class="form-control" id="customEmails" placeholder="Enter custom email address" style="border-radius: 6px;" />
+                        <button type="button" class="btn btn-outline-primary" id="btnAddCustomEmail" style="border-radius: 6px; white-space: nowrap;">
+                          <i class="fa fa-plus"></i> Add
+                        </button>
+                      </div>
+                      <small class="form-text text-muted">Saved custom emails will be included when sending promotions.</small>
+                      <div class="custom-email-list" id="customEmailList"></div>
                     </div>
 
                     <div class="mt-4">

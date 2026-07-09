@@ -9,10 +9,14 @@ document.addEventListener("DOMContentLoaded", () => {
   // State variables
   let allAgents = [];
   let attachedFiles = []; // Array of { id, original_name, url }
+  let savedCustomEmails = [];
+  const customEmailsStorageKey = "specialPromoCustomEmails";
 
   // DOM Elements
   const agentSelectBox = document.getElementById("agentSelectBox");
   const customEmailsInput = document.getElementById("customEmails");
+  const btnAddCustomEmail = document.getElementById("btnAddCustomEmail");
+  const customEmailList = document.getElementById("customEmailList");
   const ccEmailInput = document.getElementById("ccEmail");
   const emailSubjectInput = document.getElementById("promoSubject");
   const emailBodyInput = document.getElementById("promoBody");
@@ -46,6 +50,100 @@ document.addEventListener("DOMContentLoaded", () => {
     if (historyTitle) historyTitle.innerHTML = '<i class="fa fa-history text-primary mr-2" style="color: #9b59b6 !important;"></i> Sent Promotions History';
     if (historySubtitle) historySubtitle.textContent = 'Review promotions and details sent to your B2B agents.';
   }
+
+  function normalizeEmail(email) {
+    return (email || "").trim().toLowerCase();
+  }
+
+  function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  function loadSavedCustomEmails() {
+    try {
+      const raw = localStorage.getItem(customEmailsStorageKey);
+      savedCustomEmails = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(savedCustomEmails)) savedCustomEmails = [];
+    } catch (error) {
+      savedCustomEmails = [];
+    }
+    savedCustomEmails = [...new Set(savedCustomEmails.map(normalizeEmail).filter(isValidEmail))];
+    saveCustomEmails();
+    renderCustomEmails();
+  }
+
+  function saveCustomEmails() {
+    localStorage.setItem(customEmailsStorageKey, JSON.stringify(savedCustomEmails));
+  }
+
+  function renderCustomEmails() {
+    if (!customEmailList) return;
+    customEmailList.innerHTML = "";
+
+    if (savedCustomEmails.length === 0) {
+      customEmailList.innerHTML = '<div class="text-muted small">No custom emails saved.</div>';
+      return;
+    }
+
+    savedCustomEmails.forEach(email => {
+      const chip = document.createElement("div");
+      chip.className = "custom-email-chip";
+      chip.innerHTML = `
+        <span title="${email}">${email}</span>
+        <button type="button" class="remove-custom-email-btn" data-email="${email}" title="Remove email">
+          <i class="fa fa-times"></i>
+        </button>
+      `;
+      customEmailList.appendChild(chip);
+    });
+  }
+
+  function addCustomEmailFromInput() {
+    if (!customEmailsInput) return;
+    const email = normalizeEmail(customEmailsInput.value);
+    if (!email) return;
+    if (!isValidEmail(email)) {
+      alert("Please enter a valid email address.");
+      return;
+    }
+    if (savedCustomEmails.includes(email)) {
+      alert("This email is already in the custom recipient list.");
+      customEmailsInput.value = "";
+      return;
+    }
+
+    savedCustomEmails.push(email);
+    saveCustomEmails();
+    renderCustomEmails();
+    customEmailsInput.value = "";
+    customEmailsInput.focus();
+  }
+
+  if (btnAddCustomEmail) {
+    btnAddCustomEmail.addEventListener("click", addCustomEmailFromInput);
+  }
+
+  if (customEmailsInput) {
+    customEmailsInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        addCustomEmailFromInput();
+      }
+    });
+  }
+
+  if (customEmailList) {
+    customEmailList.addEventListener("click", (event) => {
+      const removeButton = event.target.closest(".remove-custom-email-btn");
+      if (!removeButton) return;
+      const email = normalizeEmail(removeButton.dataset.email);
+      savedCustomEmails = savedCustomEmails.filter(item => item !== email);
+      saveCustomEmails();
+      renderCustomEmails();
+    });
+  }
+
+  loadSavedCustomEmails();
 
   // Fetch B2B Agents list (only for admins)
   if (role !== "agent") {
@@ -306,11 +404,21 @@ document.addEventListener("DOMContentLoaded", () => {
       // 1. Gather recipients
       const selectedEmails = Array.from(document.querySelectorAll(".agent-cb:checked")).map(cb => cb.value);
       
-      const customEmailsText = customEmailsInput.value.trim();
-      if (customEmailsText) {
-        const customEmails = customEmailsText.split(",").map(em => em.trim()).filter(em => em);
-        selectedEmails.push(...customEmails);
+      const customEmailDraft = normalizeEmail(customEmailsInput?.value || "");
+      if (customEmailDraft) {
+        if (!isValidEmail(customEmailDraft)) {
+          alert("Please enter a valid custom email address or add it to the saved custom list.");
+          return;
+        }
+        if (!savedCustomEmails.includes(customEmailDraft)) {
+          savedCustomEmails.push(customEmailDraft);
+          saveCustomEmails();
+          renderCustomEmails();
+        }
+        customEmailsInput.value = "";
       }
+
+      selectedEmails.push(...savedCustomEmails);
 
       if (selectedEmails.length === 0) {
         alert("Please select at least one agent or enter a custom recipient email.");
@@ -415,7 +523,7 @@ document.addEventListener("DOMContentLoaded", () => {
           // Date column
           const dateTd = document.createElement("td");
           dateTd.style.whiteSpace = "nowrap";
-          dateTd.textContent = new Date(promo.created_at).toLocaleString('th-TH', {
+          dateTd.textContent = new Date(promo.created_at).toLocaleString('en-GB', {
             year: 'numeric',
             month: 'short',
             day: 'numeric',
