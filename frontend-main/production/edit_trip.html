@@ -2170,9 +2170,9 @@
                     <option value="SIC">SIC</option>
                   </select>
                 </div>
-                <!-- Flight In -->
+                <!-- Mode of Transport -->
                 <div class="form-group col-md-4">
-                  <label for="tourFlightIn">Flight In</label>
+                  <label for="tourFlightIn">Mode of Transport</label>
                   <input
                     type="text"
                     class="form-control"
@@ -2180,9 +2180,9 @@
                     required
                   />
                 </div>
-                <!-- Arrival Time -->
+                <!-- Departure Time -->
                 <div class="form-group col-md-4">
-                  <label for="arrivalTimeTour">Arrival Time</label>
+                  <label for="arrivalTimeTour">Departure Time</label>
                   <input
                     type="time"
                     class="form-control"
@@ -2781,6 +2781,15 @@
           const clone = cell.cloneNode(true);
           clone.querySelectorAll(".pkg-badge").forEach(el => el.remove());
           return clone.textContent.trim();
+        }
+
+        function buildTourTransferText(dateValue, timeValue, transportValue, routeValue) {
+          const parts = [];
+          if (dateValue) parts.push(dateValue);
+          if (timeValue) parts.push(`Pickup: ${timeValue}`);
+          if (transportValue) parts.push(transportValue);
+          if (routeValue) parts.push(`(${routeValue})`);
+          return parts.join(" | ");
         }
 
         const SPECIAL_PACKAGE_SIGNATURE = "[Special Package]";
@@ -7323,7 +7332,7 @@
 
           // Convert startDate safely
           const startDate = new Date(startDateValue.replace(/-/g, "/"));
-          startDate.setDate(startDate.getDate() + duration + 1);
+          startDate.setDate(startDate.getDate() + Math.max(parseInt(duration, 10) - 1, 0));
 
           // Format date as YYYY-MM-DD
           const formattedEndDate = startDate.toISOString().split("T")[0];
@@ -7871,6 +7880,8 @@
           row.dataset.departureTime = tour.departureTimeTour;
           row.dataset.flightIn = tour.tourFlightIn;
           row.dataset.flightOut = tour.tourFlightOut;
+          row.dataset.transferIn = buildTourTransferText(tour.tourStartDate, tour.arrivalTimeTour, tour.tourFlightIn, tour.route || "");
+          row.dataset.transferOut = buildTourTransferText(tour.tourEndDate, tour.departureTimeTour, tour.tourFlightOut, tour.route || "");
           row.dataset.tourStartDate = tour.tourStartDate;
           row.dataset.tourEndDate = tour.tourEndDate;
 
@@ -8020,6 +8031,8 @@
           row.dataset.quotationStatus = quotationStatus; // ✅ Store quotation status
           row.dataset.flightIn = tour.flight_in || "";
           row.dataset.flightOut = tour.flight_out || "";
+          row.dataset.transferIn = tour.transfer_in || "";
+          row.dataset.transferOut = tour.transfer_out || "";
           row.dataset.singleRooms = tour.single_rooms || 0;
           row.dataset.doubleRooms = tour.double_rooms || 0;
           row.dataset.tripleRooms = tour.triple_rooms || 0;
@@ -8095,6 +8108,8 @@
             rowData["to_date"] = formatToYYYYMMDD(
               getCellDateValue(cells[1]) || row.dataset.tourEndDate || ""
             );
+            rowData["transfer_in"] = row.dataset.transferIn || buildTourTransferText(rowData["from_date"], rowData["arrival_time"], rowData["flight_in"], rowData["route"]);
+            rowData["transfer_out"] = row.dataset.transferOut || buildTourTransferText(rowData["to_date"], rowData["departure_time"], rowData["flight_out"], rowData["route"]);
             rowData["single_rooms"] = parseInt(row.dataset.singleRooms) || 0;
             rowData["double_rooms"] = parseInt(row.dataset.doubleRooms) || 0;
             rowData["triple_rooms"] = parseInt(row.dataset.tripleRooms) || 0;
@@ -8122,26 +8137,35 @@
             return;
           }
 
+          const hasDateColumns = row.cells.length >= 10;
+          const cityIndex = hasDateColumns ? 2 : 0;
+          const nameIndex = hasDateColumns ? 3 : 1;
+          const totIndex = hasDateColumns ? 4 : 2;
+          const routeIndex = hasDateColumns ? 5 : 3;
+          const paxIndex = hasDateColumns ? 6 : 4;
+          const remarksIndex = hasDateColumns ? 7 : 5;
+          const priceIndex = hasDateColumns ? 8 : 6;
+
           let tour = {
             tour_id: tourId,
-            from_location: row.cells[0]?.textContent.trim() || "",
+            from_location: getCellText(row.cells[cityIndex]) || "",
             tourStartDate: formatToYYYYMMDD(row.dataset.tourStartDate) || "",
             tourEndDate: formatToYYYYMMDD(row.dataset.tourEndDate) || "",
-            tour_name: row.cells[1]?.textContent.trim() || "",
-            tot: row.cells[2]?.textContent.trim() || "",
-            route: row.cells[3]?.textContent.trim() || "",
+            tour_name: getCellText(row.cells[nameIndex]) || "",
+            tot: getCellText(row.cells[totIndex]) || "",
+            route: getCellText(row.cells[routeIndex]) || "",
             adult_pax: parseInt(document.getElementById("adult")?.value) || 0,
             child_pax: parseInt(document.getElementById("child")?.value) || 0,
-            pax: parseInt(row.cells[4]?.textContent.trim(), 10) || 0,
+            pax: parseInt(getCellText(row.cells[paxIndex]), 10) || 0,
             flight_in: row.dataset.flightIn || "",
             flight_out: row.dataset.flightOut || "",
-            remarks: row.cells[5]?.textContent.trim() || "",
+            remarks: row.dataset.remarks || getCellText(row.cells[remarksIndex]) || "",
             arrival_time: row.dataset.arrivalTime || "",
             departure_time: row.dataset.departureTime || "",
             single_rooms: parseInt(row.dataset.singleRooms, 10) || 0,
             double_rooms: parseInt(row.dataset.doubleRooms, 10) || 0,
             triple_rooms: parseInt(row.dataset.tripleRooms, 10) || 0,
-            total_cost: parseFloat(row.cells[6]?.textContent.trim()) || 0.0,
+            total_cost: parseFloat(getCellText(row.cells[priceIndex])) || 0.0,
           };
 
           console.log("Loaded Tour Data for Editing:", tour);
@@ -8292,6 +8316,8 @@
           }, 300);
 
           editingTourRow = row;
+          document.getElementById("addTourModalLabel").textContent = "Edit Tour";
+          document.getElementById("saveTour").textContent = "Update Tour";
           $("#addTourModal").modal("show");
         }
 
@@ -8394,6 +8420,18 @@
             updatedTour.departure_time || "";
           editingTourRow.dataset.tourStartDate = document.getElementById("tourStartDate").value;
           editingTourRow.dataset.tourEndDate = document.getElementById("tourEndDate").value;
+          editingTourRow.dataset.transferIn = buildTourTransferText(
+            updatedTour.tourStartDate,
+            updatedTour.arrival_time,
+            updatedTour.flight_in,
+            updatedTour.route || ""
+          );
+          editingTourRow.dataset.transferOut = buildTourTransferText(
+            updatedTour.tourEndDate,
+            updatedTour.departure_time,
+            updatedTour.flight_out,
+            updatedTour.route || ""
+          );
           editingTourRow.dataset.remarks = updatedTour.remarks;
           editingTourRow.dataset.singleRooms = updatedTour.single_rooms;
           editingTourRow.dataset.doubleRooms = updatedTour.double_rooms;
@@ -8439,6 +8477,8 @@
 
           // ✅ Reset editing row and close modal
           editingTourRow = null;
+          document.getElementById("addTourModalLabel").textContent = "Add Tour";
+          document.getElementById("saveTour").textContent = "Save Tour";
           $("#addTourModal").modal("hide");
           updateUIPriceFields();
         }
@@ -9761,6 +9801,8 @@
                 rowData["to_date"] = formatToYYYYMMDD(
                   getCellDateValue(cells[1]) || row.dataset.tourEndDate || ""
                 );
+                rowData["transfer_in"] = row.dataset.transferIn || buildTourTransferText(rowData["from_date"], rowData["arrival_time"], rowData["flight_in"], rowData["route"]);
+                rowData["transfer_out"] = row.dataset.transferOut || buildTourTransferText(rowData["to_date"], rowData["departure_time"], rowData["flight_out"], rowData["route"]);
                 rowData["single_rooms"] =
                   parseInt(row.dataset.singleRooms) || 0;
                 rowData["double_rooms"] =
@@ -10243,6 +10285,10 @@
         document
           .getElementById("addtourBtn")
           .addEventListener("click", function () {
+            editingTourRow = null;
+            document.getElementById("tourForm").reset();
+            document.getElementById("addTourModalLabel").textContent = "Add Tour";
+            document.getElementById("saveTour").textContent = "Save Tour";
             $("#addTourModal").modal("show");
           });
 

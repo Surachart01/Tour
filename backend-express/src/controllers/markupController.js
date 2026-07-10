@@ -1,8 +1,37 @@
 import prisma from '../config/db.js';
 
+let hotelMarkupAmountPrecisionReady = false;
+
+async function ensureHotelMarkupAmountPrecision() {
+  if (hotelMarkupAmountPrecisionReady) return;
+  await prisma.$executeRawUnsafe(
+    'ALTER TABLE hotel_markup_percentages ALTER COLUMN markup_percentage TYPE numeric(10,2)'
+  );
+  hotelMarkupAmountPrecisionReady = true;
+}
+
+function buildHotelMarkupRows(rows) {
+  return (rows || []).map(h => ({
+    price_from: h.price_from,
+    price_to: h.price_to,
+    markup_percentage: h.markup_percentage
+  }));
+}
+
+function handleMarkupError(err, res, next) {
+  const message = String(err?.message || '');
+  if (message.includes('numeric field overflow') || message.includes('precision 5')) {
+    return res.status(400).json({
+      message: 'Hotel Markup now uses fixed THB amounts. The database column must support values such as 1000. Please retry after the latest deployment finishes.'
+    });
+  }
+  return next(err);
+}
+
 export async function createMarkup(req, res, next) {
   try {
     const data = req.body;
+    await ensureHotelMarkupAmountPrecision();
     const markup = await prisma.markups.create({
       data: {
         markup_group: data.markup_group, excursion_markup_unit: data.excursion_markup_unit,
@@ -12,15 +41,13 @@ export async function createMarkup(req, res, next) {
         hotel_markup_unit: data.hotel_markup_unit || null,
         hotel_markup_value: data.hotel_markup_value || null,
         hotel_markup_percentages: data.hotel_markup_percentages ? {
-          create: data.hotel_markup_percentages.map(h => ({
-            price_from: h.price_from, price_to: h.price_to, markup_percentage: h.markup_percentage
-          }))
+          create: buildHotelMarkupRows(data.hotel_markup_percentages)
         } : undefined
       },
       include: { hotel_markup_percentages: true, currencies: true }
     });
     return res.status(201).json(markup);
-  } catch (err) { next(err); }
+  } catch (err) { return handleMarkupError(err, res, next); }
 }
 
 export async function getMarkup(req, res, next) {
@@ -72,6 +99,7 @@ export async function updateMarkup(req, res, next) {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid markup ID');
     const data = req.body;
+    await ensureHotelMarkupAmountPrecision();
     await prisma.$transaction(async (tx) => {
       await tx.hotel_markup_percentages.deleteMany({ where: { markup_id: id } });
       await tx.markups.update({
@@ -84,9 +112,7 @@ export async function updateMarkup(req, res, next) {
           hotel_markup_unit: data.hotel_markup_unit !== undefined ? data.hotel_markup_unit : undefined,
           hotel_markup_value: data.hotel_markup_value !== undefined ? data.hotel_markup_value : undefined,
           hotel_markup_percentages: data.hotel_markup_percentages ? {
-            create: data.hotel_markup_percentages.map(h => ({
-              price_from: h.price_from, price_to: h.price_to, markup_percentage: h.markup_percentage
-            }))
+            create: buildHotelMarkupRows(data.hotel_markup_percentages)
           } : undefined
         }
       });
@@ -95,7 +121,7 @@ export async function updateMarkup(req, res, next) {
       timeout: 30000
     });
     return res.json({ status: 'success' });
-  } catch (err) { next(err); }
+  } catch (err) { return handleMarkupError(err, res, next); }
 }
 
 export async function deleteMarkup(req, res, next) {

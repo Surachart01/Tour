@@ -259,7 +259,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     const startDate = new Date(startDateValue);
-    startDate.setDate(startDate.getDate() + duration); // Add duration to start date
+    startDate.setDate(startDate.getDate() + Math.max(parseInt(duration, 10) - 1, 0)); // Duration includes the start day
 
     const formattedEndDate = startDate.toISOString().split("T")[0]; // Convert to YYYY-MM-DD
     setTimeout(() => {

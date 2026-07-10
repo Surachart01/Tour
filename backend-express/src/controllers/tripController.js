@@ -25,6 +25,53 @@ function parseTot(value, fallback = 'SIC') {
   return (v === 'SIC' || v === 'PVT') ? v : fallback;
 }
 
+function formatTripDate(value) {
+  const d = parseOptionalDate(value);
+  if (!d) return '';
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${dd}-${mm}-${yyyy}`;
+}
+
+function buildTourTransferText(item, direction = 'in') {
+  const date = formatTripDate(direction === 'out' ? item.to_date : item.from_date);
+  const time = direction === 'out' ? item.departure_time : item.arrival_time;
+  const transport = direction === 'out'
+    ? (item.flight_out || item.transport_out || '')
+    : (item.flight_number || item.mode_of_transport || item.flight_in || '');
+  const route = item.route || [item.from_location, item.to_location].filter(Boolean).join(' -> ');
+  const parts = [];
+
+  if (date) parts.push(date);
+  if (time) parts.push(`Pickup: ${time}`);
+  if (transport) parts.push(transport);
+  if (route) parts.push(`(${route})`);
+
+  return parts.join(' | ');
+}
+
+function extractTourTransferTime(value) {
+  if (!value) return '';
+  const match = String(value).match(/\b(?:Pickup|Departure):\s*([^|]+)/i);
+  return match ? match[1].trim() : '';
+}
+
+function extractTourTransferTransport(value) {
+  if (!value) return '';
+  const parts = String(value)
+    .split('|')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  return parts.find((part) => {
+    if (/^\d{2}-\d{2}-\d{4}$/.test(part)) return false;
+    if (/^(?:Pickup|Departure):/i.test(part)) return false;
+    if (/^\(.+\)$/.test(part)) return false;
+    return true;
+  }) || '';
+}
+
 function generateQuotationNumber() {
   const now = new Date();
   const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
@@ -158,7 +205,7 @@ async function validateSpecialPackageAvailability(tx, packageId, tripStartDate) 
   fromDate.setHours(0,0,0,0);
   
   const toDate = new Date(fromDate);
-  toDate.setDate(fromDate.getDate() + (pkg.duration || 1));
+  toDate.setDate(fromDate.getDate() + Math.max((pkg.duration || 1) - 1, 0));
   toDate.setHours(0,0,0,0);
 
   // Check if there is an active stop sale overlapping with the trip stay dates
@@ -301,6 +348,11 @@ function mapTripResponse(trip) {
       final_cost: toFloat(t.price),
       from_date: fmtDate(t.from_date),
       to_date: fmtDate(t.to_date),
+      flight_in: t.flight_number || extractTourTransferTransport(t.transfer_in) || fmtDate(t.flight_in),
+      flight_out: extractTourTransferTransport(t.transfer_out) || fmtDate(t.flight_out),
+      arrival_time: extractTourTransferTime(t.transfer_in),
+      departure_time: extractTourTransferTime(t.transfer_out),
+      mode_of_transport: t.flight_number || '',
       tour_name: t.tours?.name || "",
     })),
     transfers: (trip.transfer_trip_items || []).map((t) => ({
@@ -641,11 +693,13 @@ export async function createQuotation(req, res, next) {
               number_of_adults: parseSafeInt(item.number_of_adults) || 0, number_of_kids: parseSafeInt(item.number_of_kids) || 0,
               from_date: parseRequiredDate(item.from_date, tripFallbackDate), to_date: parseRequiredDate(item.to_date, tripFallbackDate),
               flight_in: parseOptionalDate(item.flight_in),
-              flight_number: item.flight_number, flight_out: parseOptionalDate(item.flight_out),
+              flight_number: item.flight_number || item.flight_in || null, flight_out: parseOptionalDate(item.flight_out),
               guide_name: item.guide_name, guide_contact: item.guide_contact,
               payment_car: item.payment_car, payment_service: item.payment_service,
               price: parseFloat(item.price) || 0, currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
-              approved: item.approved || false, declined: item.declined || false
+              approved: item.approved || false, declined: item.declined || false,
+              transfer_in: item.transfer_in || buildTourTransferText(item, 'in') || null,
+              transfer_out: item.transfer_out || buildTourTransferText(item, 'out') || null
             }
           });
         }
@@ -755,7 +809,7 @@ export async function createQuotation(req, res, next) {
 export async function listQuotations(req, res, next) {
   try {
     const claims = req.user;
-    const where = { approved: false, declined: false };
+    const where = { declined: false, status: { in: ['Pending', 'InProgress', 'Approved', 'Confirmed'] } };
     if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       where.user_id = claims.user_id;
     }
@@ -772,7 +826,7 @@ export async function listQuotationsByDateRange(req, res, next) {
   try {
     const { from_date, to_date } = req.query;
     const claims = req.user;
-    const where = { approved: false, declined: false };
+    const where = { declined: false, status: { in: ['Pending', 'InProgress', 'Approved', 'Confirmed'] } };
     if (from_date && to_date) {
       where.created_at = { gte: new Date(from_date), lte: new Date(to_date) };
     }
@@ -1176,11 +1230,13 @@ export async function updateQuotation(req, res, next) {
               number_of_adults: parseSafeInt(item.number_of_adults) || 0, number_of_kids: parseSafeInt(item.number_of_kids) || 0,
               from_date: parseRequiredDate(item.from_date, tripFallbackDate), to_date: parseRequiredDate(item.to_date, tripFallbackDate),
               flight_in: parseOptionalDate(item.flight_in),
-              flight_number: item.flight_number, flight_out: parseOptionalDate(item.flight_out),
+              flight_number: item.flight_number || item.flight_in || null, flight_out: parseOptionalDate(item.flight_out),
               guide_name: item.guide_name, guide_contact: item.guide_contact,
               payment_car: item.payment_car, payment_service: item.payment_service,
               price: parseFloat(item.price) || 0, currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
-              approved: item.approved || false, declined: item.declined || false
+              approved: item.approved || false, declined: item.declined || false,
+              transfer_in: item.transfer_in || buildTourTransferText(item, 'in') || null,
+              transfer_out: item.transfer_out || buildTourTransferText(item, 'out') || null
             }
           });
         }
@@ -1288,18 +1344,12 @@ export async function finalizeQuotation(req, res, next) {
       }
     }
 
-    const isAgent = claims && claims.role !== 'admin' && claims.role !== 'superadmin';
-    const updateData = {};
-    if (isAgent) {
-      updateData.approved = false;
-      updateData.declined = false;
-      updateData.status = 'InProgress';
-    } else {
-      updateData.approved = true;
-      updateData.declined = false;
-      updateData.status = 'Approved';
-    }
-    updateData.updated_at = new Date();
+    const updateData = {
+      approved: false,
+      declined: false,
+      status: 'InProgress',
+      updated_at: new Date()
+    };
 
     const trip = await prisma.trips.update({
       where: { id },

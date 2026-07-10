@@ -2101,14 +2101,14 @@
                     <option value="SIC">SIC</option>
                   </select>
                 </div>
-                <!-- Flight In -->
+                <!-- Mode of Transport -->
                 <div class="form-group col-md-4">
                   <label for="tourFlightIn">
                     <i
                       class="fas fa-plane"
                       style="margin-right: 8px; color: #1abb9c"
                     ></i>
-                    Flight In
+                    Mode of Transport
                   </label>
                   <input
                     type="text"
@@ -2117,14 +2117,14 @@
                     required
                   />
                 </div>
-                <!-- Arrival Time -->
+                <!-- Departure Time -->
                 <div class="form-group col-md-4">
                   <label for="arrivalTimeTour">
                     <i
                       class="fas fa-clock"
                       style="margin-right: 8px; color: #1abb9c"
                     ></i>
-                    Arrival Time
+                    Departure Time
                   </label>
                   <input
                     type="time"
@@ -5449,6 +5449,15 @@
               return clone.textContent.trim();
             }
 
+            function buildTourTransferText(dateValue, timeValue, transportValue, routeValue) {
+              const parts = [];
+              if (dateValue) parts.push(dateValue);
+              if (timeValue) parts.push(`Pickup: ${timeValue}`);
+              if (transportValue) parts.push(transportValue);
+              if (routeValue) parts.push(`(${routeValue})`);
+              return parts.join(" | ");
+            }
+
             function extractTableData(tableId, columns) {
               const table = document.getElementById(tableId);
               const rows = table.querySelectorAll("tbody tr");
@@ -5558,6 +5567,8 @@
                   parseInt(row.dataset.tripleRooms) || 0;
                 rowData["arrival_time"] = row.dataset.arrivalTime || "";
                 rowData["departure_time"] = row.dataset.departureTime || "";
+                rowData["transfer_in"] = row.dataset.transferIn || buildTourTransferText(rowData["from_date"], rowData["arrival_time"], rowData["flight_in"], rowData["route"]);
+                rowData["transfer_out"] = row.dataset.transferOut || buildTourTransferText(rowData["to_date"], rowData["departure_time"], rowData["flight_out"], rowData["route"]);
                 rowData["total_cost"] =
                   parseFloat(cells[8]?.textContent.trim()) || 0.0;
                 rowData["price"] = rowData["total_cost"];

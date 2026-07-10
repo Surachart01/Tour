@@ -44,6 +44,22 @@ function formatTransferItem(t) {
   return parts.join(' | ');
 }
 
+function formatTourTransferItem(tourItem, direction = 'in') {
+  if (!tourItem) return '';
+  const parts = [];
+  const dateStr = formatDateToDDMMYYYY(direction === 'out' ? tourItem.to_date : tourItem.from_date);
+  const transport = direction === 'out'
+    ? ''
+    : (tourItem.flight_number || '');
+  const route = tourItem.tours?.route || [tourItem.from_location, tourItem.to_location].filter(Boolean).join(' -> ');
+
+  if (dateStr) parts.push(dateStr);
+  if (transport) parts.push(transport);
+  if (route) parts.push(`(${route})`);
+
+  return parts.join(' | ');
+}
+
 
 export async function getTourHotels(req, res, next) {
   try {
@@ -57,17 +73,16 @@ export async function getTourHotels(req, res, next) {
     });
     if (!tourItem) return res.status(404).send('Tour trip item not found');
 
-    // Auto-fetch Transfer In (first transfer of the trip) and Transfer Out (last transfer)
-    let transfer_in = '';
-    let transfer_out = '';
+    let transfer_in = tourItem.transfer_in || formatTourTransferItem(tourItem, 'in');
+    let transfer_out = tourItem.transfer_out || formatTourTransferItem(tourItem, 'out');
     if (!isNaN(tripId)) {
       const tripTransfers = await prisma.transfer_trip_items.findMany({
         where: { trip_item_id: tripId },
         orderBy: { from_date: 'asc' }
       });
       if (tripTransfers.length > 0) {
-        transfer_in = formatTransferItem(tripTransfers[0]);
-        transfer_out = formatTransferItem(tripTransfers[tripTransfers.length - 1]);
+        transfer_in = transfer_in || formatTransferItem(tripTransfers[0]);
+        transfer_out = transfer_out || formatTransferItem(tripTransfers[tripTransfers.length - 1]);
       }
     }
 

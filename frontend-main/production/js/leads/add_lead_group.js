@@ -2140,7 +2140,7 @@ function calculateTourEndDate() {
     
     const startDate = new Date(tourStartDate);
     const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + tourData.duration); // Add duration to start date
+    endDate.setDate(startDate.getDate() + Math.max(parseInt(tourData.duration, 10) - 1, 0)); // Duration includes the start day
     
     const formattedEndDate = endDate.toISOString().split("T")[0]; // Convert to YYYY-MM-DD
     

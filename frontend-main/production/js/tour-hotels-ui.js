@@ -6,6 +6,161 @@
 const TourHotelsUI = {
   // Store fetched hotel data for room type population
   hotelDataCache: {},
+
+  ensureDisplayStyles() {
+    if (document.getElementById("tourHotelsDisplayStyles")) return;
+    const style = document.createElement("style");
+    style.id = "tourHotelsDisplayStyles";
+    style.textContent = `
+      .tour-hotels-row > td {
+        padding: 0 !important;
+        background: #f8fafc;
+        border-top: 0 !important;
+      }
+      .tour-hotels-container {
+        width: 100%;
+        padding: 18px 22px;
+        background: #f8fafc;
+        border-left: 4px solid #1a9fd1;
+      }
+      .tour-hotels-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      .tour-hotels-title {
+        margin: 0;
+        color: #24384a;
+        font-size: 15px;
+        font-weight: 700;
+      }
+      .tour-hotels-layout {
+        display: grid;
+        grid-template-columns: minmax(360px, 1.1fr) minmax(340px, 0.9fr);
+        gap: 16px;
+        align-items: start;
+      }
+      .tour-hotels-panel,
+      .tour-transfer-panel {
+        min-width: 0;
+      }
+      .tour-hotels-list {
+        display: grid;
+        gap: 8px;
+      }
+      .tour-hotel-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-width: 0;
+        padding: 10px 12px;
+        background: #ffffff;
+        border: 1px solid #d9e3ec;
+        border-radius: 6px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      }
+      .tour-hotel-email-btn {
+        min-width: 82px;
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
+      .tour-hotel-content {
+        min-width: 0;
+        flex: 1;
+      }
+      .tour-hotel-main {
+        color: #26384a;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+      }
+      .tour-hotel-details {
+        margin-top: 3px;
+        color: #64748b;
+        font-size: 11px;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+      }
+      .tour-transfer-stack {
+        display: grid;
+        gap: 10px;
+      }
+      .tour-transfer-box {
+        display: grid;
+        grid-template-columns: 22px minmax(0, 1fr);
+        gap: 8px;
+        align-items: start;
+        padding: 10px 12px;
+        border-radius: 6px;
+        line-height: 1.35;
+      }
+      .tour-transfer-box.in {
+        background: #e8f6fb;
+        border: 1px solid #b8dfec;
+      }
+      .tour-transfer-box.out {
+        background: #fff8e8;
+        border: 1px solid #f4d38a;
+      }
+      .tour-transfer-icon {
+        font-size: 16px;
+        padding-top: 1px;
+      }
+      .tour-transfer-box.in .tour-transfer-icon,
+      .tour-transfer-box.in .tour-transfer-label {
+        color: #08738d;
+      }
+      .tour-transfer-box.out .tour-transfer-icon,
+      .tour-transfer-box.out .tour-transfer-label {
+        color: #a35a00;
+      }
+      .tour-transfer-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 2px;
+      }
+      .tour-transfer-text {
+        color: #334155;
+        font-size: 11px;
+        overflow-wrap: anywhere;
+      }
+      .tour-empty-note {
+        margin: 0;
+        padding: 12px;
+        color: #64748b;
+        background: #ffffff;
+        border: 1px dashed #cbd5e1;
+        border-radius: 6px;
+      }
+      @media (max-width: 1100px) {
+        .tour-hotels-layout {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 640px) {
+        .tour-hotels-container {
+          padding: 14px;
+        }
+        .tour-hotels-header,
+        .tour-hotel-item {
+          align-items: stretch;
+          flex-direction: column;
+        }
+        .tour-hotel-email-btn {
+          width: 100%;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  },
+
   /**
    * Initialize tour hotels display for a trip
    * @param {number} tripId - The trip ID
@@ -105,16 +260,16 @@ const TourHotelsUI = {
    * @returns {HTMLElement} Hotels display element
    */
   createHotelsDisplay(hotelData, isAdmin, isBooking, tripId, tourItemId) {
+    this.ensureDisplayStyles();
     const container = document.createElement("div");
     container.className = "tour-hotels-container";
-    container.style.cssText = "padding: 15px; background-color: #f8f9fa; border-left: 4px solid #007bff; margin: 10px 0;";
 
     // Header with badge
     const header = document.createElement("div");
-    header.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;";
+    header.className = "tour-hotels-header";
     
     const title = document.createElement("h5");
-    title.style.cssText = "margin: 0; color: #333;";
+    title.className = "tour-hotels-title";
     title.innerHTML = '<i class="fa fa-hotel"></i> Tour Accommodation';
     
     const badgeContainer = document.createElement("div");
@@ -132,7 +287,6 @@ const TourHotelsUI = {
       const editBtn = document.createElement("button");
       editBtn.type = "button"; // Prevent form submission
       editBtn.className = "btn btn-sm btn-primary";
-      editBtn.style.cssText = "margin-left: 10px;";
       editBtn.innerHTML = '<i class="fa fa-edit"></i> Edit Hotels';
       editBtn.onclick = (event) => {
         if (event) {
@@ -149,50 +303,61 @@ const TourHotelsUI = {
     header.appendChild(badgeContainer);
     container.appendChild(header);
 
-    // ─── Transfer In (top) ───────────────────────────────────────────
-    const transferInBox = document.createElement("div");
-    transferInBox.className = "transfer-in-box";
-    transferInBox.style.cssText = "display: flex; align-items: flex-start; gap: 8px; padding: 8px 12px; margin-bottom: 10px; background: #e8f4f8; border: 1px solid #bee5eb; border-radius: 6px;";
-    transferInBox.innerHTML = `
-      <span style="color:#0c6079; font-size:1.1em; margin-top:2px;"><i class="fa fa-arrow-circle-down"></i></span>
-      <div style="flex:1;">
-        <strong style="color:#0c6079; font-size:0.85em; text-transform:uppercase; letter-spacing:0.5px;">Transfer In</strong>
-        <div style="color:#333; margin-top:2px; font-size:0.95em;">${hotelData.transfer_in || '<span style="color:#999; font-style:italic;">— Not specified —</span>'}</div>
-      </div>
-    `;
-    container.appendChild(transferInBox);
+    const layout = document.createElement("div");
+    layout.className = "tour-hotels-layout";
+
+    const hotelsPanel = document.createElement("div");
+    hotelsPanel.className = "tour-hotels-panel";
 
     // Hotels list
     if (hotelData.hotels && hotelData.hotels.length > 0) {
       const hotelsList = document.createElement("div");
-      hotelsList.className = "hotels-list";
+      hotelsList.className = "tour-hotels-list";
       
       hotelData.hotels.forEach(hotel => {
         const hotelItem = this.createHotelItem(hotel, isAdmin);
         hotelsList.appendChild(hotelItem);
       });
       
-      container.appendChild(hotelsList);
+      hotelsPanel.appendChild(hotelsList);
     } else {
       const noHotels = document.createElement("p");
-      noHotels.className = "text-muted";
-      noHotels.style.cssText = "margin: 10px 0 0 0;";
+      noHotels.className = "tour-empty-note";
       noHotels.textContent = "No accommodation information available for this tour.";
-      container.appendChild(noHotels);
+      hotelsPanel.appendChild(noHotels);
     }
 
-    // ─── Transfer Out (bottom) ───────────────────────────────────────
-    const transferOutBox = document.createElement("div");
-    transferOutBox.className = "transfer-out-box";
-    transferOutBox.style.cssText = "display: flex; align-items: flex-start; gap: 8px; padding: 8px 12px; margin-top: 10px; background: #fff8e8; border: 1px solid #ffd27d; border-radius: 6px;";
-    transferOutBox.innerHTML = `
-      <span style="color:#b05e00; font-size:1.1em; margin-top:2px;"><i class="fa fa-arrow-circle-up"></i></span>
-      <div style="flex:1;">
-        <strong style="color:#b05e00; font-size:0.85em; text-transform:uppercase; letter-spacing:0.5px;">Transfer Out</strong>
-        <div style="color:#333; margin-top:2px; font-size:0.95em;">${hotelData.transfer_out || '<span style="color:#999; font-style:italic;">— Not specified —</span>'}</div>
+    const transfersPanel = document.createElement("div");
+    transfersPanel.className = "tour-transfer-panel";
+    const transferStack = document.createElement("div");
+    transferStack.className = "tour-transfer-stack";
+
+    const transferInBox = document.createElement("div");
+    transferInBox.className = "tour-transfer-box in";
+    transferInBox.innerHTML = `
+      <span class="tour-transfer-icon"><i class="fa fa-arrow-circle-down"></i></span>
+      <div>
+        <strong class="tour-transfer-label">Transfer In</strong>
+        <div class="tour-transfer-text">${hotelData.transfer_in || '<span style="color:#999; font-style:italic;">— Not specified —</span>'}</div>
       </div>
     `;
-    container.appendChild(transferOutBox);
+    transferStack.appendChild(transferInBox);
+
+    const transferOutBox = document.createElement("div");
+    transferOutBox.className = "tour-transfer-box out";
+    transferOutBox.innerHTML = `
+      <span class="tour-transfer-icon"><i class="fa fa-arrow-circle-up"></i></span>
+      <div>
+        <strong class="tour-transfer-label">Transfer Out</strong>
+        <div class="tour-transfer-text">${hotelData.transfer_out || '<span style="color:#999; font-style:italic;">— Not specified —</span>'}</div>
+      </div>
+    `;
+    transferStack.appendChild(transferOutBox);
+    transfersPanel.appendChild(transferStack);
+
+    layout.appendChild(hotelsPanel);
+    layout.appendChild(transfersPanel);
+    container.appendChild(layout);
 
     return container;
   },
@@ -204,15 +369,14 @@ const TourHotelsUI = {
    */
   createHotelItem(hotel, isAdmin = false) {
     const item = document.createElement("div");
-    item.className = "hotel-item";
-    item.style.cssText = "padding: 10px; margin: 5px 0; background-color: white; border-radius: 4px; border: 1px solid #dee2e6; display:flex; justify-content:space-between; align-items:flex-start;";
+    item.className = "tour-hotel-item";
 
     const content = document.createElement("div");
-    content.style.cssText = "flex:1;";
+    content.className = "tour-hotel-content";
     
     // Hotel name with dates
     const mainInfo = document.createElement("div");
-    mainInfo.style.cssText = "font-weight: 600; color: #333; margin-bottom: 5px;";
+    mainInfo.className = "tour-hotel-main";
     
     const dateRange = hotel.check_in_date && hotel.check_out_date 
       ? `${hotel.check_in_date} to ${hotel.check_out_date}`
@@ -237,7 +401,7 @@ const TourHotelsUI = {
     
     if (details.length > 0) {
       const detailsDiv = document.createElement("div");
-      detailsDiv.style.cssText = "font-size: 0.9em; color: #666; margin-top: 3px;";
+      detailsDiv.className = "tour-hotel-details";
       detailsDiv.textContent = details.join(" • ");
       content.appendChild(detailsDiv);
     }
@@ -256,8 +420,7 @@ const TourHotelsUI = {
     if (isAdmin) {
       const emailBtn = document.createElement("button");
       emailBtn.type = "button";
-      emailBtn.className = "btn btn-sm btn-outline-primary";
-      emailBtn.style.cssText = "margin-left:12px; min-width:80px; flex-shrink:0; align-self:center;";
+      emailBtn.className = "btn btn-sm btn-outline-primary tour-hotel-email-btn";
       emailBtn.innerHTML = '<i class="fa fa-envelope"></i> EMAIL';
       emailBtn.onclick = () => this.openHotelEmailModal(hotel);
       item.appendChild(emailBtn);
@@ -990,4 +1153,3 @@ info@verathailandia.com | +66 123 456 789`;
 if (typeof module !== "undefined" && module.exports) {
   module.exports = TourHotelsUI;
 }
-
