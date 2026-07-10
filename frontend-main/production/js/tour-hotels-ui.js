@@ -161,6 +161,71 @@ const TourHotelsUI = {
     document.head.appendChild(style);
   },
 
+  normalizeDisplayDate(value) {
+    if (!value) return "";
+    const text = String(value).trim();
+    const isoMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoMatch) return `${isoMatch[3]}-${isoMatch[2]}-${isoMatch[1]}`;
+    return text;
+  },
+
+  buildTourTransferText(tourItem, direction = "in") {
+    if (!tourItem) return "";
+    const isOut = direction === "out";
+    const date = this.normalizeDisplayDate(
+      isOut
+        ? (tourItem.to_date || tourItem.tourEndDate || tourItem.tour_end_date)
+        : (tourItem.from_date || tourItem.tourStartDate || tourItem.tour_start_date)
+    );
+    const time = isOut
+      ? (tourItem.departure_time || tourItem.departureTime || tourItem.departureTimeTour)
+      : (tourItem.arrival_time || tourItem.arrivalTime || tourItem.arrivalTimeTour);
+    const transport = isOut
+      ? (tourItem.flight_out || tourItem.tourFlightOut || tourItem.transport_out)
+      : (tourItem.mode_of_transport || tourItem.flight_in || tourItem.tourFlightIn || tourItem.flight_number);
+    const route = tourItem.route || (tourItem.tours && tourItem.tours.route) || "";
+    const parts = [];
+
+    if (date) parts.push(date);
+    if (time) parts.push(`Departure: ${time}`);
+    if (transport) parts.push(transport);
+    if (route) parts.push(`(${route})`);
+
+    return parts.join(" | ");
+  },
+
+  isTransferTextIncomplete(value) {
+    const text = String(value || "");
+    if (!text) return true;
+    const hasTime = /\b(?:Pickup|Departure):/i.test(text);
+    const hasTransport = text.split("|").some((part) => {
+      const clean = part.trim();
+      if (!clean) return false;
+      if (/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(clean)) return false;
+      if (/^(?:Pickup|Departure):/i.test(clean)) return false;
+      if (/^\(.+\)$/.test(clean)) return false;
+      return true;
+    });
+    return !hasTime || !hasTransport;
+  },
+
+  pickTourTransferText(currentText, builtText, tourItem, direction = "in") {
+    if (!builtText) return currentText || "";
+    const text = String(currentText || "");
+    const isOut = direction === "out";
+    const expectedTime = isOut
+      ? (tourItem?.departure_time || tourItem?.departureTime || tourItem?.departureTimeTour)
+      : (tourItem?.arrival_time || tourItem?.arrivalTime || tourItem?.arrivalTimeTour);
+    const expectedTransport = isOut
+      ? (tourItem?.flight_out || tourItem?.tourFlightOut || tourItem?.transport_out)
+      : (tourItem?.mode_of_transport || tourItem?.flight_in || tourItem?.tourFlightIn || tourItem?.flight_number);
+
+    if (this.isTransferTextIncomplete(text)) return builtText;
+    if (expectedTime && !text.includes(expectedTime)) return builtText;
+    if (expectedTransport && !text.includes(expectedTransport)) return builtText;
+    return text;
+  },
+
   /**
    * Initialize tour hotels display for a trip
    * @param {number} tripId - The trip ID
@@ -209,6 +274,13 @@ const TourHotelsUI = {
     try {
       console.log("[TourHotelsUI] displayTourHotels called with tripId:", tripId, "tourItem.id:", tourItem.id, "tourItem:", tourItem);
       const hotelData = await TourHotelsAPI.getTourHotels(tripId, tourItem.id);
+      const builtTransferIn = this.buildTourTransferText(tourItem, "in");
+      const builtTransferOut = this.buildTourTransferText(tourItem, "out");
+      const displayHotelData = {
+        ...hotelData,
+        transfer_in: this.pickTourTransferText(hotelData.transfer_in, builtTransferIn, tourItem, "in"),
+        transfer_out: this.pickTourTransferText(hotelData.transfer_out, builtTransferOut, tourItem, "out"),
+      };
       
       // Find the tour row in the table
       const tourRow = this.findTourRow(tourItem.id);
@@ -217,7 +289,7 @@ const TourHotelsUI = {
       }
 
       // Create hotels display element
-      const hotelsDisplay = this.createHotelsDisplay(hotelData, isAdmin, isBooking, tripId, tourItem.id);
+      const hotelsDisplay = this.createHotelsDisplay(displayHotelData, isAdmin, isBooking, tripId, tourItem.id);
       
       // Insert hotels display after the tour row
       const hotelsRow = document.createElement("tr");

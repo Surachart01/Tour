@@ -44,7 +44,7 @@ function buildTourTransferText(item, direction = 'in') {
   const parts = [];
 
   if (date) parts.push(date);
-  if (time) parts.push(`Pickup: ${time}`);
+  if (time) parts.push(`Departure: ${time}`);
   if (transport) parts.push(transport);
   if (route) parts.push(`(${route})`);
 
@@ -341,20 +341,35 @@ function mapTripResponse(trip) {
       from_date: fmtDate(e.from_date),
       excursion_name: e.excursion_name || e.excursions?.name || "",
     })),
-    tours: (trip.tour_trip_items || []).map((t) => ({
-      ...t,
-      price: toFloat(t.price),
-      total_cost: toFloat(t.price),
-      final_cost: toFloat(t.price),
-      from_date: fmtDate(t.from_date),
-      to_date: fmtDate(t.to_date),
-      flight_in: t.flight_number || extractTourTransferTransport(t.transfer_in) || fmtDate(t.flight_in),
-      flight_out: extractTourTransferTransport(t.transfer_out) || fmtDate(t.flight_out),
-      arrival_time: extractTourTransferTime(t.transfer_in),
-      departure_time: extractTourTransferTime(t.transfer_out),
-      mode_of_transport: t.flight_number || '',
-      tour_name: t.tours?.name || "",
-    })),
+    tours: (trip.tour_trip_items || []).map((t) => {
+      const savedCity = String(t.from_location || "").trim();
+      const cityLooksInvalid = !savedCity || ["SIC", "PVT", "PRIVATE"].includes(savedCity.toUpperCase());
+      const savedRemarks = String(t.remarks || "").trim();
+      const remarksLooksInvalid = /^edit\s*delete$/i.test(savedRemarks);
+      const tripPax = (parseInt(trip.number_of_adults, 10) || 0) + (parseInt(trip.number_of_kids, 10) || 0);
+      const itemPax = (parseInt(t.number_of_adults, 10) || 0) + (parseInt(t.number_of_kids, 10) || 0);
+      const displayPax = itemPax > 0 && (!tripPax || itemPax <= tripPax) ? itemPax : tripPax;
+      return {
+        ...t,
+        from_location: cityLooksInvalid ? (t.tours?.city || t.from_location || "") : t.from_location,
+        route: t.tours?.route || "",
+        remarks: remarksLooksInvalid ? "" : t.remarks,
+        pax: displayPax,
+        number_of_adults: displayPax,
+        number_of_kids: 0,
+        price: toFloat(t.price),
+        total_cost: toFloat(t.price),
+        final_cost: toFloat(t.price),
+        from_date: fmtDate(t.from_date),
+        to_date: fmtDate(t.to_date),
+        flight_in: t.flight_number || extractTourTransferTransport(t.transfer_in) || fmtDate(t.flight_in),
+        flight_out: extractTourTransferTransport(t.transfer_out) || fmtDate(t.flight_out),
+        arrival_time: extractTourTransferTime(t.transfer_in),
+        departure_time: extractTourTransferTime(t.transfer_out),
+        mode_of_transport: t.flight_number || '',
+        tour_name: t.tours?.name || "",
+      };
+    }),
     transfers: (trip.transfer_trip_items || []).map((t) => ({
       ...t,
       price: toFloat(t.price),

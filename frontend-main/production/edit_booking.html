@@ -437,6 +437,111 @@
         max-width: 90% !important;
       }
 
+      #addTourModal #tourForm > .form-row {
+        align-items: flex-start;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group,
+      #addTourModal #tourForm > .form-row > .col-md-4.form-group {
+        flex: 0 0 33.333333%;
+        max-width: 33.333333%;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#tourCountry) {
+        order: 1;
+        flex-basis: 25%;
+        max-width: 25%;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#city) {
+        order: 2;
+        flex-basis: 25%;
+        max-width: 25%;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#tourStartDate) {
+        order: 3;
+        flex-basis: 25%;
+        max-width: 25%;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#tourEndDate) {
+        order: 4;
+        flex-basis: 25%;
+        max-width: 25%;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#tourName) {
+        order: 5;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#route) {
+        order: 6;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(.room-type-box) {
+        order: 7;
+        flex-basis: 66.666667%;
+        max-width: 66.666667%;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#pax) {
+        order: 8;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#tourToT) {
+        order: 9;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#tourFlightIn) {
+        order: 10;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#arrivalTimeTour) {
+        order: 11;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#tourFlightOut) {
+        order: 12;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#departureTimeTour) {
+        order: 13;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#updatedTourPrice),
+      #addTourModal #tourForm > .form-row > .col-md-4.form-group:has(#updatedTourPrice) {
+        order: 14;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#tourRemarks) {
+        order: 15;
+        flex-basis: 100%;
+        max-width: 100%;
+      }
+
+      #addTourModal #updatedTourPrice {
+        max-width: none !important;
+      }
+
+      #addTourModal #getTourPriceBtn {
+        white-space: nowrap;
+      }
+
+      @media (max-width: 991.98px) {
+        #addTourModal #tourForm > .form-row > .form-group,
+        #addTourModal #tourForm > .form-row > .col-md-4.form-group,
+        #addTourModal #tourForm > .form-row > .form-group:has(#tourCountry),
+        #addTourModal #tourForm > .form-row > .form-group:has(#city),
+        #addTourModal #tourForm > .form-row > .form-group:has(#tourStartDate),
+        #addTourModal #tourForm > .form-row > .form-group:has(#tourEndDate),
+        #addTourModal #tourForm > .form-row > .form-group:has(.room-type-box),
+        #addTourModal #tourForm > .form-row > .form-group:has(#tourRemarks) {
+          flex-basis: 100%;
+          max-width: 100%;
+        }
+      }
+
       .modal-content {
         border-radius: 16px;
         border: none;
@@ -791,6 +896,7 @@
                     type="number"
                     id="adult"
                     class="form-control"
+                    min="0"
                     placeholder="Enter the number of adults"
                   />
                 </div>
@@ -807,6 +913,7 @@
                     type="number"
                     id="child"
                     class="form-control"
+                    min="0"
                     placeholder="Enter the number of children"
                   />
                 </div>
@@ -3237,10 +3344,18 @@
         function buildTourTransferText(dateValue, timeValue, transportValue, routeValue) {
           const parts = [];
           if (dateValue) parts.push(dateValue);
-          if (timeValue) parts.push(`Pickup: ${timeValue}`);
+          if (timeValue) parts.push(`Departure: ${timeValue}`);
           if (transportValue) parts.push(transportValue);
           if (routeValue) parts.push(`(${routeValue})`);
           return parts.join(" | ");
+        }
+
+        function isTourTransferTextIncomplete(value) {
+          const text = String(value || "");
+          return !text || !/(?:Pickup|Departure):/i.test(text) || !text.split("|").some(part => {
+            const clean = part.trim();
+            return clean && !/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(clean) && !/^(?:Pickup|Departure):/i.test(clean) && !/^\(.+\)$/.test(clean);
+          });
         }
 
         function calculateBaseTotalCost() {
@@ -3287,7 +3402,8 @@
             toursTable.querySelectorAll("tr").forEach(row => {
               if (row.dataset.isPackageItem === "true") return;
               const cells = row.querySelectorAll("td");
-              if (cells[6]) sum += parseFloat(cells[6].textContent.trim()) || 0;
+              const priceCell = row.querySelector(".tour-price") || cells[8];
+              if (priceCell) sum += parseFloat(priceCell.textContent.trim()) || 0;
             });
           }
           // sum others
@@ -8255,6 +8371,88 @@
           .getElementById("tripleRoomCount")
           .addEventListener("input", checkAndCalculateTourPrice);
 
+        function getDefaultTourRoomsForPax(pax) {
+          let remaining = parseInt(pax, 10) || 0;
+          let singleRooms = 0;
+          let doubleRooms = 0;
+          let tripleRooms = 0;
+
+          tripleRooms = Math.floor(remaining / 3);
+          remaining = remaining % 3;
+
+          if (remaining === 1) {
+            if (tripleRooms > 0) {
+              tripleRooms -= 1;
+              doubleRooms += 2;
+            } else {
+              singleRooms = 1;
+            }
+          } else if (remaining === 2) {
+            doubleRooms = 1;
+          }
+
+          return { singleRooms, doubleRooms, tripleRooms };
+        }
+
+        function applyTourRoomCounts({ singleRooms, doubleRooms, tripleRooms }) {
+          const singleRoomCheckbox = document.getElementById("singleRoom");
+          const doubleRoomCheckbox = document.getElementById("doubleRoom");
+          const tripleRoomCheckbox = document.getElementById("tripleRoom");
+          const singleRoomInput = document.getElementById("singleRoomCount");
+          const doubleRoomInput = document.getElementById("doubleRoomCount");
+          const tripleRoomInput = document.getElementById("tripleRoomCount");
+
+          singleRoomCheckbox.checked = singleRooms > 0;
+          doubleRoomCheckbox.checked = doubleRooms > 0;
+          tripleRoomCheckbox.checked = tripleRooms > 0;
+          singleRoomInput.value = singleRooms;
+          doubleRoomInput.value = doubleRooms;
+          tripleRoomInput.value = tripleRooms;
+          singleRoomInput.disabled = singleRooms === 0;
+          doubleRoomInput.disabled = doubleRooms === 0;
+          tripleRoomInput.disabled = tripleRooms === 0;
+        }
+
+        function getTourRoomCountsFromForm() {
+          const singleRooms = document.getElementById("singleRoom").checked
+            ? parseInt(document.getElementById("singleRoomCount").value || 0, 10)
+            : 0;
+          const doubleRooms = document.getElementById("doubleRoom").checked
+            ? parseInt(document.getElementById("doubleRoomCount").value || 0, 10)
+            : 0;
+          const tripleRooms = document.getElementById("tripleRoom").checked
+            ? parseInt(document.getElementById("tripleRoomCount").value || 0, 10)
+            : 0;
+
+          return { singleRooms, doubleRooms, tripleRooms };
+        }
+
+        function ensureTourRoomCountsForPax(pax, options = {}) {
+          const shouldValidateMismatch = options.validateMismatch !== false;
+          const passengerCount = parseInt(pax, 10) || 0;
+          let roomCounts = getTourRoomCountsFromForm();
+          let capacity =
+            roomCounts.singleRooms +
+            roomCounts.doubleRooms * 2 +
+            roomCounts.tripleRooms * 3;
+
+          if (passengerCount > 0 && capacity === 0) {
+            roomCounts = getDefaultTourRoomsForPax(passengerCount);
+            applyTourRoomCounts(roomCounts);
+            capacity =
+              roomCounts.singleRooms +
+              roomCounts.doubleRooms * 2 +
+              roomCounts.tripleRooms * 3;
+          }
+
+          if (shouldValidateMismatch && passengerCount > 0 && capacity !== passengerCount) {
+            alert(`Room capacity (${capacity}) must match Pax (${passengerCount}). Please adjust the room counts.`);
+            return null;
+          }
+
+          return roomCounts;
+        }
+
         // ✅ Function to calculate tour price
         function calculateTourPrice() {
           const token = localStorage.getItem("token");
@@ -8281,24 +8479,9 @@
             10
           );
 
-          const singleRooms = document.getElementById("singleRoom").checked
-            ? parseInt(
-                document.getElementById("singleRoomCount").value || 0,
-                10
-              )
-            : 0;
-          const doubleRooms = document.getElementById("doubleRoom").checked
-            ? parseInt(
-                document.getElementById("doubleRoomCount").value || 0,
-                10
-              )
-            : 0;
-          const tripleRooms = document.getElementById("tripleRoom").checked
-            ? parseInt(
-                document.getElementById("tripleRoomCount").value || 0,
-                10
-              )
-            : 0;
+          const roomCounts = ensureTourRoomCountsForPax(numberOfAdults + numberOfKids);
+          if (!roomCounts) return;
+          const { singleRooms, doubleRooms, tripleRooms } = roomCounts;
 
           // Validate inputs before API request
           if (
@@ -8510,26 +8693,9 @@
             const numberOfKids =
               parseInt(document.getElementById("child").value, 10) || 0;
 
-            const singleRooms = document.getElementById("singleRoom").checked
-              ? parseInt(
-                  document.getElementById("singleRoomCount").value || 0,
-                  10
-                )
-              : 0;
-
-            const doubleRooms = document.getElementById("doubleRoom").checked
-              ? parseInt(
-                  document.getElementById("doubleRoomCount").value || 0,
-                  10
-                )
-              : 0;
-
-            const tripleRooms = document.getElementById("tripleRoom").checked
-              ? parseInt(
-                  document.getElementById("tripleRoomCount").value || 0,
-                  10
-                )
-              : 0;
+            const roomCounts = ensureTourRoomCountsForPax(numberOfAdults + numberOfKids);
+            if (!roomCounts) return;
+            const { singleRooms, doubleRooms, tripleRooms } = roomCounts;
 
             // Validate input fields
             if (
@@ -8640,9 +8806,9 @@
           const totalRoomCapacity =
             singleRoomCount * 1 + doubleRoomCount * 2 + tripleRoomCount * 3;
 
-          if (totalRoomCapacity > pax) {
+          if (totalRoomCapacity !== pax) {
             alert(
-              `Total room capacity (${totalRoomCapacity}) exceeds the number of pax (${pax}). Please adjust the room counts.`
+              `Room capacity (${totalRoomCapacity}) must match Pax (${pax}). Please adjust the room counts.`
             );
             return false;
           }
@@ -8709,8 +8875,12 @@
           row.dataset.transferOut = buildTourTransferText(tour.tourEndDate, tour.departureTimeTour, tour.tourFlightOut, tour.route || "");
           row.dataset.tourStartDate = tour.tourStartDate;
           row.dataset.tourEndDate = tour.tourEndDate;
+          const startDateIso = formatToYYYYMMDD(tour.tourStartDate || "");
+          const endDateIso = formatToYYYYMMDD(tour.tourEndDate || "");
 
           row.innerHTML = `
+                    <td data-date="${startDateIso || ""}">${formatDateDisplay(startDateIso || tour.tourStartDate || "")}</td>
+                    <td data-date="${endDateIso || ""}">${formatDateDisplay(endDateIso || tour.tourEndDate || "")}</td>
                     <td>${tour.city}</td>
                     <td>${tour.tourName}</td>
                     <td>${tour.tourToT}</td>
@@ -8834,7 +9004,13 @@
 
           const adult = parseInt(document.getElementById("adult")?.value) || 0;
           const child = parseInt(document.getElementById("child")?.value) || 0;
-          const totalPax = (tour.number_of_adults || 0) + (tour.number_of_kids || 0) || (adult + child);
+          const tripPax = adult + child;
+          const rawTourPax = (parseInt(tour.number_of_adults, 10) || 0) + (parseInt(tour.number_of_kids, 10) || 0);
+          const totalPax = rawTourPax > 0 && (!tripPax || rawTourPax <= tripPax) ? rawTourPax : tripPax;
+          const displayCity = (tour.from_location && !["SIC", "PVT", "PRIVATE"].includes(String(tour.from_location).trim().toUpperCase()))
+            ? tour.from_location
+            : (tour.city || tour.tours?.city || "");
+          const displayRoute = tour.route || tour.tours?.route || "";
 
           // Update pax field if there are any valid inputs
           if (totalPax) {
@@ -8846,7 +9022,7 @@
             return;
           }
 
-          const remarksVal = tour.remarks || "";
+          const remarksVal = /^edit\s*delete$/i.test(String(tour.remarks || "").trim()) ? "" : (tour.remarks || "");
           const isPackage = remarksVal.includes("[Special Package]") || (window.pendingSpecialPackageId && (tour.price === 0 || tour.final_cost === 0));
 
           const cleanRemarks = remarksVal.replace(/\[Special Package\]/gi, "").trim();
@@ -8856,8 +9032,10 @@
           row.dataset.quotationStatus = quotationStatus; // ✅ Store quotation status
           row.dataset.flightIn = tour.flight_in || "";
           row.dataset.flightOut = tour.flight_out || "";
-          row.dataset.transferIn = tour.transfer_in || "";
-          row.dataset.transferOut = tour.transfer_out || "";
+          const computedTransferIn = buildTourTransferText(tour.from_date, tour.arrival_time, tour.flight_in, displayRoute);
+          const computedTransferOut = buildTourTransferText(tour.to_date, tour.departure_time, tour.flight_out, displayRoute);
+          row.dataset.transferIn = isTourTransferTextIncomplete(tour.transfer_in) ? computedTransferIn : tour.transfer_in;
+          row.dataset.transferOut = isTourTransferTextIncomplete(tour.transfer_out) ? computedTransferOut : tour.transfer_out;
           row.dataset.singleRooms = tour.single_rooms || 0;
           row.dataset.doubleRooms = tour.double_rooms || 0;
           row.dataset.tripleRooms = tour.triple_rooms || 0;
@@ -8968,10 +9146,10 @@
           row.innerHTML = `
                     <td data-date="${formatToYYYYMMDD(tour.from_date || '')}">${startDateCell}</td>
                     <td data-date="${formatToYYYYMMDD(tour.to_date || '')}">${endDateCell}</td>
-                    <td>${tour.from_location || ""}</td>
+                    <td>${displayCity}</td>
                     <td>${tour.tour_name || ""} ${packageBadge}</td>
                     <td>${isPackage ? "SIC" : (tour.tot || "")}</td>
-                    <td>${tour.route || ""}</td>
+                    <td>${displayRoute}</td>
                     <td>${totalPax}</td>
                     <td>${cleanRemarks}</td>
                     <td class="tour-price">${tour.final_cost}</td>
@@ -9026,8 +9204,10 @@
             rowData["to_date"] = formatToYYYYMMDD(
               (hasDateColumns ? getCellDateValue(cells[1]) : "") || row.dataset.tourEndDate || ""
             );
-            rowData["transfer_in"] = row.dataset.transferIn || buildTourTransferText(rowData["from_date"], rowData["arrival_time"], rowData["flight_in"], rowData["route"]);
-            rowData["transfer_out"] = row.dataset.transferOut || buildTourTransferText(rowData["to_date"], rowData["departure_time"], rowData["flight_out"], rowData["route"]);
+            const computedTransferIn = buildTourTransferText(rowData["from_date"], rowData["arrival_time"], rowData["flight_in"], rowData["route"]);
+            const computedTransferOut = buildTourTransferText(rowData["to_date"], rowData["departure_time"], rowData["flight_out"], rowData["route"]);
+            rowData["transfer_in"] = isTourTransferTextIncomplete(row.dataset.transferIn) ? computedTransferIn : row.dataset.transferIn;
+            rowData["transfer_out"] = isTourTransferTextIncomplete(row.dataset.transferOut) ? computedTransferOut : row.dataset.transferOut;
             rowData["single_rooms"] = parseInt(row.dataset.singleRooms) || 0;
             rowData["double_rooms"] = parseInt(row.dataset.doubleRooms) || 0;
             rowData["triple_rooms"] = parseInt(row.dataset.tripleRooms) || 0;
@@ -9063,12 +9243,18 @@
           const paxIndex = hasDateColumns ? 6 : 4;
           const remarksIndex = hasDateColumns ? 7 : 5;
           const priceIndex = hasDateColumns ? 8 : 6;
+          const startDateValue =
+            row.dataset.tourStartDate ||
+            (hasDateColumns ? getCellDateValue(row.cells[0]) : "");
+          const endDateValue =
+            row.dataset.tourEndDate ||
+            (hasDateColumns ? getCellDateValue(row.cells[1]) : "");
 
           let tour = {
             tour_id: tourId,
             from_location: getCellText(row.cells[cityIndex]) || "",
-            tourStartDate: formatToYYYYMMDD(row.dataset.tourStartDate) || "",
-            tourEndDate: formatToYYYYMMDD(row.dataset.tourEndDate) || "",
+            tourStartDate: formatToYYYYMMDD(startDateValue) || "",
+            tourEndDate: formatToYYYYMMDD(endDateValue) || "",
             tour_name: getCellText(row.cells[nameIndex]) || "",
             tot: getCellText(row.cells[totIndex]) || "",
             route: getCellText(row.cells[routeIndex]) || "",
@@ -9089,6 +9275,14 @@
           console.log("Loaded Tour Data for Editing:", tour);
 
           // ✅ Populate modal fields with extracted data
+          const tourDropdown = document.getElementById("tourName");
+          const routeField = document.getElementById("route");
+          if (tourDropdown) {
+            tourDropdown.innerHTML = `<option value="${tour.tour_id}" selected>${tour.tour_name || "Selected Tour"}</option>`;
+            tourDropdown.value = String(tour.tour_id);
+            tourDropdown.disabled = false;
+          }
+          if (routeField) routeField.value = tour.route || "";
           setCountryAndCityForEdit("tourCountry", "city", tour.from_location);
           document.getElementById("tourToT").value = tour.tot;
           document.getElementById("tourStartDate").value = tour.tourStartDate;
@@ -9125,6 +9319,10 @@
           singleRoomInput.disabled = !singleRoomCheckbox.checked;
           doubleRoomInput.disabled = !doubleRoomCheckbox.checked;
           tripleRoomInput.disabled = !tripleRoomCheckbox.checked;
+          ensureTourRoomCountsForPax(
+            parseInt(document.getElementById("pax").value || 0, 10),
+            { validateMismatch: false }
+          );
 
           // ✅ Add event listeners to checkboxes to toggle input field editability
           singleRoomCheckbox.addEventListener("change", function () {
@@ -9143,9 +9341,6 @@
           });
 
           // ✅ Fetch and Populate the Tour Dropdown
-          const tourDropdown = document.getElementById("tourName");
-          const routeField = document.getElementById("route");
-
           const url = new URL(`${Endpoint}/api/v1/tours`);
           url.searchParams.append("city", tour.from_location);
 
@@ -9163,6 +9358,7 @@
             .then((tours) => {
               tourDropdown.disabled = false;
               tourDropdown.innerHTML = '<option value="">Select Tour</option>'; // Clear previous options
+              let matchedSelectedTour = false;
 
               tours.forEach((tourOption) => {
                 const option = document.createElement("option");
@@ -9171,13 +9367,31 @@
 
                 toursData[tourOption.id] = tourOption;
 
-                if (tourOption.name === tour.tour_name) {
+                if (
+                  String(tourOption.id) === String(tour.tour_id) ||
+                  String(tourOption.name || "").trim() === String(tour.tour_name || "").trim()
+                ) {
                   option.selected = true;
+                  matchedSelectedTour = true;
                   routeField.value = tourOption.route || "Route Not Available";
                 }
 
                 tourDropdown.appendChild(option);
               });
+
+              if (!matchedSelectedTour && tour.tour_id) {
+                const option = document.createElement("option");
+                option.value = tour.tour_id;
+                option.textContent = tour.tour_name || "Selected Tour";
+                option.selected = true;
+                tourDropdown.appendChild(option);
+                toursData[tour.tour_id] = toursData[tour.tour_id] || {
+                  id: tour.tour_id,
+                  name: tour.tour_name,
+                  route: tour.route,
+                };
+                routeField.value = tour.route || routeField.value || "";
+              }
 
               console.log("Tour dropdown updated:", tours);
             })
@@ -9365,7 +9579,11 @@
           editingTourRow.dataset.tripleRooms = updatedTour.triple_rooms;
 
           // ✅ Update row directly in the table
+          const startDateIso = formatToYYYYMMDD(updatedTour.tourStartDate || "");
+          const endDateIso = formatToYYYYMMDD(updatedTour.tourEndDate || "");
           editingTourRow.innerHTML = `
+          <td data-date="${startDateIso || ""}">${formatDateDisplay(startDateIso || updatedTour.tourStartDate || "")}</td>
+          <td data-date="${endDateIso || ""}">${formatDateDisplay(endDateIso || updatedTour.tourEndDate || "")}</td>
           <td>${updatedTour.city}</td>
           <td>${updatedTour.tour_name}</td>
           <td>${updatedTour.tot}</td>
@@ -9439,45 +9657,15 @@
             const tourPrice =
               document.getElementById("updatedTourPrice").value || "N/A"; // ✅ Store Price
 
-            // Room counts
-            const singleRoomCount = document.getElementById("singleRoom")
-              .checked
-              ? parseInt(
-                  document.getElementById("singleRoomCount").value || 0,
-                  10
-                )
-              : 0;
-            const doubleRoomCount = document.getElementById("doubleRoom")
-              .checked
-              ? parseInt(
-                  document.getElementById("doubleRoomCount").value || 0,
-                  10
-                )
-              : 0;
-            const tripleRoomCount = document.getElementById("tripleRoom")
-              .checked
-              ? parseInt(
-                  document.getElementById("tripleRoomCount").value || 0,
-                  10
-                )
-              : 0;
-
             // Pax count
             const pax = parseInt(document.getElementById("pax").value, 10);
+            const roomCounts = ensureTourRoomCountsForPax(pax);
+            if (!roomCounts) return;
+            const { singleRooms: singleRoomCount, doubleRooms: doubleRoomCount, tripleRooms: tripleRoomCount } = roomCounts;
 
             // Validate required fields
             if (!city || !tourName || !pax || !tourToT) {
               alert("Please fill in all required fields.");
-              return;
-            }
-
-            // Validate room count does not exceed pax
-            const totalRoomCapacity =
-              singleRoomCount * 1 + doubleRoomCount * 2 + tripleRoomCount * 3;
-            if (totalRoomCapacity > pax) {
-              alert(
-                `Total room capacity (${totalRoomCapacity}) exceeds total pax (${pax}).`
-              );
               return;
             }
 
@@ -10300,54 +10488,28 @@
             const enableAssistanceFee = localStorage.getItem("enableAssistanceFee");
             const defaultAssistanceFee = localStorage.getItem("defaultAssistanceFee");
 
+            const parseBooleanValue = (value) => value === true || value === "true" || value === 1 || value === "1";
+            const hasSavedAssistanceSetting =
+              data.include_assistance_fee !== undefined &&
+              data.include_assistance_fee !== null;
             const isAgentFeeEnabled = enableAssistanceFee === "true";
+            const shouldIncludeAssistance = hasSavedAssistanceSetting
+              ? parseBooleanValue(data.include_assistance_fee)
+              : isAgentFeeEnabled;
+            const savedAssistanceAmount =
+              data.assistance_fee_amount !== undefined && data.assistance_fee_amount !== null
+                ? parseFloat(data.assistance_fee_amount)
+                : NaN;
+            const fallbackAssistanceAmount = defaultAssistanceFee ? parseFloat(defaultAssistanceFee) : 1000;
 
-            if (isAgentFeeEnabled) {
-              console.log("Agent has assistance fee enabled. Ticking checkbox automatically.");
-              if (includeAssistanceFee) {
-                includeAssistanceFee.checked = true;
-                // Dispatch change event to set the correct state and styles
-                includeAssistanceFee.dispatchEvent(new Event("change"));
-              }
-              if (assistanceFeeAmount) {
-                // If checkbox is checked, we set the amount to default/saved value
-                const savedAmount = (data.assistance_fee_amount !== undefined && data.assistance_fee_amount !== null && data.assistance_fee_amount > 0)
-                  ? data.assistance_fee_amount
-                  : (defaultAssistanceFee ? parseFloat(defaultAssistanceFee) : 1000);
-                assistanceFeeAmount.value = savedAmount;
-              }
-            } else {
-              console.log("Agent does not have assistance fee enabled by default.");
-              if (
-                data.include_assistance_fee !== undefined &&
-                data.include_assistance_fee !== null
-              ) {
-                if (includeAssistanceFee) {
-                  includeAssistanceFee.checked = Boolean(
-                    data.include_assistance_fee
-                  );
-                  includeAssistanceFee.dispatchEvent(new Event("change"));
-                }
-              } else {
-                if (includeAssistanceFee) {
-                  includeAssistanceFee.checked = false;
-                  includeAssistanceFee.dispatchEvent(new Event("change"));
-                }
-              }
-
-              if (
-                data.assistance_fee_amount !== undefined &&
-                data.assistance_fee_amount !== null
-              ) {
-                if (assistanceFeeAmount) {
-                  const isChecked = includeAssistanceFee ? includeAssistanceFee.checked : false;
-                  assistanceFeeAmount.value = isChecked ? data.assistance_fee_amount : 0;
-                }
-              } else {
-                if (assistanceFeeAmount) {
-                  assistanceFeeAmount.value = 0;
-                }
-              }
+            if (assistanceFeeAmount) {
+              assistanceFeeAmount.value = shouldIncludeAssistance
+                ? (!isNaN(savedAssistanceAmount) && savedAssistanceAmount > 0 ? savedAssistanceAmount : fallbackAssistanceAmount)
+                : 0;
+            }
+            if (includeAssistanceFee) {
+              includeAssistanceFee.checked = shouldIncludeAssistance;
+              includeAssistanceFee.dispatchEvent(new Event("change"));
             }
 
             // Call price update function immediately to refresh the prices in the UI
@@ -10603,6 +10765,7 @@
             event.preventDefault();
 
             const form = document.getElementById("addTripForm");
+            clearTripRequiredFieldState();
             if (form && !form.checkValidity()) {
               form.reportValidity();
               return;
@@ -10621,6 +10784,10 @@
             if (!quotationId) {
               alert("Quotation ID is missing! Cannot update.");
               return;
+            }
+
+            if (typeof updateUIPriceFields === "function") {
+              updateUIPriceFields();
             }
 
             const agentName = document.getElementById("agentName").textContent;
@@ -10757,8 +10924,10 @@
                 rowData["to_date"] = formatToYYYYMMDD(
                   getCellDateValue(cells[1]) || row.dataset.tourEndDate || ""
                 );
-                rowData["transfer_in"] = row.dataset.transferIn || buildTourTransferText(rowData["from_date"], rowData["arrival_time"], rowData["flight_in"], rowData["route"]);
-                rowData["transfer_out"] = row.dataset.transferOut || buildTourTransferText(rowData["to_date"], rowData["departure_time"], rowData["flight_out"], rowData["route"]);
+                const computedTransferIn = buildTourTransferText(rowData["from_date"], rowData["arrival_time"], rowData["flight_in"], rowData["route"]);
+                const computedTransferOut = buildTourTransferText(rowData["to_date"], rowData["departure_time"], rowData["flight_out"], rowData["route"]);
+                rowData["transfer_in"] = isTourTransferTextIncomplete(row.dataset.transferIn) ? computedTransferIn : row.dataset.transferIn;
+                rowData["transfer_out"] = isTourTransferTextIncomplete(row.dataset.transferOut) ? computedTransferOut : row.dataset.transferOut;
                 rowData["single_rooms"] =
                   parseInt(row.dataset.singleRooms) || 0;
                 rowData["double_rooms"] =
@@ -11034,6 +11203,143 @@
             const others = extractOthersData("othersTableBody");
             console.log("Extracted Others Data:", others);
 
+            function clearTripRequiredFieldState() {
+              [
+                "clientName",
+                "mobileNumber",
+                "bookingDate",
+                "tripStartDate",
+                "adult",
+                "child",
+                "assistanceFeeAmount"
+              ].forEach((id) => {
+                const field = document.getElementById(id);
+                if (!field) return;
+                field.setCustomValidity("");
+                field.classList.remove("is-invalid");
+              });
+            }
+
+            function isBlankValue(value) {
+              const text = String(value ?? "").trim();
+              return !text || text === "-" || text.toLowerCase() === "n/a";
+            }
+
+            function markFieldInvalid(id, message) {
+              const field = document.getElementById(id);
+              if (!field) return;
+              field.setCustomValidity(message);
+              field.classList.add("is-invalid");
+            }
+
+            function addMissingRows(errors, rows, label, checks) {
+              rows.forEach((row, index) => {
+                const missing = checks
+                  .filter((check) => check.isMissing(row))
+                  .map((check) => check.label);
+                if (missing.length) {
+                  errors.push(`${label} row ${index + 1}: ${missing.join(", ")}`);
+                }
+              });
+            }
+
+            function validateTripBeforeSave(data) {
+              clearTripRequiredFieldState();
+              const errors = [];
+
+              if (isBlankValue(clientName)) {
+                errors.push("Client Name is required.");
+                markFieldInvalid("clientName", "Client Name is required.");
+              }
+              if (isBlankValue(clientPhone)) {
+                errors.push("Mobile Number is required.");
+                markFieldInvalid("mobileNumber", "Mobile Number is required.");
+              }
+              if (isBlankValue(bookingDate)) {
+                errors.push("Booking Date is required.");
+                markFieldInvalid("bookingDate", "Booking Date is required.");
+              }
+              if (isBlankValue(startDate)) {
+                errors.push("Trip Start Date is required.");
+                markFieldInvalid("tripStartDate", "Trip Start Date is required.");
+              }
+              if (numberOfAdults + numberOfKids <= 0) {
+                errors.push("At least one adult or child is required.");
+                markFieldInvalid("adult", "At least one passenger is required.");
+              }
+
+              const includeAssistanceFeeField = document.getElementById("includeAssistanceFee");
+              const assistanceFeeField = document.getElementById("assistanceFeeAmount");
+              const assistanceFeeValue = parseFloat(assistanceFeeField?.value) || 0;
+              if (includeAssistanceFeeField?.checked && assistanceFeeValue <= 0) {
+                errors.push("Assistance Fee Amount is required when assistance fee is included.");
+                markFieldInvalid("assistanceFeeAmount", "Assistance Fee Amount is required.");
+              }
+
+              const serviceCount =
+                data.hotels.length +
+                data.transfers.length +
+                data.excursions.length +
+                data.flights.length +
+                data.tours.length +
+                data.others.length;
+              if (serviceCount === 0) {
+                errors.push("Please add at least one service or special package item.");
+              }
+
+              addMissingRows(errors, data.hotels, "Hotel", [
+                { label: "Check In", isMissing: (row) => isBlankValue(row.from_date) },
+                { label: "Check Out", isMissing: (row) => isBlankValue(row.to_date) },
+                { label: "City", isMissing: (row) => isBlankValue(row.city) },
+                { label: "Hotel", isMissing: (row) => isBlankValue(row.hotel_name) },
+                { label: "Room Type", isMissing: (row) => isBlankValue(row.room_type_summary) },
+                { label: "Nights", isMissing: (row) => !row.nights || row.nights <= 0 }
+              ]);
+              addMissingRows(errors, data.transfers, "Transfer", [
+                { label: "Date", isMissing: (row) => isBlankValue(row.date) },
+                { label: "City", isMissing: (row) => isBlankValue(row.city) },
+                { label: "Transfer Description", isMissing: (row) => isBlankValue(row.transfer_description) },
+                { label: "TOT", isMissing: (row) => isBlankValue(row.tot) },
+                { label: "From", isMissing: (row) => isBlankValue(row.from_location) },
+                { label: "To", isMissing: (row) => isBlankValue(row.to_location) }
+              ]);
+              addMissingRows(errors, data.excursions, "Excursion", [
+                { label: "Date", isMissing: (row) => isBlankValue(row.date) },
+                { label: "City", isMissing: (row) => isBlankValue(row.city) },
+                { label: "Name", isMissing: (row) => isBlankValue(row.excursion_name) },
+                { label: "TOE", isMissing: (row) => isBlankValue(row.toe) }
+              ]);
+              addMissingRows(errors, data.flights, "Flight", [
+                { label: "Date", isMissing: (row) => isBlankValue(row.flight_date) },
+                { label: "Airline", isMissing: (row) => isBlankValue(row.flight_name || row.flight_airline) },
+                { label: "Flight Number", isMissing: (row) => isBlankValue(row.flight_number) },
+                { label: "In/Out", isMissing: (row) => isBlankValue(row.in_or_out) },
+                { label: "Route", isMissing: (row) => isBlankValue(row.route) }
+              ]);
+              addMissingRows(errors, data.tours, "Tour", [
+                { label: "Start Date", isMissing: (row) => isBlankValue(row.from_date) },
+                { label: "End Date", isMissing: (row) => isBlankValue(row.to_date) },
+                { label: "City", isMissing: (row) => isBlankValue(row.from_location) },
+                { label: "Name", isMissing: (row) => isBlankValue(row.tour_name) },
+                { label: "TOT", isMissing: (row) => isBlankValue(row.tot) },
+                { label: "Route", isMissing: (row) => isBlankValue(row.route) }
+              ]);
+              addMissingRows(errors, data.others, "Other", [
+                { label: "Description", isMissing: (row) => isBlankValue(row.description) },
+                { label: "Date", isMissing: (row) => isBlankValue(row.date) }
+              ]);
+
+              if (!errors.length) return true;
+
+              alert(`Please complete the required fields before saving:\n\n- ${errors.join("\n- ")}`);
+              const firstInvalid = document.querySelector(".is-invalid");
+              if (firstInvalid) {
+                firstInvalid.reportValidity();
+                firstInvalid.focus();
+              }
+              return false;
+            }
+
             // Get assistance fee values
             const includeAssistanceFeeCheckbox = document.getElementById(
               "includeAssistanceFee"
@@ -11100,6 +11406,10 @@
                   cancellationDeadlineInput.value
                 );
               }
+            }
+
+            if (!validateTripBeforeSave({ hotels, transfers, excursions, flights, tours, others })) {
+              return;
             }
 
             // Construct the request payload

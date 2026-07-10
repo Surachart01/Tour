@@ -268,6 +268,111 @@
         max-width: 90% !important;
       }
 
+      #addTourModal #tourForm > .form-row {
+        align-items: flex-start;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group,
+      #addTourModal #tourForm > .form-row > .col-md-4.form-group {
+        flex: 0 0 33.333333%;
+        max-width: 33.333333%;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#tourCountry) {
+        order: 1;
+        flex-basis: 25%;
+        max-width: 25%;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#city) {
+        order: 2;
+        flex-basis: 25%;
+        max-width: 25%;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#tourStartDate) {
+        order: 3;
+        flex-basis: 25%;
+        max-width: 25%;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#tourEndDate) {
+        order: 4;
+        flex-basis: 25%;
+        max-width: 25%;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#tourName) {
+        order: 5;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#route) {
+        order: 6;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(.room-type-box) {
+        order: 7;
+        flex-basis: 66.666667%;
+        max-width: 66.666667%;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#pax) {
+        order: 8;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#tourToT) {
+        order: 9;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#tourFlightIn) {
+        order: 10;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#arrivalTimeTour) {
+        order: 11;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#tourFlightOut) {
+        order: 12;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#departureTimeTour) {
+        order: 13;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#updatedTourPrice),
+      #addTourModal #tourForm > .form-row > .col-md-4.form-group:has(#updatedTourPrice) {
+        order: 14;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#tourRemarks) {
+        order: 15;
+        flex-basis: 100%;
+        max-width: 100%;
+      }
+
+      #addTourModal #updatedTourPrice {
+        max-width: none !important;
+      }
+
+      #addTourModal #getTourPriceBtn {
+        white-space: nowrap;
+      }
+
+      @media (max-width: 991.98px) {
+        #addTourModal #tourForm > .form-row > .form-group,
+        #addTourModal #tourForm > .form-row > .col-md-4.form-group,
+        #addTourModal #tourForm > .form-row > .form-group:has(#tourCountry),
+        #addTourModal #tourForm > .form-row > .form-group:has(#city),
+        #addTourModal #tourForm > .form-row > .form-group:has(#tourStartDate),
+        #addTourModal #tourForm > .form-row > .form-group:has(#tourEndDate),
+        #addTourModal #tourForm > .form-row > .form-group:has(.room-type-box),
+        #addTourModal #tourForm > .form-row > .form-group:has(#tourRemarks) {
+          flex-basis: 100%;
+          max-width: 100%;
+        }
+      }
+
       .modal-content {
         border-radius: 16px;
         border: none;
@@ -532,6 +637,7 @@
                     type="number"
                     id="adult"
                     class="form-control"
+                    min="0"
                     placeholder="Enter the number of adults"
                   />
                 </div>
@@ -548,6 +654,7 @@
                     type="number"
                     id="child"
                     class="form-control"
+                    min="0"
                     placeholder="Enter the number of children"
                   />
                 </div>
@@ -2769,7 +2876,7 @@
     <script src="js/trip/transfer/add_transfer.js"></script>
     <script src="js/trip/flight/add_flight.js"></script>
     <script src="js/trip/excursion/add_excursion.js"></script>
-    <script src="js/trip/tour/add_tour.js?v=20260710-tour-duration-days"></script>
+    <script src="js/trip/tour/add_tour.js?v=20260710-tour-duration-display"></script>
     <!-- <script src="js/trip/hotel/add_hotel.js"></script> -->
 
     <script>
@@ -2930,7 +3037,7 @@
         if (assistanceFeeAmount) {
           assistanceFeeAmount.addEventListener("input", function () {
             console.log("Assistance fee amount changed:", this.value);
-            // You can add logic here to recalculate final price if needed
+            updateUIPriceFields();
           });
         }
 
@@ -5413,6 +5520,7 @@
             event.preventDefault();
 
             const form = document.getElementById("addTripForm");
+            clearTripRequiredFieldState();
             if (form && !form.checkValidity()) {
               form.reportValidity();
               return;
@@ -5452,7 +5560,7 @@
             function buildTourTransferText(dateValue, timeValue, transportValue, routeValue) {
               const parts = [];
               if (dateValue) parts.push(dateValue);
-              if (timeValue) parts.push(`Pickup: ${timeValue}`);
+              if (timeValue) parts.push(`Departure: ${timeValue}`);
               if (transportValue) parts.push(transportValue);
               if (routeValue) parts.push(`(${routeValue})`);
               return parts.join(" | ");
@@ -5567,8 +5675,20 @@
                   parseInt(row.dataset.tripleRooms) || 0;
                 rowData["arrival_time"] = row.dataset.arrivalTime || "";
                 rowData["departure_time"] = row.dataset.departureTime || "";
-                rowData["transfer_in"] = row.dataset.transferIn || buildTourTransferText(rowData["from_date"], rowData["arrival_time"], rowData["flight_in"], rowData["route"]);
-                rowData["transfer_out"] = row.dataset.transferOut || buildTourTransferText(rowData["to_date"], rowData["departure_time"], rowData["flight_out"], rowData["route"]);
+                const transferTextIncomplete = (value) => {
+                  const text = String(value || "");
+                  if (!text) return true;
+                  const hasTime = /\b(?:Pickup|Departure):/i.test(text);
+                  const hasTransport = text.split("|").some((part) => {
+                    const clean = part.trim();
+                    return clean && !/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(clean) && !/^(?:Pickup|Departure):/i.test(clean) && !/^\(.+\)$/.test(clean);
+                  });
+                  return !hasTime || !hasTransport;
+                };
+                const computedTransferIn = buildTourTransferText(rowData["from_date"], rowData["arrival_time"], rowData["flight_in"], rowData["route"]);
+                const computedTransferOut = buildTourTransferText(rowData["to_date"], rowData["departure_time"], rowData["flight_out"], rowData["route"]);
+                rowData["transfer_in"] = transferTextIncomplete(row.dataset.transferIn) ? computedTransferIn : row.dataset.transferIn;
+                rowData["transfer_out"] = transferTextIncomplete(row.dataset.transferOut) ? computedTransferOut : row.dataset.transferOut;
                 rowData["total_cost"] =
                   parseFloat(cells[8]?.textContent.trim()) || 0.0;
                 rowData["price"] = rowData["total_cost"];
@@ -5796,6 +5916,143 @@
             const others = extractOthersData();
             console.log("Extracted Others Data:", others);
 
+            function clearTripRequiredFieldState() {
+              [
+                "clientName",
+                "mobileNumber",
+                "bookingDate",
+                "tripStartDate",
+                "adult",
+                "child",
+                "assistanceFeeAmount"
+              ].forEach((id) => {
+                const field = document.getElementById(id);
+                if (!field) return;
+                field.setCustomValidity("");
+                field.classList.remove("is-invalid");
+              });
+            }
+
+            function isBlankValue(value) {
+              const text = String(value ?? "").trim();
+              return !text || text === "-" || text.toLowerCase() === "n/a";
+            }
+
+            function markFieldInvalid(id, message) {
+              const field = document.getElementById(id);
+              if (!field) return;
+              field.setCustomValidity(message);
+              field.classList.add("is-invalid");
+            }
+
+            function addMissingRows(errors, rows, label, checks) {
+              rows.forEach((row, index) => {
+                const missing = checks
+                  .filter((check) => check.isMissing(row))
+                  .map((check) => check.label);
+                if (missing.length) {
+                  errors.push(`${label} row ${index + 1}: ${missing.join(", ")}`);
+                }
+              });
+            }
+
+            function validateTripBeforeSave(data) {
+              clearTripRequiredFieldState();
+              const errors = [];
+
+              if (isBlankValue(clientName)) {
+                errors.push("Client Name is required.");
+                markFieldInvalid("clientName", "Client Name is required.");
+              }
+              if (isBlankValue(clientPhone)) {
+                errors.push("Mobile Number is required.");
+                markFieldInvalid("mobileNumber", "Mobile Number is required.");
+              }
+              if (isBlankValue(bookingDate)) {
+                errors.push("Booking Date is required.");
+                markFieldInvalid("bookingDate", "Booking Date is required.");
+              }
+              if (isBlankValue(startDate)) {
+                errors.push("Trip Start Date is required.");
+                markFieldInvalid("tripStartDate", "Trip Start Date is required.");
+              }
+              if (numberOfAdults + numberOfKids <= 0) {
+                errors.push("At least one adult or child is required.");
+                markFieldInvalid("adult", "At least one passenger is required.");
+              }
+
+              const includeAssistanceFeeField = document.getElementById("includeAssistanceFee");
+              const assistanceFeeField = document.getElementById("assistanceFeeAmount");
+              const assistanceFeeValue = parseFloat(assistanceFeeField?.value) || 0;
+              if (includeAssistanceFeeField?.checked && assistanceFeeValue <= 0) {
+                errors.push("Assistance Fee Amount is required when assistance fee is included.");
+                markFieldInvalid("assistanceFeeAmount", "Assistance Fee Amount is required.");
+              }
+
+              const serviceCount =
+                data.hotels.length +
+                data.transfers.length +
+                data.excursions.length +
+                data.flights.length +
+                data.tours.length +
+                data.others.length;
+              if (serviceCount === 0) {
+                errors.push("Please add at least one service or special package item.");
+              }
+
+              addMissingRows(errors, data.hotels, "Hotel", [
+                { label: "Check In", isMissing: (row) => isBlankValue(row.from_date) },
+                { label: "Check Out", isMissing: (row) => isBlankValue(row.to_date) },
+                { label: "City", isMissing: (row) => isBlankValue(row.city) },
+                { label: "Hotel", isMissing: (row) => isBlankValue(row.hotel_name) },
+                { label: "Room Type", isMissing: (row) => isBlankValue(row.room_type_summary) },
+                { label: "Nights", isMissing: (row) => !row.nights || row.nights <= 0 }
+              ]);
+              addMissingRows(errors, data.transfers, "Transfer", [
+                { label: "Date", isMissing: (row) => isBlankValue(row.date) },
+                { label: "City", isMissing: (row) => isBlankValue(row.city) },
+                { label: "Transfer Description", isMissing: (row) => isBlankValue(row.transfer_description) },
+                { label: "TOT", isMissing: (row) => isBlankValue(row.tot) },
+                { label: "From", isMissing: (row) => isBlankValue(row.from_location) },
+                { label: "To", isMissing: (row) => isBlankValue(row.to_location) }
+              ]);
+              addMissingRows(errors, data.excursions, "Excursion", [
+                { label: "Date", isMissing: (row) => isBlankValue(row.date) },
+                { label: "City", isMissing: (row) => isBlankValue(row.city) },
+                { label: "Name", isMissing: (row) => isBlankValue(row.excursion_name) },
+                { label: "TOE", isMissing: (row) => isBlankValue(row.toe) }
+              ]);
+              addMissingRows(errors, data.flights, "Flight", [
+                { label: "Date", isMissing: (row) => isBlankValue(row.flight_date) },
+                { label: "Airline", isMissing: (row) => isBlankValue(row.flight_name || row.flight_airline) },
+                { label: "Flight Number", isMissing: (row) => isBlankValue(row.flight_number) },
+                { label: "In/Out", isMissing: (row) => isBlankValue(row.in_or_out) },
+                { label: "Route", isMissing: (row) => isBlankValue(row.route) }
+              ]);
+              addMissingRows(errors, data.tours, "Tour", [
+                { label: "Start Date", isMissing: (row) => isBlankValue(row.from_date) },
+                { label: "End Date", isMissing: (row) => isBlankValue(row.to_date) },
+                { label: "City", isMissing: (row) => isBlankValue(row.from_location) },
+                { label: "Name", isMissing: (row) => isBlankValue(row.tour_name) },
+                { label: "TOT", isMissing: (row) => isBlankValue(row.tot) },
+                { label: "Route", isMissing: (row) => isBlankValue(row.route) }
+              ]);
+              addMissingRows(errors, data.others, "Other", [
+                { label: "Description", isMissing: (row) => isBlankValue(row.description) },
+                { label: "Date", isMissing: (row) => isBlankValue(row.date) }
+              ]);
+
+              if (!errors.length) return true;
+
+              alert(`Please complete the required fields before saving:\n\n- ${errors.join("\n- ")}`);
+              const firstInvalid = document.querySelector(".is-invalid");
+              if (firstInvalid) {
+                firstInvalid.reportValidity();
+                firstInvalid.focus();
+              }
+              return false;
+            }
+
             // Get assistance fee values
             const includeAssistanceFeeCheckbox = document.getElementById(
               "includeAssistanceFee"
@@ -5811,9 +6068,17 @@
               ? parseFloat(assistanceFeeAmountInput.value) || 1000
               : 1000;
 
+            if (typeof updateUIPriceFields === "function") {
+              updateUIPriceFields();
+            }
+
             const totalPrice = parseFloat(document.getElementById("totalPrice").value) || 0;
             const finalPrice = parseFloat(document.getElementById("finalPrice").value) || 0;
             const discount = parseFloat(document.getElementById("discount").value) || 0;
+
+            if (!validateTripBeforeSave({ hotels, transfers, excursions, flights, tours, others })) {
+              return;
+            }
 
             // Construct the request payload
             const quotationRequest = {
@@ -6101,7 +6366,7 @@
             transfersTable.querySelectorAll("tr").forEach(row => {
               if (row.dataset.isPackageItem === "true") return;
               const cells = row.querySelectorAll("td");
-              if (cells[8]) sum += parseFloat(cells[8].textContent.trim()) || 0;
+              if (cells[7]) sum += parseFloat(cells[7].textContent.trim()) || 0;
             });
           }
           // sum hotels
@@ -6128,7 +6393,8 @@
             toursTable.querySelectorAll("tr").forEach(row => {
               if (row.dataset.isPackageItem === "true") return;
               const cells = row.querySelectorAll("td");
-              if (cells[6]) sum += parseFloat(cells[6].textContent.trim()) || 0;
+              const priceCell = row.querySelector(".tour-price") || cells[8];
+              if (priceCell) sum += parseFloat(priceCell.textContent.trim()) || 0;
             });
           }
           // sum others
@@ -6141,6 +6407,29 @@
             });
           }
           return sum;
+        }
+
+        function updateUIPriceFields() {
+          if (typeof currentSpecialPackage !== "undefined" && currentSpecialPackage) {
+            updateSpecialPackagePrice();
+            return;
+          }
+
+          const includeAssistanceFee = document.getElementById("includeAssistanceFee");
+          const assistanceFeeAmount = document.getElementById("assistanceFeeAmount");
+          const totalPriceInput = document.getElementById("totalPrice");
+          const finalPriceInput = document.getElementById("finalPrice");
+          const discountInput = document.getElementById("discount");
+
+          const isChecked = includeAssistanceFee ? includeAssistanceFee.checked : false;
+          const fee = isChecked ? (parseFloat(assistanceFeeAmount.value) || 0) : 0;
+          const discount = discountInput ? (parseFloat(discountInput.value) || 0) : 0;
+          const baseTotalCost = calculateBaseTotalCost();
+          const newTotal = baseTotalCost + fee;
+          const newFinal = Math.max(0, newTotal - discount);
+
+          if (totalPriceInput) totalPriceInput.value = newTotal.toFixed(2);
+          if (finalPriceInput) finalPriceInput.value = newFinal.toFixed(2);
         }
 
         let currentSpecialPackage = null;
@@ -6384,13 +6673,13 @@
           if (currentSpecialPackage) updateSpecialPackagePrice();
         });
         document.getElementById("discount").addEventListener("input", function() {
-          if (currentSpecialPackage) updateSpecialPackagePrice();
+          updateUIPriceFields();
         });
         document.getElementById("includeAssistanceFee").addEventListener("change", function() {
-          if (currentSpecialPackage) updateSpecialPackagePrice();
+          updateUIPriceFields();
         });
         document.getElementById("assistanceFeeAmount").addEventListener("input", function() {
-          if (currentSpecialPackage) updateSpecialPackagePrice();
+          updateUIPriceFields();
         });
 
 
@@ -7173,9 +7462,7 @@
 
         // Set up mutation observer to update special package prices when items are added/deleted
         const priceObserver = new MutationObserver(function() {
-          if (currentSpecialPackage) {
-            updateSpecialPackagePrice();
-          }
+          updateUIPriceFields();
         });
         const priceTableIds = ["hotelsTableBody", "transferTableBody", "excursionTableBody", "flightsTableBody", "othersTableBody", "tourTableBody"];
         priceTableIds.forEach(id => {

@@ -60,6 +60,21 @@ function formatTourTransferItem(tourItem, direction = 'in') {
   return parts.join(' | ');
 }
 
+function isTourTransferTextIncomplete(value) {
+  const text = String(value || '');
+  if (!text) return true;
+  const hasTime = /\b(?:Pickup|Departure):/i.test(text);
+  const hasTransport = text.split('|').some((part) => {
+    const clean = part.trim();
+    if (!clean) return false;
+    if (/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(clean)) return false;
+    if (/^(?:Pickup|Departure):/i.test(clean)) return false;
+    if (/^\(.+\)$/.test(clean)) return false;
+    return true;
+  });
+  return !hasTime || !hasTransport;
+}
+
 function getMaxHotelDay(tourItem) {
   const duration = parseInt(tourItem?.tours?.duration, 10);
   return duration ? Math.max(duration - 1, 0) : null;
@@ -78,8 +93,12 @@ export async function getTourHotels(req, res, next) {
     });
     if (!tourItem) return res.status(404).send('Tour trip item not found');
 
-    let transfer_in = tourItem.transfer_in || formatTourTransferItem(tourItem, 'in');
-    let transfer_out = tourItem.transfer_out || formatTourTransferItem(tourItem, 'out');
+    let transfer_in = isTourTransferTextIncomplete(tourItem.transfer_in)
+      ? formatTourTransferItem(tourItem, 'in')
+      : tourItem.transfer_in;
+    let transfer_out = isTourTransferTextIncomplete(tourItem.transfer_out)
+      ? formatTourTransferItem(tourItem, 'out')
+      : tourItem.transfer_out;
     if (!isNaN(tripId)) {
       const tripTransfers = await prisma.transfer_trip_items.findMany({
         where: { trip_item_id: tripId },

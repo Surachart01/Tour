@@ -370,11 +370,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const today = new Date().toISOString().split('T')[0];
     startDateInput.value = tripStartDate ? tripStartDate : today;
     startDateInput.min = tripStartDate; // Prevent selecting past dates
+    endDateInput.min = startDateInput.value;
 
     // Ensure endDate can only be selected after startDate
     startDateInput.addEventListener("change", function () {
         endDateInput.min = startDateInput.value; // Set endDate's min to startDate's value
-        endDateInput.value = ""; // Reset end date if start date is changed
+        calculateEndDate();
     });
 
     $("#addTourModal").modal("show");
