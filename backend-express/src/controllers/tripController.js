@@ -1351,10 +1351,12 @@ export async function deleteQuotation(req, res, next) {
 }
 
 // ==================== BOOKINGS ====================
+const bookingStatusWhere = { status: { in: ['InProgress', 'Approved', 'Confirmed'] } };
+
 export async function listBookings(req, res, next) {
   try {
     const bookings = await prisma.trips.findMany({
-      where: { OR: [{ approved: true }, { status: 'InProgress' }] },
+      where: bookingStatusWhere,
       include: { agents: true },
       orderBy: [{ updated_at: 'desc' }, { created_at: 'desc' }]
     });
@@ -1364,9 +1366,10 @@ export async function listBookings(req, res, next) {
 
 export async function listBookingsByDateRange(req, res, next) {
   try {
-    const { from_date, to_date } = req.query;
+    const from_date = req.query.from_date || req.query.start_date;
+    const to_date = req.query.to_date || req.query.end_date;
     const claims = req.user;
-    const where = { OR: [{ approved: true }, { status: 'InProgress' }] };
+    const where = { ...bookingStatusWhere };
     if (from_date && to_date) {
       where.created_at = { gte: new Date(from_date), lte: new Date(to_date) };
     }
