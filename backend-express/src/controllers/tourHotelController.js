@@ -60,6 +60,11 @@ function formatTourTransferItem(tourItem, direction = 'in') {
   return parts.join(' | ');
 }
 
+function getMaxHotelDay(tourItem) {
+  const duration = parseInt(tourItem?.tours?.duration, 10);
+  return duration ? Math.max(duration - 1, 0) : null;
+}
+
 
 export async function getTourHotels(req, res, next) {
   try {
@@ -104,6 +109,7 @@ export async function getTourHotels(req, res, next) {
       hotels: []
     };
 
+    const maxHotelDay = getMaxHotelDay(tourItem);
 
     if (overrides.length > 0) {
       // Deduplicate by day — keep only the last entry per day to fix existing duplicate DB rows
@@ -111,7 +117,8 @@ export async function getTourHotels(req, res, next) {
       for (const override of overrides) {
         dedupMap.set(override.day, override);
       }
-      const uniqueOverrides = Array.from(dedupMap.values());
+      const uniqueOverrides = Array.from(dedupMap.values())
+        .filter(override => maxHotelDay === null || override.day <= maxHotelDay);
 
       response.hotels = uniqueOverrides.map(override => {
         const { checkIn, checkOut } = calculateHotelDates(tourItem.from_date, override.day);
@@ -150,6 +157,9 @@ export async function getTourHotels(req, res, next) {
       const hotelsList = [];
       if (tour && tour.tour_days) {
         for (const day of tour.tour_days) {
+          if (maxHotelDay !== null && day.day > maxHotelDay) {
+            continue;
+          }
           if (day.tour_details) {
             // Take only the first detail per day that has a hotel_name
             const detail = day.tour_details.find(d => d.hotel_name && d.hotel_name.trim() !== '');
@@ -283,7 +293,12 @@ export async function updateTourHotels(req, res, next) {
       has_overrides: overrides.length > 0,
       transfer_in: tourItem.transfer_in || '',
       transfer_out: tourItem.transfer_out || '',
-      hotels: overrides.map(override => {
+      hotels: overrides
+        .filter(override => {
+          const maxHotelDay = getMaxHotelDay(tourItem);
+          return maxHotelDay === null || override.day <= maxHotelDay;
+        })
+        .map(override => {
         const { checkIn, checkOut } = calculateHotelDates(tourItem.from_date, override.day);
         return {
           day: override.day,
