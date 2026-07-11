@@ -5587,10 +5587,8 @@
 
             function buildTourTransferText(dateValue, timeValue, transportValue, routeValue) {
               const parts = [];
-              if (dateValue) parts.push(dateValue);
-              if (timeValue) parts.push(`Departure: ${timeValue}`);
               if (transportValue) parts.push(transportValue);
-              if (routeValue) parts.push(`(${routeValue})`);
+              if (timeValue) parts.push(timeValue);
               return parts.join(" | ");
             }
 
@@ -5706,10 +5704,10 @@
                 const transferTextIncomplete = (value) => {
                   const text = String(value || "");
                   if (!text) return true;
-                  const hasTime = /\b(?:Pickup|Departure):/i.test(text);
+                  const hasTime = /\b(?:Pickup|Departure):/i.test(text) || /\b\d{1,2}:\d{2}(?:\s*[AP]M)?\b/i.test(text);
                   const hasTransport = text.split("|").some((part) => {
                     const clean = part.trim();
-                    return clean && !/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(clean) && !/^(?:Pickup|Departure):/i.test(clean) && !/^\(.+\)$/.test(clean);
+                    return clean && !/^\d{1,4}[-/]\d{1,2}[-/]\d{1,4}$/.test(clean) && !/^\d{1,2}:\d{2}(?:\s*[AP]M)?$/i.test(clean) && !/^(?:Pickup|Departure):/i.test(clean) && !/^\(.+\)$/.test(clean);
                   });
                   return !hasTime || !hasTransport;
                 };

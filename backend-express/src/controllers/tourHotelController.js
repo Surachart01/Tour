@@ -47,15 +47,13 @@ function formatTransferItem(t) {
 function formatTourTransferItem(tourItem, direction = 'in') {
   if (!tourItem) return '';
   const parts = [];
-  const dateStr = formatDateToDDMMYYYY(direction === 'out' ? tourItem.to_date : tourItem.from_date);
+  const time = direction === 'out' ? tourItem.departure_time : tourItem.arrival_time;
   const transport = direction === 'out'
     ? ''
-    : (tourItem.flight_number || '');
-  const route = tourItem.tours?.route || [tourItem.from_location, tourItem.to_location].filter(Boolean).join(' -> ');
+    : (tourItem.flight_number || tourItem.mode_of_transport || '');
 
-  if (dateStr) parts.push(dateStr);
   if (transport) parts.push(transport);
-  if (route) parts.push(`(${route})`);
+  if (time) parts.push(time);
 
   return parts.join(' | ');
 }
@@ -63,11 +61,12 @@ function formatTourTransferItem(tourItem, direction = 'in') {
 function isTourTransferTextIncomplete(value) {
   const text = String(value || '');
   if (!text) return true;
-  const hasTime = /\b(?:Pickup|Departure):/i.test(text);
+  const hasTime = /\b(?:Pickup|Departure):/i.test(text) || /\b\d{1,2}:\d{2}(?:\s*[AP]M)?\b/i.test(text);
   const hasTransport = text.split('|').some((part) => {
     const clean = part.trim();
     if (!clean) return false;
-    if (/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(clean)) return false;
+    if (/^\d{1,4}[-/]\d{1,2}[-/]\d{1,4}$/.test(clean)) return false;
+    if (/^\d{1,2}:\d{2}(?:\s*[AP]M)?$/i.test(clean)) return false;
     if (/^(?:Pickup|Departure):/i.test(clean)) return false;
     if (/^\(.+\)$/.test(clean)) return false;
     return true;
@@ -116,28 +115,28 @@ export async function getTourHotels(req, res, next) {
       orderBy: { day: 'asc' }
     });
 
+    const maxHotelDay = getMaxHotelDay(tourItem);
+    const validOverrides = overrides.filter(override => maxHotelDay === null || override.day <= maxHotelDay);
+
     const response = {
       tour_trip_item_id: tourItemId,
       tour_id: tourItem.tour_id || 0,
       tour_name: tourItem.tours?.name || '',
       tour_start_date: formatDateToDDMMYYYY(tourItem.from_date),
       tour_end_date: formatDateToDDMMYYYY(tourItem.to_date),
-      has_overrides: overrides.length > 0,
+      has_overrides: validOverrides.length > 0,
       transfer_in,
       transfer_out,
       hotels: []
     };
 
-    const maxHotelDay = getMaxHotelDay(tourItem);
-
-    if (overrides.length > 0) {
+    if (validOverrides.length > 0) {
       // Deduplicate by day — keep only the last entry per day to fix existing duplicate DB rows
       const dedupMap = new Map();
-      for (const override of overrides) {
+      for (const override of validOverrides) {
         dedupMap.set(override.day, override);
       }
-      const uniqueOverrides = Array.from(dedupMap.values())
-        .filter(override => maxHotelDay === null || override.day <= maxHotelDay);
+      const uniqueOverrides = Array.from(dedupMap.values());
 
       response.hotels = uniqueOverrides.map(override => {
         const { checkIn, checkOut } = calculateHotelDates(tourItem.from_date, override.day);
@@ -216,6 +215,13 @@ export async function updateTourHotels(req, res, next) {
       return res.status(400).send('hotels must be an array');
     }
 
+    const tourItem = await prisma.tour_trip_items.findUnique({
+      where: { id: tourItemId },
+      include: { tours: true }
+    });
+    if (!tourItem) return res.status(404).send('Tour trip item not found');
+    const maxHotelDay = getMaxHotelDay(tourItem);
+
     // Deduplicate incoming hotels by day number (last one wins) to prevent future duplicate DB rows
     const incomingDedupMap = new Map();
     for (const h of hotels) {
@@ -225,6 +231,12 @@ export async function updateTourHotels(req, res, next) {
       }
       if (!h.day || isNaN(dayNum)) {
         return res.status(400).send('Valid day is required');
+      }
+      if (dayNum < 1) {
+        return res.status(400).send('Hotel day must be at least 1');
+      }
+      if (maxHotelDay !== null && dayNum > maxHotelDay) {
+        continue;
       }
       incomingDedupMap.set(dayNum, h);
     }
@@ -292,11 +304,6 @@ export async function updateTourHotels(req, res, next) {
     });
 
     // Return the updated list in the same response format
-    const tourItem = await prisma.tour_trip_items.findUnique({
-      where: { id: tourItemId },
-      include: { tours: true }
-    });
-    
     // Get newly created overrides
     const overrides = await prisma.tour_trip_item_hotels.findMany({
       where: { tour_trip_item_id: tourItemId },

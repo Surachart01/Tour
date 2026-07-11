@@ -172,24 +172,16 @@ const TourHotelsUI = {
   buildTourTransferText(tourItem, direction = "in") {
     if (!tourItem) return "";
     const isOut = direction === "out";
-    const date = this.normalizeDisplayDate(
-      isOut
-        ? (tourItem.to_date || tourItem.tourEndDate || tourItem.tour_end_date)
-        : (tourItem.from_date || tourItem.tourStartDate || tourItem.tour_start_date)
-    );
     const time = isOut
       ? (tourItem.departure_time || tourItem.departureTime || tourItem.departureTimeTour)
       : (tourItem.arrival_time || tourItem.arrivalTime || tourItem.arrivalTimeTour);
     const transport = isOut
       ? (tourItem.flight_out || tourItem.tourFlightOut || tourItem.transport_out)
       : (tourItem.mode_of_transport || tourItem.flight_in || tourItem.tourFlightIn || tourItem.flight_number);
-    const route = tourItem.route || (tourItem.tours && tourItem.tours.route) || "";
     const parts = [];
 
-    if (date) parts.push(date);
-    if (time) parts.push(`Departure: ${time}`);
     if (transport) parts.push(transport);
-    if (route) parts.push(`(${route})`);
+    if (time) parts.push(time);
 
     return parts.join(" | ");
   },
@@ -197,11 +189,12 @@ const TourHotelsUI = {
   isTransferTextIncomplete(value) {
     const text = String(value || "");
     if (!text) return true;
-    const hasTime = /\b(?:Pickup|Departure):/i.test(text);
+    const hasTime = /\b(?:Pickup|Departure):/i.test(text) || /\b\d{1,2}:\d{2}(?:\s*[AP]M)?\b/i.test(text);
     const hasTransport = text.split("|").some((part) => {
       const clean = part.trim();
       if (!clean) return false;
-      if (/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(clean)) return false;
+      if (/^\d{1,4}[-/]\d{1,2}[-/]\d{1,4}$/.test(clean)) return false;
+      if (/^\d{1,2}:\d{2}(?:\s*[AP]M)?$/i.test(clean)) return false;
       if (/^(?:Pickup|Departure):/i.test(clean)) return false;
       if (/^\(.+\)$/.test(clean)) return false;
       return true;

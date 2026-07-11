@@ -258,10 +258,15 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    const startDate = new Date(startDateValue);
-    startDate.setDate(startDate.getDate() + Math.max(parseInt(duration, 10) - 1, 0)); // Duration includes the start day
+    const [year, month, day] = startDateValue.split("-").map(Number);
+    const startDate = new Date(Date.UTC(year, month - 1, day));
+    startDate.setUTCDate(startDate.getUTCDate() + Math.max(parseInt(duration, 10) - 1, 0)); // Duration includes the start day
 
-    const formattedEndDate = startDate.toISOString().split("T")[0]; // Convert to YYYY-MM-DD
+    const formattedEndDate = [
+      startDate.getUTCFullYear(),
+      String(startDate.getUTCMonth() + 1).padStart(2, "0"),
+      String(startDate.getUTCDate()).padStart(2, "0")
+    ].join("-");
     setTimeout(() => {
       // endDateInput.removeAttribute("readonly"); // Ensure it's editable
       endDateInput.value = formattedEndDate;

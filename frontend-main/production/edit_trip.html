@@ -2920,18 +2920,17 @@
 
         function buildTourTransferText(dateValue, timeValue, transportValue, routeValue) {
           const parts = [];
-          if (dateValue) parts.push(dateValue);
-          if (timeValue) parts.push(`Departure: ${timeValue}`);
           if (transportValue) parts.push(transportValue);
-          if (routeValue) parts.push(`(${routeValue})`);
+          if (timeValue) parts.push(timeValue);
           return parts.join(" | ");
         }
 
         function isTourTransferTextIncomplete(value) {
           const text = String(value || "");
-          return !text || !/(?:Pickup|Departure):/i.test(text) || !text.split("|").some(part => {
+          const hasTime = /(?:Pickup|Departure):/i.test(text) || /\b\d{1,2}:\d{2}(?:\s*[AP]M)?\b/i.test(text);
+          return !text || !hasTime || !text.split("|").some(part => {
             const clean = part.trim();
-            return clean && !/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(clean) && !/^(?:Pickup|Departure):/i.test(clean) && !/^\(.+\)$/.test(clean);
+            return clean && !/^\d{1,4}[-/]\d{1,2}[-/]\d{1,4}$/.test(clean) && !/^\d{1,2}:\d{2}(?:\s*[AP]M)?$/i.test(clean) && !/^(?:Pickup|Departure):/i.test(clean) && !/^\(.+\)$/.test(clean);
           });
         }
 
@@ -7474,12 +7473,17 @@
             return;
           }
 
-          // Convert startDate safely
-          const startDate = new Date(startDateValue.replace(/-/g, "/"));
-          startDate.setDate(startDate.getDate() + Math.max(parseInt(duration, 10) - 1, 0));
+          const [year, month, day] = startDateValue.split("-").map(Number);
+          const startDate = new Date(Date.UTC(year, month - 1, day));
+          startDate.setUTCDate(
+            startDate.getUTCDate() + Math.max(parseInt(duration, 10) - 1, 0)
+          );
 
-          // Format date as YYYY-MM-DD
-          const formattedEndDate = startDate.toISOString().split("T")[0];
+          const formattedEndDate = [
+            startDate.getUTCFullYear(),
+            String(startDate.getUTCMonth() + 1).padStart(2, "0"),
+            String(startDate.getUTCDate()).padStart(2, "0"),
+          ].join("-");
 
           console.log(`✅ Setting End Date: ${formattedEndDate}`);
 
@@ -7488,6 +7492,10 @@
             endDateInput.value = formattedEndDate;
             console.log("✅ End Date Updated in UI:", endDateInput.value);
           }, 50);
+        }
+
+        function calculateTourEndDate() {
+          calculateEndDate();
         }
 
         // Function to check if all required fields are present before calculating price

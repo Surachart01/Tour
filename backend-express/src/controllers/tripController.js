@@ -35,26 +35,25 @@ function formatTripDate(value) {
 }
 
 function buildTourTransferText(item, direction = 'in') {
-  const date = formatTripDate(direction === 'out' ? item.to_date : item.from_date);
   const time = direction === 'out' ? item.departure_time : item.arrival_time;
   const transport = direction === 'out'
     ? (item.flight_out || item.transport_out || '')
     : (item.flight_number || item.mode_of_transport || item.flight_in || '');
-  const route = item.route || [item.from_location, item.to_location].filter(Boolean).join(' -> ');
   const parts = [];
 
-  if (date) parts.push(date);
-  if (time) parts.push(`Departure: ${time}`);
   if (transport) parts.push(transport);
-  if (route) parts.push(`(${route})`);
+  if (time) parts.push(time);
 
   return parts.join(' | ');
 }
 
 function extractTourTransferTime(value) {
   if (!value) return '';
-  const match = String(value).match(/\b(?:Pickup|Departure):\s*([^|]+)/i);
-  return match ? match[1].trim() : '';
+  const text = String(value);
+  const labeledMatch = text.match(/\b(?:Pickup|Departure):\s*([^|]+)/i);
+  if (labeledMatch) return labeledMatch[1].trim();
+  const timeMatch = text.match(/\b\d{1,2}:\d{2}(?:\s*[AP]M)?\b/i);
+  return timeMatch ? timeMatch[0].trim() : '';
 }
 
 function extractTourTransferTransport(value) {
@@ -65,7 +64,8 @@ function extractTourTransferTransport(value) {
     .filter(Boolean);
 
   return parts.find((part) => {
-    if (/^\d{2}-\d{2}-\d{4}$/.test(part)) return false;
+    if (/^\d{1,4}[-/]\d{1,2}[-/]\d{1,4}$/.test(part)) return false;
+    if (/^\d{1,2}:\d{2}(?:\s*[AP]M)?$/i.test(part)) return false;
     if (/^(?:Pickup|Departure):/i.test(part)) return false;
     if (/^\(.+\)$/.test(part)) return false;
     return true;
@@ -362,8 +362,8 @@ function mapTripResponse(trip) {
         final_cost: toFloat(t.price),
         from_date: fmtDate(t.from_date),
         to_date: fmtDate(t.to_date),
-        flight_in: t.flight_number || extractTourTransferTransport(t.transfer_in) || fmtDate(t.flight_in),
-        flight_out: extractTourTransferTransport(t.transfer_out) || fmtDate(t.flight_out),
+        flight_in: t.flight_number || extractTourTransferTransport(t.transfer_in) || '',
+        flight_out: extractTourTransferTransport(t.transfer_out) || '',
         arrival_time: extractTourTransferTime(t.transfer_in),
         departure_time: extractTourTransferTime(t.transfer_out),
         mode_of_transport: t.flight_number || '',
