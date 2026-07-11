@@ -19,7 +19,7 @@ const TourHotelsUI = {
       }
       .tour-hotels-container {
         width: 100%;
-        padding: 18px 22px;
+        padding: 20px 24px 22px;
         background: #f8fafc;
         border-left: 4px solid #1a9fd1;
       }
@@ -28,18 +28,21 @@ const TourHotelsUI = {
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        margin-bottom: 14px;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e2e8f0;
       }
       .tour-hotels-title {
         margin: 0;
         color: #24384a;
-        font-size: 15px;
+        font-size: 16px;
         font-weight: 700;
+        white-space: nowrap;
       }
       .tour-hotels-layout {
         display: grid;
-        grid-template-columns: minmax(360px, 1.1fr) minmax(340px, 0.9fr);
-        gap: 16px;
+        grid-template-columns: minmax(520px, 1fr) minmax(300px, 360px);
+        gap: 18px;
         align-items: start;
       }
       .tour-hotels-panel,
@@ -48,7 +51,7 @@ const TourHotelsUI = {
       }
       .tour-hotels-list {
         display: grid;
-        gap: 8px;
+        gap: 10px;
       }
       .tour-hotel-item {
         display: flex;
@@ -56,11 +59,11 @@ const TourHotelsUI = {
         justify-content: space-between;
         gap: 12px;
         min-width: 0;
-        padding: 10px 12px;
+        padding: 11px 14px;
         background: #ffffff;
         border: 1px solid #d9e3ec;
-        border-radius: 6px;
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
       }
       .tour-hotel-email-btn {
         min-width: 82px;
@@ -88,14 +91,16 @@ const TourHotelsUI = {
       .tour-transfer-stack {
         display: grid;
         gap: 10px;
+        position: sticky;
+        top: 12px;
       }
       .tour-transfer-box {
         display: grid;
-        grid-template-columns: 22px minmax(0, 1fr);
-        gap: 8px;
-        align-items: start;
-        padding: 10px 12px;
-        border-radius: 6px;
+        grid-template-columns: 28px minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        padding: 12px 14px;
+        border-radius: 8px;
         line-height: 1.35;
       }
       .tour-transfer-box.in {
@@ -107,8 +112,12 @@ const TourHotelsUI = {
         border: 1px solid #f4d38a;
       }
       .tour-transfer-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
         font-size: 16px;
-        padding-top: 1px;
       }
       .tour-transfer-box.in .tour-transfer-icon,
       .tour-transfer-box.in .tour-transfer-label {
@@ -120,15 +129,16 @@ const TourHotelsUI = {
       }
       .tour-transfer-label {
         display: block;
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.4px;
-        margin-bottom: 2px;
+        margin-bottom: 4px;
       }
       .tour-transfer-text {
         color: #334155;
-        font-size: 11px;
+        font-size: 12px;
+        font-weight: 600;
         overflow-wrap: anywhere;
       }
       .tour-empty-note {
@@ -152,6 +162,9 @@ const TourHotelsUI = {
         .tour-hotel-item {
           align-items: stretch;
           flex-direction: column;
+        }
+        .tour-hotels-title {
+          white-space: normal;
         }
         .tour-hotel-email-btn {
           width: 100%;
@@ -203,8 +216,8 @@ const TourHotelsUI = {
   },
 
   pickTourTransferText(currentText, builtText, tourItem, direction = "in") {
-    if (!builtText) return currentText || "";
     const text = String(currentText || "");
+    if (!builtText) return this.isTransferTextIncomplete(text) ? "" : text;
     const isOut = direction === "out";
     const expectedTime = isOut
       ? (tourItem?.departure_time || tourItem?.departureTime || tourItem?.departureTimeTour)
