@@ -304,45 +304,63 @@
 
       #addTourModal #tourForm > .form-row > .form-group:has(#tourName) {
         order: 5;
+        flex-basis: 33.333333%;
+        max-width: 33.333333%;
       }
 
       #addTourModal #tourForm > .form-row > .form-group:has(#route) {
         order: 6;
-      }
-
-      #addTourModal #tourForm > .form-row > .form-group:has(.room-type-box) {
-        order: 7;
-        flex-basis: 66.666667%;
-        max-width: 66.666667%;
-      }
-
-      #addTourModal #tourForm > .form-row > .form-group:has(#pax) {
-        order: 8;
+        flex-basis: 50%;
+        max-width: 50%;
       }
 
       #addTourModal #tourForm > .form-row > .form-group:has(#tourToT) {
+        order: 7;
+        flex-basis: 16.666667%;
+        max-width: 16.666667%;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(.room-type-box) {
+        order: 8;
+        flex-basis: 50%;
+        max-width: 50%;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#pax) {
         order: 9;
-      }
-
-      #addTourModal #tourForm > .form-row > .form-group:has(#tourFlightIn) {
-        order: 10;
-      }
-
-      #addTourModal #tourForm > .form-row > .form-group:has(#arrivalTimeTour) {
-        order: 11;
-      }
-
-      #addTourModal #tourForm > .form-row > .form-group:has(#tourFlightOut) {
-        order: 12;
-      }
-
-      #addTourModal #tourForm > .form-row > .form-group:has(#departureTimeTour) {
-        order: 13;
+        flex-basis: 12.5%;
+        max-width: 12.5%;
       }
 
       #addTourModal #tourForm > .form-row > .form-group:has(#updatedTourPrice),
       #addTourModal #tourForm > .form-row > .col-md-4.form-group:has(#updatedTourPrice) {
+        order: 10;
+        flex-basis: 37.5%;
+        max-width: 37.5%;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#tourFlightIn) {
+        order: 11;
+        flex-basis: 25%;
+        max-width: 25%;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#arrivalTimeTour) {
+        order: 12;
+        flex-basis: 25%;
+        max-width: 25%;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#tourFlightOut) {
+        order: 13;
+        flex-basis: 25%;
+        max-width: 25%;
+      }
+
+      #addTourModal #tourForm > .form-row > .form-group:has(#departureTimeTour) {
         order: 14;
+        flex-basis: 25%;
+        max-width: 25%;
       }
 
       #addTourModal #tourForm > .form-row > .form-group:has(#tourRemarks) {
@@ -366,7 +384,17 @@
         #addTourModal #tourForm > .form-row > .form-group:has(#city),
         #addTourModal #tourForm > .form-row > .form-group:has(#tourStartDate),
         #addTourModal #tourForm > .form-row > .form-group:has(#tourEndDate),
+        #addTourModal #tourForm > .form-row > .form-group:has(#tourName),
+        #addTourModal #tourForm > .form-row > .form-group:has(#route),
+        #addTourModal #tourForm > .form-row > .form-group:has(#tourToT),
         #addTourModal #tourForm > .form-row > .form-group:has(.room-type-box),
+        #addTourModal #tourForm > .form-row > .form-group:has(#pax),
+        #addTourModal #tourForm > .form-row > .form-group:has(#updatedTourPrice),
+        #addTourModal #tourForm > .form-row > .col-md-4.form-group:has(#updatedTourPrice),
+        #addTourModal #tourForm > .form-row > .form-group:has(#tourFlightIn),
+        #addTourModal #tourForm > .form-row > .form-group:has(#arrivalTimeTour),
+        #addTourModal #tourForm > .form-row > .form-group:has(#tourFlightOut),
+        #addTourModal #tourForm > .form-row > .form-group:has(#departureTimeTour),
         #addTourModal #tourForm > .form-row > .form-group:has(#tourRemarks) {
           flex-basis: 100%;
           max-width: 100%;
