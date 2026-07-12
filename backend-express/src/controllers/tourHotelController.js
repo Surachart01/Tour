@@ -49,7 +49,7 @@ function formatTourTransferItem(tourItem, direction = 'in') {
   const parts = [];
   const time = direction === 'out' ? tourItem.departure_time : tourItem.arrival_time;
   const transport = direction === 'out'
-    ? ''
+    ? (tourItem.flight_out || tourItem.transport_out || '')
     : (tourItem.flight_number || tourItem.mode_of_transport || '');
 
   if (transport) parts.push(transport);
@@ -98,16 +98,6 @@ export async function getTourHotels(req, res, next) {
     let transfer_out = isTourTransferTextIncomplete(tourItem.transfer_out)
       ? formatTourTransferItem(tourItem, 'out')
       : tourItem.transfer_out;
-    if (!isNaN(tripId)) {
-      const tripTransfers = await prisma.transfer_trip_items.findMany({
-        where: { trip_item_id: tripId },
-        orderBy: { from_date: 'asc' }
-      });
-      if (tripTransfers.length > 0) {
-        transfer_in = transfer_in || formatTransferItem(tripTransfers[0]);
-        transfer_out = transfer_out || formatTransferItem(tripTransfers[tripTransfers.length - 1]);
-      }
-    }
 
     // Get hotel overrides
     const overrides = await prisma.tour_trip_item_hotels.findMany({

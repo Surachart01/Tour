@@ -3426,7 +3426,7 @@
           // sum tours
           const toursTable = document.getElementById("tourTableBody");
           if (toursTable) {
-            toursTable.querySelectorAll("tr").forEach(row => {
+            toursTable.querySelectorAll("tr:not(.tour-hotels-row)").forEach(row => {
               if (row.dataset.isPackageItem === "true") return;
               const cells = row.querySelectorAll("td");
               const priceCell = row.querySelector(".tour-price") || cells[8];
@@ -6173,6 +6173,7 @@
             })
             .then((data) => {
               console.log("API Response:", data);
+              window.lastHotelPriceBreakdown = data;
 
               if (
                 data.final_cost !== undefined &&
@@ -6266,6 +6267,7 @@
           .getElementById("addHotelBtn")
           .addEventListener("click", function () {
             document.getElementById("hotelBookingForm").reset();
+            window.lastHotelPriceBreakdown = null;
             const tripStartDateInput = document.getElementById("tripStartDate");
             const checkInDateInput = document.getElementById("checkInDate");
             const checkOutDateInput = document.getElementById("checkOutDate");
@@ -6509,6 +6511,7 @@
           const isPackage = notesVal.includes("[Special Package]") || (window.pendingSpecialPackageId && (hotel.price === 0 || hotel.final_cost === 0));
 
           row.dataset.notes = notesVal;
+          row.dataset.bookingRemark = hotel.booking_remark || hotel.bookingRemark || "";
           if (isPackage) {
             row.dataset.isPackageItem = "true";
           }
@@ -6820,13 +6823,40 @@
               hotelsArray[rowIndex] = newHotel;
               editingHotelRow = null;
             } else {
-              addHotelRow(newHotel);
-              hotelsArray.push(newHotel);
+              getHotelSeasonRows(newHotel).forEach((hotelRow) => {
+                addHotelRow(hotelRow);
+                hotelsArray.push(hotelRow);
+              });
             }
 
             document.getElementById("hotelBookingForm").reset();
             $("#hotelModal").modal("hide");
           });
+
+        function getHotelSeasonRows(hotel) {
+          const segments = Array.isArray(window.lastHotelPriceBreakdown?.season_segments)
+            ? window.lastHotelPriceBreakdown.season_segments
+            : [];
+
+          if (!segments.length) return [hotel];
+
+          return segments.map((segment) => ({
+            ...hotel,
+            checkInDate: segment.from_date,
+            checkOutDate: segment.to_date,
+            check_in_date: segment.from_date,
+            check_out_date: segment.to_date,
+            from_date: segment.from_date,
+            to_date: segment.to_date,
+            nights: segment.nights,
+            totalCost: segment.final_cost,
+            hotelPrice: segment.final_cost,
+            final_cost: segment.final_cost,
+            discount: 0,
+            bookingRemark: segment.booking_remark || "",
+            booking_remark: segment.booking_remark || "",
+          }));
+        }
 
         function updateHotelRow() {
           if (!editingHotelRow) return;
@@ -6973,6 +7003,7 @@
           editingHotelRow.dataset.mealAllInclusive =
             updatedHotel.meal_all_inclusive ? "true" : "false";
           editingHotelRow.dataset.discount = updatedHotel.discount;
+          editingHotelRow.dataset.bookingRemark = updatedHotel.booking_remark || updatedHotel.bookingRemark || "";
           editingHotelRow.dataset.roomTypes = JSON.stringify(roomTypes);
 
           // ✅ Update visible row in the table
@@ -7082,6 +7113,7 @@
             hotel.all_inclusive_notes || hotel.allInclusiveNotes || "";
           newRow.dataset.notes = hotel.notes || "";
           newRow.dataset.discount = hotel.discount || 0;
+          newRow.dataset.bookingRemark = hotel.booking_remark || hotel.bookingRemark || "";
 
           // Booleans
           newRow.dataset.complimentaryAbf =
@@ -7991,6 +8023,7 @@
               })
               .then((data) => {
                 console.log("API Response:", data);
+                window.lastHotelPriceBreakdown = data;
 
                 if (
                   data.final_cost !== undefined &&
@@ -9204,7 +9237,7 @@
 
         function extractTourData(tableId) {
           const table = document.getElementById(tableId);
-          const rows = table.querySelectorAll("tbody tr");
+          const rows = table.querySelectorAll("tbody tr:not(.tour-hotels-row)");
           let dataArray = [];
 
           rows.forEach((row) => {
@@ -9647,6 +9680,14 @@
           const index = toursArray.findIndex((t) => t.tour_id === tourId);
           if (index !== -1) {
             toursArray[index] = updatedTour;
+          }
+
+          if (typeof TourHotelsUI !== "undefined" && editingTourRow.dataset.tourItemId) {
+            const currentTripId = new URLSearchParams(window.location.search).get("id");
+            const userRole = localStorage.getItem("role");
+            const canEditHotels = userRole === "admin" || userRole === "superadmin";
+            TourHotelsUI.refreshTourHotelsForRow(editingTourRow, currentTripId, canEditHotels, true)
+              .catch((error) => console.error("Error refreshing tour accommodation:", error));
           }
 
           // ✅ Reset editing row and close modal
@@ -10933,7 +10974,7 @@
 
             function extractTourData(tableId) {
               const table = document.getElementById(tableId);
-              const rows = table.querySelectorAll("tbody tr");
+              const rows = table.querySelectorAll("tbody tr:not(.tour-hotels-row)");
               let dataArray = [];
 
               rows.forEach((row) => {
@@ -11123,6 +11164,7 @@
                 rowData["all_inclusive_notes"] =
                   row.dataset.allInclusiveNotes || "";
                 rowData["notes"] = row.dataset.notes || "";
+                rowData["booking_remark"] = row.dataset.bookingRemark || "";
 
                 // ✅ Meal Days
                 rowData["days_abf"] = parseInt(row.dataset.abfDays, 10) || 0;

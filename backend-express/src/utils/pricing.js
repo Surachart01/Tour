@@ -348,6 +348,56 @@ export function calculateHotelCostLogic(hotel, request, markupGroup, markups, ma
 
   let finalCost = 0;
   let discount = 0;
+  const seasonSegments = [];
+
+  const toISODate = (date) => date.toISOString().slice(0, 10);
+  const addDays = (date, days) => {
+    const next = new Date(date.getTime());
+    next.setDate(next.getDate() + days);
+    return next;
+  };
+  const normalizeDate = (value) => {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
+  const requestedRoomsForAllotment = Math.max(0, numSingleRooms + numDoubleRooms);
+  const appendSeasonSegment = (roomTypeForDay, markedUpRoomType, rtReq, currentDate, dayCost) => {
+    const last = seasonSegments[seasonSegments.length - 1];
+    const segmentKey = `${rtReq.room_type_id || roomTypeForDay.id}-${roomTypeForDay.id}`;
+    const nextCheckout = addDays(currentDate, 1);
+    const allotment = parseInt(roomTypeForDay.allotment || 0, 10) || 0;
+    const bookingRemark = allotment > 0 && requestedRoomsForAllotment <= allotment
+      ? 'Room Inside Allotment'
+      : 'Room Extra Allotment';
+
+    if (last && last.segment_key === segmentKey && last.to_date === toISODate(currentDate)) {
+      last.to_date = toISODate(nextCheckout);
+      last.nights += 1;
+      last.base_cost += dayCost;
+      last.final_cost += dayCost;
+      if (bookingRemark === 'Room Extra Allotment') {
+        last.booking_remark = bookingRemark;
+      }
+      return;
+    }
+
+    seasonSegments.push({
+      segment_key: segmentKey,
+      from_date: toISODate(currentDate),
+      to_date: toISODate(nextCheckout),
+      nights: 1,
+      room_type_id: roomTypeForDay.id,
+      room_type: roomTypeForDay.name,
+      single_price: parseFloat(markedUpRoomType.single_price || 0),
+      double_price: parseFloat(markedUpRoomType.double_price || 0),
+      allotment,
+      requested_rooms: requestedRoomsForAllotment,
+      booking_remark: bookingRemark,
+      base_cost: dayCost,
+      final_cost: dayCost,
+    });
+  };
 
   // Day by day cost calculation
   let currentDate = new Date(startDate.getTime());
@@ -370,12 +420,18 @@ export function calculateHotelCostLogic(hotel, request, markupGroup, markups, ma
 
       // Apply markup
       const markedUpRoomType = calculateMarkupRoomType(roomTypeForDay, markupGroup, markups);
+      let dayCost = 0;
 
       if (parseInt(rtReq.adults) === 1 && numSingleRooms > 0) {
-        finalCost += parseFloat(markedUpRoomType.single_price) * numSingleRooms;
+        dayCost += parseFloat(markedUpRoomType.single_price) * numSingleRooms;
       }
       if (parseInt(rtReq.adults) >= 2 && numDoubleRooms > 0) {
-        finalCost += parseFloat(markedUpRoomType.double_price) * numDoubleRooms;
+        dayCost += parseFloat(markedUpRoomType.double_price) * numDoubleRooms;
+      }
+
+      if (dayCost > 0) {
+        finalCost += dayCost;
+        appendSeasonSegment(roomTypeForDay, markedUpRoomType, rtReq, currentDate, dayCost);
       }
     }
     currentDate.setDate(currentDate.getDate() + 1);
@@ -384,16 +440,18 @@ export function calculateHotelCostLogic(hotel, request, markupGroup, markups, ma
   // Handle promotions / coupon code
   let promotionForExtraBedApplied = false;
   if (promotion) {
-    // Check if travel dates fall within travel range of promo (stored in booking_date_from/to in DB)
-    const pStart = new Date(promotion.booking_date_from);
-    const pEnd = new Date(promotion.booking_date_to);
+    const bookingStart = normalizeDate(promotion.booking_date_from);
+    const bookingEnd = normalizeDate(promotion.booking_date_to);
+    const travelStart = normalizeDate(promotion.travel_date_from) || bookingStart;
+    const travelEnd = normalizeDate(promotion.travel_date_to) || bookingEnd;
 
-    const isTravelDatesValid = startDate >= pStart && endDate <= pEnd;
+    const isBookingDateValid = (!bookingStart || bookingDate >= bookingStart) && (!bookingEnd || bookingDate <= bookingEnd);
+    const isTravelDatesValid = (!travelStart || startDate >= travelStart) && (!travelEnd || endDate <= travelEnd);
     const daysToTravel = Math.floor((startDate.getTime() - bookingDate.getTime()) / (24 * 60 * 60 * 1000));
     const isEarlyBirdValid = !(promotion.early_bird_days > 0 && daysToTravel < promotion.early_bird_days);
     const isMinNightsValid = !(promotion.minimum_nights > 1 && numNights < promotion.minimum_nights);
 
-    if (promotion.enabled && isTravelDatesValid && isEarlyBirdValid && isMinNightsValid) {
+    if (promotion.enabled && isBookingDateValid && isTravelDatesValid && isEarlyBirdValid && isMinNightsValid) {
       if (promotion.valid_for_extra_beds) {
         // Adding extra beds cost
         for (const rtReq of roomTypesReq) {
@@ -549,5 +607,25 @@ export function calculateHotelCostLogic(hotel, request, markupGroup, markups, ma
   finalCost = Math.ceil(finalCost / 10) * 10;
   discount = Math.ceil(discount / 10) * 10;
 
-  return { final_cost: finalCost, discount };
+  if (seasonSegments.length > 0) {
+    const roomBaseTotal = seasonSegments.reduce((sum, segment) => sum + (parseFloat(segment.base_cost) || 0), 0);
+    let allocatedTotal = 0;
+
+    seasonSegments.forEach((segment, index) => {
+      let segmentCost = 0;
+      if (roomBaseTotal > 0) {
+        segmentCost = index === seasonSegments.length - 1
+          ? finalCost - allocatedTotal
+          : Math.round((finalCost * segment.base_cost / roomBaseTotal) * 100) / 100;
+      }
+      allocatedTotal += segmentCost;
+      segment.final_cost = Math.max(0, segmentCost);
+      segment.total_price = segment.final_cost;
+      segment.discount = 0;
+      delete segment.segment_key;
+      segment.base_cost = Math.round(segment.base_cost * 100) / 100;
+    });
+  }
+
+  return { final_cost: finalCost, discount, season_segments: seasonSegments };
 }

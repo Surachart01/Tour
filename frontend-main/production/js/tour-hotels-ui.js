@@ -216,20 +216,74 @@ const TourHotelsUI = {
   },
 
   pickTourTransferText(currentText, builtText, tourItem, direction = "in") {
-    const text = String(currentText || "");
-    if (!builtText) return this.isTransferTextIncomplete(text) ? "" : text;
-    const isOut = direction === "out";
-    const expectedTime = isOut
-      ? (tourItem?.departure_time || tourItem?.departureTime || tourItem?.departureTimeTour)
-      : (tourItem?.arrival_time || tourItem?.arrivalTime || tourItem?.arrivalTimeTour);
-    const expectedTransport = isOut
-      ? (tourItem?.flight_out || tourItem?.tourFlightOut || tourItem?.transport_out)
-      : (tourItem?.mode_of_transport || tourItem?.flight_in || tourItem?.tourFlightIn || tourItem?.flight_number);
+    return builtText || "";
+  },
 
-    if (this.isTransferTextIncomplete(text)) return builtText;
-    if (expectedTime && !text.includes(expectedTime)) return builtText;
-    if (expectedTransport && !text.includes(expectedTransport)) return builtText;
-    return text;
+  parseTourDisplayDate(value) {
+    if (!value) return null;
+    if (value instanceof Date && !isNaN(value.getTime())) {
+      return new Date(Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()));
+    }
+
+    const text = String(value).trim().split("T")[0];
+    let match = text.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+    if (match) {
+      return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+    }
+
+    match = text.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+    if (match) {
+      return new Date(Date.UTC(Number(match[3]), Number(match[2]) - 1, Number(match[1])));
+    }
+
+    return null;
+  },
+
+  formatTourStayDate(date) {
+    return [
+      String(date.getUTCDate()).padStart(2, "0"),
+      String(date.getUTCMonth() + 1).padStart(2, "0"),
+      date.getUTCFullYear(),
+    ].join("-");
+  },
+
+  getTourRowStartDate(tourRow, tourItem) {
+    const firstCell = tourRow?.cells?.[0];
+    const dateInput = firstCell?.querySelector?.("input[type='date']");
+    return (
+      dateInput?.value ||
+      firstCell?.dataset?.date ||
+      tourRow?.dataset?.tourStartDate ||
+      tourItem?.from_date ||
+      tourItem?.tourStartDate ||
+      tourItem?.tour_start_date ||
+      firstCell?.textContent?.trim() ||
+      ""
+    );
+  },
+
+  alignHotelStayDatesWithTourRow(hotelData, tourItem, tourRow) {
+    const startDate = this.parseTourDisplayDate(this.getTourRowStartDate(tourRow, tourItem));
+    if (!startDate || !Array.isArray(hotelData.hotels)) {
+      return hotelData;
+    }
+
+    return {
+      ...hotelData,
+      hotels: hotelData.hotels.map((hotel, index) => {
+        const dayNumber = Number.parseInt(hotel.day, 10) || index + 1;
+        const checkIn = new Date(startDate);
+        checkIn.setUTCDate(startDate.getUTCDate() + Math.max(dayNumber - 1, 0));
+        const checkOut = new Date(checkIn);
+        checkOut.setUTCDate(checkIn.getUTCDate() + 1);
+
+        return {
+          ...hotel,
+          check_in_date: this.formatTourStayDate(checkIn),
+          check_out_date: this.formatTourStayDate(checkOut),
+        };
+      }),
+    };
   },
 
   /**
@@ -280,19 +334,18 @@ const TourHotelsUI = {
     try {
       console.log("[TourHotelsUI] displayTourHotels called with tripId:", tripId, "tourItem.id:", tourItem.id, "tourItem:", tourItem);
       const hotelData = await TourHotelsAPI.getTourHotels(tripId, tourItem.id);
-      const builtTransferIn = this.buildTourTransferText(tourItem, "in");
-      const builtTransferOut = this.buildTourTransferText(tourItem, "out");
-      const displayHotelData = {
-        ...hotelData,
-        transfer_in: this.pickTourTransferText(hotelData.transfer_in, builtTransferIn, tourItem, "in"),
-        transfer_out: this.pickTourTransferText(hotelData.transfer_out, builtTransferOut, tourItem, "out"),
-      };
-      
-      // Find the tour row in the table
       const tourRow = this.findTourRow(tourItem.id);
       if (!tourRow) {
         return;
       }
+
+      const builtTransferIn = this.buildTourTransferText(tourItem, "in");
+      const builtTransferOut = this.buildTourTransferText(tourItem, "out");
+      const displayHotelData = this.alignHotelStayDatesWithTourRow({
+        ...hotelData,
+        transfer_in: this.pickTourTransferText(hotelData.transfer_in, builtTransferIn, tourItem, "in"),
+        transfer_out: this.pickTourTransferText(hotelData.transfer_out, builtTransferOut, tourItem, "out"),
+      }, tourItem, tourRow);
 
       // Create hotels display element
       const hotelsDisplay = this.createHotelsDisplay(displayHotelData, isAdmin, isBooking, tripId, tourItem.id);
@@ -522,6 +575,35 @@ const TourHotelsUI = {
       }
     }
     return null;
+  },
+
+  buildTourItemFromRow(row) {
+    if (!row) return null;
+    const cells = row.cells || [];
+    const getDateFromCell = (cell) => {
+      const input = cell?.querySelector?.("input[type='date']");
+      return input?.value || cell?.dataset?.date || cell?.textContent?.trim() || "";
+    };
+
+    return {
+      id: row.dataset.tourItemId,
+      tour_id: row.dataset.tourId,
+      from_date: getDateFromCell(cells[0]) || row.dataset.tourStartDate || "",
+      to_date: getDateFromCell(cells[1]) || row.dataset.tourEndDate || "",
+      tourStartDate: row.dataset.tourStartDate || getDateFromCell(cells[0]) || "",
+      tourEndDate: row.dataset.tourEndDate || getDateFromCell(cells[1]) || "",
+      arrival_time: row.dataset.arrivalTime || "",
+      departure_time: row.dataset.departureTime || "",
+      flight_in: row.dataset.flightIn || "",
+      flight_out: row.dataset.flightOut || "",
+      route: cells[5]?.textContent?.trim() || "",
+    };
+  },
+
+  async refreshTourHotelsForRow(row, tripId, isAdmin = false, isBooking = false) {
+    const tourItem = this.buildTourItemFromRow(row);
+    if (!tourItem?.id || !tripId) return;
+    await this.displayTourHotels(tripId, tourItem, isAdmin, isBooking);
   },
 
   /**
