@@ -41,12 +41,12 @@ const TourHotelsUI = {
       }
       .tour-hotels-layout {
         display: grid;
-        grid-template-columns: minmax(520px, 1fr) minmax(300px, 360px);
-        gap: 18px;
-        align-items: start;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+        width: min(100%, 980px);
+        margin: 0 auto;
       }
-      .tour-hotels-panel,
-      .tour-transfer-panel {
+      .tour-hotels-panel {
         min-width: 0;
       }
       .tour-hotels-list {
@@ -87,12 +87,6 @@ const TourHotelsUI = {
         font-size: 11px;
         line-height: 1.3;
         overflow-wrap: anywhere;
-      }
-      .tour-transfer-stack {
-        display: grid;
-        gap: 10px;
-        position: sticky;
-        top: 12px;
       }
       .tour-transfer-box {
         display: grid;
@@ -148,11 +142,6 @@ const TourHotelsUI = {
         background: #ffffff;
         border: 1px dashed #cbd5e1;
         border-radius: 6px;
-      }
-      @media (max-width: 1100px) {
-        .tour-hotels-layout {
-          grid-template-columns: 1fr;
-        }
       }
       @media (max-width: 640px) {
         .tour-hotels-container {
@@ -458,11 +447,6 @@ const TourHotelsUI = {
       hotelsPanel.appendChild(noHotels);
     }
 
-    const transfersPanel = document.createElement("div");
-    transfersPanel.className = "tour-transfer-panel";
-    const transferStack = document.createElement("div");
-    transferStack.className = "tour-transfer-stack";
-
     const transferInBox = document.createElement("div");
     transferInBox.className = "tour-transfer-box in";
     transferInBox.innerHTML = `
@@ -472,8 +456,6 @@ const TourHotelsUI = {
         <div class="tour-transfer-text">${hotelData.transfer_in || '<span style="color:#999; font-style:italic;">— Not specified —</span>'}</div>
       </div>
     `;
-    transferStack.appendChild(transferInBox);
-
     const transferOutBox = document.createElement("div");
     transferOutBox.className = "tour-transfer-box out";
     transferOutBox.innerHTML = `
@@ -483,11 +465,9 @@ const TourHotelsUI = {
         <div class="tour-transfer-text">${hotelData.transfer_out || '<span style="color:#999; font-style:italic;">— Not specified —</span>'}</div>
       </div>
     `;
-    transferStack.appendChild(transferOutBox);
-    transfersPanel.appendChild(transferStack);
-
+    layout.appendChild(transferInBox);
     layout.appendChild(hotelsPanel);
-    layout.appendChild(transfersPanel);
+    layout.appendChild(transferOutBox);
     container.appendChild(layout);
 
     return container;
@@ -826,6 +806,38 @@ const TourHotelsUI = {
     }
   },
 
+  async fetchHotelDetails(hotelId) {
+    if (!hotelId || String(hotelId).startsWith("custom_")) return null;
+    if (this.hotelDataCache[hotelId]?.room_types?.length) {
+      return this.hotelDataCache[hotelId];
+    }
+
+    try {
+      const response = await fetch(`${Endpoint}/api/v1/hotels/${hotelId}`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch hotel details");
+      }
+
+      const hotel = await response.json();
+      this.hotelDataCache[hotelId] = {
+        name: hotel.name || hotel.hotel_name,
+        room_types: hotel.room_types || [],
+        promotions: hotel.promotions || [],
+      };
+      return this.hotelDataCache[hotelId];
+    } catch (error) {
+      console.error("Error fetching hotel details:", error);
+      return null;
+    }
+  },
+
   /**
    * Populate hotel dropdown with hotels for a given city
    * @param {HTMLSelectElement} hotelDropdown - The hotel dropdown element
@@ -891,7 +903,7 @@ const TourHotelsUI = {
    * @param {HTMLSelectElement} hotelDropdown - The hotel dropdown element
    * @param {boolean} isInitialLoad - Whether this is the initial load (not user-triggered change)
    */
-  onHotelChange(hotelDropdown, isInitialLoad = false) {
+  async onHotelChange(hotelDropdown, isInitialLoad = false) {
     const container = hotelDropdown.closest('.hotel-edit-form');
     if (!container) return;
 
@@ -934,6 +946,16 @@ const TourHotelsUI = {
       roomTypes = this.hotelDataCache[hotelId].room_types || [];
     }
 
+    if (roomTypes.length === 0 && hotelId) {
+      roomTypeDropdown.innerHTML = '<option value="">Loading room types...</option>';
+      const hotelDetails = await this.fetchHotelDetails(hotelId);
+      roomTypes = hotelDetails?.room_types || [];
+      if (selectedOption && roomTypes.length > 0) {
+        selectedOption.setAttribute("data-roomtypes", JSON.stringify(roomTypes));
+      }
+      roomTypeDropdown.innerHTML = '<option value="">Select Room Type</option>';
+    }
+
     if (roomTypes.length > 0) {
       let selectedFound = false;
       roomTypes.forEach(roomType => {
@@ -951,6 +973,11 @@ const TourHotelsUI = {
         roomTypeDropdown.appendChild(option);
       });
 
+      if (!isInitialLoad && roomTypes.length === 1) {
+        roomTypeDropdown.selectedIndex = 1;
+        selectedFound = true;
+      }
+
       // Only add "(Current)" option on initial load if current room type not found in list
       if (isInitialLoad && !selectedFound && currentRoomType) {
         const customOption = document.createElement('option');
@@ -966,6 +993,8 @@ const TourHotelsUI = {
       customOption.textContent = currentRoomType;
       customOption.selected = true;
       roomTypeDropdown.appendChild(customOption);
+    } else {
+      roomTypeDropdown.innerHTML = '<option value="">No room types available</option>';
     }
   },
 
@@ -1034,7 +1063,7 @@ const TourHotelsUI = {
     const hotelDropdown = container.querySelector('.hotel-dropdown');
     const hotelNameInput = container.querySelector('.hotel-name');
     
-    hotelDropdown.addEventListener('change', () => {
+    hotelDropdown.addEventListener('change', async () => {
       // Update hidden hotel name input
       const selectedOption = hotelDropdown.options[hotelDropdown.selectedIndex];
       if (selectedOption && selectedOption.dataset.hotelName) {
@@ -1044,7 +1073,7 @@ const TourHotelsUI = {
       }
       
       // Populate room types
-      this.onHotelChange(hotelDropdown);
+      await this.onHotelChange(hotelDropdown);
     });
 
     // Populate hotel dropdown based on city
