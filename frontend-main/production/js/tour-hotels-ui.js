@@ -435,7 +435,7 @@ const TourHotelsUI = {
       hotelsList.className = "tour-hotels-list";
       
       hotelData.hotels.forEach(hotel => {
-        const hotelItem = this.createHotelItem(hotel, isAdmin);
+        const hotelItem = this.createHotelItem(hotel, isAdmin, isBooking);
         hotelsList.appendChild(hotelItem);
       });
       
@@ -476,9 +476,11 @@ const TourHotelsUI = {
   /**
    * Create a single hotel item display
    * @param {Object} hotel - Hotel object
+   * @param {boolean} isAdmin - Whether current user is admin
+   * @param {boolean} isBooking - Whether this is a booking
    * @returns {HTMLElement} Hotel item element
    */
-  createHotelItem(hotel, isAdmin = false) {
+  createHotelItem(hotel, isAdmin = false, isBooking = false) {
     const item = document.createElement("div");
     item.className = "tour-hotel-item";
 
@@ -527,8 +529,8 @@ const TourHotelsUI = {
 
     item.appendChild(content);
 
-    // EMAIL button — admin only
-    if (isAdmin) {
+    // Supplier email is available only to admins after conversion to booking.
+    if (isAdmin && isBooking) {
       const emailBtn = document.createElement("button");
       emailBtn.type = "button";
       emailBtn.className = "btn btn-sm btn-outline-primary tour-hotel-email-btn";

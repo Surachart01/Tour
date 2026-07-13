@@ -375,8 +375,41 @@
               </h5>
               
               <div class="row">
+                <!-- Extra Bed Markup -->
+                <div class="col-md-3 mb-3">
+                  <div class="form-group">
+                    <label for="extraBedMarkupUnit" style="display: flex; align-items: center;">
+                      <i class="fas fa-bed" style="margin-right: 8px; color: #1abb9c;"></i>
+                      Extra Bed Markup Unit *
+                    </label>
+                    <select id="extraBedMarkupUnit" class="form-control">
+                      <option value="flat rate">flat rate</option>
+                      <option value="%">%</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="extraBedMarkup" style="display: flex; align-items: center;">
+                      <i class="fas fa-coins" style="margin-right: 8px; color: #1abb9c;"></i>
+                      Extra Bed Markup Value *
+                    </label>
+                    <div class="input-group">
+                      <input
+                        type="number"
+                        id="extraBedMarkup"
+                        class="form-control"
+                        placeholder="Enter Extra Bed Markup"
+                        value="0"
+                        required
+                      />
+                      <div class="input-group-append">
+                        <span class="input-group-text" id="extraBedMarkupUnitDisplay">THB</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Excursion Markup -->
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                   <div class="form-group">
                     <label for="excursionMarkupUnit" style="display: flex; align-items: center;">
                       <i class="fas fa-map-marked-alt" style="margin-right: 8px; color: #1abb9c;"></i>
@@ -408,7 +441,7 @@
                 </div>
 
                 <!-- Tour Markup -->
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                   <div class="form-group">
                     <label for="tourMarkupUnit" style="display: flex; align-items: center;">
                       <i class="fas fa-route" style="margin-right: 8px; color: #1abb9c;"></i>
@@ -440,7 +473,7 @@
                 </div>
 
                 <!-- Transfer Markup -->
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                   <div class="form-group">
                     <label for="transferMarkupUnit" style="display: flex; align-items: center;">
                       <i class="fas fa-shuttle-van" style="margin-right: 8px; color: #1abb9c;"></i>
@@ -696,6 +729,14 @@
 
       // Add event listeners to update the display for units dynamically
       document
+        .getElementById("extraBedMarkupUnit")
+        .addEventListener("change", function () {
+          updateUnitDisplay(
+            this,
+            document.getElementById("extraBedMarkupUnitDisplay")
+          );
+        });
+      document
         .getElementById("excursionMarkupUnit")
         .addEventListener("change", function () {
           updateUnitDisplay(
@@ -721,6 +762,10 @@
         });
 
       // Trigger initial unit display
+      updateUnitDisplay(
+        document.getElementById("extraBedMarkupUnit"),
+        document.getElementById("extraBedMarkupUnitDisplay")
+      );
       updateUnitDisplay(
         document.getElementById("excursionMarkupUnit"),
         document.getElementById("excursionMarkupUnitDisplay")
@@ -776,12 +821,19 @@
           ) || 0;
           const transferMarkupUnit =
             document.getElementById("transferMarkupUnit").value;
+          const extraBedMarkup = parseFloat(
+            document.getElementById("extraBedMarkup").value
+          ) || 0;
+          const extraBedMarkupUnit =
+            document.getElementById("extraBedMarkupUnit").value;
 
           // Construct the payload to send to the backend
           const markupData = {
             markup_group: groupName,
             hotel_markup_unit: hotelMarkupUnit,
             hotel_markup_percentages: hotelMarkups,
+            extra_bed_markup: extraBedMarkup,
+            extra_bed_markup_unit: extraBedMarkupUnit,
             excursion_markup: excursionMarkup,
             excursion_markup_unit: excursionMarkupUnit,
             tour_markup: tourMarkup,

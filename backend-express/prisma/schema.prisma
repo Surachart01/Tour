@@ -414,6 +414,7 @@ model hotel_trip_items {
   room_types_json       String?
   early_check_in        Boolean?                @default(false)
   late_check_out        Boolean?                @default(false)
+  late_checkout_type    String?                 @db.VarChar(20)
   flight_in             String?
   flight_out            String?
   flight_info           String?
@@ -488,6 +489,8 @@ model markups {
   tour_markup              Decimal                    @db.Decimal(10, 2)
   transfer_markup_unit     String                     @db.VarChar(10)
   transfer_markup          Decimal                    @db.Decimal(10, 2)
+  extra_bed_markup_unit    String?                    @db.VarChar(10)
+  extra_bed_markup         Decimal?                   @db.Decimal(10, 2)
   currency_id              Int?
   hotel_markup_unit        String?                    @db.VarChar(10)
   hotel_markup_value       Decimal?                   @db.Decimal(10, 2)

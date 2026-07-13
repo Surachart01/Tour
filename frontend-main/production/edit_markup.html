@@ -375,8 +375,35 @@
               </h5>
               
               <div class="row">
+                <!-- Extra Bed Markup -->
+                <div class="col-md-3 mb-3">
+                  <div class="form-group">
+                    <label for="extraBedMarkupUnit" style="display: flex; align-items: center;">
+                      <i class="fas fa-bed" style="margin-right: 8px; color: #1abb9c;"></i>
+                      Extra Bed Markup Unit *
+                    </label>
+                    <select id="extraBedMarkupUnit" class="form-control">
+                      <option value="flat rate">flat rate</option>
+                      <option value="%">%</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="extraBedMarkup" style="display: flex; align-items: center;">
+                      <i class="fas fa-coins" style="margin-right: 8px; color: #1abb9c;"></i>
+                      Extra Bed Markup Value *
+                    </label>
+                    <input
+                      type="number"
+                      id="extraBedMarkup"
+                      class="form-control"
+                      placeholder="Enter Extra Bed Markup"
+                      required
+                    />
+                  </div>
+                </div>
+
                 <!-- Excursion Markup -->
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                   <div class="form-group">
                     <label for="excursionMarkupUnit" style="display: flex; align-items: center;">
                       <i class="fas fa-map-marked-alt" style="margin-right: 8px; color: #1abb9c;"></i>
@@ -403,7 +430,7 @@
                 </div>
 
                 <!-- Tour Markup -->
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                   <div class="form-group">
                     <label for="tourMarkupUnit" style="display: flex; align-items: center;">
                       <i class="fas fa-route" style="margin-right: 8px; color: #1abb9c;"></i>
@@ -430,7 +457,7 @@
                 </div>
 
                 <!-- Transfer Markup -->
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                   <div class="form-group">
                     <label for="transferMarkupUnit" style="display: flex; align-items: center;">
                       <i class="fas fa-shuttle-van" style="margin-right: 8px; color: #1abb9c;"></i>
@@ -680,6 +707,12 @@
                 markup.transfer_markup !== null ? markup.transfer_markup : 0;
               document.getElementById("transferMarkupUnit").value =
                 markup.transfer_markup_unit || "%";
+              document.getElementById("extraBedMarkup").value =
+                markup.extra_bed_markup !== null && markup.extra_bed_markup !== undefined
+                  ? markup.extra_bed_markup
+                  : 0;
+              document.getElementById("extraBedMarkupUnit").value =
+                markup.extra_bed_markup_unit || "flat rate";
 
               // Populate the hotel markup percentages table
               markup.hotel_markup_percentages.forEach((hotelMarkup, index) => {
@@ -822,6 +855,10 @@
             document.getElementById("transferMarkup").value;
           const transferMarkupUnit =
             document.getElementById("transferMarkupUnit").value;
+          const extraBedMarkup =
+            document.getElementById("extraBedMarkup").value;
+          const extraBedMarkupUnit =
+            document.getElementById("extraBedMarkupUnit").value;
 
           const hotelMarkups = Array.from(
             document.querySelectorAll("#hotelMarkupTableBody tr")
@@ -841,6 +878,8 @@
             markup_group: groupName,
             hotel_markup_unit: hotelMarkupUnit,
             hotel_markup_percentages: hotelMarkups,
+            extra_bed_markup: parseFloat(extraBedMarkup) || 0,
+            extra_bed_markup_unit: extraBedMarkupUnit,
             excursion_markup: parseFloat(excursionMarkup) || 0,
             excursion_markup_unit: excursionMarkupUnit,
             tour_markup: parseFloat(tourMarkup) || 0,

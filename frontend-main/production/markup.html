@@ -346,6 +346,7 @@
                              <tr>
                                <th>Markup Group</th>
                                <th>Hotel</th>
+                               <th>Extra Bed</th>
                                <th>Excursion</th>
                                <th>Tour</th>
                                <th>Transfer</th>
@@ -355,6 +356,7 @@
                              <tr id="filterRow" style="background:#f0f4f8;">
                                <th><input type="text" id="filterGroup" class="form-control form-control-sm" placeholder="Filter group..."></th>
                                <th><input type="text" id="filterHotel" class="form-control form-control-sm" placeholder="Filter..."></th>
+                               <th><input type="text" id="filterExtraBed" class="form-control form-control-sm" placeholder="Filter..."></th>
                                <th><input type="text" id="filterExcursion" class="form-control form-control-sm" placeholder="Filter..."></th>
                                <th><input type="text" id="filterTour" class="form-control form-control-sm" placeholder="Filter..."></th>
                                <th><input type="text" id="filterTransfer" class="form-control form-control-sm" placeholder="Filter..."></th>
@@ -465,13 +467,17 @@
               markup.tour_markup_unit === "flat rate" ? "THB" : "%";
             const transferUnit =
               markup.transfer_markup_unit === "flat rate" ? "THB" : "%";
+            const extraBedUnit =
+              markup.extra_bed_markup_unit === "flat rate" ? "THB" : "%";
 
             const hotelMarkup = "Fixed THB";
+            const extraBedMarkup = `${markup.extra_bed_markup || 0} ${extraBedUnit}`;
 
             const row = `
               <tr>
                 <td>${markup.markup_group}</td>
                 <td>${hotelMarkup}</td>
+                <td>${extraBedMarkup}</td>
                 <td>${markup.excursion_markup} ${excursionUnit}</td>
                 <td>${markup.tour_markup} ${tourUnit}</td>
                 <td>${markup.transfer_markup} ${transferUnit}</td>
@@ -584,6 +590,7 @@
         function applyColumnFilters() {
           const fGroup = document.getElementById("filterGroup").value.toLowerCase();
           const fHotel = document.getElementById("filterHotel").value.toLowerCase();
+          const fExtraBed = document.getElementById("filterExtraBed").value.toLowerCase();
           const fExcursion = document.getElementById("filterExcursion").value.toLowerCase();
           const fTour = document.getElementById("filterTour").value.toLowerCase();
           const fTransfer = document.getElementById("filterTransfer").value.toLowerCase();
@@ -593,22 +600,26 @@
             const excursionUnit = markup.excursion_markup_unit === "flat rate" ? "THB" : "%";
             const tourUnit = markup.tour_markup_unit === "flat rate" ? "THB" : "%";
             const transferUnit = markup.transfer_markup_unit === "flat rate" ? "THB" : "%";
+            const extraBedUnit = markup.extra_bed_markup_unit === "flat rate" ? "THB" : "%";
             const hotelDisplay = "%";
+            const extraBedDisplay = `${markup.extra_bed_markup || 0} ${extraBedUnit}`;
             const excursionDisplay = `${markup.excursion_markup} ${excursionUnit}`;
             const tourDisplay = `${markup.tour_markup} ${tourUnit}`;
             const transferDisplay = `${markup.transfer_markup} ${transferUnit}`;
 
             const groupMatch = markup.markup_group.toLowerCase().includes(fGroup);
             const hotelMatch = hotelDisplay.toLowerCase().includes(fHotel);
+            const extraBedMatch = extraBedDisplay.toLowerCase().includes(fExtraBed);
             const excursionMatch = excursionDisplay.toLowerCase().includes(fExcursion);
             const tourMatch = tourDisplay.toLowerCase().includes(fTour);
             const transferMatch = transferDisplay.toLowerCase().includes(fTransfer);
             const globalSearch = !searchValue ||
               markup.markup_group.toLowerCase().includes(searchValue) ||
+              String(markup.extra_bed_markup || 0).includes(searchValue) ||
               String(markup.excursion_markup).includes(searchValue) ||
               String(markup.tour_markup).includes(searchValue);
 
-            return groupMatch && hotelMatch && excursionMatch && tourMatch && transferMatch && globalSearch;
+            return groupMatch && hotelMatch && extraBedMatch && excursionMatch && tourMatch && transferMatch && globalSearch;
           });
 
           currentPage = 1;
@@ -617,7 +628,7 @@
           updateMarkupsCount();
         }
 
-        ["filterGroup", "filterHotel", "filterExcursion", "filterTour", "filterTransfer"].forEach((id) => {
+        ["filterGroup", "filterHotel", "filterExtraBed", "filterExcursion", "filterTour", "filterTransfer"].forEach((id) => {
           document.getElementById(id).addEventListener("keyup", applyColumnFilters);
         });
 

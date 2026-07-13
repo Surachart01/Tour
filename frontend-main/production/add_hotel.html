@@ -450,19 +450,38 @@
                     oninput="validatePercentageInput(this)"
                   />
                 </div>
-                <div class="col-md-6 form-group">
+                <div class="col-md-3 form-group">
                   <label for="latecheckoutadd">
                     <i
                       class="fas fa-clock"
                       style="margin-right: 8px; color: #1abb9c"
                     ></i>
-                    Late Check-out Add (%)
+                    Late Check-out 6PM Add (%)
                   </label>
                   <input
                     type="number"
                     class="form-control"
                     id="latecheckoutadd"
-                    placeholder="Enter late check-out percentage"
+                    placeholder="Usually 50"
+                    min="0"
+                    max="100"
+                    step="1"
+                    oninput="validatePercentageInput(this)"
+                  />
+                </div>
+                <div class="col-md-3 form-group">
+                  <label for="latecheckout21add">
+                    <i
+                      class="fas fa-clock"
+                      style="margin-right: 8px; color: #1abb9c"
+                    ></i>
+                    Late Check-out 9PM Add (%)
+                  </label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="latecheckout21add"
+                    placeholder="Usually 100"
                     min="0"
                     max="100"
                     step="1"

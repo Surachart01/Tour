@@ -2521,6 +2521,7 @@
                         class="form-check-input"
                         type="checkbox"
                         id="earlyCheckIn"
+                        disabled
                       />
                       <label class="form-check-label" for="earlyCheckIn"
                         >Early Check-In</label
@@ -2529,17 +2530,23 @@
                   </div>
 
                   <!-- Late Check-Out -->
-                  <div class="form-group col-md-2 d-flex align-items-center">
+                  <div class="form-group col-md-4">
                     <div class="form-check">
                       <input
                         class="form-check-input"
                         type="checkbox"
                         id="lateCheckOut"
+                        disabled
                       />
                       <label class="form-check-label" for="lateCheckOut"
                         >Late Check-Out</label
                       >
                     </div>
+                    <select class="form-control mt-2" id="lateCheckOutType" disabled>
+                      <option value="">Select Late Check-Out</option>
+                      <option value="18">Late Check-out 6PM Add (50%)</option>
+                      <option value="21">Late Check-out 9PM Add (100%)</option>
+                    </select>
                   </div>
                 </div>
 
@@ -2859,6 +2866,7 @@
     <!-- Custom Scripts -->
     <script src="../build/js/custom.min.js"></script>
     <script src="js/config.js"></script>
+    <script src="js/extra-bed-tooltips.js?v=20260713"></script>
     <script src="js/locationCache.js"></script>
     <!-- Tour Hotels Management -->
     <script src="js/tour-hotels-api.js"></script>
@@ -5692,6 +5700,8 @@
             booking_end_date: bookingEndDate,
             coupon_code: couponCode,
             late_checkout: lateCheckOut,
+            late_checkout_type:
+              document.getElementById("lateCheckOutType")?.value || null,
             early_checkin: earlyCheckIn,
             christmas_dinner: christmasDinner,
             new_year_dinner: newYearDinner,
@@ -5917,6 +5927,11 @@
           const checkInDate = new Date(checkInDateInput.value);
           const checkOutDate = new Date(checkOutDateInput.value);
 
+          if (!checkInDateInput.value || !checkOutDateInput.value) {
+            numberOfNightsInput.value = "";
+            return;
+          }
+
           // Ensure Check-Out Date is after Check-In Date
           if (
             !isNaN(checkInDate) &&
@@ -5973,10 +5988,11 @@
         function autoPopulateHotels() {
           const cityDropdown = document.getElementById("hotelCity");
           const hotelDropdown = document.getElementById("hotelType");
+          const selectedCountry = document.getElementById("hotelCountry")?.value;
           const checkInDate = document.getElementById("checkInDate").value;
           const checkOutDate = document.getElementById("checkOutDate").value;
 
-          if (cityDropdown.value && checkInDate && checkOutDate) {
+          if (selectedCountry && cityDropdown.value && checkInDate && checkOutDate) {
             searchHotelByCity(cityDropdown, hotelDropdown);
           }
         }
@@ -6039,6 +6055,7 @@
           row.dataset.mealAllInclusive = hotel.all_inclusive ? "true" : "false";
           row.dataset.earlyCheckIn = hotel.early_checkin ? "true" : "false";
           row.dataset.lateCheckOut = hotel.late_checkout ? "true" : "false";
+          row.dataset.lateCheckoutType = hotel.late_checkout_type || "";
           row.dataset.extraAdultBed = hotel.extra_adult_bed ? "true" : "false";
           row.dataset.extraChildBed = hotel.extra_child_bed ? "true" : "false";
           row.dataset.sharingBed = hotel.sharing_bed ? "true" : "false";
@@ -6263,6 +6280,7 @@
               complimentaryAbf: getBool("complimentaryAbf"),
               earlyCheckIn: getBool("earlyCheckIn"),
               lateCheckOut: getBool("lateCheckOut"),
+              lateCheckOutType: document.getElementById("lateCheckOutType")?.value || "",
               extraAdultBed: getBool("extraAdultBed"),
               extraChildBed: getBool("extraChildBed"),
               sharingBed: getBool("sharingBed"),
@@ -6406,6 +6424,7 @@
               0,
             early_checkin: document.getElementById("earlyCheckIn").checked,
             late_checkout: document.getElementById("lateCheckOut").checked,
+            late_checkout_type: document.getElementById("lateCheckOutType")?.value || null,
             meal_abf: document.getElementById("mealAbf").checked,
             meal_lunch: document.getElementById("mealLunch").checked,
             meal_dinner: document.getElementById("mealDinner").checked,
@@ -6467,6 +6486,8 @@
           editingHotelRow.dataset.lateCheckOut = updatedHotel.late_checkout
             ? "true"
             : "false";
+          editingHotelRow.dataset.lateCheckoutType =
+            updatedHotel.late_checkout_type || "";
           editingHotelRow.dataset.extraAdultBed = updatedHotel.extra_adult_bed
             ? "true"
             : "false";
@@ -6578,6 +6599,8 @@
             hotel.early_checkin || hotel.earlyCheckIn ? "true" : "false";
           newRow.dataset.lateCheckOut =
             hotel.late_checkout || hotel.lateCheckOut ? "true" : "false";
+          newRow.dataset.lateCheckoutType =
+            hotel.late_checkout_type || hotel.lateCheckOutType || "";
           newRow.dataset.extraAdultBed =
             hotel.extra_adult_bed || hotel.extraAdultBed ? "true" : "false";
           newRow.dataset.extraChildBed =
@@ -6804,6 +6827,8 @@
 
           document.getElementById("earlyCheckIn").checked = hotel.early_checkin;
           document.getElementById("lateCheckOut").checked = hotel.late_checkout;
+          document.getElementById("lateCheckOutType").value =
+            hotel.late_checkout_type || "";
           document.getElementById("mealAbf").checked = hotel.abf_include;
           document.getElementById("mealLunch").checked = hotel.lunch_include;
           document.getElementById("mealDinner").checked = hotel.dinner_include;
@@ -7231,6 +7256,7 @@
               booking_end_date: bookingEndDate,
               coupon_code: couponCode,
               late_checkout: lateCheckOut,
+              late_checkout_type: document.getElementById("lateCheckOutType")?.value || null,
               early_checkin: earlyCheckIn,
               christmas_dinner: christmasDinner,
               new_year_dinner: newYearDinner,
@@ -7289,20 +7315,24 @@
         // Function to search hotels by city and populate the hotel dropdown
         function searchHotelByCity(cityDropdown, hotelDropdown) {
           const selectedCity = cityDropdown.value;
-
-          if (!selectedCity) {
-            alert("Please select a city.");
-            return;
-          }
-
           const checkInDate = document.getElementById("checkInDate").value;
           const checkoutDate = document.getElementById("checkOutDate").value;
+          const selectedCountry = document.getElementById("hotelCountry")?.value || "";
 
-          if (!checkInDate || !checkoutDate) {
-            alert("Please select both Check-In and Check-Out dates.");
+          if (!selectedCountry || !selectedCity || !checkInDate || !checkoutDate) {
+            hotelDropdown.innerHTML =
+              '<option value="">Complete dates, country and city first</option>';
+            hotelDropdown.disabled = true;
+            const earlyCheckInCheckbox = document.getElementById("earlyCheckIn");
+            if (earlyCheckInCheckbox) {
+              earlyCheckInCheckbox.checked = false;
+              earlyCheckInCheckbox.disabled = true;
+            }
             return;
           }
 
+          hotelDropdown.disabled = false;
+          hotelDropdown.innerHTML = '<option value="">Loading hotels...</option>';
           const bookingDate = document.getElementById("bookingDate").value;
 
           const url = new URL(`${Endpoint}/api/v1/hotels`);
@@ -7344,6 +7374,7 @@
                   JSON.stringify({
                     early_checkin_fee: hotel.fees.early_checkin_fee || 0,
                     late_checkout_fee: hotel.fees.late_checkout_fee || 0,
+                    late_checkout_21_fee: hotel.fees.late_checkout_21_fee || 0,
                   })
                 );
 
@@ -7367,7 +7398,8 @@
             })
             .catch((error) => {
               console.error("Error fetching hotels:", error);
-              alert("Failed to load hotels. Please try again later.");
+              hotelDropdown.innerHTML =
+                '<option value="">Unable to load hotels</option>';
             });
         }
 
@@ -7448,6 +7480,46 @@
           if (!selectedHotel) {
             console.error("No hotel selected.");
             return;
+          }
+
+          let hotelData = {};
+          try {
+            hotelData = JSON.parse(
+              selectedHotel.getAttribute("data-hotel") || "{}"
+            );
+          } catch (e) {
+            console.error("Failed to parse hotel data JSON");
+          }
+
+          const earlyCheckInCheckbox = document.getElementById("earlyCheckIn");
+          if (earlyCheckInCheckbox) {
+            const hasDates =
+              Boolean(document.getElementById("checkInDate")?.value) &&
+              Boolean(document.getElementById("checkOutDate")?.value);
+            earlyCheckInCheckbox.disabled = true;
+            earlyCheckInCheckbox.checked =
+              hasDates && Number(hotelData.early_checkin_fee || 0) > 0;
+          }
+
+          const lateCheckOutCheckbox = document.getElementById("lateCheckOut");
+          const lateCheckOutTypeSelect =
+            document.getElementById("lateCheckOutType");
+          if (lateCheckOutCheckbox && lateCheckOutTypeSelect) {
+            const sixPmFee = Number(hotelData.late_checkout_fee || 0);
+            const ninePmFee = Number(hotelData.late_checkout_21_fee || 0);
+            lateCheckOutCheckbox.disabled = true;
+            lateCheckOutTypeSelect.disabled = sixPmFee <= 0 && ninePmFee <= 0;
+            lateCheckOutTypeSelect.querySelector('option[value="18"]').disabled =
+              sixPmFee <= 0;
+            lateCheckOutTypeSelect.querySelector('option[value="21"]').disabled =
+              ninePmFee <= 0;
+            if (
+              (lateCheckOutTypeSelect.value === "18" && sixPmFee <= 0) ||
+              (lateCheckOutTypeSelect.value === "21" && ninePmFee <= 0)
+            ) {
+              lateCheckOutTypeSelect.value = "";
+            }
+            lateCheckOutCheckbox.checked = Boolean(lateCheckOutTypeSelect.value);
           }
 
           // Parse room types
@@ -7537,6 +7609,16 @@
             }
           }
         }
+
+        document
+          .getElementById("lateCheckOutType")
+          ?.addEventListener("change", function () {
+            const lateCheckOutCheckbox = document.getElementById("lateCheckOut");
+            if (lateCheckOutCheckbox) {
+              lateCheckOutCheckbox.checked = Boolean(this.value);
+            }
+            checkAndCalculateHotelPrice();
+          });
 
         // Event listener for hotel dropdown change
         document.addEventListener("change", function (event) {
@@ -10315,6 +10397,7 @@
                 rowData["dinner_include"] = row.dataset.mealDinner === "true";
                 rowData["early_checkin"] = row.dataset.earlyCheckIn === "true";
                 rowData["late_checkout"] = row.dataset.lateCheckOut === "true";
+                rowData["late_checkout_type"] = row.dataset.lateCheckoutType || null;
                 rowData["extra_adult_bed"] =
                   row.dataset.extraAdultBed === "true";
                 rowData["extra_child_bed"] =

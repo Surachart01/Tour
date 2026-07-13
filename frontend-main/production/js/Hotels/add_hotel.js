@@ -13,6 +13,102 @@ function toggleEditButtonVisibility() {
   }
 }
 
+function getRoomTypeNameFromRow(row) {
+  const roomCell = row?.getElementsByTagName("td")?.[3];
+  return (roomCell?.innerText || "").split("\n")[0].trim().toLowerCase();
+}
+
+function getRoomTypeStartDateFromRow(row) {
+  const dateCell = row?.getElementsByTagName("td")?.[1];
+  return formatToYYYYMMDD((dateCell?.textContent || "").trim()) || "";
+}
+
+function styleRoomTypeSeasonalityTable() {
+  const tableBody = document.querySelector("#roomTypesTable tbody");
+  if (!tableBody) return;
+
+  const rows = Array.from(tableBody.querySelectorAll("tr"));
+  const originalRows = rows.slice();
+  const sortedRows = rows.sort((a, b) => {
+      const nameCompare = getRoomTypeNameFromRow(a).localeCompare(
+        getRoomTypeNameFromRow(b)
+      );
+      if (nameCompare !== 0) return nameCompare;
+      return getRoomTypeStartDateFromRow(a).localeCompare(
+        getRoomTypeStartDateFromRow(b)
+      );
+    });
+  if (sortedRows.some((row, index) => row !== originalRows[index])) {
+    sortedRows.forEach((row) => tableBody.appendChild(row));
+  }
+
+  let previousRoomName = "";
+  Array.from(tableBody.querySelectorAll("tr")).forEach((row) => {
+    const cells = row.getElementsByTagName("td");
+    const roomCell = cells[3];
+    if (!roomCell) return;
+    const roomName = getRoomTypeNameFromRow(row);
+    const isDuplicateSeason = roomName && roomName === previousRoomName;
+    row.classList.toggle("room-season-row", isDuplicateSeason);
+    row.classList.toggle("room-type-group-row", !isDuplicateSeason);
+    roomCell.classList.toggle("room-season-duplicate", isDuplicateSeason);
+    roomCell.classList.toggle("room-type-group-cell", !isDuplicateSeason);
+    previousRoomName = roomName;
+  });
+}
+
+function installRoomTypeSeasonalityView() {
+  const tableBody = document.querySelector("#roomTypesTable tbody");
+  if (!tableBody || tableBody.dataset.seasonalityObserver === "true") return;
+  tableBody.dataset.seasonalityObserver = "true";
+
+  const style = document.createElement("style");
+  style.textContent = `
+    #roomTypesTable tbody tr.room-type-group-row td {
+      border-top: 3px solid #1abb9c;
+    }
+    #roomTypesTable td.room-type-group-cell {
+      background: #f4fbf9;
+      font-weight: 700;
+      color: #263f55;
+      vertical-align: top;
+    }
+    #roomTypesTable td.room-season-duplicate {
+      color: transparent;
+      font-size: 0;
+      position: relative;
+      background: #fbfdfe;
+    }
+    #roomTypesTable td.room-season-duplicate::after {
+      content: "Seasonality";
+      color: #7a8a9a;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+  `;
+  document.head.appendChild(style);
+
+  let scheduled = false;
+  const scheduleGrouping = () => {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(() => {
+      scheduled = false;
+      styleRoomTypeSeasonalityTable();
+    });
+  };
+  new MutationObserver(scheduleGrouping).observe(tableBody, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+  });
+  scheduleGrouping();
+}
+
+document.addEventListener("DOMContentLoaded", installRoomTypeSeasonalityView);
+
 function loadSelectedRowsIntoModal() {
   const selectedRows = document.querySelectorAll('input[type="checkbox"]:checked');
   const dynamicContainer = document.getElementById("dynamicRoomEntriesContainer");
@@ -1675,6 +1771,10 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("latecheckoutadd").value,
         10
       );
+      const lateCheckout21Add = parseInt(
+        document.getElementById("latecheckout21add").value,
+        10
+      );
       const christmasDinner = parseInt(
         document.getElementById("christmasdinner").value,
         10
@@ -1788,6 +1888,7 @@ document.addEventListener("DOMContentLoaded", function () {
         fees: {
           early_checkin_fee: earlyCheckinAdd,
           late_checkout_fee: lateCheckoutAdd,
+          late_checkout_21_fee: lateCheckout21Add,
           christmas_dinner_fee: christmasDinner,
           new_year_dinner_fee: newYear,
           currency_id: 4, // Assuming THB as the currency

@@ -18,6 +18,24 @@ function applyFixedMarkup(basePrice, markupValue) {
   return Math.round(finalPrice * 100) / 100;
 }
 
+function applyExtraBedMarkup(basePrice, markup) {
+  const parsedPrice = parseFloat(basePrice);
+  if (isNaN(parsedPrice) || parsedPrice === 0) {
+    return 0;
+  }
+  if (!markup) {
+    return parsedPrice;
+  }
+
+  const extraBedMarkup = parseFloat(markup.extra_bed_markup || 0);
+  const extraBedMarkupUnit = markup.extra_bed_markup_unit || 'flat rate';
+  if (extraBedMarkupUnit === 'flat rate') {
+    return applyFixedMarkup(parsedPrice, extraBedMarkup);
+  }
+
+  return applyMarkup(parsedPrice, extraBedMarkup, extraBedMarkupUnit);
+}
+
 export function calculateMarkedUpPrice(basePrice, markupGroup, serviceType, markups) {
   const parsedPrice = parseFloat(basePrice);
   if (isNaN(parsedPrice) || parsedPrice === 0) {
@@ -172,6 +190,7 @@ export function calculateTourCostLogic(tour, request, markupGroup, markups) {
 
 export function calculateMarkupRoomType(roomType, markupGroup, markups) {
   const rt = { ...roomType };
+  const markup = (markups || []).find(m => m.markup_group === markupGroup);
   if (rt.food_adult_all_inclusive === undefined || rt.food_adult_all_inclusive === null) {
     rt.food_adult_all_inclusive = rt.boarding_full_price || 0;
   }
@@ -181,13 +200,13 @@ export function calculateMarkupRoomType(roomType, markupGroup, markups) {
   rt.single_price = calculateMarkedUpPrice(parseFloat(rt.single_price || 0), markupGroup, 'hotel', markups);
   rt.double_price = calculateMarkedUpPrice(parseFloat(rt.double_price || 0), markupGroup, 'hotel', markups);
   if (parseFloat(rt.extra_bed_adult || 0) > 0) {
-    rt.extra_bed_adult = parseFloat(rt.extra_bed_adult || 0);
+    rt.extra_bed_adult = applyExtraBedMarkup(rt.extra_bed_adult, markup);
   }
   if (parseFloat(rt.extra_bed_child || 0) > 0) {
-    rt.extra_bed_child = parseFloat(rt.extra_bed_child || 0);
+    rt.extra_bed_child = applyExtraBedMarkup(rt.extra_bed_child, markup);
   }
   if (parseFloat(rt.extra_bed_shared || 0) > 0) {
-    rt.extra_bed_shared = parseFloat(rt.extra_bed_shared || 0);
+    rt.extra_bed_shared = applyExtraBedMarkup(rt.extra_bed_shared, markup);
   }
 
   if (parseFloat(rt.food_adult_all_inclusive || 0) > 0) {
@@ -533,7 +552,13 @@ export function calculateHotelCostLogic(hotel, request, markupGroup, markups, ma
   if (request.early_checkin && parseInt(hotelFees.early_checkin_fee || 0) <= 0) {
     throw new Error('no information for early checkin available at this hotel. Please pay directly to the hotel');
   }
-  if (request.late_checkout && parseInt(hotelFees.late_checkout_fee || 0) <= 0) {
+  const requestedLateCheckoutType = String(request.late_checkout_type || '18');
+  const requestedLateCheckoutFee =
+    requestedLateCheckoutType === '21'
+      ? parseInt(hotelFees.late_checkout_21_fee || 0)
+      : parseInt(hotelFees.late_checkout_fee || 0);
+
+  if (request.late_checkout && requestedLateCheckoutFee <= 0) {
     throw new Error('no information for latecheckoutfees available at this hotel. Please pay directly to the hotel');
   }
 
@@ -584,7 +609,7 @@ export function calculateHotelCostLogic(hotel, request, markupGroup, markups, ma
 
   // Late checkout / early checkin fees
   if (request.late_checkout) {
-    const lateCheckoutFee = parseInt(hotelFees.late_checkout_fee || 0);
+    const lateCheckoutFee = requestedLateCheckoutFee;
     if (lateCheckoutFee > 100) {
       finalCost += lateCheckoutFee;
     } else {

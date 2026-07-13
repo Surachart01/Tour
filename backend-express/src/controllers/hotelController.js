@@ -86,9 +86,9 @@ export function formatHotelResponse(hotel, markupGroup = '', markups = []) {
     id: fees.id,
     early_checkin_fee: fees.early_checkin_fee ? parseFloat(fees.early_checkin_fee) : 0,
     late_checkout_fee: fees.late_checkout_fee ? parseFloat(fees.late_checkout_fee) : 0,
+    late_checkout_21_fee: fees.late_checkout_21_fee ? parseFloat(fees.late_checkout_21_fee) : 0,
     christmas_dinner_fee: fees.christmas_dinner_fee ? parseFloat(fees.christmas_dinner_fee) : 0,
     new_year_dinner_fee: fees.new_year_dinner_fee ? parseFloat(fees.new_year_dinner_fee) : 0,
-    late_checkout_21_fee: fees.late_checkout_21_fee ? parseFloat(fees.late_checkout_21_fee) : 0,
     currency_id: fees.currency_id
   };
 
@@ -160,7 +160,7 @@ export async function createHotel(req, res, next) {
           create: [{
             late_checkout_fee: data.lateCheckoutAdd !== undefined ? parseFloat(data.lateCheckoutAdd) : (data.fees?.late_checkout_fee || 0),
             early_checkin_fee: data.earlyCheckinAdd !== undefined ? parseFloat(data.earlyCheckinAdd) : (data.fees?.early_checkin_fee || 0),
-            late_checkout_21_fee: data.fees?.late_checkout_21_fee || 0,
+            late_checkout_21_fee: data.lateCheckout21Add !== undefined ? parseFloat(data.lateCheckout21Add) : (data.fees?.late_checkout_21_fee || 0),
             currency_id: data.fees?.currency_id,
             christmas_dinner_fee: data.christmasDinner !== undefined ? data.christmasDinner : (data.fees?.christmas_dinner_fee || ""),
             new_year_dinner_fee: data.newYearDinner !== undefined ? data.newYearDinner : (data.fees?.new_year_dinner_fee || "")
@@ -376,7 +376,7 @@ export async function updateHotel(req, res, next) {
             create: [{
               late_checkout_fee: data.lateCheckoutAdd !== undefined ? parseFloat(data.lateCheckoutAdd) : (data.fees?.late_checkout_fee || 0),
               early_checkin_fee: data.earlyCheckinAdd !== undefined ? parseFloat(data.earlyCheckinAdd) : (data.fees?.early_checkin_fee || 0),
-              late_checkout_21_fee: data.fees?.late_checkout_21_fee || 0,
+              late_checkout_21_fee: data.lateCheckout21Add !== undefined ? parseFloat(data.lateCheckout21Add) : (data.fees?.late_checkout_21_fee || 0),
               currency_id: data.fees?.currency_id,
               christmas_dinner_fee: data.christmasDinner !== undefined ? data.christmasDinner : (data.fees?.christmas_dinner_fee || ""),
               new_year_dinner_fee: data.newYearDinner !== undefined ? data.newYearDinner : (data.fees?.new_year_dinner_fee || "")
