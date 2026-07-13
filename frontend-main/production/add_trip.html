@@ -3286,6 +3286,78 @@
               if (!isEdit) sharingBedCheckbox.checked = false;
             }
           });
+
+          return div;
+        }
+
+        function getHotelRoomBlocks() {
+          return Array.from(
+            document.querySelectorAll("#roomTypesWrapper .room-type-block")
+          );
+        }
+
+        function autoFillHotelRoomDetails() {
+          const blocks = getHotelRoomBlocks();
+          const totalAdults = parseInt(document.getElementById("adult")?.value, 10) || 0;
+          const totalChildren = parseInt(document.getElementById("child")?.value, 10) || 0;
+          const singleRooms = parseInt(document.getElementById("singleRooms")?.value, 10) || 0;
+
+          blocks.forEach((block) => {
+            const dropdown = block.querySelector(".roomtype-dropdown");
+            if (dropdown && !dropdown.value && dropdown.options.length === 2) {
+              dropdown.selectedIndex = 1;
+              dropdown.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+          });
+
+          const hasGuestValues = blocks.some((block) => {
+            const adults = parseInt(block.querySelector(".adults")?.value, 10) || 0;
+            const children = parseInt(block.querySelector(".children")?.value, 10) || 0;
+            return adults > 0 || children > 0;
+          });
+
+          if (hasGuestValues || (totalAdults + totalChildren) <= 0) return;
+
+          let remainingAdults = totalAdults;
+          let remainingChildren = totalChildren;
+          blocks.forEach((block, index) => {
+            const adultInput = block.querySelector(".adults");
+            const childInput = block.querySelector(".children");
+            if (!adultInput || !childInput) return;
+            const targetAdults = index < singleRooms ? 1 : 2;
+            const assignedAdults = Math.min(targetAdults, remainingAdults);
+            adultInput.value = assignedAdults;
+            remainingAdults -= assignedAdults;
+            childInput.value = 0;
+          });
+
+          const lastBlock = blocks[blocks.length - 1];
+          if (lastBlock) {
+            const lastAdultInput = lastBlock.querySelector(".adults");
+            const lastChildInput = lastBlock.querySelector(".children");
+            if (lastAdultInput && remainingAdults > 0) {
+              lastAdultInput.value = (parseInt(lastAdultInput.value, 10) || 0) + remainingAdults;
+            }
+            if (lastChildInput && remainingChildren > 0) {
+              lastChildInput.value = remainingChildren;
+            }
+          }
+        }
+
+        function syncHotelRoomBlocksWithRoomCounts() {
+          const singleRooms = parseInt(document.getElementById("singleRooms")?.value, 10) || 0;
+          const doubleRooms = parseInt(document.getElementById("doubleRooms")?.value, 10) || 0;
+          const totalRooms = singleRooms + doubleRooms;
+          if (totalRooms <= 0) return;
+
+          while (getHotelRoomBlocks().length < totalRooms) {
+            roomTypeIndex++;
+            createRoomTypeBlock(roomTypeIndex);
+          }
+
+          autoFillHotelRoomDetails();
+          updateAddRoomTypeButtonState();
+          setTimeout(checkAndCalculateHotelPrice, 0);
         }
 
         // Add Room Type Button
@@ -3294,6 +3366,7 @@
           addRoomTypeBtn.addEventListener("click", function () {
             roomTypeIndex++;
             createRoomTypeBlock(roomTypeIndex);
+            autoFillHotelRoomDetails();
           });
         }
 
@@ -3303,6 +3376,7 @@
           if (input) {
             input.addEventListener("input", function () {
               updateAddRoomTypeButtonState();
+              syncHotelRoomBlocksWithRoomCounts();
             });
           }
         });
@@ -3315,6 +3389,7 @@
             if (document.querySelectorAll(".room-type-block").length === 0) {
               createRoomTypeBlock(roomTypeIndex);
             }
+            syncHotelRoomBlocksWithRoomCounts();
           });
         }
 
@@ -3535,6 +3610,11 @@
 
                 hotelDropdown.appendChild(option);
               });
+
+              if (hotels.length === 1) {
+                hotelDropdown.value = hotels[0].id;
+                hotelDropdown.dispatchEvent(new Event("change", { bubbles: true }));
+              }
             })
             .catch((error) => {
               console.error("Error fetching hotels:", error);

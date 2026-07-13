@@ -172,6 +172,12 @@ export function calculateTourCostLogic(tour, request, markupGroup, markups) {
 
 export function calculateMarkupRoomType(roomType, markupGroup, markups) {
   const rt = { ...roomType };
+  if (rt.food_adult_all_inclusive === undefined || rt.food_adult_all_inclusive === null) {
+    rt.food_adult_all_inclusive = rt.boarding_full_price || 0;
+  }
+  if (rt.food_child_all_inclusive === undefined || rt.food_child_all_inclusive === null) {
+    rt.food_child_all_inclusive = rt.boarding_half_price || 0;
+  }
   rt.single_price = calculateMarkedUpPrice(parseFloat(rt.single_price || 0), markupGroup, 'hotel', markups);
   rt.double_price = calculateMarkedUpPrice(parseFloat(rt.double_price || 0), markupGroup, 'hotel', markups);
   if (parseFloat(rt.extra_bed_adult || 0) > 0) {
@@ -213,6 +219,15 @@ export function calculateMarkupRoomType(roomType, markupGroup, markups) {
 }
 
 export function calculateHotelCostLogic(hotel, request, markupGroup, markups, matchingRoomTypes, hotelFees, promotion) {
+  matchingRoomTypes.forEach((roomType) => {
+    if (roomType.food_adult_all_inclusive === undefined || roomType.food_adult_all_inclusive === null) {
+      roomType.food_adult_all_inclusive = roomType.boarding_full_price || 0;
+    }
+    if (roomType.food_child_all_inclusive === undefined || roomType.food_child_all_inclusive === null) {
+      roomType.food_child_all_inclusive = roomType.boarding_half_price || 0;
+    }
+  });
+
   const roomTypesReq = request.room_types || [];
   if (roomTypesReq.length === 0) {
     throw new Error('at least one room type must be specified');
@@ -323,7 +338,7 @@ export function calculateHotelCostLogic(hotel, request, markupGroup, markups, ma
     if (parseInt(request.all_inclusive_days || 0) > 0 && parseFloat(roomType.food_adult_all_inclusive || 0) <= 0) {
       throw new Error(`all-inclusive adult option is not supported by room type '${rtReq.room_type}'`);
     }
-    if (parseInt(request.all_inclusive_days || 0) > 0 && parseFloat(roomType.food_child_all_inclusive || 0) <= 0) {
+    if (numKids > 0 && parseInt(request.all_inclusive_days || 0) > 0 && parseFloat(roomType.food_child_all_inclusive || 0) <= 0) {
       throw new Error(`all-inclusive child option is not supported by room type '${rtReq.room_type}'`);
     }
     if (parseInt(request.abf_days || 0) > 0 && parseFloat(roomType.food_adult_abf || 0) <= 0) {
@@ -332,13 +347,13 @@ export function calculateHotelCostLogic(hotel, request, markupGroup, markups, ma
     if (parseInt(request.lunch_days || 0) > 0 && parseFloat(roomType.food_adult_lunch || 0) <= 0) {
       throw new Error(`lunch adult option is not supported by room type '${rtReq.room_type}'`);
     }
-    if (parseInt(request.abf_days || 0) > 0 && parseFloat(roomType.food_child_abf || 0) <= 0) {
+    if (numKids > 0 && parseInt(request.abf_days || 0) > 0 && parseFloat(roomType.food_child_abf || 0) <= 0) {
       throw new Error(`abf child option is not supported by room type '${rtReq.room_type}'`);
     }
-    if (parseInt(request.lunch_days || 0) > 0 && parseFloat(roomType.food_child_lunch || 0) <= 0) {
+    if (numKids > 0 && parseInt(request.lunch_days || 0) > 0 && parseFloat(roomType.food_child_lunch || 0) <= 0) {
       throw new Error(`lunch child option is not supported by room type '${rtReq.room_type}'`);
     }
-    if (parseInt(request.dinner_days || 0) > 0 && parseFloat(roomType.food_child_dinner || 0) <= 0) {
+    if (numKids > 0 && parseInt(request.dinner_days || 0) > 0 && parseFloat(roomType.food_child_dinner || 0) <= 0) {
       throw new Error(`dinner child option is not supported by room type '${rtReq.room_type}'`);
     }
     if (parseInt(request.dinner_days || 0) > 0 && parseFloat(roomType.food_adult_dinner || 0) <= 0) {

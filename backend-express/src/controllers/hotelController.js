@@ -46,6 +46,12 @@ export function formatHotelResponse(hotel, markupGroup = '', markups = []) {
       food_child_abf: finalRt.food_child_abf ? parseFloat(finalRt.food_child_abf) : 0,
       food_child_lunch: finalRt.food_child_lunch ? parseFloat(finalRt.food_child_lunch) : 0,
       food_child_dinner: finalRt.food_child_dinner ? parseFloat(finalRt.food_child_dinner) : 0,
+      food_adult_all_inclusive: finalRt.food_adult_all_inclusive !== undefined
+        ? parseFloat(finalRt.food_adult_all_inclusive || 0)
+        : parseFloat(finalRt.boarding_full_price || 0),
+      food_child_all_inclusive: finalRt.food_child_all_inclusive !== undefined
+        ? parseFloat(finalRt.food_child_all_inclusive || 0)
+        : parseFloat(finalRt.boarding_half_price || 0),
       allotment: finalRt.allotment || 0,
       currency_id: finalRt.currency_id
     };
@@ -145,8 +151,8 @@ export async function createHotel(req, res, next) {
             food_adult_dinner: rt.foodAdultDinner !== undefined ? parseFloat(rt.foodAdultDinner) : (rt.food_adult_dinner ? parseFloat(rt.food_adult_dinner) : 0),
             food_child_lunch: rt.foodChildLunch !== undefined ? parseFloat(rt.foodChildLunch) : (rt.food_child_lunch ? parseFloat(rt.food_child_lunch) : 0),
             food_child_dinner: rt.foodChildDinner !== undefined ? parseFloat(rt.foodChildDinner) : (rt.food_child_dinner ? parseFloat(rt.food_child_dinner) : 0),
-            boarding_half_price: rt.boarding_half_price,
-            boarding_full_price: rt.boarding_full_price,
+            boarding_full_price: rt.foodAdultAllinclusive !== undefined ? parseFloat(rt.foodAdultAllinclusive) : (rt.food_adult_all_inclusive !== undefined ? parseFloat(rt.food_adult_all_inclusive) : (rt.boarding_full_price ? parseFloat(rt.boarding_full_price) : 0)),
+            boarding_half_price: rt.foodChildAllinclusive !== undefined ? parseFloat(rt.foodChildAllinclusive) : (rt.food_child_all_inclusive !== undefined ? parseFloat(rt.food_child_all_inclusive) : (rt.boarding_half_price ? parseFloat(rt.boarding_half_price) : 0)),
             currency_id: rt.currency_id !== undefined ? parseInt(rt.currency_id) : null
           }))
         } : undefined,
@@ -361,8 +367,8 @@ export async function updateHotel(req, res, next) {
               food_adult_dinner: rt.foodAdultDinner !== undefined ? parseFloat(rt.foodAdultDinner) : (rt.food_adult_dinner ? parseFloat(rt.food_adult_dinner) : 0),
               food_child_lunch: rt.foodChildLunch !== undefined ? parseFloat(rt.foodChildLunch) : (rt.food_child_lunch ? parseFloat(rt.food_child_lunch) : 0),
               food_child_dinner: rt.foodChildDinner !== undefined ? parseFloat(rt.foodChildDinner) : (rt.food_child_dinner ? parseFloat(rt.food_child_dinner) : 0),
-              boarding_half_price: rt.boarding_half_price,
-              boarding_full_price: rt.boarding_full_price,
+              boarding_full_price: rt.foodAdultAllinclusive !== undefined ? parseFloat(rt.foodAdultAllinclusive) : (rt.food_adult_all_inclusive !== undefined ? parseFloat(rt.food_adult_all_inclusive) : (rt.boarding_full_price ? parseFloat(rt.boarding_full_price) : 0)),
+              boarding_half_price: rt.foodChildAllinclusive !== undefined ? parseFloat(rt.foodChildAllinclusive) : (rt.food_child_all_inclusive !== undefined ? parseFloat(rt.food_child_all_inclusive) : (rt.boarding_half_price ? parseFloat(rt.boarding_half_price) : 0)),
               currency_id: rt.currency_id !== undefined ? parseInt(rt.currency_id) : null
             }))
           } : undefined,
