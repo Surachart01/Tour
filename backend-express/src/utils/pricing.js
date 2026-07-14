@@ -600,9 +600,6 @@ export function calculateHotelCostLogic(hotel, request, markupGroup, markups, ma
   if (request.christmas_dinner && parseFloat(hotelFees.christmas_dinner_fee || 0) <= 0) {
     throw new Error('christmas dinner is not available at this hotel');
   }
-  if (request.early_checkin && parseInt(hotelFees.early_checkin_fee || 0) <= 0) {
-    throw new Error('no information for early checkin available at this hotel. Please pay directly to the hotel');
-  }
   const requestedLateCheckoutType = String(request.late_checkout_type || '18');
   const requestedLateCheckoutFee =
     requestedLateCheckoutType === '21'
@@ -674,17 +671,22 @@ export function calculateHotelCostLogic(hotel, request, markupGroup, markups, ma
   }
 
   if (request.early_checkin) {
-    const earlyCheckinFee = parseInt(hotelFees.early_checkin_fee || 0);
-    if (earlyCheckinFee > 100) {
-      finalCost += earlyCheckinFee;
-    } else {
-      if (numSingleRooms > 0) {
-        finalCost += (parseFloat(markedUpRefRT.single_price) * earlyCheckinFee / 100) * numSingleRooms;
+    roomTypesReq.forEach((rtReq, roomIndex) => {
+      const originalRT = requestedRoomTypes[rtReq.room_type_id];
+      const matchingRTs = allRoomTypesByName[originalRT.name] || [];
+      const roomTypeForEarlyCheckin = matchingRTs.find((matchRT) => {
+        const rStart = new Date(matchRT.start_date);
+        const rEnd = new Date(matchRT.end_date);
+        return startDate >= rStart && startDate <= rEnd;
+      }) || originalRT;
+      const markedUpRoomType = calculateMarkupRoomType(roomTypeForEarlyCheckin, markupGroup, markups);
+      const roomKind = roomKindByIndex[roomIndex];
+      if (roomKind === 'single') {
+        finalCost += parseFloat(markedUpRoomType.single_price || 0);
+      } else {
+        finalCost += parseFloat(markedUpRoomType.double_price || 0);
       }
-      if (numDoubleRooms > 0) {
-        finalCost += (parseFloat(markedUpRefRT.double_price) * earlyCheckinFee / 100) * numDoubleRooms;
-      }
-    }
+    });
   }
 
   if (finalCost < 0) finalCost = 0;

@@ -15,12 +15,21 @@ function toggleEditButtonVisibility() {
 
 function getRoomTypeNameFromRow(row) {
   const roomCell = row?.getElementsByTagName("td")?.[3];
-  return (roomCell?.innerText || "").split("\n")[0].trim().toLowerCase();
+  return (roomCell?.textContent || "").split("\n")[0].trim().toLowerCase();
 }
 
 function getRoomTypeStartDateFromRow(row) {
   const dateCell = row?.getElementsByTagName("td")?.[1];
   return formatToYYYYMMDD((dateCell?.textContent || "").trim()) || "";
+}
+
+function getRoomTypeLowestPriceFromRow(row) {
+  const priceCell = row?.getElementsByTagName("td")?.[4];
+  const prices = (priceCell?.innerText || "")
+    .match(/\d+(?:\.\d+)?/g)
+    ?.map(Number)
+    .filter((price) => !Number.isNaN(price)) || [];
+  return prices.length ? Math.min(...prices) : Number.MAX_SAFE_INTEGER;
 }
 
 function styleRoomTypeSeasonalityTable() {
@@ -29,31 +38,54 @@ function styleRoomTypeSeasonalityTable() {
 
   const rows = Array.from(tableBody.querySelectorAll("tr"));
   const originalRows = rows.slice();
+  const roomLowestPrices = rows.reduce((pricesByRoom, row) => {
+    const roomName = getRoomTypeNameFromRow(row);
+    if (!roomName) return pricesByRoom;
+    const currentLowest = pricesByRoom.get(roomName) ?? Number.MAX_SAFE_INTEGER;
+    pricesByRoom.set(roomName, Math.min(currentLowest, getRoomTypeLowestPriceFromRow(row)));
+    return pricesByRoom;
+  }, new Map());
   const sortedRows = rows.sort((a, b) => {
-      const nameCompare = getRoomTypeNameFromRow(a).localeCompare(
-        getRoomTypeNameFromRow(b)
-      );
-      if (nameCompare !== 0) return nameCompare;
-      return getRoomTypeStartDateFromRow(a).localeCompare(
-        getRoomTypeStartDateFromRow(b)
-      );
-    });
+    const aName = getRoomTypeNameFromRow(a);
+    const bName = getRoomTypeNameFromRow(b);
+    const priceCompare = (roomLowestPrices.get(aName) ?? Number.MAX_SAFE_INTEGER) -
+      (roomLowestPrices.get(bName) ?? Number.MAX_SAFE_INTEGER);
+    if (priceCompare !== 0) return priceCompare;
+    const nameCompare = aName.localeCompare(bName);
+    if (nameCompare !== 0) return nameCompare;
+    return getRoomTypeStartDateFromRow(a).localeCompare(
+      getRoomTypeStartDateFromRow(b)
+    );
+  });
   if (sortedRows.some((row, index) => row !== originalRows[index])) {
     sortedRows.forEach((row) => tableBody.appendChild(row));
   }
 
-  let previousRoomName = "";
+  const groupedRows = new Map();
   Array.from(tableBody.querySelectorAll("tr")).forEach((row) => {
     const cells = row.getElementsByTagName("td");
     const roomCell = cells[3];
     if (!roomCell) return;
+    row.classList.remove("room-season-row");
+    row.classList.remove("room-type-group-row");
+    roomCell.classList.remove("room-season-duplicate");
+    roomCell.classList.remove("room-type-group-cell");
+
     const roomName = getRoomTypeNameFromRow(row);
-    const isDuplicateSeason = roomName && roomName === previousRoomName;
-    row.classList.toggle("room-season-row", isDuplicateSeason);
-    row.classList.toggle("room-type-group-row", !isDuplicateSeason);
-    roomCell.classList.toggle("room-season-duplicate", isDuplicateSeason);
-    roomCell.classList.toggle("room-type-group-cell", !isDuplicateSeason);
-    previousRoomName = roomName;
+    if (!roomName) return;
+    if (!groupedRows.has(roomName)) {
+      groupedRows.set(roomName, []);
+    }
+    groupedRows.get(roomName).push(row);
+  });
+
+  groupedRows.forEach((roomRows) => {
+    const middleIndex = Math.floor((roomRows.length - 1) / 2);
+    roomRows.forEach((row, index) => {
+      const roomCell = row.getElementsByTagName("td")[3];
+      row.classList.add(index === 0 ? "room-type-group-row" : "room-season-row");
+      roomCell.classList.add(index === middleIndex ? "room-type-group-cell" : "room-season-duplicate");
+    });
   });
 }
 
@@ -71,15 +103,21 @@ function installRoomTypeSeasonalityView() {
       background: #f4fbf9;
       font-weight: 700;
       color: #263f55;
-      vertical-align: top;
+      vertical-align: middle;
     }
     #roomTypesTable td.room-season-duplicate {
-      color: #263f55;
+      color: transparent !important;
       font-size: inherit;
       position: static;
       background: #fbfdfe;
       font-weight: 700;
-      vertical-align: top;
+      text-shadow: none !important;
+      user-select: none;
+      vertical-align: middle;
+    }
+    #roomTypesTable td.room-season-duplicate * {
+      color: transparent !important;
+      text-shadow: none !important;
     }
   `;
   document.head.appendChild(style);

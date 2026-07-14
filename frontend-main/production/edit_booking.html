@@ -368,16 +368,17 @@
 
       #hotelsTable { width: 100%; min-width: 0; max-width: 100%; }
       #hotelsTable th:nth-child(1), #hotelsTable td:nth-child(1),
-      #hotelsTable th:nth-child(2), #hotelsTable td:nth-child(2) { width: 10%; }
-      #hotelsTable th:nth-child(3), #hotelsTable td:nth-child(3) { width: 9%; }
-      #hotelsTable th:nth-child(4), #hotelsTable td:nth-child(4) { width: 14%; }
+      #hotelsTable th:nth-child(2), #hotelsTable td:nth-child(2) { width: 9%; }
+      #hotelsTable th:nth-child(3), #hotelsTable td:nth-child(3) { width: 8%; }
+      #hotelsTable th:nth-child(4), #hotelsTable td:nth-child(4) { width: 13%; }
       #hotelsTable th:nth-child(5), #hotelsTable td:nth-child(5) { width: 12%; }
-      #hotelsTable th:nth-child(6), #hotelsTable td:nth-child(6) { width: 6%; }
+      #hotelsTable th:nth-child(6), #hotelsTable td:nth-child(6) { width: 5%; }
       #hotelsTable th:nth-child(7), #hotelsTable td:nth-child(7),
-      #hotelsTable th:nth-child(8), #hotelsTable td:nth-child(8) { width: 9%; }
-      #hotelsTable th:nth-child(9), #hotelsTable td:nth-child(9) { width: 9%; }
-      #hotelsTable th:nth-child(10), #hotelsTable td:nth-child(10) { width: 6%; }
+      #hotelsTable th:nth-child(8), #hotelsTable td:nth-child(8) { width: 8%; }
+      #hotelsTable th:nth-child(9), #hotelsTable td:nth-child(9) { width: 6%; }
+      #hotelsTable th:nth-child(10), #hotelsTable td:nth-child(10) { width: 8%; }
       #hotelsTable th:nth-child(11), #hotelsTable td:nth-child(11) { width: 6%; }
+      #hotelsTable th:nth-child(12), #hotelsTable td:nth-child(12) { width: 8%; }
 
       #transferTable { width: 100%; min-width: 0; max-width: 100%; }
       #transferTable th:nth-child(1), #transferTable td:nth-child(1) { width: 11%; }
@@ -1449,6 +1450,7 @@
                           <th>Nights</th>
                           <th>Single Room</th>
                           <th>Double Room</th>
+                          <th>Extra Bed</th>
                           <th>Promotion</th>
                           <th>Price</th>
                           <th>Actions</th>
@@ -2579,7 +2581,6 @@
                         class="form-check-input"
                         type="checkbox"
                         id="earlyCheckIn"
-                        disabled
                       />
                       <label class="form-check-label" for="earlyCheckIn"
                         >Early Check-In</label
@@ -2588,7 +2589,7 @@
                   </div>
 
                   <!-- Late Check-Out -->
-                  <div class="form-group col-md-4">
+                  <div class="form-group col-md-4" style="margin-left: 32px;">
                     <div class="form-check">
                       <input
                         class="form-check-input"
@@ -3419,8 +3420,8 @@
           if (hotelsTable) {
             hotelsTable.querySelectorAll("tr").forEach(row => {
               if (row.dataset.isPackageItem === "true") return;
-              const cells = row.querySelectorAll("td");
-              if (cells[9]) sum += parseFloat(cells[9].textContent.trim()) || 0;
+              const priceCell = row.querySelector(".hotel-price") || row.querySelectorAll("td")[10];
+              if (priceCell) sum += parseFloat(priceCell.textContent.trim()) || 0;
             });
           }
           // sum excursions
@@ -6557,6 +6558,27 @@
             syncMealDays(document.getElementById("numberOfNights").value);
           });
 
+        function getHotelExtraBedDisplay(hotel) {
+          const roomTypes = hotel.roomTypes || hotel.room_types || [];
+          const roomTypeExtraBeds = Array.isArray(roomTypes)
+            ? roomTypes.reduce(
+                (total, rt) =>
+                  total +
+                  (rt.extra_adult_bed ? 1 : 0) +
+                  (rt.extra_child_bed ? 1 : 0) +
+                  (rt.sharing_bed ? 1 : 0),
+                0
+              )
+            : 0;
+          const fallbackExtraBeds =
+            parseInt(hotel.extraBeds || hotel.extra_beds, 10) ||
+            (hotel.extraAdultBed || hotel.extra_adult_bed ? 1 : 0) +
+              (hotel.extraChildBed || hotel.extra_child_bed ? 1 : 0) +
+              (hotel.sharingBed || hotel.sharing_bed ? 1 : 0);
+          const count = roomTypeExtraBeds || fallbackExtraBeds;
+          return count > 0 ? count : "-";
+        }
+
         function populateHotelRow(hotel) {
           const hotelTableBody = document.getElementById("hotelsTableBody");
           const row = document.createElement("tr");
@@ -6726,6 +6748,7 @@
                 <td>${hotel.nights || ""}</td>
                 <td>${hotel.single_room_days || 0}</td>
                 <td>${hotel.double_room_days || 0}</td>
+                <td>${getHotelExtraBedDisplay(hotel)}</td>
                 <td>${hotel.promotion || ""}</td>
                 <td>${hotel.final_cost || ""}</td>
                 <td>
@@ -7158,6 +7181,7 @@
             <td>${updatedHotel.nights}</td>
             <td>${updatedHotel.single_rooms}</td>
             <td>${updatedHotel.double_rooms}</td>
+            <td>${getHotelExtraBedDisplay(updatedHotel)}</td>
             <td>${updatedHotel.promotion}</td>
             <td class="hotel-price">${updatedHotel.total_cost}</td>
             <td>
@@ -7264,6 +7288,7 @@
             <td>${hotel.nights || 0}</td>
             <td>${hotel.single_room_days || hotel.singleRooms || 0}</td>
             <td>${hotel.double_room_days || hotel.doubleRooms || 0}</td>
+            <td>${getHotelExtraBedDisplay(hotel)}</td>
             <td>${hotel.promotion || ""}</td>
             <td class="hotel-price">${
               hotel.final_cost || hotel.totalCost || "N/A"
@@ -7383,7 +7408,7 @@
           const adult = parseInt(document.getElementById("adult")?.value) || 0;
           const child = parseInt(document.getElementById("child")?.value) || 0;
           const discount = parseFloat(row.dataset.discount) || 0;
-          const final_cost = parseFloat(row.cells[9]?.textContent.trim()) || 0;
+          const final_cost = parseFloat(row.cells[10]?.textContent.trim()) || 0;
           const total_cost = final_cost + discount;
 
           const hotel = {
@@ -8162,7 +8187,7 @@
             const earlyCheckInCheckbox = document.getElementById("earlyCheckIn");
             if (earlyCheckInCheckbox) {
               earlyCheckInCheckbox.checked = false;
-              earlyCheckInCheckbox.disabled = true;
+              earlyCheckInCheckbox.disabled = false;
             }
             return;
           }
@@ -8329,12 +8354,7 @@
 
           const earlyCheckInCheckbox = document.getElementById("earlyCheckIn");
           if (earlyCheckInCheckbox) {
-            const hasDates =
-              Boolean(document.getElementById("checkInDate")?.value) &&
-              Boolean(document.getElementById("checkOutDate")?.value);
-            earlyCheckInCheckbox.disabled = true;
-            earlyCheckInCheckbox.checked =
-              hasDates && Number(hotelData.early_checkin_fee || 0) > 0;
+            earlyCheckInCheckbox.disabled = false;
           }
 
           const lateCheckOutCheckbox = document.getElementById("lateCheckOut");
@@ -11311,7 +11331,7 @@
                 // ✅ Room summary and promotion
                 rowData["room_type_summary"] =
                   cells[4]?.textContent.trim() || "";
-                rowData["promotion"] = cells[8]?.textContent.trim() || "";
+                rowData["promotion"] = cells[9]?.textContent.trim() || "";
 
                 // ✅ Numbers
                 rowData["nights"] =
@@ -11321,7 +11341,7 @@
                 rowData["double_room_days"] =
                   parseInt(cells[7]?.textContent.trim(), 10) || 0;
                 rowData["final_cost"] =
-                  parseFloat(cells[9]?.textContent.trim()) || 0.0;
+                  parseFloat(cells[10]?.textContent.trim()) || 0.0;
 
                 // ✅ Meals and Notes
                 rowData["abf_notes"] = row.dataset.abfNotes || "";
@@ -12710,6 +12730,7 @@
                 <td>${item.hotel_name || "TBD"} ${packageBadge}</td>
                 <td>${item.room_type || "-"}</td>
                 <td>${item.nights || 1}</td>
+                <td>-</td>
                 <td>-</td>
                 <td>-</td>
                 <td>-</td>

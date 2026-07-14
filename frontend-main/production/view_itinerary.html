@@ -377,6 +377,7 @@
                         <th>Nights</th>
                         <th>Single Room</th>
                         <th>Double Room</th>
+                        <th>Extra Bed</th>
                         <th>Promotion</th>
                         <th>Price</th>
                         <th>View</th>
@@ -2462,6 +2463,27 @@
             }
           });
 
+        function getHotelExtraBedDisplay(hotel) {
+          const roomTypes = hotel.roomTypes || hotel.room_types || [];
+          const roomTypeExtraBeds = Array.isArray(roomTypes)
+            ? roomTypes.reduce(
+                (total, rt) =>
+                  total +
+                  (rt.extra_adult_bed ? 1 : 0) +
+                  (rt.extra_child_bed ? 1 : 0) +
+                  (rt.sharing_bed ? 1 : 0),
+                0
+              )
+            : 0;
+          const fallbackExtraBeds =
+            parseInt(hotel.extraBeds || hotel.extra_beds, 10) ||
+            (hotel.extraAdultBed || hotel.extra_adult_bed ? 1 : 0) +
+              (hotel.extraChildBed || hotel.extra_child_bed ? 1 : 0) +
+              (hotel.sharingBed || hotel.sharing_bed ? 1 : 0);
+          const count = roomTypeExtraBeds || fallbackExtraBeds;
+          return count > 0 ? count : "-";
+        }
+
         function populateHotelRow(hotel) {
           const hotelTableBody = document.getElementById("hotelsTableBody");
           const row = document.createElement("tr");
@@ -2525,6 +2547,7 @@
               <td>${hotel.nights || ""}</td>
               <td>${hotel.single_room_days || 0}</td>
               <td>${hotel.double_room_days || 0}</td>
+              <td>${getHotelExtraBedDisplay(hotel)}</td>
               <td>${hotel.promotion || ""}</td>
               <td>${hotel.final_cost || ""}</td>
               <td>${viewButton}</td>
@@ -2572,7 +2595,7 @@
 
           const discount = parseFloat(row.dataset.discount) || 0.0;
           const final_cost =
-            parseFloat(row.cells[9]?.textContent.trim()) || 0.0;
+            parseFloat(row.cells[10]?.textContent.trim()) || 0.0;
           const total_cost = final_cost + discount;
 
           let hotel = {
@@ -2611,7 +2634,7 @@
             extra_adult_bed: row.dataset.extraAdultBed === "true",
             extra_child_bed: row.dataset.extraChildBed === "true",
             sharing_bed: row.dataset.sharingBed === "true",
-            promotion: row.cells[8]?.textContent.trim() || "",
+            promotion: row.cells[9]?.textContent.trim() || "",
             free_nights: parseInt(row.dataset.freeNights, 10) || 0,
             discount: discount,
             final_cost: final_cost,

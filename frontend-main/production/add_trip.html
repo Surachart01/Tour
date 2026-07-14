@@ -1085,6 +1085,7 @@
                           <th>Nights</th>
                           <th>Single Room</th>
                           <th>Double Room</th>
+                          <th>Extra Bed</th>
                           <th>Promotion</th>
                           <th>Price</th>
                           <th>Actions</th>
@@ -2550,7 +2551,6 @@
                         class="form-check-input"
                         type="checkbox"
                         id="earlyCheckIn"
-                        disabled
                       />
                       <label class="form-check-label" for="earlyCheckIn"
                         >Early Check-In</label
@@ -2559,7 +2559,7 @@
                   </div>
 
                   <!-- Late Check-Out -->
-                  <div class="form-group col-md-4">
+                  <div class="form-group col-md-4" style="margin-left: 32px;">
                     <div class="form-check">
                       <input
                         class="form-check-input"
@@ -3556,7 +3556,7 @@
             const earlyCheckInCheckbox = document.getElementById("earlyCheckIn");
             if (earlyCheckInCheckbox) {
               earlyCheckInCheckbox.checked = false;
-              earlyCheckInCheckbox.disabled = true;
+              earlyCheckInCheckbox.disabled = false;
             }
             return;
           }
@@ -3679,9 +3679,7 @@
             Boolean(document.getElementById("checkOutDate")?.value);
 
           if (earlyCheckInCheckbox) {
-            earlyCheckInCheckbox.disabled = true;
-            earlyCheckInCheckbox.checked =
-              hasDates && Number(hotelData.early_checkin_fee || 0) > 0;
+            earlyCheckInCheckbox.disabled = false;
           }
 
           if (lateCheckOutCheckbox && lateCheckOutTypeSelect) {
@@ -4667,6 +4665,27 @@
         }
 
         // Function to Add a Hotel Row to the Table
+        function getHotelExtraBedDisplay(hotel) {
+          const roomTypes = hotel.roomTypes || hotel.room_types || [];
+          const roomTypeExtraBeds = Array.isArray(roomTypes)
+            ? roomTypes.reduce(
+                (total, rt) =>
+                  total +
+                  (rt.extra_adult_bed ? 1 : 0) +
+                  (rt.extra_child_bed ? 1 : 0) +
+                  (rt.sharing_bed ? 1 : 0),
+                0
+              )
+            : 0;
+          const fallbackExtraBeds =
+            parseInt(hotel.extraBeds || hotel.extra_beds, 10) ||
+            (hotel.extraAdultBed || hotel.extra_adult_bed ? 1 : 0) +
+              (hotel.extraChildBed || hotel.extra_child_bed ? 1 : 0) +
+              (hotel.sharingBed || hotel.sharing_bed ? 1 : 0);
+          const count = roomTypeExtraBeds || fallbackExtraBeds;
+          return count > 0 ? count : "-";
+        }
+
         function addHotelRow(hotel) {
           const newRow = document.createElement("tr");
 
@@ -4734,6 +4753,7 @@
               <td>${hotel.nights}</td>
               <td>${hotel.singleRooms || "0"}</td>
               <td>${hotel.doubleRooms || "0"}</td>
+              <td>${getHotelExtraBedDisplay(hotel)}</td>
               <td>${hotel.promotion}</td>
               <td class="hotel-price">${
                 hotel.hotelPrice ? `${hotel.hotelPrice}` : "N/A"
@@ -4769,8 +4789,9 @@
           row.cells[5].textContent = hotel.nights;
           row.cells[6].textContent = hotel.singleRooms;
           row.cells[7].textContent = hotel.doubleRooms;
-          row.cells[8].textContent = hotel.promotion;
-          row.cells[9].textContent = hotel.hotelPrice
+          row.cells[8].textContent = getHotelExtraBedDisplay(hotel);
+          row.cells[9].textContent = hotel.promotion;
+          row.cells[10].textContent = hotel.hotelPrice
             ? `${hotel.hotelPrice}`
             : "N/A";
           row.dataset.hotelId = hotel.hotelId;
@@ -5998,7 +6019,7 @@
                 // ✅ Room summary and promotion
                 rowData["room_type_summary"] =
                   cells[4]?.textContent.trim() || "";
-                rowData["promotion"] = cells[8]?.textContent.trim() || "";
+                rowData["promotion"] = cells[9]?.textContent.trim() || "";
 
                 // ✅ Numbers
                 rowData["nights"] =
@@ -6008,7 +6029,7 @@
                 rowData["double_room_days"] =
                   parseInt(cells[7]?.textContent.trim(), 10) || 0;
                 rowData["final_cost"] =
-                  parseFloat(cells[9]?.textContent.trim()) || 0.0;
+                  parseFloat(cells[10]?.textContent.trim()) || 0.0;
 
                 // ✅ Meals and Notes
                 rowData["abf_notes"] = row.dataset.abfNotes || "";
@@ -6567,8 +6588,8 @@
           if (hotelsTable) {
             hotelsTable.querySelectorAll("tr").forEach(row => {
               if (row.dataset.isPackageItem === "true") return;
-              const cells = row.querySelectorAll("td");
-              if (cells[9]) sum += parseFloat(cells[9].textContent.trim()) || 0;
+              const priceCell = row.querySelector(".hotel-price") || row.querySelectorAll("td")[10];
+              if (priceCell) sum += parseFloat(priceCell.textContent.trim()) || 0;
             });
           }
           // sum excursions
@@ -6932,6 +6953,7 @@
                 <td>${item.hotel_name || "TBD"} ${packageBadge}</td>
                 <td>${item.room_type || "-"}</td>
                 <td>${item.nights || 1}</td>
+                <td>-</td>
                 <td>-</td>
                 <td>-</td>
                 <td>-</td>
