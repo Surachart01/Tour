@@ -96,6 +96,52 @@ function installRoomTypeSeasonalityView() {
 
   const style = document.createElement("style");
   style.textContent = `
+    #roomTypesTable {
+      width: 100%;
+      table-layout: fixed;
+    }
+    #roomTypesTable thead,
+    #roomTypesTable tbody {
+      display: block;
+      width: 100%;
+    }
+    #roomTypesTable thead tr,
+    #roomTypesTable tbody tr {
+      display: grid;
+      grid-template-columns:
+        44px
+        minmax(220px, 1.45fr)
+        minmax(120px, 0.72fr)
+        minmax(120px, 0.72fr)
+        minmax(140px, 0.9fr)
+        minmax(130px, 0.82fr)
+        minmax(170px, 1fr)
+        minmax(170px, 1fr)
+        minmax(130px, 0.78fr);
+      width: 100%;
+      align-items: stretch;
+    }
+    #roomTypesTable th,
+    #roomTypesTable td {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      margin: 0;
+      border-top: 0;
+      border-left: 0;
+      border-right: 0;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    #roomTypesTable th:nth-child(1), #roomTypesTable td:nth-child(1) { order: 1; justify-content: center; }
+    #roomTypesTable th:nth-child(4), #roomTypesTable td:nth-child(4) { order: 2; }
+    #roomTypesTable th:nth-child(2), #roomTypesTable td:nth-child(2) { order: 3; justify-content: center; }
+    #roomTypesTable th:nth-child(3), #roomTypesTable td:nth-child(3) { order: 4; justify-content: center; }
+    #roomTypesTable th:nth-child(5), #roomTypesTable td:nth-child(5) { order: 5; }
+    #roomTypesTable th:nth-child(6), #roomTypesTable td:nth-child(6) { order: 6; }
+    #roomTypesTable th:nth-child(7), #roomTypesTable td:nth-child(7) { order: 7; }
+    #roomTypesTable th:nth-child(8), #roomTypesTable td:nth-child(8) { order: 8; }
+    #roomTypesTable th:nth-child(9), #roomTypesTable td:nth-child(9) { order: 9; justify-content: center; }
     #roomTypesTable tbody tr.room-type-group-row td {
       border-top: 3px solid #1abb9c;
     }

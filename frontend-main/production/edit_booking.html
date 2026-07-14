@@ -6559,22 +6559,23 @@
           });
 
         function getHotelExtraBedDisplay(hotel) {
+          const isChecked = (value) => value === true || value === 1 || value === "true";
           const roomTypes = hotel.roomTypes || hotel.room_types || [];
           const roomTypeExtraBeds = Array.isArray(roomTypes)
             ? roomTypes.reduce(
                 (total, rt) =>
                   total +
-                  (rt.extra_adult_bed ? 1 : 0) +
-                  (rt.extra_child_bed ? 1 : 0) +
-                  (rt.sharing_bed ? 1 : 0),
+                  (isChecked(rt.extra_adult_bed) ? 1 : 0) +
+                  (isChecked(rt.extra_child_bed) ? 1 : 0) +
+                  (isChecked(rt.sharing_bed) ? 1 : 0),
                 0
               )
             : 0;
           const fallbackExtraBeds =
             parseInt(hotel.extraBeds || hotel.extra_beds, 10) ||
-            (hotel.extraAdultBed || hotel.extra_adult_bed ? 1 : 0) +
-              (hotel.extraChildBed || hotel.extra_child_bed ? 1 : 0) +
-              (hotel.sharingBed || hotel.sharing_bed ? 1 : 0);
+            (isChecked(hotel.extraAdultBed) || isChecked(hotel.extra_adult_bed) ? 1 : 0) +
+              (isChecked(hotel.extraChildBed) || isChecked(hotel.extra_child_bed) ? 1 : 0) +
+              (isChecked(hotel.sharingBed) || isChecked(hotel.sharing_bed) ? 1 : 0);
           const count = roomTypeExtraBeds || fallbackExtraBeds;
           return count > 0 ? count : "-";
         }
@@ -6960,7 +6961,22 @@
 
           if (!segments.length) return [hotel];
 
-          return segments.map((segment) => ({
+          const groupedSegments = new Map();
+          segments.forEach((segment) => {
+            const key = `${segment.from_date || ""}|${segment.to_date || ""}`;
+            const current = groupedSegments.get(key) || {
+              ...segment,
+              final_cost: 0,
+              booking_remark: segment.booking_remark || "",
+            };
+            current.final_cost += parseFloat(segment.final_cost || 0);
+            if (segment.booking_remark && !current.booking_remark.includes(segment.booking_remark)) {
+              current.booking_remark = [current.booking_remark, segment.booking_remark].filter(Boolean).join(", ");
+            }
+            groupedSegments.set(key, current);
+          });
+
+          return Array.from(groupedSegments.values()).map((segment) => ({
             ...hotel,
             checkInDate: segment.from_date,
             checkOutDate: segment.to_date,
