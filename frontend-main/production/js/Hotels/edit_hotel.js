@@ -74,18 +74,12 @@ function installRoomTypeSeasonalityView() {
       vertical-align: top;
     }
     #roomTypesTable td.room-season-duplicate {
-      color: transparent;
-      font-size: 0;
-      position: relative;
+      color: #263f55;
+      font-size: inherit;
+      position: static;
       background: #fbfdfe;
-    }
-    #roomTypesTable td.room-season-duplicate::after {
-      content: "Seasonality";
-      color: #7a8a9a;
-      font-size: 12px;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0;
+      vertical-align: top;
     }
   `;
   document.head.appendChild(style);

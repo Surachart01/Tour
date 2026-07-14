@@ -1,0 +1,264 @@
+{
+  "exported_at": "2026-07-14T00:58:05.269Z",
+  "source": "prisma-json-export",
+  "tables": [
+    {
+      "model": "User",
+      "db_name": "users",
+      "file": "tables/User.json",
+      "rows": 12
+    },
+    {
+      "model": "UserProfile",
+      "db_name": "user_profiles",
+      "file": "tables/UserProfile.json",
+      "rows": 12
+    },
+    {
+      "model": "Organization",
+      "db_name": "organizations",
+      "file": "tables/Organization.json",
+      "rows": 1
+    },
+    {
+      "model": "Agent",
+      "db_name": "agents",
+      "file": "tables/Agent.json",
+      "rows": 20
+    },
+    {
+      "model": "currencies",
+      "db_name": "currencies",
+      "file": "tables/currencies.json",
+      "rows": 32
+    },
+    {
+      "model": "excursion_pricing",
+      "db_name": "excursion_pricing",
+      "file": "tables/excursion_pricing.json",
+      "rows": 103
+    },
+    {
+      "model": "excursion_trip_items",
+      "db_name": "excursion_trip_items",
+      "file": "tables/excursion_trip_items.json",
+      "rows": 27
+    },
+    {
+      "model": "excursions",
+      "db_name": "excursions",
+      "file": "tables/excursions.json",
+      "rows": 34
+    },
+    {
+      "model": "flight_trip_items",
+      "db_name": "flight_trip_items",
+      "file": "tables/flight_trip_items.json",
+      "rows": 61
+    },
+    {
+      "model": "hotel_contacts",
+      "db_name": "hotel_contacts",
+      "file": "tables/hotel_contacts.json",
+      "rows": 407
+    },
+    {
+      "model": "hotel_fees",
+      "db_name": "hotel_fees",
+      "file": "tables/hotel_fees.json",
+      "rows": 408
+    },
+    {
+      "model": "hotel_markup_percentages",
+      "db_name": "hotel_markup_percentages",
+      "file": "tables/hotel_markup_percentages.json",
+      "rows": 4
+    },
+    {
+      "model": "hotel_promotions",
+      "db_name": "hotel_promotions",
+      "file": "tables/hotel_promotions.json",
+      "rows": 156
+    },
+    {
+      "model": "hotel_room_type_items",
+      "db_name": "hotel_room_type_items",
+      "file": "tables/hotel_room_type_items.json",
+      "rows": 16
+    },
+    {
+      "model": "hotel_trip_items",
+      "db_name": "hotel_trip_items",
+      "file": "tables/hotel_trip_items.json",
+      "rows": 42
+    },
+    {
+      "model": "hotels",
+      "db_name": "hotels",
+      "file": "tables/hotels.json",
+      "rows": 408
+    },
+    {
+      "model": "invoice_items",
+      "db_name": "invoice_items",
+      "file": "tables/invoice_items.json",
+      "rows": 0
+    },
+    {
+      "model": "invoices",
+      "db_name": "invoices",
+      "file": "tables/invoices.json",
+      "rows": 0
+    },
+    {
+      "model": "markups",
+      "db_name": "markups",
+      "file": "tables/markups.json",
+      "rows": 5
+    },
+    {
+      "model": "migrations",
+      "db_name": "migrations",
+      "file": "tables/migrations.json",
+      "rows": 0
+    },
+    {
+      "model": "other_trip_items",
+      "db_name": "other_trip_items",
+      "file": "tables/other_trip_items.json",
+      "rows": 0
+    },
+    {
+      "model": "others",
+      "db_name": "others",
+      "file": "tables/others.json",
+      "rows": 2
+    },
+    {
+      "model": "room_types",
+      "db_name": "room_types",
+      "file": "tables/room_types.json",
+      "rows": 2219
+    },
+    {
+      "model": "stop_sales",
+      "db_name": "stop_sales",
+      "file": "tables/stop_sales.json",
+      "rows": 31
+    },
+    {
+      "model": "tour_stop_sales",
+      "db_name": "tour_stop_sales",
+      "file": "tables/tour_stop_sales.json",
+      "rows": 0
+    },
+    {
+      "model": "suppliers",
+      "db_name": "suppliers",
+      "file": "tables/suppliers.json",
+      "rows": 23
+    },
+    {
+      "model": "tour_pricing",
+      "db_name": "tour_pricing",
+      "file": "tables/tour_pricing.json",
+      "rows": 55
+    },
+    {
+      "model": "tour_trip_items",
+      "db_name": "tour_trip_items",
+      "file": "tables/tour_trip_items.json",
+      "rows": 9
+    },
+    {
+      "model": "tours",
+      "db_name": "tours",
+      "file": "tables/tours.json",
+      "rows": 20
+    },
+    {
+      "model": "transfer_pricing",
+      "db_name": "transfer_pricing",
+      "file": "tables/transfer_pricing.json",
+      "rows": 670
+    },
+    {
+      "model": "transfer_trip_items",
+      "db_name": "transfer_trip_items",
+      "file": "tables/transfer_trip_items.json",
+      "rows": 45
+    },
+    {
+      "model": "transfers",
+      "db_name": "transfers",
+      "file": "tables/transfers.json",
+      "rows": 171
+    },
+    {
+      "model": "travel_checklists",
+      "db_name": "travel_checklists",
+      "file": "tables/travel_checklists.json",
+      "rows": 0
+    },
+    {
+      "model": "trips",
+      "db_name": "trips",
+      "file": "tables/trips.json",
+      "rows": 56
+    },
+    {
+      "model": "CityInfo",
+      "db_name": "city_info",
+      "file": "tables/CityInfo.json",
+      "rows": 11
+    },
+    {
+      "model": "tour_days",
+      "db_name": "tour_days",
+      "file": "tables/tour_days.json",
+      "rows": 95
+    },
+    {
+      "model": "tour_details",
+      "db_name": "tour_details",
+      "file": "tables/tour_details.json",
+      "rows": 103
+    },
+    {
+      "model": "tour_trip_item_hotels",
+      "db_name": "tour_trip_item_hotels",
+      "file": "tables/tour_trip_item_hotels.json",
+      "rows": 2
+    },
+    {
+      "model": "service_documents",
+      "db_name": "service_documents",
+      "file": "tables/service_documents.json",
+      "rows": 2
+    },
+    {
+      "model": "special_packages",
+      "db_name": "special_packages",
+      "file": "tables/special_packages.json",
+      "rows": 99
+    },
+    {
+      "model": "special_package_items",
+      "db_name": "special_package_items",
+      "file": "tables/special_package_items.json",
+      "rows": 612
+    },
+    {
+      "model": "special_package_stop_sales",
+      "db_name": "special_package_stop_sales",
+      "file": "tables/special_package_stop_sales.json",
+      "rows": 1
+    },
+    {
+      "model": "special_promos",
+      "db_name": "special_promos",
+      "file": "tables/special_promos.json",
+      "rows": 1
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "description": "food court",
+    "amount": "6000",
+    "chargetype": "per unit",
+    "created_at": "2026-04-05T06:58:00.004Z",
+    "updated_at": "2026-04-05T06:58:00.004Z"
+  },
+  {
+    "id": 2,
+    "description": "Lunch on spot",
+    "amount": "300",
+    "chargetype": "per pax",
+    "created_at": "2026-05-21T07:11:35.639Z",
+    "updated_at": "2026-05-21T07:11:44.732Z"
+  }
+]

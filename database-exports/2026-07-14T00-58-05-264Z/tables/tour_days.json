@@ -1,0 +1,762 @@
+[
+  {
+    "id": 19,
+    "tour_id": 16,
+    "day": 1,
+    "itinerary": "Test Itinerary Day 1",
+    "created_at": "2026-06-26T02:26:36.006Z",
+    "updated_at": "2026-06-26T02:26:36.006Z"
+  },
+  {
+    "id": 20,
+    "tour_id": 16,
+    "day": 2,
+    "itinerary": "Test Itinerary Day 2",
+    "created_at": "2026-06-26T02:26:36.006Z",
+    "updated_at": "2026-06-26T02:26:36.006Z"
+  },
+  {
+    "id": 21,
+    "tour_id": 16,
+    "day": 3,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:26:36.006Z",
+    "updated_at": "2026-06-26T02:26:36.006Z"
+  },
+  {
+    "id": 22,
+    "tour_id": 16,
+    "day": 4,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:26:36.006Z",
+    "updated_at": "2026-06-26T02:26:36.006Z"
+  },
+  {
+    "id": 23,
+    "tour_id": 6,
+    "day": 1,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:30:12.270Z",
+    "updated_at": "2026-06-26T02:30:12.270Z"
+  },
+  {
+    "id": 24,
+    "tour_id": 6,
+    "day": 2,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:30:12.270Z",
+    "updated_at": "2026-06-26T02:30:12.270Z"
+  },
+  {
+    "id": 25,
+    "tour_id": 6,
+    "day": 3,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:30:12.270Z",
+    "updated_at": "2026-06-26T02:30:12.270Z"
+  },
+  {
+    "id": 26,
+    "tour_id": 6,
+    "day": 4,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:30:12.270Z",
+    "updated_at": "2026-06-26T02:30:12.270Z"
+  },
+  {
+    "id": 27,
+    "tour_id": 9,
+    "day": 1,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:33:49.579Z",
+    "updated_at": "2026-06-26T02:33:49.579Z"
+  },
+  {
+    "id": 28,
+    "tour_id": 9,
+    "day": 2,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:33:49.579Z",
+    "updated_at": "2026-06-26T02:33:49.579Z"
+  },
+  {
+    "id": 29,
+    "tour_id": 9,
+    "day": 3,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:33:49.579Z",
+    "updated_at": "2026-06-26T02:33:49.579Z"
+  },
+  {
+    "id": 30,
+    "tour_id": 9,
+    "day": 4,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:33:49.579Z",
+    "updated_at": "2026-06-26T02:33:49.579Z"
+  },
+  {
+    "id": 31,
+    "tour_id": 9,
+    "day": 5,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:33:49.579Z",
+    "updated_at": "2026-06-26T02:33:49.579Z"
+  },
+  {
+    "id": 32,
+    "tour_id": 24,
+    "day": 1,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:37:11.263Z",
+    "updated_at": "2026-06-26T02:37:11.263Z"
+  },
+  {
+    "id": 33,
+    "tour_id": 24,
+    "day": 2,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:37:11.263Z",
+    "updated_at": "2026-06-26T02:37:11.263Z"
+  },
+  {
+    "id": 34,
+    "tour_id": 24,
+    "day": 3,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:37:11.263Z",
+    "updated_at": "2026-06-26T02:37:11.263Z"
+  },
+  {
+    "id": 35,
+    "tour_id": 24,
+    "day": 4,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:37:11.263Z",
+    "updated_at": "2026-06-26T02:37:11.263Z"
+  },
+  {
+    "id": 36,
+    "tour_id": 24,
+    "day": 5,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:37:11.263Z",
+    "updated_at": "2026-06-26T02:37:11.263Z"
+  },
+  {
+    "id": 37,
+    "tour_id": 15,
+    "day": 1,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:41:21.501Z",
+    "updated_at": "2026-06-26T02:41:21.501Z"
+  },
+  {
+    "id": 38,
+    "tour_id": 15,
+    "day": 2,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:41:21.501Z",
+    "updated_at": "2026-06-26T02:41:21.501Z"
+  },
+  {
+    "id": 39,
+    "tour_id": 15,
+    "day": 3,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:41:21.501Z",
+    "updated_at": "2026-06-26T02:41:21.501Z"
+  },
+  {
+    "id": 40,
+    "tour_id": 15,
+    "day": 4,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:41:21.501Z",
+    "updated_at": "2026-06-26T02:41:21.501Z"
+  },
+  {
+    "id": 41,
+    "tour_id": 15,
+    "day": 5,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:41:21.501Z",
+    "updated_at": "2026-06-26T02:41:21.501Z"
+  },
+  {
+    "id": 42,
+    "tour_id": 15,
+    "day": 6,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:41:21.501Z",
+    "updated_at": "2026-06-26T02:41:21.501Z"
+  },
+  {
+    "id": 43,
+    "tour_id": 20,
+    "day": 1,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:45:13.083Z",
+    "updated_at": "2026-06-26T02:45:13.083Z"
+  },
+  {
+    "id": 44,
+    "tour_id": 20,
+    "day": 2,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:45:13.083Z",
+    "updated_at": "2026-06-26T02:45:13.083Z"
+  },
+  {
+    "id": 45,
+    "tour_id": 20,
+    "day": 3,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:45:13.083Z",
+    "updated_at": "2026-06-26T02:45:13.083Z"
+  },
+  {
+    "id": 46,
+    "tour_id": 20,
+    "day": 4,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:45:13.083Z",
+    "updated_at": "2026-06-26T02:45:13.083Z"
+  },
+  {
+    "id": 47,
+    "tour_id": 20,
+    "day": 5,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:45:13.083Z",
+    "updated_at": "2026-06-26T02:45:13.083Z"
+  },
+  {
+    "id": 48,
+    "tour_id": 20,
+    "day": 6,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:45:13.083Z",
+    "updated_at": "2026-06-26T02:45:13.083Z"
+  },
+  {
+    "id": 49,
+    "tour_id": 25,
+    "day": 1,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:46:08.163Z",
+    "updated_at": "2026-06-26T02:46:08.163Z"
+  },
+  {
+    "id": 50,
+    "tour_id": 25,
+    "day": 2,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:46:08.163Z",
+    "updated_at": "2026-06-26T02:46:08.163Z"
+  },
+  {
+    "id": 51,
+    "tour_id": 25,
+    "day": 3,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:46:08.163Z",
+    "updated_at": "2026-06-26T02:46:08.163Z"
+  },
+  {
+    "id": 52,
+    "tour_id": 25,
+    "day": 4,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:46:08.163Z",
+    "updated_at": "2026-06-26T02:46:08.163Z"
+  },
+  {
+    "id": 53,
+    "tour_id": 25,
+    "day": 5,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:46:08.163Z",
+    "updated_at": "2026-06-26T02:46:08.163Z"
+  },
+  {
+    "id": 54,
+    "tour_id": 10,
+    "day": 1,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:49:24.836Z",
+    "updated_at": "2026-06-26T02:49:24.836Z"
+  },
+  {
+    "id": 55,
+    "tour_id": 10,
+    "day": 2,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:49:24.836Z",
+    "updated_at": "2026-06-26T02:49:24.836Z"
+  },
+  {
+    "id": 56,
+    "tour_id": 10,
+    "day": 3,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:49:24.836Z",
+    "updated_at": "2026-06-26T02:49:24.836Z"
+  },
+  {
+    "id": 57,
+    "tour_id": 10,
+    "day": 4,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:49:24.836Z",
+    "updated_at": "2026-06-26T02:49:24.836Z"
+  },
+  {
+    "id": 58,
+    "tour_id": 11,
+    "day": 1,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:51:59.068Z",
+    "updated_at": "2026-06-26T02:51:59.068Z"
+  },
+  {
+    "id": 59,
+    "tour_id": 11,
+    "day": 2,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:51:59.068Z",
+    "updated_at": "2026-06-26T02:51:59.068Z"
+  },
+  {
+    "id": 60,
+    "tour_id": 11,
+    "day": 3,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:51:59.068Z",
+    "updated_at": "2026-06-26T02:51:59.068Z"
+  },
+  {
+    "id": 61,
+    "tour_id": 11,
+    "day": 4,
+    "itinerary": "",
+    "created_at": "2026-06-26T02:51:59.068Z",
+    "updated_at": "2026-06-26T02:51:59.068Z"
+  },
+  {
+    "id": 62,
+    "tour_id": 8,
+    "day": 1,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:01:57.775Z",
+    "updated_at": "2026-06-26T03:01:57.775Z"
+  },
+  {
+    "id": 63,
+    "tour_id": 8,
+    "day": 2,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:01:57.775Z",
+    "updated_at": "2026-06-26T03:01:57.775Z"
+  },
+  {
+    "id": 64,
+    "tour_id": 8,
+    "day": 3,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:01:57.775Z",
+    "updated_at": "2026-06-26T03:01:57.775Z"
+  },
+  {
+    "id": 65,
+    "tour_id": 8,
+    "day": 4,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:01:57.775Z",
+    "updated_at": "2026-06-26T03:01:57.775Z"
+  },
+  {
+    "id": 66,
+    "tour_id": 8,
+    "day": 5,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:01:57.775Z",
+    "updated_at": "2026-06-26T03:01:57.775Z"
+  },
+  {
+    "id": 67,
+    "tour_id": 17,
+    "day": 1,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:04:46.665Z",
+    "updated_at": "2026-06-26T03:04:46.665Z"
+  },
+  {
+    "id": 68,
+    "tour_id": 17,
+    "day": 2,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:04:46.665Z",
+    "updated_at": "2026-06-26T03:04:46.665Z"
+  },
+  {
+    "id": 69,
+    "tour_id": 17,
+    "day": 3,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:04:46.665Z",
+    "updated_at": "2026-06-26T03:04:46.665Z"
+  },
+  {
+    "id": 70,
+    "tour_id": 17,
+    "day": 4,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:04:46.665Z",
+    "updated_at": "2026-06-26T03:04:46.665Z"
+  },
+  {
+    "id": 71,
+    "tour_id": 17,
+    "day": 5,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:04:46.665Z",
+    "updated_at": "2026-06-26T03:04:46.665Z"
+  },
+  {
+    "id": 72,
+    "tour_id": 14,
+    "day": 1,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:07:29.429Z",
+    "updated_at": "2026-06-26T03:07:29.429Z"
+  },
+  {
+    "id": 73,
+    "tour_id": 14,
+    "day": 2,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:07:29.429Z",
+    "updated_at": "2026-06-26T03:07:29.429Z"
+  },
+  {
+    "id": 74,
+    "tour_id": 14,
+    "day": 3,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:07:29.429Z",
+    "updated_at": "2026-06-26T03:07:29.429Z"
+  },
+  {
+    "id": 75,
+    "tour_id": 12,
+    "day": 1,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:10:05.775Z",
+    "updated_at": "2026-06-26T03:10:05.775Z"
+  },
+  {
+    "id": 76,
+    "tour_id": 12,
+    "day": 2,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:10:05.775Z",
+    "updated_at": "2026-06-26T03:10:05.775Z"
+  },
+  {
+    "id": 77,
+    "tour_id": 12,
+    "day": 3,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:10:05.775Z",
+    "updated_at": "2026-06-26T03:10:05.775Z"
+  },
+  {
+    "id": 78,
+    "tour_id": 18,
+    "day": 1,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:13:04.164Z",
+    "updated_at": "2026-06-26T03:13:04.164Z"
+  },
+  {
+    "id": 79,
+    "tour_id": 18,
+    "day": 2,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:13:04.164Z",
+    "updated_at": "2026-06-26T03:13:04.164Z"
+  },
+  {
+    "id": 80,
+    "tour_id": 18,
+    "day": 3,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:13:04.164Z",
+    "updated_at": "2026-06-26T03:13:04.164Z"
+  },
+  {
+    "id": 81,
+    "tour_id": 18,
+    "day": 4,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:13:04.164Z",
+    "updated_at": "2026-06-26T03:13:04.164Z"
+  },
+  {
+    "id": 82,
+    "tour_id": 19,
+    "day": 1,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:15:48.871Z",
+    "updated_at": "2026-06-26T03:15:48.871Z"
+  },
+  {
+    "id": 83,
+    "tour_id": 19,
+    "day": 2,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:15:48.871Z",
+    "updated_at": "2026-06-26T03:15:48.871Z"
+  },
+  {
+    "id": 84,
+    "tour_id": 19,
+    "day": 3,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:15:48.871Z",
+    "updated_at": "2026-06-26T03:15:48.871Z"
+  },
+  {
+    "id": 85,
+    "tour_id": 19,
+    "day": 4,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:15:48.871Z",
+    "updated_at": "2026-06-26T03:15:48.871Z"
+  },
+  {
+    "id": 86,
+    "tour_id": 22,
+    "day": 1,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:20:20.448Z",
+    "updated_at": "2026-06-26T03:20:20.448Z"
+  },
+  {
+    "id": 87,
+    "tour_id": 22,
+    "day": 2,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:20:20.448Z",
+    "updated_at": "2026-06-26T03:20:20.448Z"
+  },
+  {
+    "id": 88,
+    "tour_id": 22,
+    "day": 3,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:20:20.448Z",
+    "updated_at": "2026-06-26T03:20:20.448Z"
+  },
+  {
+    "id": 89,
+    "tour_id": 22,
+    "day": 4,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:20:20.448Z",
+    "updated_at": "2026-06-26T03:20:20.448Z"
+  },
+  {
+    "id": 90,
+    "tour_id": 22,
+    "day": 5,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:20:20.448Z",
+    "updated_at": "2026-06-26T03:20:20.448Z"
+  },
+  {
+    "id": 91,
+    "tour_id": 22,
+    "day": 6,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:20:20.448Z",
+    "updated_at": "2026-06-26T03:20:20.448Z"
+  },
+  {
+    "id": 92,
+    "tour_id": 13,
+    "day": 1,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:22:54.565Z",
+    "updated_at": "2026-06-26T03:22:54.565Z"
+  },
+  {
+    "id": 93,
+    "tour_id": 13,
+    "day": 2,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:22:54.565Z",
+    "updated_at": "2026-06-26T03:22:54.565Z"
+  },
+  {
+    "id": 94,
+    "tour_id": 13,
+    "day": 3,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:22:54.565Z",
+    "updated_at": "2026-06-26T03:22:54.565Z"
+  },
+  {
+    "id": 95,
+    "tour_id": 13,
+    "day": 4,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:22:54.565Z",
+    "updated_at": "2026-06-26T03:22:54.565Z"
+  },
+  {
+    "id": 96,
+    "tour_id": 13,
+    "day": 5,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:22:54.565Z",
+    "updated_at": "2026-06-26T03:22:54.565Z"
+  },
+  {
+    "id": 97,
+    "tour_id": 13,
+    "day": 6,
+    "itinerary": "",
+    "created_at": "2026-06-26T03:22:54.565Z",
+    "updated_at": "2026-06-26T03:22:54.565Z"
+  },
+  {
+    "id": 98,
+    "tour_id": 5,
+    "day": 1,
+    "itinerary": "",
+    "created_at": "2026-06-26T04:39:06.991Z",
+    "updated_at": "2026-06-26T04:39:06.991Z"
+  },
+  {
+    "id": 99,
+    "tour_id": 5,
+    "day": 2,
+    "itinerary": "",
+    "created_at": "2026-06-26T04:39:06.991Z",
+    "updated_at": "2026-06-26T04:39:06.991Z"
+  },
+  {
+    "id": 100,
+    "tour_id": 5,
+    "day": 3,
+    "itinerary": "",
+    "created_at": "2026-06-26T04:39:06.991Z",
+    "updated_at": "2026-06-26T04:39:06.991Z"
+  },
+  {
+    "id": 101,
+    "tour_id": 5,
+    "day": 4,
+    "itinerary": "",
+    "created_at": "2026-06-26T04:39:06.991Z",
+    "updated_at": "2026-06-26T04:39:06.991Z"
+  },
+  {
+    "id": 102,
+    "tour_id": 5,
+    "day": 5,
+    "itinerary": "",
+    "created_at": "2026-06-26T04:39:06.991Z",
+    "updated_at": "2026-06-26T04:39:06.991Z"
+  },
+  {
+    "id": 103,
+    "tour_id": 7,
+    "day": 1,
+    "itinerary": "",
+    "created_at": "2026-06-26T04:48:07.311Z",
+    "updated_at": "2026-06-26T04:48:07.311Z"
+  },
+  {
+    "id": 104,
+    "tour_id": 7,
+    "day": 2,
+    "itinerary": "",
+    "created_at": "2026-06-26T04:48:07.311Z",
+    "updated_at": "2026-06-26T04:48:07.311Z"
+  },
+  {
+    "id": 105,
+    "tour_id": 7,
+    "day": 3,
+    "itinerary": "",
+    "created_at": "2026-06-26T04:48:07.311Z",
+    "updated_at": "2026-06-26T04:48:07.311Z"
+  },
+  {
+    "id": 106,
+    "tour_id": 7,
+    "day": 4,
+    "itinerary": "",
+    "created_at": "2026-06-26T04:48:07.311Z",
+    "updated_at": "2026-06-26T04:48:07.311Z"
+  },
+  {
+    "id": 107,
+    "tour_id": 7,
+    "day": 5,
+    "itinerary": "",
+    "created_at": "2026-06-26T04:48:07.311Z",
+    "updated_at": "2026-06-26T04:48:07.311Z"
+  },
+  {
+    "id": 108,
+    "tour_id": 26,
+    "day": 1,
+    "itinerary": "Arrival Phuket - Transfer to Hotel",
+    "created_at": "2026-07-03T15:44:32.700Z",
+    "updated_at": "2026-07-03T15:44:32.700Z"
+  },
+  {
+    "id": 109,
+    "tour_id": 26,
+    "day": 2,
+    "itinerary": "Phi Phi Islands Excursion",
+    "created_at": "2026-07-03T15:44:32.700Z",
+    "updated_at": "2026-07-03T15:44:32.700Z"
+  },
+  {
+    "id": 110,
+    "tour_id": 26,
+    "day": 3,
+    "itinerary": "Similan Islands Excursion",
+    "created_at": "2026-07-03T15:44:32.700Z",
+    "updated_at": "2026-07-03T15:44:32.700Z"
+  },
+  {
+    "id": 111,
+    "tour_id": 26,
+    "day": 4,
+    "itinerary": "Leisure day in Phuket",
+    "created_at": "2026-07-03T15:44:32.700Z",
+    "updated_at": "2026-07-03T15:44:32.700Z"
+  },
+  {
+    "id": 112,
+    "tour_id": 26,
+    "day": 5,
+    "itinerary": "Leisure day in Phuket",
+    "created_at": "2026-07-03T15:44:32.700Z",
+    "updated_at": "2026-07-03T15:44:32.700Z"
+  },
+  {
+    "id": 113,
+    "tour_id": 26,
+    "day": 6,
+    "itinerary": "Departure Phuket - Transfer to Airport",
+    "created_at": "2026-07-03T15:44:32.700Z",
+    "updated_at": "2026-07-03T15:44:32.700Z"
+  }
+]

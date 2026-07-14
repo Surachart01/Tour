@@ -1,0 +1,26 @@
+[
+  {
+    "id": 2,
+    "service_type": "excursion",
+    "service_id": 2,
+    "file_name": "week-6a_wayground_import.xlsx",
+    "file_path": "3c8255aa-b3fa-432a-9d7a-0ce6bc573e77.xlsx",
+    "file_type": "xlsx",
+    "file_size": 20448,
+    "description": null,
+    "created_at": "2026-06-26T16:55:52.328Z",
+    "updated_at": "2026-06-26T16:55:52.328Z"
+  },
+  {
+    "id": 3,
+    "service_type": "excursion",
+    "service_id": 9,
+    "file_name": "5_SAT_SUN Description_Bang Krachao_Chatuchak Market 2026.2027.docx",
+    "file_path": "a3a032e8-f295-4079-bc6d-c086c3024518.docx",
+    "file_type": "docx",
+    "file_size": 3648894,
+    "description": null,
+    "created_at": "2026-07-01T04:25:09.502Z",
+    "updated_at": "2026-07-01T04:25:09.502Z"
+  }
+]

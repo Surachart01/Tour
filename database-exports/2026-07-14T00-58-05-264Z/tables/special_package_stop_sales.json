@@ -1,0 +1,13 @@
+[
+  {
+    "id": 1,
+    "special_package_id": 117,
+    "start_date": "2026-07-10T00:00:00.000Z",
+    "end_date": "2026-07-15T00:00:00.000Z",
+    "stopped": true,
+    "attachment_url": null,
+    "created_at": "2026-07-07T09:09:31.138Z",
+    "updated_at": "2026-07-07T09:09:31.138Z",
+    "deleted_at": null
+  }
+]
