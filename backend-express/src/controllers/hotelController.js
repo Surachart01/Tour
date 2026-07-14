@@ -1,6 +1,44 @@
 import prisma from '../config/db.js';
 import { calculateHotelCostLogic, calculateMarkupRoomType } from '../utils/pricing.js';
 
+function asArray(value) {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
+function cleanForPrisma(value) {
+  if (Array.isArray(value)) {
+    return value.map(cleanForPrisma);
+  }
+  if (value && typeof value === 'object' && !(value instanceof Date)) {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([, entryValue]) => entryValue !== undefined)
+        .map(([key, entryValue]) => [key, cleanForPrisma(entryValue)])
+    );
+  }
+  return value;
+}
+
+function normalizeHotelContacts(rawContacts) {
+  const seenEmails = new Set();
+  return asArray(rawContacts)
+    .map(c => ({
+      contact_name: (c.name ?? c.contact_name ?? '').toString().trim() || null,
+      email: (c.email ?? '').toString().trim() || null,
+      telephone: (c.tel ?? c.telephone ?? '').toString().trim() || null,
+      fax: (c.fax ?? '').toString().trim() || null
+    }))
+    .filter(c => c.contact_name || c.email || c.telephone || c.fax)
+    .filter(c => {
+      if (!c.email) return true;
+      const key = c.email.toLowerCase();
+      if (seenEmails.has(key)) return false;
+      seenEmails.add(key);
+      return true;
+    });
+}
+
 export function formatHotelResponse(hotel, markupGroup = '', markups = []) {
   if (!hotel) return null;
   const fees = hotel.hotel_fees && hotel.hotel_fees[0] ? hotel.hotel_fees[0] : {};
@@ -117,8 +155,9 @@ export function formatHotelResponse(hotel, markupGroup = '', markups = []) {
 export async function createHotel(req, res, next) {
   try {
     const data = req.body;
+    const contacts = normalizeHotelContacts(data.contacts ?? data.hotel_contacts);
     const hotel = await prisma.hotels.create({
-      data: {
+      data: cleanForPrisma({
         name: data.name,
         city: data.city,
         notes: data.notes || null,
@@ -126,14 +165,7 @@ export async function createHotel(req, res, next) {
         country: data.country || "Thailand",
         display_order: data.display_order !== undefined ? parseInt(data.display_order) : 0,
         user_id: data.user_id ? parseInt(data.user_id) : null,
-        hotel_contacts: (data.contacts || data.hotel_contacts) ? {
-          create: (data.contacts || data.hotel_contacts).map(c => ({
-            contact_name: c.name || c.contact_name,
-            email: c.email,
-            telephone: c.tel || c.telephone,
-            fax: c.fax
-          }))
-        } : undefined,
+        hotel_contacts: contacts.length ? { create: contacts } : undefined,
         room_types: (data.roomTypes || data.room_types) ? {
           create: (data.roomTypes || data.room_types).map(rt => ({
             name: rt.roomType || rt.name,
@@ -183,7 +215,7 @@ export async function createHotel(req, res, next) {
             free_meals_abf: p.freeMeals !== undefined ? (p.freeMeals ? 1 : 0) : (p.free_meals_abf || 0)
           }))
         } : undefined
-      },
+      }),
       include: { hotel_contacts: true, room_types: true, hotel_fees: true, hotel_promotions: true }
     });
     return res.status(201).json(formatHotelResponse(hotel));
@@ -324,6 +356,7 @@ export async function updateHotel(req, res, next) {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid hotel ID');
     const data = req.body;
+    const contacts = normalizeHotelContacts(data.contacts ?? data.hotel_contacts);
 
     // Delete existing related data and recreate
     await prisma.$transaction(async (tx) => {
@@ -334,7 +367,7 @@ export async function updateHotel(req, res, next) {
 
       await tx.hotels.update({
         where: { id },
-        data: {
+        data: cleanForPrisma({
           name: data.name,
           city: data.city,
           notes: data.notes,
@@ -342,14 +375,7 @@ export async function updateHotel(req, res, next) {
           country: data.country !== undefined ? data.country : undefined,
           display_order: data.display_order !== undefined ? parseInt(data.display_order) : undefined,
           user_id: data.user_id !== undefined ? (data.user_id ? parseInt(data.user_id) : null) : undefined,
-          hotel_contacts: (data.contacts || data.hotel_contacts) ? {
-            create: (data.contacts || data.hotel_contacts).map(c => ({
-              contact_name: c.name || c.contact_name,
-              email: c.email,
-              telephone: c.tel || c.telephone,
-              fax: c.fax
-            }))
-          } : undefined,
+          hotel_contacts: contacts.length ? { create: contacts } : undefined,
           room_types: (data.roomTypes || data.room_types) ? {
             create: (data.roomTypes || data.room_types).map(rt => ({
               name: rt.roomType || rt.name,
@@ -399,7 +425,7 @@ export async function updateHotel(req, res, next) {
               free_meals_abf: p.freeMeals !== undefined ? (p.freeMeals ? 1 : 0) : (p.free_meals_abf || 0)
             }))
           } : undefined
-        }
+        })
       });
     }, {
       maxWait: 15000,

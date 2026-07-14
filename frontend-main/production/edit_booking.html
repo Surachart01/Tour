@@ -781,6 +781,23 @@
           <div style="display: flex; gap: 15px">
             <button
               type="button"
+              id="topBookingSummaryBtn"
+              class="btn btn-info booking-summary-trigger"
+              style="
+                background-color: #2d9cdb;
+                border-color: #2d9cdb;
+                color: #ffffff;
+                padding: 8px 20px;
+                border-radius: 6px;
+                font-weight: 600;
+              "
+              title="Create booking summary PDF"
+            >
+              <i class="fas fa-file-pdf" style="margin-right: 8px"></i>
+              Summary PDF
+            </button>
+            <button
+              type="button"
               class="btn btn-outline-light"
               onclick="window.location.href='booking.html'"
 
@@ -1651,6 +1668,7 @@
                   display: flex;
                   gap: 15px;
                   justify-content: center;
+                  flex-wrap: wrap;
                   margin-top: 30px;
                   padding-top: 30px;
                   border-top: 2px solid #ecf0f1;
@@ -1693,6 +1711,24 @@
                 >
                   <i class="fas fa-check-circle" style="margin-right: 8px"></i>
                   BOOKING CONFIRMED
+                </button>
+
+                <button
+                  id="bookingSummaryBtn"
+                  type="button"
+                  class="btn btn-info booking-summary-trigger"
+                  style="
+                    padding: 12px 30px;
+                    border-radius: 6px;
+                    font-weight: 600;
+                    background-color: #2d9cdb;
+                    border-color: #2d9cdb;
+                    color: #ffffff;
+                  "
+                  title="Create an A4 booking summary file"
+                >
+                  <i class="fas fa-file-alt" style="margin-right: 8px"></i>
+                  Summary
                 </button>
               </div>
             </form>
@@ -3004,6 +3040,425 @@
         const sendBulkEmailBtn = document.getElementById("sendBulkEmailBtn");
         if (sendBulkEmailBtn) {
           sendBulkEmailBtn.addEventListener("click", sendBulkEmailForBooking);
+        }
+
+        document.querySelectorAll(".booking-summary-trigger").forEach((button) => {
+          button.addEventListener("click", generateBookingSummaryFile);
+        });
+
+        function getSummaryFieldValue(id) {
+          const el = document.getElementById(id);
+          if (!el) return "";
+          if (["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName)) {
+            return (el.value || "").trim();
+          }
+          return (el.textContent || "").trim();
+        }
+
+        function cleanSummaryCellText(cell) {
+          if (!cell) return "";
+          const clone = cell.cloneNode(true);
+          clone.querySelectorAll("script, style, button, .btn, .tooltip-text").forEach((el) => el.remove());
+          clone.querySelectorAll("input, textarea, select").forEach((field) => {
+            let value = "";
+            if (field.tagName === "SELECT") {
+              const selected = field.options?.[field.selectedIndex];
+              value = selected ? selected.textContent : field.value;
+            } else {
+              value = field.value || field.getAttribute("value") || "";
+            }
+            field.replaceWith(document.createTextNode(value));
+          });
+          return (clone.textContent || "").replace(/\s+/g, " ").trim();
+        }
+
+        function getSummaryTableObjects(tableId) {
+          const table = document.getElementById(tableId);
+          if (!table) return [];
+          const headers = Array.from(table.querySelectorAll("thead th")).map((th) => cleanSummaryCellText(th));
+          const rows = Array.from(table.querySelectorAll("tbody tr")).filter((row) => {
+            const style = window.getComputedStyle(row);
+            return style.display !== "none" && !row.classList.contains("summary-ignore-row");
+          });
+
+          return rows.map((row) => {
+            const obj = {};
+            Array.from(row.cells || []).forEach((cell, index) => {
+              const header = headers[index] || `Column ${index + 1}`;
+              if (header.toLowerCase().includes("action")) return;
+              obj[header] = cleanSummaryCellText(cell);
+            });
+            return obj;
+          }).filter((obj) => Object.values(obj).some(Boolean));
+        }
+
+        function normalizeSummaryDate(value) {
+          if (!value) return "";
+          const text = String(value).trim();
+          const iso = text.match(/\d{4}-\d{2}-\d{2}/)?.[0];
+          if (iso) {
+            const [year, month, day] = iso.split("-");
+            return `${day}-${month}-${year}`;
+          }
+          return text;
+        }
+
+        function pdfText(value) {
+          const text = String(value ?? "")
+            .normalize("NFKD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^\x20-\x7E]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+          return text.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+        }
+
+        function createBookingSummaryPdfBlob() {
+          const pageWidth = 841.89;
+          const pageHeight = 595.28;
+          const margin = 22;
+          const contentWidth = pageWidth - margin * 2;
+          const pages = [];
+          let content = [];
+          let cursorY = 18;
+
+          function add(cmd) {
+            content.push(cmd);
+          }
+
+          function pdfY(topY, height = 0) {
+            return pageHeight - topY - height;
+          }
+
+          function fillRect(x, topY, width, height, color) {
+            const colors = {
+              paper: "1 1 1",
+              header: "0.92 0.96 0.88",
+              section: "0.70 0.84 0.48",
+              white: "1 1 1",
+            };
+            add(`q ${colors[color] || colors.white} rg ${x.toFixed(2)} ${pdfY(topY, height).toFixed(2)} ${width.toFixed(2)} ${height.toFixed(2)} re f Q`);
+          }
+
+          function rect(x, topY, width, height) {
+            add(`${x.toFixed(2)} ${pdfY(topY, height).toFixed(2)} ${width.toFixed(2)} ${height.toFixed(2)} re S`);
+          }
+
+          function text(x, topY, value, size = 7, bold = false) {
+            if (value === undefined || value === null || value === "") return;
+            add(`BT /${bold ? "F2" : "F1"} ${size} Tf ${x.toFixed(2)} ${pdfY(topY).toFixed(2)} Td (${pdfText(value)}) Tj ET`);
+          }
+
+          function wrap(value, width, size = 7) {
+            const raw = String(value ?? "-").replace(/\s+/g, " ").trim() || "-";
+            const maxChars = Math.max(5, Math.floor(width / (size * 0.47)));
+            const words = raw.split(" ");
+            const lines = [];
+            let current = "";
+            words.forEach((word) => {
+              if ((current + " " + word).trim().length <= maxChars) {
+                current = (current + " " + word).trim();
+              } else {
+                if (current) lines.push(current);
+                current = word;
+              }
+            });
+            if (current) lines.push(current);
+            return lines.length ? lines : ["-"];
+          }
+
+          function drawWrappedText(x, topY, width, value, size = 6.5, bold = false) {
+            const lines = wrap(value, width, size).slice(0, 4);
+            lines.forEach((line, index) => text(x, topY + index * (size + 2), line, size, bold));
+          }
+
+          function drawCellText(x, topY, width, height, value, size = 6.5, bold = false, maxLines = 4) {
+            const lines = wrap(value, width, size).slice(0, maxLines);
+            const lineStep = size + 2;
+            const blockHeight = (lines.length - 1) * lineStep + size;
+            const firstBaseline = topY + Math.max(size + 1, (height - blockHeight) / 2 + size);
+            lines.forEach((line, index) => text(x, firstBaseline + index * lineStep, line, size, bold));
+          }
+
+          function newPage(repeatHeader = false) {
+            content = [];
+            pages.push(content);
+            cursorY = 18;
+            fillRect(0, 0, pageWidth, pageHeight, "paper");
+            add("0 0 0 RG 0.35 w");
+            if (repeatHeader) {
+              text(margin, cursorY, "BOOKING SUMMARY", 10, true);
+              text(pageWidth - 220, cursorY, getSummaryFieldValue("bookingReference") || "Booking Summary", 8, true);
+              cursorY += 16;
+            }
+          }
+
+          function infoBox(label, value, x, y, width) {
+            rect(x, y, width, 17);
+            drawCellText(x + 4, y, 50, 17, label, 6, true, 1);
+            drawCellText(x + 58, y, width - 62, 17, value || "-", 6.2, false, 2);
+          }
+
+          function drawMainHeader() {
+            const params = new URLSearchParams(window.location.search);
+            const bookingId = params.get("id") || "";
+            const bookingRef = getSummaryFieldValue("bookingReference") || (bookingId ? `Booking #${bookingId}` : "");
+            const operator = localStorage.getItem("username") || localStorage.getItem("userName") || "ADMIN";
+            text(420, cursorY, "Client Name (s)", 8, true);
+            text(520, cursorY, clientNameForSummary(), 8, false);
+            cursorY += 16;
+            infoBox("MR:", getSummaryFieldValue("clientName"), margin, cursorY, 230);
+            infoBox("MS:", "", margin + 238, cursorY, 170);
+            infoBox("Pax:", (getSummaryFieldValue("adult") || "0") + " + " + (getSummaryFieldValue("child") || "0"), margin + 416, cursorY, 92);
+            infoBox("Booking Date:", normalizeSummaryDate(getSummaryFieldValue("bookingDate")), margin + 516, cursorY, 132);
+            infoBox("Operator:", operator, margin + 656, cursorY, 120);
+            cursorY += 22;
+            infoBox("FILE:", bookingRef, margin, cursorY, 260);
+            infoBox("Trip Start:", normalizeSummaryDate(getSummaryFieldValue("tripStartDate")), margin + 268, cursorY, 150);
+            infoBox("Final Price:", getSummaryFieldValue("finalPrice"), margin + 426, cursorY, 150);
+            infoBox("Telephone:", getSummaryFieldValue("mobileNumber"), margin + 584, cursorY, 192);
+            cursorY += 28;
+          }
+
+          function clientNameForSummary() {
+            return getSummaryFieldValue("clientName") || "-";
+          }
+
+          function rowHeight(columns, row) {
+            const lineCounts = columns.map((column) => wrap(row[column.key] || "-", column.width - 5, 6.1).length);
+            return Math.max(16, Math.min(44, Math.max(...lineCounts) * 8 + 7));
+          }
+
+          function drawTableHeader(columns) {
+            let x = margin;
+            fillRect(margin, cursorY, contentWidth, 15, "header");
+            columns.forEach((column) => {
+              rect(x, cursorY, column.width, 15);
+              drawCellText(x + 3, cursorY, column.width - 6, 15, column.label, 5.7, true, 2);
+              x += column.width;
+            });
+            cursorY += 15;
+          }
+
+          function drawSection(title, columns, rows) {
+            const dataRows = rows.length ? rows : [Object.fromEntries(columns.map((column) => [column.key, ""]))];
+            if (cursorY + 42 > pageHeight - 20) newPage(true);
+            text(margin, cursorY, title, 8, true);
+            cursorY += 8;
+            drawTableHeader(columns);
+            dataRows.forEach((row) => {
+              const height = rowHeight(columns, row);
+              if (cursorY + height > pageHeight - 20) {
+                newPage(true);
+                text(margin, cursorY, title, 8, true);
+                cursorY += 8;
+                drawTableHeader(columns);
+              }
+              let x = margin;
+              columns.forEach((column) => {
+                rect(x, cursorY, column.width, height);
+                drawCellText(x + 3, cursorY, column.width - 6, height, row[column.key] || "-", 6.1, false, 4);
+                x += column.width;
+              });
+              cursorY += height;
+            });
+            cursorY += 10;
+          }
+
+          function makeRows(source, mapper) {
+            return source.map(mapper).filter((row) => Object.values(row).some(Boolean));
+          }
+
+          function totalWidth(widths) {
+            return widths.reduce((sum, width) => sum + width, 0);
+          }
+
+          function makeColumns(labels, widths) {
+            const scale = contentWidth / totalWidth(widths);
+            return labels.map(([key, label], index) => ({
+              key,
+              label,
+              width: widths[index] * scale,
+            }));
+          }
+
+          newPage(false);
+          drawMainHeader();
+
+          const flights = makeRows(getSummaryTableObjects("flightsTable"), (row) => ({
+            date: normalizeSummaryDate(row.Date),
+            flight: [row.Flight, row.Number].filter(Boolean).join(" "),
+            route: row.Route,
+            etd: row.ETD,
+            eta: row.ETA,
+            issued: row.Issued,
+            reconfirm: "",
+            by: "",
+            code: "",
+            remarks: row.Remarks,
+          }));
+          drawSection(
+            "FLIGHT(S):",
+            makeColumns([
+              ["date", "DATE"],
+              ["flight", "FLIGHT"],
+              ["route", "ROUTE"],
+              ["etd", "ETD"],
+              ["eta", "ETA"],
+              ["issued", "Issued"],
+              ["reconfirm", "Reconfirm on"],
+              ["by", "by"],
+              ["code", "Reconfirmation CODE"],
+              ["remarks", "REMARKS"],
+            ], [48, 60, 125, 45, 45, 44, 70, 36, 90, 118]),
+            flights
+          );
+
+          const transfers = makeRows(getSummaryTableObjects("transferTable"), (row) => ({
+            date: normalizeSummaryDate(row["Date / Flight"]),
+            type: row["Transfer Type"],
+            city: row.City,
+            tot: row.ToT,
+            from: row.From,
+            to: row.To,
+            flight: "",
+            time: "",
+            cnfd: "",
+            supplier: "",
+            guide: "",
+            mobile: "",
+            remarks: row.Remarks,
+          }));
+          drawSection(
+            "TRANSFER(S):",
+            makeColumns([
+              ["date", "DATE"],
+              ["type", "TYPE"],
+              ["city", "CITY"],
+              ["tot", "T.o.T"],
+              ["from", "FROM"],
+              ["to", "TO"],
+              ["flight", "FLIGHT"],
+              ["time", "TIME"],
+              ["cnfd", "CNFD ON"],
+              ["supplier", "SUPPLIER"],
+              ["guide", "GUIDE"],
+              ["mobile", "MOBILE"],
+              ["remarks", "REMARKS"],
+            ], [50, 45, 58, 38, 58, 58, 56, 42, 58, 75, 58, 58, 77]),
+            transfers
+          );
+
+          const tours = makeRows(getSummaryTableObjects("tourTable"), (row) => ({
+            date: [normalizeSummaryDate(row["Start Date"]), normalizeSummaryDate(row["End Date"])].filter(Boolean).join(" - "),
+            day: "",
+            city: row.City,
+            toe: row.ToT,
+            name: row.Name,
+            time: "",
+            hotel: "",
+            guide: "",
+            mobile: "",
+            remarks: row.Remarks,
+          }));
+          drawSection(
+            "TOUR(S):",
+            makeColumns([
+              ["date", "DATE"],
+              ["day", "DAY"],
+              ["city", "CITY"],
+              ["toe", "T.o.E"],
+              ["name", "Name Excursion"],
+              ["time", "Time"],
+              ["hotel", "Hotel"],
+              ["guide", "GUIDE"],
+              ["mobile", "MOBILE"],
+              ["remarks", "REMARKS"],
+            ], [58, 40, 60, 40, 165, 45, 115, 60, 60, 92]),
+            tours
+          );
+
+          const hotels = makeRows(getSummaryTableObjects("hotelsTable"), (row) => ({
+            checkIn: normalizeSummaryDate(row["Check In"]),
+            checkOut: normalizeSummaryDate(row["Check Out"]),
+            city: row.City,
+            hotel: row.Hotel,
+            nights: row.Nights,
+            single: row["Single Room"],
+            double: row["Double Room"],
+            extraBed: row["Extra Bed"],
+            roomType: row["Room Type"],
+            abf: "",
+            lunch: "",
+            dinner: "",
+            rsvn: row.Promotion,
+            payment: row.Price,
+          }));
+          drawSection(
+            "ACCOMMODATION(S):",
+            makeColumns([
+              ["checkIn", "Check In"],
+              ["checkOut", "Check Out"],
+              ["city", "CITY"],
+              ["hotel", "HOTEL"],
+              ["nights", "Nts"],
+              ["single", "Sgl"],
+              ["double", "Dbl"],
+              ["extraBed", "ExB"],
+              ["roomType", "Type of Room"],
+              ["abf", "Abf"],
+              ["lunch", "Lunch"],
+              ["dinner", "Dinner"],
+              ["rsvn", "RSVN"],
+              ["payment", "Payment"],
+            ], [52, 52, 58, 118, 28, 30, 30, 32, 110, 28, 36, 38, 70, 70]),
+            hotels
+          );
+
+          if (getSummaryFieldValue("remark")) {
+            drawSection(
+              "REMARKS:",
+              makeColumns([["remarks", "REMARKS"]], [contentWidth]),
+              [{ remarks: getSummaryFieldValue("remark") }]
+            );
+          }
+
+          const objects = [];
+          objects.push("<< /Type /Catalog /Pages 2 0 R >>");
+          objects.push(`<< /Type /Pages /Kids [${pages.map((_, index) => `${5 + index * 2} 0 R`).join(" ")}] /Count ${pages.length} >>`);
+          objects.push("<< /Type /Font /Subtype /TrueType /BaseFont /Tahoma >>");
+          objects.push("<< /Type /Font /Subtype /TrueType /BaseFont /Tahoma-Bold >>");
+          pages.forEach((page, index) => {
+            const pageObjectId = 5 + index * 2;
+            const streamObjectId = pageObjectId + 1;
+            const stream = page.join("\n");
+            objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${streamObjectId} 0 R >>`);
+            objects.push(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
+          });
+
+          let pdf = "%PDF-1.4\n";
+          const offsets = [0];
+          objects.forEach((object, index) => {
+            offsets.push(pdf.length);
+            pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+          });
+          const xrefOffset = pdf.length;
+          pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+          offsets.slice(1).forEach((offset) => {
+            pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+          });
+          pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+          return new Blob([pdf], { type: "application/pdf" });
+        }
+
+        function generateBookingSummaryFile() {
+          const blob = createBookingSummaryPdfBlob();
+          const url = URL.createObjectURL(blob);
+          const previewWindow = window.open(url, "_blank");
+          if (!previewWindow) {
+            alert("The PDF summary is ready, but the preview was blocked by the browser. Please allow pop-ups and try again.");
+          }
+          setTimeout(() => URL.revokeObjectURL(url), 30000);
         }
 
         function hasSupplierEmailBeenSent(value) {
