@@ -80,11 +80,10 @@ function styleRoomTypeSeasonalityTable() {
   });
 
   groupedRows.forEach((roomRows) => {
-    const middleIndex = Math.floor((roomRows.length - 1) / 2);
     roomRows.forEach((row, index) => {
       const roomCell = row.getElementsByTagName("td")[3];
       row.classList.add(index === 0 ? "room-type-group-row" : "room-season-row");
-      roomCell.classList.add(index === middleIndex ? "room-type-group-cell" : "room-season-duplicate");
+      roomCell.classList.add(index === 0 ? "room-type-group-cell" : "room-season-duplicate");
     });
   });
 }
