@@ -36,6 +36,41 @@ function applyExtraBedMarkup(basePrice, markup) {
   return applyMarkup(parsedPrice, extraBedMarkup, extraBedMarkupUnit);
 }
 
+function toPositiveInt(value) {
+  return Math.max(0, parseInt(value, 10) || 0);
+}
+
+function countRequestedExtraBeds(roomRequest) {
+  return (roomRequest.extra_adult_bed ? 1 : 0) +
+    (roomRequest.extra_child_bed ? 1 : 0) +
+    (roomRequest.sharing_bed ? 1 : 0);
+}
+
+function assignHotelRoomKinds(roomTypesReq, numSingleRooms, numDoubleRooms) {
+  let singlesLeft = toPositiveInt(numSingleRooms);
+  let doublesLeft = toPositiveInt(numDoubleRooms);
+
+  return roomTypesReq.map((roomRequest) => {
+    const guests = toPositiveInt(roomRequest.adults) + toPositiveInt(roomRequest.children);
+    if (guests <= 1 && singlesLeft > 0) {
+      singlesLeft -= 1;
+      return 'single';
+    }
+
+    if (doublesLeft > 0) {
+      doublesLeft -= 1;
+      return 'double';
+    }
+
+    if (singlesLeft > 0) {
+      singlesLeft -= 1;
+      return 'single';
+    }
+
+    return 'double';
+  });
+}
+
 export function calculateMarkedUpPrice(basePrice, markupGroup, serviceType, markups) {
   const parsedPrice = parseFloat(basePrice);
   if (isNaN(parsedPrice) || parsedPrice === 0) {
@@ -271,7 +306,21 @@ export function calculateHotelCostLogic(hotel, request, markupGroup, markups, ma
 
   const totalGuests = numAdults + numKids;
   const totalBeds = numSingleRooms + numDoubleRooms * 2;
-  let extraBedsAvailable = 0;
+  const totalRooms = numSingleRooms + numDoubleRooms;
+  let extraBedsRequested = 0;
+
+  if (roomTypesReq.length !== totalRooms) {
+    throw new Error(`room type rows (${roomTypesReq.length}) must match selected rooms (${totalRooms})`);
+  }
+
+  const roomKindByIndex = assignHotelRoomKinds(roomTypesReq, numSingleRooms, numDoubleRooms);
+  const roomGuestsTotal = roomTypesReq.reduce((total, rtReq) => {
+    return total + (parseInt(rtReq.adults) || 0) + (parseInt(rtReq.children) || 0);
+  }, 0);
+
+  if (roomGuestsTotal !== totalGuests) {
+    throw new Error(`room type guests (${roomGuestsTotal}) must match total guests (${totalGuests})`);
+  }
 
   // Group room types by name
   const allRoomTypesByName = {};
@@ -292,23 +341,23 @@ export function calculateHotelCostLogic(hotel, request, markupGroup, markups, ma
 
     // Validate room capacity
     const requestedGuests = (parseInt(rtReq.adults) || 0) + (parseInt(rtReq.children) || 0);
+    const roomBaseCapacity = roomKindByIndex[roomTypesReq.indexOf(rtReq)] === 'single' ? 1 : 2;
+    const requestedExtraBeds = countRequestedExtraBeds(rtReq);
+    if (requestedGuests > roomBaseCapacity + requestedExtraBeds) {
+      throw new Error(`room type '${originalRoomType.name}' has ${requestedGuests} guests, but this room setup accommodates ${roomBaseCapacity + requestedExtraBeds} guests`);
+    }
     if (originalRoomType.max_capacity > 0 && requestedGuests > originalRoomType.max_capacity) {
       throw new Error(`room type '${originalRoomType.name}' has maximum capacity of ${originalRoomType.max_capacity} guests, but ${requestedGuests} guests were requested for this room`);
     }
 
     requestedRoomTypes[rtReq.room_type_id] = originalRoomType;
 
-    if (rtReq.extra_adult_bed) {
-      extraBedsAvailable += parseInt(originalRoomType.extra_bed_adult || 0);
-    }
-    if (rtReq.extra_child_bed) {
-      extraBedsAvailable += parseInt(originalRoomType.extra_bed_child || 0);
-    }
+    extraBedsRequested += countRequestedExtraBeds(rtReq);
   }
 
   // Check if enough beds are available
   if (totalBeds < totalGuests) {
-    if (totalBeds + extraBedsAvailable < totalGuests) {
+    if (totalBeds + extraBedsRequested < totalGuests) {
       throw new Error('not enough beds for the number of guests');
     }
   }
@@ -396,22 +445,24 @@ export function calculateHotelCostLogic(hotel, request, markupGroup, markups, ma
     return Number.isNaN(date.getTime()) ? null : date;
   };
   const requestedRoomsForAllotment = Math.max(0, numSingleRooms + numDoubleRooms);
-  const appendSeasonSegment = (roomTypeForDay, markedUpRoomType, rtReq, currentDate, dayCost) => {
-    const last = seasonSegments[seasonSegments.length - 1];
-    const segmentKey = `${rtReq.room_type_id || roomTypeForDay.id}-${roomTypeForDay.id}`;
+  const appendSeasonSegment = (roomTypeForDay, markedUpRoomType, rtReq, currentDate, dayCost, roomIndex) => {
+    const segmentKey = `${roomIndex}-${rtReq.room_type_id || roomTypeForDay.id}-${roomTypeForDay.id}`;
     const nextCheckout = addDays(currentDate, 1);
     const allotment = parseInt(roomTypeForDay.allotment || 0, 10) || 0;
     const bookingRemark = allotment > 0 && requestedRoomsForAllotment <= allotment
       ? 'Room Inside Allotment'
       : 'Room Extra Allotment';
 
-    if (last && last.segment_key === segmentKey && last.to_date === toISODate(currentDate)) {
-      last.to_date = toISODate(nextCheckout);
-      last.nights += 1;
-      last.base_cost += dayCost;
-      last.final_cost += dayCost;
+    const existingSegment = seasonSegments.find(
+      (segment) => segment.segment_key === segmentKey && segment.to_date === toISODate(currentDate)
+    );
+    if (existingSegment) {
+      existingSegment.to_date = toISODate(nextCheckout);
+      existingSegment.nights += 1;
+      existingSegment.base_cost += dayCost;
+      existingSegment.final_cost += dayCost;
       if (bookingRemark === 'Room Extra Allotment') {
-        last.booking_remark = bookingRemark;
+        existingSegment.booking_remark = bookingRemark;
       }
       return;
     }
@@ -436,7 +487,7 @@ export function calculateHotelCostLogic(hotel, request, markupGroup, markups, ma
   // Day by day cost calculation
   let currentDate = new Date(startDate.getTime());
   while (currentDate < endDate) {
-    for (const rtReq of roomTypesReq) {
+    for (const [roomIndex, rtReq] of roomTypesReq.entries()) {
       const originalRT = requestedRoomTypes[rtReq.room_type_id];
       const matchingRTs = allRoomTypesByName[originalRT.name] || [];
 
@@ -455,17 +506,17 @@ export function calculateHotelCostLogic(hotel, request, markupGroup, markups, ma
       // Apply markup
       const markedUpRoomType = calculateMarkupRoomType(roomTypeForDay, markupGroup, markups);
       let dayCost = 0;
+      const roomKind = roomKindByIndex[roomIndex];
 
-      if (parseInt(rtReq.adults) === 1 && numSingleRooms > 0) {
-        dayCost += parseFloat(markedUpRoomType.single_price) * numSingleRooms;
-      }
-      if (parseInt(rtReq.adults) >= 2 && numDoubleRooms > 0) {
-        dayCost += parseFloat(markedUpRoomType.double_price) * numDoubleRooms;
+      if (roomKind === 'single') {
+        dayCost += parseFloat(markedUpRoomType.single_price || 0);
+      } else {
+        dayCost += parseFloat(markedUpRoomType.double_price || 0);
       }
 
       if (dayCost > 0) {
         finalCost += dayCost;
-        appendSeasonSegment(roomTypeForDay, markedUpRoomType, rtReq, currentDate, dayCost);
+        appendSeasonSegment(roomTypeForDay, markedUpRoomType, rtReq, currentDate, dayCost, roomIndex);
       }
     }
     currentDate.setDate(currentDate.getDate() + 1);
