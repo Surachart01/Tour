@@ -4,7 +4,17 @@
 set -e
 
 # Default backend URL if not provided
-BACKEND_URL="${BACKEND_URL:-http://localhost:8081}"
+BACKEND_URL="${BACKEND_URL:-https://gracious-trust-production-cc0c.up.railway.app}"
+
+# Browsers block HTTPS pages from calling public HTTP APIs. Keep localhost
+# unchanged for local development, but upgrade public Railway/custom domains.
+case "$BACKEND_URL" in
+  http://localhost*|http://127.0.0.1*|http://0.0.0.0*)
+    ;;
+  http://*)
+    BACKEND_URL="https://${BACKEND_URL#http://}"
+    ;;
+esac
 
 echo ">>> Injecting API endpoint: ${BACKEND_URL}"
 

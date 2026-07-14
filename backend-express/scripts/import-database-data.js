@@ -29,6 +29,53 @@ function deserializeRow(row) {
   return result;
 }
 
+function orderTablesByDependencies(tables) {
+  const tableModels = new Set(tables.map((table) => table.model));
+  const modelMeta = new Map(
+    Prisma.dmmf.datamodel.models.map((model) => [model.name, model])
+  );
+  const dependencies = new Map();
+
+  for (const table of tables) {
+    const model = modelMeta.get(table.model);
+    const deps = new Set();
+
+    for (const field of model?.fields || []) {
+      if (
+        field.kind === "object" &&
+        field.relationFromFields?.length &&
+        tableModels.has(field.type) &&
+        field.type !== table.model
+      ) {
+        deps.add(field.type);
+      }
+    }
+
+    dependencies.set(table.model, deps);
+  }
+
+  const ordered = [];
+  const remaining = new Map(tables.map((table) => [table.model, table]));
+
+  while (remaining.size) {
+    const ready = [...remaining.values()].find((table) =>
+      [...(dependencies.get(table.model) || [])].every((dep) => !remaining.has(dep))
+    );
+
+    if (!ready) {
+      const [first] = remaining.values();
+      ordered.push(first);
+      remaining.delete(first.model);
+      continue;
+    }
+
+    ordered.push(ready);
+    remaining.delete(ready.model);
+  }
+
+  return ordered;
+}
+
 async function main() {
   const manifestArg = process.argv[2];
   if (!manifestArg) {
@@ -39,7 +86,9 @@ async function main() {
   const exportDir = path.dirname(manifestPath);
   const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
 
-  for (const table of manifest.tables) {
+  const orderedTables = orderTablesByDependencies(manifest.tables);
+
+  for (const table of orderedTables) {
     const clientKey = toClientKey(table.model);
     if (!prisma[clientKey]?.upsert) {
       console.warn(`Skipping ${table.model}: Prisma delegate not found`);
