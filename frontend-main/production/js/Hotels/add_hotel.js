@@ -164,6 +164,56 @@ function installRoomTypeSeasonalityView() {
       color: transparent !important;
       text-shadow: none !important;
     }
+    #massEditRoomTypeModal .modal-dialog {
+      max-width: min(1280px, calc(100vw - 48px));
+    }
+    #dynamicRoomEntriesContainer {
+      display: block;
+      margin: 12px 0 0;
+    }
+    .mass-edit-room-table {
+      border: 1px solid #dfe7ef;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .mass-edit-room-header,
+    #dynamicRoomEntriesContainer .dynamic-entry {
+      display: grid;
+      grid-template-columns: minmax(220px, 1.7fr) repeat(3, minmax(95px, 0.8fr)) repeat(2, minmax(130px, 1fr));
+      gap: 0;
+      align-items: center;
+      margin: 0;
+    }
+    .mass-edit-room-header {
+      background: #f3f7fb;
+      color: #34495e;
+      font-weight: 700;
+      border-bottom: 1px solid #dfe7ef;
+    }
+    .mass-edit-room-header span,
+    #dynamicRoomEntriesContainer .dynamic-entry input {
+      min-width: 0;
+    }
+    .mass-edit-room-header span {
+      padding: 10px 12px;
+      border-right: 1px solid #dfe7ef;
+    }
+    .mass-edit-room-header span:last-child {
+      border-right: 0;
+    }
+    #dynamicRoomEntriesContainer .dynamic-entry {
+      border-bottom: 1px solid #edf1f5;
+      padding: 8px;
+      column-gap: 8px;
+    }
+    #dynamicRoomEntriesContainer .dynamic-entry:last-child {
+      border-bottom: 0;
+    }
+    #dynamicRoomEntriesContainer .dynamic-entry input {
+      height: 40px;
+      font-size: 14px;
+    }
   `;
   document.head.appendChild(style);
 
@@ -261,30 +311,20 @@ function loadSelectedRowsIntoModal() {
           foodChildAllinclusive = currentFoodChildAllinclusive;
           isFirstRow = false;
       } else {
-          if (
-              currentFromDate !== fromDate ||
-              currentToDate !== toDate ||
-              currentExtraBedAdult !== extraBedAdult ||
-              currentExtraBedChild !== extraBedChild ||
-              currentExtraBedShared !== extraBedShared ||
-              currentFoodAdultABF !== foodAdultABF ||
-              currentFoodAdultLunch !== foodAdultLunch ||
-              currentFoodAdultDinner !== foodAdultDinner ||
-              currentFoodAdultAllinclusive !== foodAdultAllinclusive ||
-              currentFoodChildABF !== foodChildABF ||
-              currentFoodChildLunch !== foodChildLunch ||
-              currentFoodChildDinner !== foodChildDinner ||
-              currentFoodChildAllinclusive !== foodChildAllinclusive
-          ) {
-              alert("Selected rows have different values. Please select rows with identical data.");
-              return;  // Prevent the modal from opening if values are different
-          }
+          if (currentFromDate !== fromDate) fromDate = "";
+          if (currentToDate !== toDate) toDate = "";
+          if (currentExtraBedAdult !== extraBedAdult) extraBedAdult = "";
+          if (currentExtraBedChild !== extraBedChild) extraBedChild = "";
+          if (currentExtraBedShared !== extraBedShared) extraBedShared = "";
+          if (currentFoodAdultABF !== foodAdultABF) foodAdultABF = "";
+          if (currentFoodAdultLunch !== foodAdultLunch) foodAdultLunch = "";
+          if (currentFoodAdultDinner !== foodAdultDinner) foodAdultDinner = "";
+          if (currentFoodAdultAllinclusive !== foodAdultAllinclusive) foodAdultAllinclusive = "";
+          if (currentFoodChildABF !== foodChildABF) foodChildABF = "";
+          if (currentFoodChildLunch !== foodChildLunch) foodChildLunch = "";
+          if (currentFoodChildDinner !== foodChildDinner) foodChildDinner = "";
+          if (currentFoodChildAllinclusive !== foodChildAllinclusive) foodChildAllinclusive = "";
       }
-  }
-
-  // If not identical, the modal should never open
-  if (!identical) {
-      return;
   }
 
   // ✅ Populate the modal inputs with the first row data after all checks pass
@@ -302,7 +342,18 @@ function loadSelectedRowsIntoModal() {
   document.getElementById("massEditFoodCostChildDinner").value = foodChildDinner;
   document.getElementById("massEditFoodCostChildAllinclusive").value = foodChildAllinclusive;
 
-  // Only populate the modal when identical values are confirmed
+  let roomEntriesHtml = `
+      <div class="mass-edit-room-table">
+          <div class="mass-edit-room-header">
+              <span>Room Type</span>
+              <span>Allotment</span>
+              <span>Cut-off</span>
+              <span>Max Capacity</span>
+              <span>Single</span>
+              <span>Double</span>
+          </div>
+  `;
+
   selectedRows.forEach((checkbox) => {
       const row = checkbox.closest("tr");
       const cells = row.getElementsByTagName("td");
@@ -310,36 +361,21 @@ function loadSelectedRowsIntoModal() {
       const nameAllotment = cells[3].innerHTML.split("<br>");
       const prices = cells[4].innerHTML.split("<br>");
 
-      dynamicContainer.innerHTML += `
-          <div class="form-row dynamic-entry">
-              <div class="form-group col-md-6">
-                  <label for="roomType" style="font-weight: bold">
-                      Room Type(Name,Allotment,Cut-Off,Max Capacity)
-                  </label>
-                  <div class="d-flex">
-                      <input type="text" class="form-control mr-2" value="${nameAllotment[0]?.replace("Name:", "").trim() || ""}" placeholder="Name" required>
-                      <input type="number" class="form-control mr-2" value="${nameAllotment[1]?.replace("Allotment:", "").trim() || ""}" placeholder="Allotment" required>
-                      <input type="number" class="form-control mr-2" value="${nameAllotment[2]?.replace("CutOff Days:", "").trim() || ""}" placeholder="Cut-Off" required>
-                      <input type="number" class="form-control" value="${nameAllotment[3]?.replace("Max Capacity:", "").trim() || "0"}" placeholder="Max Capacity" min="0">
-                  </div>
-              </div>
-              <div class="form-group col-md-6">
-                  <label for="singlePrice" style="font-weight: bold">
-                      Room Price (Single, Double)
-                  </label>
-                  <div class="d-flex">
-                      <input type="number" class="form-control mr-2" value="${prices[0]?.replace("Single:", "").trim() || ""}" placeholder="Single Price" required>
-                      <input type="number" class="form-control mr-2" value="${prices[1]?.replace("Double:", "").trim() || ""}" placeholder="Double Price" required>
-                  </div>
-              </div>
+      roomEntriesHtml += `
+          <div class="dynamic-entry">
+              <input type="text" class="form-control" value="${nameAllotment[0]?.replace("Name:", "").trim() || ""}" placeholder="Room Type" required>
+              <input type="number" class="form-control" value="${nameAllotment[1]?.replace("Allotment:", "").trim() || ""}" placeholder="Allotment" required>
+              <input type="number" class="form-control" value="${nameAllotment[2]?.replace("CutOff Days:", "").trim() || ""}" placeholder="Cut-off" required>
+              <input type="number" class="form-control" value="${nameAllotment[3]?.replace("Max Capacity:", "").trim() || "0"}" placeholder="Max Capacity" min="0">
+              <input type="number" class="form-control" value="${prices[0]?.replace("Single:", "").trim() || ""}" placeholder="Single" required>
+              <input type="number" class="form-control" value="${prices[1]?.replace("Double:", "").trim() || ""}" placeholder="Double" required>
           </div>
       `;
   });
+  roomEntriesHtml += "</div>";
+  dynamicContainer.innerHTML = roomEntriesHtml;
 
-  // Modal is opened here ONLY if all the conditions are passed
-  if (identical) {
-      $("#massEditRoomTypeModal").modal("show");
-  }
+  $("#massEditRoomTypeModal").modal("show");
 }
 
 function applyMassEdit() {
@@ -359,8 +395,10 @@ function applyMassEdit() {
   }
 
   // ✅ Static Values from the Modal
-  const fromDate = formatToDDMMYYYY(document.getElementById("massEditFromDate").value);
-  const toDate = formatToDDMMYYYY(document.getElementById("massEditToDate").value);
+  const fromDateInput = document.getElementById("massEditFromDate").value;
+  const toDateInput = document.getElementById("massEditToDate").value;
+  const fromDate = fromDateInput ? formatToDDMMYYYY(fromDateInput) : "";
+  const toDate = toDateInput ? formatToDDMMYYYY(toDateInput) : "";
   const extraBedAdult = document.getElementById("massEditExtraBedAdult").value;
   const extraBedChild = document.getElementById("massEditExtraBedChild").value;
   const extraBedShared = document.getElementById("massEditExtraBedShared").value;
@@ -373,7 +411,7 @@ function applyMassEdit() {
   const foodChildDinner = document.getElementById("massEditFoodCostChildDinner").value;
   const foodChildAllinclusive = document.getElementById("massEditFoodCostChildAllinclusive").value;
 
-  if (!validateDateRange(fromDate, toDate)) {
+  if ((fromDate || toDate) && (!fromDate || !toDate || !validateDateRange(fromDate, toDate))) {
     return;
   }
 
@@ -382,31 +420,47 @@ function applyMassEdit() {
       const row = checkbox.closest("tr");
       const cells = row.getElementsByTagName("td");
 
-      // Update static fields for all rows
-      cells[1].textContent = fromDate;
-      cells[2].textContent = toDate;
+      // Update shared fields only when the user enters a value in the mass edit modal.
+      if (fromDate) cells[1].textContent = fromDate;
+      if (toDate) cells[2].textContent = toDate;
+
+      const existingExtraBed = cells[5].innerHTML.split("<br>");
+      const existingFoodAdult = cells[6].innerHTML.split("<br>");
+      const existingFoodChild = cells[7].innerHTML.split("<br>");
+
+      const nextExtraBedAdult = extraBedAdult !== "" ? extraBedAdult : existingExtraBed[0]?.replace("Adult: ", "").trim() || "";
+      const nextExtraBedChild = extraBedChild !== "" ? extraBedChild : existingExtraBed[1]?.replace("Child: ", "").trim() || "";
+      const nextExtraBedShared = extraBedShared !== "" ? extraBedShared : existingExtraBed[2]?.replace("Shared: ", "").trim() || "";
+      const nextFoodAdultABF = foodAdultABF !== "" ? foodAdultABF : existingFoodAdult[0]?.replace("ABF: ", "").trim() || "";
+      const nextFoodAdultLunch = foodAdultLunch !== "" ? foodAdultLunch : existingFoodAdult[1]?.replace("Lunch: ", "").trim() || "";
+      const nextFoodAdultDinner = foodAdultDinner !== "" ? foodAdultDinner : existingFoodAdult[2]?.replace("Dinner: ", "").trim() || "";
+      const nextFoodAdultAllinclusive = foodAdultAllinclusive !== "" ? foodAdultAllinclusive : existingFoodAdult[3]?.replace("All Inclusive: ", "").trim() || "";
+      const nextFoodChildABF = foodChildABF !== "" ? foodChildABF : existingFoodChild[0]?.replace("ABF: ", "").trim() || "";
+      const nextFoodChildLunch = foodChildLunch !== "" ? foodChildLunch : existingFoodChild[1]?.replace("Lunch: ", "").trim() || "";
+      const nextFoodChildDinner = foodChildDinner !== "" ? foodChildDinner : existingFoodChild[2]?.replace("Dinner: ", "").trim() || "";
+      const nextFoodChildAllinclusive = foodChildAllinclusive !== "" ? foodChildAllinclusive : existingFoodChild[3]?.replace("All Inclusive: ", "").trim() || "";
 
       // ✅ Update Extra Bed Information
       cells[5].innerHTML = `
-          Adult: ${extraBedAdult}<br>
-          Child: ${extraBedChild}<br>
-          Shared: ${extraBedShared}
+          Adult: ${nextExtraBedAdult}<br>
+          Child: ${nextExtraBedChild}<br>
+          Shared: ${nextExtraBedShared}
       `;
 
       // ✅ Update Food Cost (Adult)
       cells[6].innerHTML = `
-          ABF: ${foodAdultABF}<br>
-          Lunch: ${foodAdultLunch}<br>
-          Dinner: ${foodAdultDinner}<br>
-          All Inclusive: ${foodAdultAllinclusive}
+          ABF: ${nextFoodAdultABF}<br>
+          Lunch: ${nextFoodAdultLunch}<br>
+          Dinner: ${nextFoodAdultDinner}<br>
+          All Inclusive: ${nextFoodAdultAllinclusive}
       `;
 
       // ✅ Update Food Cost (Child)
       cells[7].innerHTML = `
-          ABF: ${foodChildABF}<br>
-          Lunch: ${foodChildLunch}<br>
-          Dinner: ${foodChildDinner}<br>
-          All Inclusive: ${foodChildAllinclusive}
+          ABF: ${nextFoodChildABF}<br>
+          Lunch: ${nextFoodChildLunch}<br>
+          Dinner: ${nextFoodChildDinner}<br>
+          All Inclusive: ${nextFoodChildAllinclusive}
       `;
 
       // ✅ Dynamic Inputs - Room Entries
