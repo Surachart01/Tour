@@ -1,0 +1,552 @@
+[
+  {
+    "id": 261,
+    "tour_id": 5,
+    "start_date": "2026-11-01T00:00:00.000Z",
+    "end_date": "2026-12-21T00:00:00.000Z",
+    "single_room_price": "22750",
+    "double_room_price": "18500",
+    "triple_room_price": "18500",
+    "currency_id": 1
+  },
+  {
+    "id": 262,
+    "tour_id": 5,
+    "start_date": "2026-12-22T00:00:00.000Z",
+    "end_date": "2027-01-10T00:00:00.000Z",
+    "single_room_price": "26500",
+    "double_room_price": "20000",
+    "triple_room_price": "20000",
+    "currency_id": 1
+  },
+  {
+    "id": 263,
+    "tour_id": 5,
+    "start_date": "2027-01-11T00:00:00.000Z",
+    "end_date": "2027-10-31T00:00:00.000Z",
+    "single_room_price": "22750",
+    "double_room_price": "18500",
+    "triple_room_price": "18500",
+    "currency_id": 1
+  },
+  {
+    "id": 264,
+    "tour_id": 7,
+    "start_date": "2026-11-02T00:00:00.000Z",
+    "end_date": "2026-12-21T00:00:00.000Z",
+    "single_room_price": "29500",
+    "double_room_price": "21500",
+    "triple_room_price": "21000",
+    "currency_id": 1
+  },
+  {
+    "id": 265,
+    "tour_id": 7,
+    "start_date": "2026-12-22T00:00:00.000Z",
+    "end_date": "2027-01-10T00:00:00.000Z",
+    "single_room_price": "33000",
+    "double_room_price": "23250",
+    "triple_room_price": "22500",
+    "currency_id": 1
+  },
+  {
+    "id": 266,
+    "tour_id": 7,
+    "start_date": "2027-01-11T00:00:00.000Z",
+    "end_date": "2027-10-31T00:00:00.000Z",
+    "single_room_price": "29000",
+    "double_room_price": "21500",
+    "triple_room_price": "21000",
+    "currency_id": 1
+  },
+  {
+    "id": 267,
+    "tour_id": 26,
+    "start_date": "2026-11-01T00:00:00.000Z",
+    "end_date": "2027-10-31T00:00:00.000Z",
+    "single_room_price": "15000",
+    "double_room_price": "10000",
+    "triple_room_price": "10000",
+    "currency_id": 1
+  },
+  {
+    "id": 213,
+    "tour_id": 16,
+    "start_date": "2026-11-01T00:00:00.000Z",
+    "end_date": "2026-12-21T00:00:00.000Z",
+    "single_room_price": "17500",
+    "double_room_price": "14000",
+    "triple_room_price": "14000",
+    "currency_id": 1
+  },
+  {
+    "id": 214,
+    "tour_id": 16,
+    "start_date": "2026-12-22T00:00:00.000Z",
+    "end_date": "2027-01-10T00:00:00.000Z",
+    "single_room_price": "21000",
+    "double_room_price": "15500",
+    "triple_room_price": "15500",
+    "currency_id": 1
+  },
+  {
+    "id": 215,
+    "tour_id": 16,
+    "start_date": "2027-01-11T00:00:00.000Z",
+    "end_date": "2027-10-31T00:00:00.000Z",
+    "single_room_price": "17500",
+    "double_room_price": "14000",
+    "triple_room_price": "14000",
+    "currency_id": 1
+  },
+  {
+    "id": 216,
+    "tour_id": 6,
+    "start_date": "2026-11-02T00:00:00.000Z",
+    "end_date": "2026-12-21T00:00:00.000Z",
+    "single_room_price": "22000",
+    "double_room_price": "16000",
+    "triple_room_price": "15500",
+    "currency_id": 1
+  },
+  {
+    "id": 217,
+    "tour_id": 6,
+    "start_date": "2026-12-22T00:00:00.000Z",
+    "end_date": "2027-01-10T00:00:00.000Z",
+    "single_room_price": "24500",
+    "double_room_price": "17250",
+    "triple_room_price": "16500",
+    "currency_id": 1
+  },
+  {
+    "id": 218,
+    "tour_id": 6,
+    "start_date": "2027-01-11T00:00:00.000Z",
+    "end_date": "2027-10-31T00:00:00.000Z",
+    "single_room_price": "22000",
+    "double_room_price": "16000",
+    "triple_room_price": "15500",
+    "currency_id": 1
+  },
+  {
+    "id": 219,
+    "tour_id": 9,
+    "start_date": "2026-11-01T00:00:00.000Z",
+    "end_date": "2026-12-21T00:00:00.000Z",
+    "single_room_price": "25500",
+    "double_room_price": "21000",
+    "triple_room_price": "21000",
+    "currency_id": 1
+  },
+  {
+    "id": 220,
+    "tour_id": 9,
+    "start_date": "2026-12-22T00:00:00.000Z",
+    "end_date": "2027-01-10T00:00:00.000Z",
+    "single_room_price": "29000",
+    "double_room_price": "22500",
+    "triple_room_price": "22500",
+    "currency_id": 1
+  },
+  {
+    "id": 221,
+    "tour_id": 9,
+    "start_date": "2027-01-11T00:00:00.000Z",
+    "end_date": "2027-10-31T00:00:00.000Z",
+    "single_room_price": "25500",
+    "double_room_price": "21000",
+    "triple_room_price": "21000",
+    "currency_id": 1
+  },
+  {
+    "id": 222,
+    "tour_id": 24,
+    "start_date": "2026-11-01T00:00:00.000Z",
+    "end_date": "2026-12-21T00:00:00.000Z",
+    "single_room_price": "31000",
+    "double_room_price": "23500",
+    "triple_room_price": "22500",
+    "currency_id": 1
+  },
+  {
+    "id": 223,
+    "tour_id": 24,
+    "start_date": "2026-12-22T00:00:00.000Z",
+    "end_date": "2027-01-10T00:00:00.000Z",
+    "single_room_price": "33000",
+    "double_room_price": "24500",
+    "triple_room_price": "23500",
+    "currency_id": 1
+  },
+  {
+    "id": 224,
+    "tour_id": 24,
+    "start_date": "2027-01-11T00:00:00.000Z",
+    "end_date": "2027-10-31T00:00:00.000Z",
+    "single_room_price": "31000",
+    "double_room_price": "23500",
+    "triple_room_price": "22500",
+    "currency_id": 1
+  },
+  {
+    "id": 225,
+    "tour_id": 15,
+    "start_date": "2026-11-01T00:00:00.000Z",
+    "end_date": "2026-12-21T00:00:00.000Z",
+    "single_room_price": "30750",
+    "double_room_price": "25000",
+    "triple_room_price": "25000",
+    "currency_id": 1
+  },
+  {
+    "id": 226,
+    "tour_id": 15,
+    "start_date": "2026-12-22T00:00:00.000Z",
+    "end_date": "2027-01-10T00:00:00.000Z",
+    "single_room_price": "35000",
+    "double_room_price": "27000",
+    "triple_room_price": "27000",
+    "currency_id": 1
+  },
+  {
+    "id": 227,
+    "tour_id": 15,
+    "start_date": "2027-01-11T00:00:00.000Z",
+    "end_date": "2027-10-31T00:00:00.000Z",
+    "single_room_price": "30750",
+    "double_room_price": "25000",
+    "triple_room_price": "25000",
+    "currency_id": 1
+  },
+  {
+    "id": 228,
+    "tour_id": 20,
+    "start_date": "2026-11-01T00:00:00.000Z",
+    "end_date": "2026-12-21T00:00:00.000Z",
+    "single_room_price": "37500",
+    "double_room_price": "28000",
+    "triple_room_price": "27000",
+    "currency_id": 1
+  },
+  {
+    "id": 229,
+    "tour_id": 20,
+    "start_date": "2026-12-22T00:00:00.000Z",
+    "end_date": "2027-01-10T00:00:00.000Z",
+    "single_room_price": "40500",
+    "double_room_price": "29500",
+    "triple_room_price": "28500",
+    "currency_id": 1
+  },
+  {
+    "id": 230,
+    "tour_id": 20,
+    "start_date": "2027-01-11T00:00:00.000Z",
+    "end_date": "2027-10-31T00:00:00.000Z",
+    "single_room_price": "37500",
+    "double_room_price": "28000",
+    "triple_room_price": "27000",
+    "currency_id": 1
+  },
+  {
+    "id": 231,
+    "tour_id": 10,
+    "start_date": "2026-11-02T00:00:00.000Z",
+    "end_date": "2026-12-21T00:00:00.000Z",
+    "single_room_price": "20000",
+    "double_room_price": "16750",
+    "triple_room_price": "16750",
+    "currency_id": 1
+  },
+  {
+    "id": 232,
+    "tour_id": 10,
+    "start_date": "2026-12-22T00:00:00.000Z",
+    "end_date": "2027-01-10T00:00:00.000Z",
+    "single_room_price": "23000",
+    "double_room_price": "18000",
+    "triple_room_price": "18000",
+    "currency_id": 1
+  },
+  {
+    "id": 233,
+    "tour_id": 10,
+    "start_date": "2027-01-11T00:00:00.000Z",
+    "end_date": "2027-10-31T00:00:00.000Z",
+    "single_room_price": "20000",
+    "double_room_price": "16750",
+    "triple_room_price": "16750",
+    "currency_id": 1
+  },
+  {
+    "id": 234,
+    "tour_id": 11,
+    "start_date": "2026-11-02T00:00:00.000Z",
+    "end_date": "2026-12-21T00:00:00.000Z",
+    "single_room_price": "25000",
+    "double_room_price": "19000",
+    "triple_room_price": "18500",
+    "currency_id": 1
+  },
+  {
+    "id": 235,
+    "tour_id": 11,
+    "start_date": "2026-12-22T00:00:00.000Z",
+    "end_date": "2027-01-10T00:00:00.000Z",
+    "single_room_price": "27000",
+    "double_room_price": "20000",
+    "triple_room_price": "19500",
+    "currency_id": 1
+  },
+  {
+    "id": 236,
+    "tour_id": 11,
+    "start_date": "2027-01-11T00:00:00.000Z",
+    "end_date": "2027-10-31T00:00:00.000Z",
+    "single_room_price": "25000",
+    "double_room_price": "19000",
+    "triple_room_price": "18500",
+    "currency_id": 1
+  },
+  {
+    "id": 237,
+    "tour_id": 8,
+    "start_date": "2026-11-02T00:00:00.000Z",
+    "end_date": "2026-12-21T00:00:00.000Z",
+    "single_room_price": "27250",
+    "double_room_price": "22750",
+    "triple_room_price": "22750",
+    "currency_id": 1
+  },
+  {
+    "id": 238,
+    "tour_id": 8,
+    "start_date": "2026-12-22T00:00:00.000Z",
+    "end_date": "2027-01-10T00:00:00.000Z",
+    "single_room_price": "31500",
+    "double_room_price": "24500",
+    "triple_room_price": "24500",
+    "currency_id": 1
+  },
+  {
+    "id": 239,
+    "tour_id": 8,
+    "start_date": "2027-01-11T00:00:00.000Z",
+    "end_date": "2027-10-31T00:00:00.000Z",
+    "single_room_price": "27250",
+    "double_room_price": "22750",
+    "triple_room_price": "22750",
+    "currency_id": 1
+  },
+  {
+    "id": 240,
+    "tour_id": 17,
+    "start_date": "2026-11-02T00:00:00.000Z",
+    "end_date": "2026-12-21T00:00:00.000Z",
+    "single_room_price": "33500",
+    "double_room_price": "25500",
+    "triple_room_price": "25000",
+    "currency_id": 1
+  },
+  {
+    "id": 241,
+    "tour_id": 17,
+    "start_date": "2026-12-22T00:00:00.000Z",
+    "end_date": "2027-01-10T00:00:00.000Z",
+    "single_room_price": "36500",
+    "double_room_price": "27000",
+    "triple_room_price": "26000",
+    "currency_id": 1
+  },
+  {
+    "id": 242,
+    "tour_id": 17,
+    "start_date": "2027-01-11T00:00:00.000Z",
+    "end_date": "2027-10-31T00:00:00.000Z",
+    "single_room_price": "33500",
+    "double_room_price": "25500",
+    "triple_room_price": "25000",
+    "currency_id": 1
+  },
+  {
+    "id": 243,
+    "tour_id": 14,
+    "start_date": "2026-11-02T00:00:00.000Z",
+    "end_date": "2026-12-21T00:00:00.000Z",
+    "single_room_price": "9250",
+    "double_room_price": "7000",
+    "triple_room_price": "7000",
+    "currency_id": 1
+  },
+  {
+    "id": 244,
+    "tour_id": 14,
+    "start_date": "2026-12-22T00:00:00.000Z",
+    "end_date": "2027-01-10T00:00:00.000Z",
+    "single_room_price": "11500",
+    "double_room_price": "8000",
+    "triple_room_price": "8000",
+    "currency_id": 1
+  },
+  {
+    "id": 245,
+    "tour_id": 14,
+    "start_date": "2027-01-11T00:00:00.000Z",
+    "end_date": "2027-10-31T00:00:00.000Z",
+    "single_room_price": "9250",
+    "double_room_price": "7000",
+    "triple_room_price": "7000",
+    "currency_id": 1
+  },
+  {
+    "id": 246,
+    "tour_id": 12,
+    "start_date": "2026-11-02T00:00:00.000Z",
+    "end_date": "2026-12-21T00:00:00.000Z",
+    "single_room_price": "12500",
+    "double_room_price": "8500",
+    "triple_room_price": "8000",
+    "currency_id": 1
+  },
+  {
+    "id": 247,
+    "tour_id": 12,
+    "start_date": "2026-12-22T00:00:00.000Z",
+    "end_date": "2027-01-10T00:00:00.000Z",
+    "single_room_price": "14000",
+    "double_room_price": "9500",
+    "triple_room_price": "9000",
+    "currency_id": 1
+  },
+  {
+    "id": 248,
+    "tour_id": 12,
+    "start_date": "2027-01-11T00:00:00.000Z",
+    "end_date": "2027-10-31T00:00:00.000Z",
+    "single_room_price": "12500",
+    "double_room_price": "8500",
+    "triple_room_price": "8000",
+    "currency_id": 1
+  },
+  {
+    "id": 249,
+    "tour_id": 18,
+    "start_date": "2026-11-02T00:00:00.000Z",
+    "end_date": "2026-12-21T00:00:00.000Z",
+    "single_room_price": "15000",
+    "double_room_price": "11500",
+    "triple_room_price": "11500",
+    "currency_id": 1
+  },
+  {
+    "id": 250,
+    "tour_id": 18,
+    "start_date": "2026-12-22T00:00:00.000Z",
+    "end_date": "2027-01-10T00:00:00.000Z",
+    "single_room_price": "18500",
+    "double_room_price": "13000",
+    "triple_room_price": "13000",
+    "currency_id": 1
+  },
+  {
+    "id": 251,
+    "tour_id": 18,
+    "start_date": "2027-01-11T00:00:00.000Z",
+    "end_date": "2027-10-31T00:00:00.000Z",
+    "single_room_price": "15000",
+    "double_room_price": "11500",
+    "triple_room_price": "11500",
+    "currency_id": 1
+  },
+  {
+    "id": 252,
+    "tour_id": 19,
+    "start_date": "2026-11-02T00:00:00.000Z",
+    "end_date": "2026-12-21T00:00:00.000Z",
+    "single_room_price": "19500",
+    "double_room_price": "13500",
+    "triple_room_price": "13000",
+    "currency_id": 1
+  },
+  {
+    "id": 253,
+    "tour_id": 19,
+    "start_date": "2026-12-22T00:00:00.000Z",
+    "end_date": "2027-01-10T00:00:00.000Z",
+    "single_room_price": "22000",
+    "double_room_price": "14750",
+    "triple_room_price": "14250",
+    "currency_id": 1
+  },
+  {
+    "id": 254,
+    "tour_id": 19,
+    "start_date": "2027-01-11T00:00:00.000Z",
+    "end_date": "2027-10-31T00:00:00.000Z",
+    "single_room_price": "19500",
+    "double_room_price": "13500",
+    "triple_room_price": "13000",
+    "currency_id": 1
+  },
+  {
+    "id": 255,
+    "tour_id": 22,
+    "start_date": "2026-11-02T00:00:00.000Z",
+    "end_date": "2026-12-21T00:00:00.000Z",
+    "single_room_price": "29500",
+    "double_room_price": "24000",
+    "triple_room_price": "24000",
+    "currency_id": 1
+  },
+  {
+    "id": 256,
+    "tour_id": 22,
+    "start_date": "2026-12-22T00:00:00.000Z",
+    "end_date": "2027-01-10T00:00:00.000Z",
+    "single_room_price": "34500",
+    "double_room_price": "26000",
+    "triple_room_price": "26000",
+    "currency_id": 1
+  },
+  {
+    "id": 257,
+    "tour_id": 22,
+    "start_date": "2027-01-11T00:00:00.000Z",
+    "end_date": "2027-10-31T00:00:00.000Z",
+    "single_room_price": "29500",
+    "double_room_price": "24000",
+    "triple_room_price": "24000",
+    "currency_id": 1
+  },
+  {
+    "id": 258,
+    "tour_id": 13,
+    "start_date": "2026-11-02T00:00:00.000Z",
+    "end_date": "2026-12-21T00:00:00.000Z",
+    "single_room_price": "37500",
+    "double_room_price": "27500",
+    "triple_room_price": "26500",
+    "currency_id": 1
+  },
+  {
+    "id": 259,
+    "tour_id": 13,
+    "start_date": "2026-12-22T00:00:00.000Z",
+    "end_date": "2027-01-10T00:00:00.000Z",
+    "single_room_price": "42000",
+    "double_room_price": "30000",
+    "triple_room_price": "29000",
+    "currency_id": 1
+  },
+  {
+    "id": 260,
+    "tour_id": 13,
+    "start_date": "2027-01-11T00:00:00.000Z",
+    "end_date": "2027-10-31T00:00:00.000Z",
+    "single_room_price": "37500",
+    "double_room_price": "27500",
+    "triple_room_price": "26500",
+    "currency_id": 1
+  }
+]

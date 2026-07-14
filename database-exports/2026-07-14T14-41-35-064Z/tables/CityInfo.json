@@ -1,0 +1,101 @@
+[
+  {
+    "id": 4,
+    "cityName": "Chon Buri - Pattaya",
+    "description": "Chon Buri è una rinomata località balneare della regione orientale, situata nei pressi di Bangkok. È celebre per Pattaya — una meta di di livello internazionale , la splendida isola di Koh Larn, il prestigioso Nong Nooch Tropical Garden, il Santuario della Verità (una meraviglia architettonica interamente scolpita nel legno) e la grande abbondanza di ristoranti che servono pesce e frutti di mare freschi.",
+    "highlights": "Isola Larn & Le spiagge di Pattaya,Il Giardino tropicale Nong Nooch,Il Santuario della Verita',Parco delle Tigre",
+    "bestTime": "Novembre  - Aprile (Miglior periodo da visitare)",
+    "createdAt": "2026-06-24T08:34:21.705Z",
+    "updatedAt": "2026-06-26T04:21:17.894Z"
+  },
+  {
+    "id": 2,
+    "cityName": "Chiang Mai",
+    "description": "Chiang Mai,destinazione culturale e turistica della Thailandia del Nord, è circondata da un complesso sistema montuoso. La città è ricca di siti storici della cultura Lanna, di centinaia di antichi templi – come il Wat Phra That Doi Suthep e il Wat Chedi Luang – e di attrazioni naturali come il Doi Inthanon, oltre a offrire specialità di street food locale e il mercato pedonale di Tha Pae.",
+    "highlights": "Tempio Phratad Doi Suthep,Parco Naziole di Doi Inthanon,Mercato notturno di Tha Pae,La festa di Yi Peng,Il Santuario degli Elefanti",
+    "bestTime": "Maggio - Marzo (Miglior periodo da visitare)",
+    "createdAt": "2026-06-24T08:34:21.171Z",
+    "updatedAt": "2026-06-26T07:23:25.636Z"
+  },
+  {
+    "id": 5,
+    "cityName": "Krabi",
+    "description": "Krabi, un paradiso sulla costa delle Andamane, è ricca di meraviglie naturali: dalle imponenti scogliere calcaree a picco sul mare, Ao Nang alla sabbia bianca e finissima di Railay Beach (meta di fama mondiale per l'arrampicata su roccia) e le isole spettacolari come gli arcipelaghi di Phi Phi e Hong, senza dimenticare le attrazioni dell'entroterra come la piscina di Smeraldo e la cascata di acqua termale.",
+    "highlights": "Le spiagge di Railay e Ao Nang, La piscina di Smeraldo e sorgenti termali, Isole Phi Phi e Koh Hong, Arrampicata su roccia, Tempio della Grotta della Tigre",
+    "bestTime": "Novembre - Aprile  (Miglior periodo da visitare )",
+    "createdAt": "2026-06-24T08:34:21.997Z",
+    "updatedAt": "2026-07-06T05:07:07.115Z"
+  },
+  {
+    "id": 3,
+    "cityName": "Phuket",
+    "description": "Phuket, la più grande isola della Thailandia — spesso definita la \"Perla delle Andamane\" — è rinomata in tutto il mondo per le sue spiagge incontaminate di sabbia bianca e le acque azzurre e cristalline. Vanta inoltre un centro storico caratterizzato dalla peculiare architettura sino-portoghese, il celebre punto panoramico di Capo Promthep per ammirare il tramonto e una tradizione culinaria locale riconosciuta dall'UNESCO.",
+    "highlights": "Cape Promthep, spiagge di Patong,Kata e Karon, centro storico sino-portoghese, Wat Chalong e Il Grande Buddha di Phuket, Phi Phi/Isola Simila,Le Isole di Surin,Isola di James Bond",
+    "bestTime": "Novembre - Aprile (Miglior periodo da visitare)",
+    "createdAt": "2026-06-24T08:34:21.477Z",
+    "updatedAt": "2026-07-08T05:55:28.853Z"
+  },
+  {
+    "id": 13,
+    "cityName": "Chiang Rai",
+    "description": "Chiang Rai è la città principale dell'estremo nord della Thailandia. Fondata nel 1262 come prima capitale del Regno Lanna, è oggi una destinazione dal ritmo rilassato, celebre per la sua vicinanza al Triangolo d'Oro (confine tra Thailandia, Laos e Myanmar) e per la sua architettura spettacolare.Noto per il Tempio Bianco e il Tempio Blu.",
+    "highlights": "Wat Rong Khun (Tempio Bianco),Il mitico Triangolo D'oro, Il Wat Rong Suea Ten( il tempio blu),Chiang Rai Night Bazaar per assaggiare lo street food locale del nord.",
+    "bestTime": "Novembre  - Aprile (Miglior periodo da visitare)",
+    "createdAt": "2026-06-25T09:06:46.593Z",
+    "updatedAt": "2026-06-25T09:06:46.593Z"
+  },
+  {
+    "id": 14,
+    "cityName": "Trat - Koh Chang + Koh Kood + Koh Mak",
+    "description": "Trat è una città situata nella parte orientale della Thailandia, vicino al confine con la Cambogia. Questa città costiera è famosa per i suoi mercati del pesce e per la sua cucina tradizionale di mare. La città è anche un importante centro di traghettamento per alcune delle più belle isole della Thailandia, come Ko Chang, Ko Mak e Ko Kood.Isola di Ko Chang - e' la terza più grande della  Thailandia . La spiaggia di sabbia bianca e morbida, l'acqua cristallina e il clima tropicale creano un'atmosfera paradisiaca. Un luogo ideale per rilassarsi, fare snorkeling o immersioni subacquee.Koh Kood è una delle isole più belle e meno sviluppate della Thailandia, con spiagge mozzafiato, acque cristalline e un'atmosfera tranquilla perfetta per il relax.Koh Mak  è una piccola  nota per la sua atmosfera tranquilla e bucolica, con resort a bassa altezza e spiagge incontaminate. L'isola offre una varietà di attività come snorkeling, immersioni subacquee, pesca e visite turistiche, tutte all'interno del Parco Nazionale Marino. K",
+    "highlights": "White Sand beach,Kaibae beach, Lonely beach ,Night market,Cascata Klong Plu,",
+    "bestTime": "Novembre - Aprile (Miglior periodo da visitare)",
+    "createdAt": "2026-06-26T04:20:44.298Z",
+    "updatedAt": "2026-06-26T04:20:44.298Z"
+  },
+  {
+    "id": 15,
+    "cityName": "Kharnchanaburi",
+    "description": "La città di Kanchanaburi si trova vicino alla zona di confine con la Birmania. Non lontano da Bangkok.Questa città è apprezzata per il suo contesto relativamente naturale, i suoi templi e musei, ma soprattutto per la sua storia con il famoso ponte sul fiume Kwai(ferrovia della morte).Un posto meraviglioso per gli amanti della la nutura,storia e avventura.",
+    "highlights": "Il ponte sul fiume Kwai,la cascata di Erawan,Il percorso sul treno,Il santuario degli elefanti,escursione in zattera di bamboo",
+    "bestTime": "Settembre - Aprile e Luglio - Settembre  (Miglior periodo da visitare )",
+    "createdAt": "2026-06-26T04:30:22.124Z",
+    "updatedAt": "2026-06-26T04:33:35.248Z"
+  },
+  {
+    "id": 16,
+    "cityName": "Ayutthaya",
+    "description": "Ayutthaya è una delle città più importanti della Thailandia dal punto di vista storico e culturale. Situata a circa 80 chilometri a nord di Bangkok, fu la capitale del Regno del Siam per oltre quattro secoli, dal 1350 al 1767. Oggi è conosciuta soprattutto per il suo straordinario parco archeologico, dichiarato Patrimonio dell'Umanità dall'UNESCO, dove si possono ammirare le rovine di antichi templi, palazzi e statue di Buddha.",
+    "highlights": "Wat Mhathat,Wat Phra Si Sanphet , Wat Yai Chai Mongkol , wt Chaiwatthanaram",
+    "bestTime": "Novembre  - Maggio  (Miglior periodo da visitare)",
+    "createdAt": "2026-07-06T04:56:08.556Z",
+    "updatedAt": "2026-07-06T04:56:08.556Z"
+  },
+  {
+    "id": 17,
+    "cityName": "Sukhothai",
+    "description": "Sukhothai è considerata la prima capitale del Regno del Siam e rappresenta il luogo di nascita della cultura, dell'arte e dell'identità thailandese. Il suo nome significa \"Alba della Felicità\" e richiama il periodo di prosperità e pace che caratterizzò il regno tra il XIII e il XV secolo.\nSituata a circa 430 chilometri a nord di Bangkok, oggi Sukhothai è una delle destinazioni storiche più importanti della Thailandia. Il suo straordinario Parco Storico di Sukhothai, riconosciuto come Patrimonio dell'Umanità UNESCO nel 1991, conserva le rovine dell'antica capitale e testimonia la nascita della nazione thailandese.",
+    "highlights": "Wat Mahathat,Wat Sri Chum, Wat Sra Sri,",
+    "bestTime": "Novembre - Maggio (Miglior periodo da visitare )",
+    "createdAt": "2026-07-06T05:01:32.001Z",
+    "updatedAt": "2026-07-06T05:01:32.001Z"
+  },
+  {
+    "id": 1,
+    "cityName": "Bangkok ( Krunthep)",
+    "description": "Bangkok, la capitale della Thailandia, è un importante centro di sviluppo, commercio, cultura e turismo. È caratterizzata da magnifici monumenti storici – come il Grande Palazzo Reale e il Wat Phra Kaew – che si affiancano a moderni grattacieli, centri commerciali di livello internazionale, street food di fama mondiale e al vasto mercato del fine settimana di Chatuchak.Offre anche una vita notturna molto vibrante per tutti i gusti.",
+    "highlights": "Il Palazzo Reale  & Il tempio del Buddha di Smeraldo,Navigate sul fiume di Chaophraya,Mercato di Chatuchak,MBK & IconSiam,Chinatown,Khaosarn Road",
+    "bestTime": "Maggio - Febraio (Miglior periodo per visitare la Thailandia)",
+    "createdAt": "2026-06-24T08:34:20.659Z",
+    "updatedAt": "2026-07-08T05:58:36.704Z"
+  },
+  {
+    "id": 6,
+    "cityName": "Surat Thani - Kho Samui",
+    "description": "Surat Thani, una vasta provincia della Thailandia meridionale, è nota come la \"Città delle cento isole\". Ospita paradisi insulari di fama mondiale – come Koh Samui che e' la meta' piu' famosa.Koh Samui è la seconda isola più grande della Thailandia, dopo Phuket.La prima cosa che colpisce arrivando a Koh Samui è il paesaggio: spiagge di sabbia bianca, mare turchese, palme da cocco e colline ricoperte di foresta tropicale. L'interno dell'isola è montuoso e ospita cascate, sentieri nella giungla e numerosi punti panoramici.Koh Phangan e  Koh Tao – oltre a ricche attrazioni nell'entroterra, quali il Parco Nazionale di Khao Sok e la diga di Cheow Lan (spesso definita la \"Guilin della Thailandia\")",
+    "highlights": "Koh Samui (Chaweng Beach,Lamai Beach,Bophut Beach) Koh Phangan (Full Moon Party), Koh Tao (destinazione per immersioni di livello mondiale), Cheow Lan Dam (Guilin tailandese)",
+    "bestTime": "Aprile  - Settembre (Miglior periodo da visitare)",
+    "createdAt": "2026-06-24T08:34:22.251Z",
+    "updatedAt": "2026-07-06T09:04:15.157Z"
+  }
+]

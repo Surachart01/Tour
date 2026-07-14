@@ -15,4 +15,4 @@ RUN npx prisma generate
 
 EXPOSE 8081
 
-CMD ["node", "src/main.js"]
+CMD ["sh", "-c", "npx prisma db push && node src/main.js"]

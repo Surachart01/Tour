@@ -1,0 +1,194 @@
+[
+  {
+    "id": 1,
+    "city": "Bangkok",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 2,
+    "city": "Phuket",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 3,
+    "city": "Chiang Mai",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 4,
+    "city": "Koh Tao",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 5,
+    "city": "Krabi",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 6,
+    "city": "Koh Kood",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 7,
+    "city": "Koh Samui",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 8,
+    "city": "Ayutthaya",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 9,
+    "city": "Pattaya",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 10,
+    "city": "Koh Phangan",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 11,
+    "city": "Kanchanaburi",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 12,
+    "city": "Chiang Saen",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 13,
+    "city": "Hua Hin",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 14,
+    "city": "Koh Samed",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 15,
+    "city": "Koh Chang",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 16,
+    "city": "Amphawa",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 17,
+    "city": "Phi Phi Island",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 18,
+    "city": "Koh Yao Noi",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 19,
+    "city": "Koh Lipe",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 20,
+    "city": "Rayong",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 21,
+    "city": "Khao Lak",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 22,
+    "city": "Koh Lanta",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 23,
+    "city": "Chiang Rai",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 24,
+    "city": "Pai",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 25,
+    "city": "Ubon Ratchathani",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 26,
+    "city": "Surin",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 27,
+    "city": "Koh Kradan",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 28,
+    "city": "Khao Yai",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 29,
+    "city": "Mae Hong Son",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 30,
+    "city": "Sukhothai",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 31,
+    "city": "Kho Samui",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  },
+  {
+    "id": 32,
+    "city": "Kho Larn Pattaya",
+    "currency_code": "THB",
+    "currency_name": "Thai Baht"
+  }
+]
