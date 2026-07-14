@@ -109,8 +109,8 @@ function installRoomTypeSeasonalityView() {
     #roomTypesTable tbody tr {
       display: grid;
       grid-template-columns:
-        44px
         minmax(220px, 1.45fr)
+        44px
         minmax(120px, 0.72fr)
         minmax(120px, 0.72fr)
         minmax(140px, 0.9fr)
@@ -133,8 +133,8 @@ function installRoomTypeSeasonalityView() {
       white-space: normal;
       overflow-wrap: anywhere;
     }
-    #roomTypesTable th:nth-child(1), #roomTypesTable td:nth-child(1) { order: 1; justify-content: center; }
-    #roomTypesTable th:nth-child(4), #roomTypesTable td:nth-child(4) { order: 2; }
+    #roomTypesTable th:nth-child(4), #roomTypesTable td:nth-child(4) { order: 1; }
+    #roomTypesTable th:nth-child(1), #roomTypesTable td:nth-child(1) { order: 2; justify-content: center; }
     #roomTypesTable th:nth-child(2), #roomTypesTable td:nth-child(2) { order: 3; justify-content: center; }
     #roomTypesTable th:nth-child(3), #roomTypesTable td:nth-child(3) { order: 4; justify-content: center; }
     #roomTypesTable th:nth-child(5), #roomTypesTable td:nth-child(5) { order: 5; }
