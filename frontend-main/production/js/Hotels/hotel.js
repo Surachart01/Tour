@@ -19,6 +19,11 @@ document.addEventListener("DOMContentLoaded", function () {
     filterTable();
   });
   document.getElementById("filterCity").addEventListener("change", filterTable);
+  document.getElementById("filterRateSeason").addEventListener("change", function () {
+    annotateHotelsWithRateStatus();
+    filterTable();
+  });
+  document.getElementById("filterRateStatus").addEventListener("change", filterTable);
 
   // Add event listener for changing the number of rows per page
   document.getElementById("rowsSelect").addEventListener("change", function () {
@@ -34,6 +39,174 @@ let rowsPerPage = 25;
 let totalPages = 1;
 let hotelsData = [];
 let filteredHotelsData = [];
+let selectedRateSeasonStartYear = new Date().getFullYear();
+
+const RATE_STATUS_CONFIG = {
+  updated: {
+    label: "Updated",
+    className: "rate-status-updated",
+    rowClassName: "hotel-rate-updated",
+  },
+  review: {
+    label: "Needs Review",
+    className: "rate-status-review",
+    rowClassName: "hotel-rate-review",
+  },
+  pending: {
+    label: "Pending",
+    className: "rate-status-pending",
+    rowClassName: "hotel-rate-pending",
+  },
+};
+
+function parseDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+
+  const text = String(value).trim();
+  const dmy = text.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (dmy) {
+    const [, day, month, year] = dmy;
+    const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  const date = new Date(text);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function toUtcDay(date) {
+  return Math.floor(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()) / 86400000);
+}
+
+function getSeasonRange(startYear) {
+  const start = new Date(Date.UTC(startYear, 10, 1));
+  const end = new Date(Date.UTC(startYear + 1, 9, 31));
+  return {
+    start,
+    end,
+    startDay: toUtcDay(start),
+    endDay: toUtcDay(end),
+    label: `${startYear}/${startYear + 1}`,
+  };
+}
+
+function formatDateDisplay(value) {
+  const date = parseDate(value);
+  if (!date) return "-";
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function getNumericRate(value) {
+  const parsed = Number(String(value ?? "").replace(/,/g, "").trim());
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function hasRoomRate(roomType) {
+  return [
+    roomType.single_price,
+    roomType.double_price,
+  ].some((value) => getNumericRate(value) > 0);
+}
+
+function mergeIntervals(intervals) {
+  if (!intervals.length) return [];
+  const sorted = [...intervals].sort((a, b) => a.start - b.start);
+  const merged = [sorted[0]];
+
+  for (const interval of sorted.slice(1)) {
+    const last = merged[merged.length - 1];
+    if (interval.start <= last.end + 1) {
+      last.end = Math.max(last.end, interval.end);
+    } else {
+      merged.push({ ...interval });
+    }
+  }
+
+  return merged;
+}
+
+function computeRateStatus(hotel, seasonStartYear) {
+  const season = getSeasonRange(seasonStartYear);
+  const roomTypes = hotel.room_types || hotel.roomTypes || [];
+  const overlappingRows = [];
+  const pricedIntervals = [];
+  let latestRateUpdate = null;
+
+  roomTypes.forEach((roomType) => {
+    const start = parseDate(roomType.start_date || roomType.fromDate);
+    const end = parseDate(roomType.end_date || roomType.toDate);
+    if (!start || !end) return;
+
+    const startDay = toUtcDay(start);
+    const endDay = toUtcDay(end);
+    if (endDay < season.startDay || startDay > season.endDay) return;
+
+    overlappingRows.push(roomType);
+
+    const updatedAt = parseDate(roomType.updated_at || roomType.updatedAt);
+    if (updatedAt && (!latestRateUpdate || updatedAt > latestRateUpdate)) {
+      latestRateUpdate = updatedAt;
+    }
+
+    if (hasRoomRate(roomType)) {
+      pricedIntervals.push({
+        start: Math.max(startDay, season.startDay),
+        end: Math.min(endDay, season.endDay),
+      });
+    }
+  });
+
+  if (!latestRateUpdate) {
+    latestRateUpdate = parseDate(hotel.updated_at || hotel.updatedAt);
+  }
+
+  if (!overlappingRows.length) {
+    return {
+      key: "pending",
+      label: `Pending ${season.label}`,
+      season: season.label,
+      lastRateUpdate: latestRateUpdate,
+      coverageText: "No rates entered for this season",
+    };
+  }
+
+  const merged = mergeIntervals(pricedIntervals);
+  const coveredDays = merged.reduce((sum, interval) => sum + (interval.end - interval.start + 1), 0);
+  const totalDays = season.endDay - season.startDay + 1;
+  const coveragePercent = Math.min(100, Math.round((coveredDays / totalDays) * 100));
+
+  if (coveragePercent >= 100) {
+    return {
+      key: "updated",
+      label: `Updated ${season.label}`,
+      season: season.label,
+      lastRateUpdate: latestRateUpdate,
+      coverageText: "Full season covered",
+    };
+  }
+
+  return {
+    key: "review",
+    label: `Needs Review ${season.label}`,
+    season: season.label,
+    lastRateUpdate: latestRateUpdate,
+    coverageText: `${coveragePercent}% of season covered`,
+  };
+}
+
+function annotateHotelsWithRateStatus() {
+  const seasonSelect = document.getElementById("filterRateSeason");
+  selectedRateSeasonStartYear = parseInt(seasonSelect?.value, 10) || new Date().getFullYear();
+  hotelsData = hotelsData.map((hotel) => ({
+    ...hotel,
+    rateStatus: computeRateStatus(hotel, selectedRateSeasonStartYear),
+  }));
+}
 
 // Function to load hotels
 function loadHotels() {
@@ -74,7 +247,9 @@ function loadHotels() {
         return; // Exit if there are no hotels
       }
       hotelsData = hotels;
-      filteredHotelsData = hotels; // Initially, filtered data is the same as the original data
+      populateRateSeasonFilter(hotels);
+      annotateHotelsWithRateStatus();
+      filteredHotelsData = hotelsData; // Initially, filtered data is the same as the original data
       totalPages = Math.ceil(hotels.length / rowsPerPage) || 1;
       populateFilters(hotels);
       updateHotelsCount();
@@ -97,16 +272,23 @@ function renderTable() {
 
   rowsToShow.forEach((hotel) => {
     const row = document.createElement("tr");
+    const status = hotel.rateStatus || computeRateStatus(hotel, selectedRateSeasonStartYear);
+    const statusConfig = RATE_STATUS_CONFIG[status.key] || RATE_STATUS_CONFIG.pending;
 
-    // Check if roomTypeEmpty is true, apply color
-    if (hotel.empty) {
-      row.style.backgroundColor = "#FFD580";
-    }
+    row.classList.add(statusConfig.rowClassName);
 
     row.innerHTML = `
       <td>${hotel.display_order ?? 0}</td>
       <td>${hotel.name}</td>
       <td>${hotel.city}</td>
+      <td>${status.season}</td>
+      <td>
+        <span class="rate-status-badge ${statusConfig.className}" title="${status.coverageText}">
+          ${statusConfig.label}
+        </span>
+        <div class="rate-status-note">${status.coverageText}</div>
+      </td>
+      <td>${formatDateDisplay(status.lastRateUpdate)}</td>
       <td><button class="btn btn-primary btn-sm edit-btn" data-id="${hotel.id}"><i class="fa fa-edit"></i> Edit</button></td>
       <td><button class="btn btn-success btn-sm clone-btn" data-id="${hotel.id}"><i class="fa fa-copy"></i> Clone</button></td>
       <td><button class="btn btn-danger btn-sm delete-btn" data-id="${hotel.id}"><i class="fa fa-trash"></i> Delete</button></td>
@@ -142,6 +324,41 @@ function renderTable() {
       }
     });
   });
+}
+
+function populateRateSeasonFilter(dataList) {
+  const filterRateSeason = document.getElementById("filterRateSeason");
+  if (!filterRateSeason) return;
+
+  const selectedValue = filterRateSeason.value;
+  const currentYear = new Date().getFullYear();
+  const years = new Set([currentYear - 1, currentYear, currentYear + 1, currentYear + 2]);
+
+  dataList.forEach((hotel) => {
+    (hotel.room_types || hotel.roomTypes || []).forEach((roomType) => {
+      const start = parseDate(roomType.start_date || roomType.fromDate);
+      const end = parseDate(roomType.end_date || roomType.toDate);
+      [start, end].forEach((date) => {
+        if (date) {
+          const year = date.getUTCMonth() >= 10 ? date.getUTCFullYear() : date.getUTCFullYear() - 1;
+          years.add(year);
+        }
+      });
+    });
+  });
+
+  const sortedYears = [...years].sort((a, b) => b - a);
+  filterRateSeason.innerHTML = sortedYears
+    .map((year) => `<option value="${year}">${year}/${year + 1}</option>`)
+    .join("");
+
+  if (selectedValue && sortedYears.includes(parseInt(selectedValue, 10))) {
+    filterRateSeason.value = selectedValue;
+  } else if (sortedYears.includes(currentYear)) {
+    filterRateSeason.value = String(currentYear);
+  } else {
+    filterRateSeason.value = String(sortedYears[0]);
+  }
 }
 
 // Update pagination buttons based on current page
@@ -256,6 +473,7 @@ function populateCities(country) {
 function filterTable() {
   const selectedCountry = document.getElementById("filterCountry").value;
   const selectedCity = document.getElementById("filterCity").value;
+  const selectedRateStatus = document.getElementById("filterRateStatus").value;
   const searchValue = document.getElementById("searchBox").value.toLowerCase();
 
   // Filter the hotelsData based on the search values
@@ -266,14 +484,19 @@ function filterTable() {
     // City filter
     const matchCity = selectedCity === "All" || hotel.city === selectedCity;
 
+    // Rate status filter
+    const status = hotel.rateStatus || computeRateStatus(hotel, selectedRateSeasonStartYear);
+    const matchRateStatus = selectedRateStatus === "All" || status.key === selectedRateStatus;
+
     // Keyword filter
     const matchKeyword = !searchValue ||
       hotel.name.toLowerCase().includes(searchValue) ||
       hotel.city.toLowerCase().includes(searchValue) ||
       (hotel.address || "").toLowerCase().includes(searchValue) ||
-      (hotel.notes || "").toLowerCase().includes(searchValue);
+      (hotel.notes || "").toLowerCase().includes(searchValue) ||
+      (status.label || "").toLowerCase().includes(searchValue);
 
-    return matchCountry && matchCity && matchKeyword;
+    return matchCountry && matchCity && matchRateStatus && matchKeyword;
   });
 
   currentPage = 1; // Reset to the first page on search

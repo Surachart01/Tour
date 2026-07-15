@@ -1930,7 +1930,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const roomTypes = [];
         const rows = document.querySelectorAll("#roomTypesTable tbody tr");
 
-        rows.forEach((row) => {
+        rows.forEach((row, index) => {
           const cells = row.getElementsByTagName("td");
 
           // Extract room type details
@@ -1941,14 +1941,23 @@ document.addEventListener("DOMContentLoaded", function () {
           const cutoffDays = parseIntOrDefault(cutoffLine.replace(/cut.*off.*days\s*:\s*/i, "").trim());
           const maxCapacity = parseIntOrDefault(maxCapacityLine.replace(/max.*capacity\s*:\s*/i, "").trim());
 
+          const roomTypeName = nameLine.replace("", "").trim();
           const startDateISO = convertToISODate(cells[1].textContent.trim());
           const endDateISO = convertToISODate(cells[2].textContent.trim());
+          const startDate = new Date(startDateISO);
+          const endDate = new Date(endDateISO);
+
+          if (!roomTypeName || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+            throw new Error(
+              `Room type row ${index + 1}: Room Type, From date, and To date are required.`
+            );
+          }
 
           const roomType = {
             id: parseInt(row.getAttribute("data-room-type-id") || "0", 10),
-            name: nameLine.replace("", "").trim(),
-            start_date: new Date(startDateISO).toISOString(),
-            end_date: new Date(endDateISO).toISOString(),
+            name: roomTypeName,
+            start_date: startDate.toISOString(),
+            end_date: endDate.toISOString(),
             single_price: parseFloatOrDefault(
               cells[4].innerText.split("\n")[0].replace("Single: ", "").trim()
             ),
@@ -2008,6 +2017,16 @@ document.addEventListener("DOMContentLoaded", function () {
         return roomTypes;
       }
 
+      let roomTypes = [];
+      let promotions = [];
+      try {
+        roomTypes = getRoomTypesFromTable();
+        promotions = getPromotionsFromTable();
+      } catch (error) {
+        alert(error.message);
+        return;
+      }
+
       const hotelData = {
         name,
         display_order: displayOrder,
@@ -2024,12 +2043,12 @@ document.addEventListener("DOMContentLoaded", function () {
           new_year_dinner_fee: newYear,
           currency_id: 4, // Assuming THB as the currency
         },
-        room_types: getRoomTypesFromTable(),
-        promotions: getPromotionsFromTable(),
+        room_types: roomTypes,
+        promotions,
       };
 
-      console.log(getRoomTypesFromTable());
-      console.log(getPromotionsFromTable());
+      console.log(roomTypes);
+      console.log(promotions);
       console.log("Hotel Data being sent to backend:", hotelData);
       // Send the hotel data to the backend
       fetch(`${Endpoint}/api/v1/hotels`, {

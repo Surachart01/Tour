@@ -1104,9 +1104,20 @@ document.addEventListener("DOMContentLoaded", function () {
     .addEventListener("submit", function (event) {
       event.preventDefault();
 
+      let roomTypes = [];
+      let promotions = [];
+      try {
+        roomTypes = getRoomTypesFromTable();
+        promotions = getPromotionsFromTable();
+      } catch (error) {
+        alert(error.message);
+        return;
+      }
+
       const updatedHotelData = {
         name: document.getElementById("hotelName").value,
         display_order: parseInt(document.getElementById("displayOrder").value) || 0,
+        country: document.getElementById("country").value,
         city: document.getElementById("hotelLocation").value,
         address: document.getElementById("hotelAddress").value,
         fees: {
@@ -1124,8 +1135,8 @@ document.addEventListener("DOMContentLoaded", function () {
         },
         notes: document.getElementById("hotelnotesforagent").value,
         contacts: getContactsFromTable(),
-        room_types: getRoomTypesFromTable(),
-        promotions: getPromotionsFromTable(),
+        room_types: roomTypes,
+        promotions,
       };
 
       const isCloneMode = new URLSearchParams(window.location.search).get("clone") === "true";
@@ -1652,7 +1663,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const roomTypes = [];
     const rows = document.querySelectorAll("#roomTypesTable tbody tr");
 
-    rows.forEach((row) => {
+    rows.forEach((row, index) => {
       const cells = row.getElementsByTagName("td");
 
       // Retrieve room type ID from a data attribute or elsewhere as appropriate
@@ -1686,14 +1697,23 @@ document.addEventListener("DOMContentLoaded", function () {
         return isNaN(parsed) ? defaultValue : parsed;
       };
 
+      const roomTypeName = nameLine.replace("Name: ", "").trim();
       const startDateISO = convertToISODate(cells[1].textContent.trim());
       const endDateISO = convertToISODate(cells[2].textContent.trim());
+      const startDate = new Date(startDateISO);
+      const endDate = new Date(endDateISO);
+
+      if (!roomTypeName || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        throw new Error(
+          `Room type row ${index + 1}: Room Type, From date, and To date are required.`
+        );
+      }
 
       const roomType = {
         id: roomTypeId,
-        name: nameLine.replace("Name: ", "").trim(),
-        start_date: new Date(startDateISO).toISOString(),
-        end_date: new Date(endDateISO).toISOString(),
+        name: roomTypeName,
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
         single_price: parseOrDefault(
           cells[4].innerText.split("\n")[0].replace("Single: ", "").trim()
         ),

@@ -39,6 +39,186 @@ function normalizeHotelContacts(rawContacts) {
     });
 }
 
+function isBlank(value) {
+  return value === undefined || value === null || (typeof value === 'string' && value.trim() === '');
+}
+
+function validationError(message) {
+  const error = new Error(message);
+  error.statusCode = 400;
+  return error;
+}
+
+function textOrNull(value) {
+  if (isBlank(value)) return null;
+  const text = String(value).trim();
+  return text || null;
+}
+
+function textOrDefault(value, fallback = '') {
+  const text = textOrNull(value);
+  return text || fallback;
+}
+
+function requiredText(value, label) {
+  const text = textOrNull(value);
+  if (!text) throw validationError(`${label} is required.`);
+  return text;
+}
+
+function toNumber(value, fallback = 0) {
+  if (isBlank(value)) return fallback;
+  const parsed = Number(String(value).replace(/,/g, '').trim());
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function toNullableNumber(value) {
+  if (isBlank(value)) return null;
+  return toNumber(value, 0);
+}
+
+function toInt(value, fallback = 0) {
+  if (isBlank(value)) return fallback;
+  const parsed = parseInt(String(value).replace(/,/g, '').trim(), 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function toNullableInt(value) {
+  if (isBlank(value)) return null;
+  return toInt(value, 0);
+}
+
+function toBoolean(value, fallback = false) {
+  if (value === undefined || value === null || value === '') return fallback;
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value !== 0;
+  return ['true', 'yes', '1', 'enabled'].includes(String(value).trim().toLowerCase());
+}
+
+function toDateOrNull(value) {
+  if (isBlank(value)) return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+
+  const text = String(value).trim();
+  const dmy = text.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (dmy) {
+    const [, day, month, year] = dmy;
+    const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  const date = new Date(text);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function hasMeaningfulValue(value) {
+  if (isBlank(value)) return false;
+  if (typeof value === 'number') return value !== 0;
+  const text = String(value).replace(/,/g, '').trim();
+  return text !== '' && text !== '-' && text !== '0';
+}
+
+function hasRoomTypeContent(rt) {
+  if (!rt || typeof rt !== 'object') return false;
+  return [
+    rt.roomType, rt.name, rt.fromDate, rt.start_date, rt.toDate, rt.end_date,
+    rt.price, rt.single_price, rt.double_price, rt.extraBed, rt.extra_bed_adult,
+    rt.extra_bed_child, rt.extra_bed_shared, rt.foodCostAdult, rt.foodCostChild,
+    rt.foodAdultLunch, rt.foodAdultDinner, rt.foodChildLunch, rt.foodChildDinner,
+    rt.foodAdultAllinclusive, rt.foodChildAllinclusive, rt.allotment, rt.currency_id
+  ].some(hasMeaningfulValue);
+}
+
+function normalizeRoomTypes(rawRoomTypes) {
+  return asArray(rawRoomTypes)
+    .map(rt => {
+      if (!rt || typeof rt !== 'object') return null;
+      const name = (rt.roomType ?? rt.name ?? '').toString().trim();
+      const startDate = toDateOrNull(rt.fromDate ?? rt.start_date);
+      const endDate = toDateOrNull(rt.toDate ?? rt.end_date);
+
+      if (!hasRoomTypeContent(rt)) return null;
+      if (!name || !startDate || !endDate) {
+        throw validationError('Please check room type rows. Each row needs a room name, from date, and to date.');
+      }
+
+      return {
+        name,
+        start_date: startDate,
+        end_date: endDate,
+        allotment: toInt(rt.allotment),
+        single_price: rt.price !== undefined ? toNumber(rt.price) : toNumber(rt.single_price),
+        double_price: rt.price !== undefined ? toNumber(rt.price) : toNumber(rt.double_price),
+        extra_bed_adult: rt.extraBed !== undefined ? toNumber(rt.extraBed) : toNumber(rt.extra_bed_adult),
+        extra_bed_child: rt.extraBed !== undefined ? toNumber(rt.extraBed) : toNumber(rt.extra_bed_child),
+        extra_bed_shared: rt.extraBed !== undefined ? toNumber(rt.extraBed) : toNumber(rt.extra_bed_shared),
+        food_adult_abf: rt.foodCostAdult !== undefined ? toNumber(rt.foodCostAdult) : toNumber(rt.food_adult_abf),
+        food_child_abf: rt.foodCostChild !== undefined ? toNumber(rt.foodCostChild) : toNumber(rt.food_child_abf),
+        food_adult_lunch: rt.foodAdultLunch !== undefined ? toNumber(rt.foodAdultLunch) : toNumber(rt.food_adult_lunch),
+        food_adult_dinner: rt.foodAdultDinner !== undefined ? toNumber(rt.foodAdultDinner) : toNumber(rt.food_adult_dinner),
+        food_child_lunch: rt.foodChildLunch !== undefined ? toNumber(rt.foodChildLunch) : toNumber(rt.food_child_lunch),
+        food_child_dinner: rt.foodChildDinner !== undefined ? toNumber(rt.foodChildDinner) : toNumber(rt.food_child_dinner),
+        boarding_full_price: rt.foodAdultAllinclusive !== undefined
+          ? toNumber(rt.foodAdultAllinclusive)
+          : (rt.food_adult_all_inclusive !== undefined ? toNumber(rt.food_adult_all_inclusive) : toNumber(rt.boarding_full_price)),
+        boarding_half_price: rt.foodChildAllinclusive !== undefined
+          ? toNumber(rt.foodChildAllinclusive)
+          : (rt.food_child_all_inclusive !== undefined ? toNumber(rt.food_child_all_inclusive) : toNumber(rt.boarding_half_price)),
+        currency_id: toNullableInt(rt.currency_id)
+      };
+    })
+    .filter(Boolean);
+}
+
+function normalizeHotelFees(data) {
+  const fees = data.fees || {};
+  return {
+    late_checkout_fee: data.lateCheckoutAdd !== undefined ? toInt(data.lateCheckoutAdd) : toInt(fees.late_checkout_fee),
+    early_checkin_fee: data.earlyCheckinAdd !== undefined ? toInt(data.earlyCheckinAdd) : toInt(fees.early_checkin_fee),
+    late_checkout_21_fee: data.lateCheckout21Add !== undefined ? toInt(data.lateCheckout21Add) : toInt(fees.late_checkout_21_fee),
+    currency_id: toNullableInt(fees.currency_id),
+    christmas_dinner_fee: data.christmasDinner !== undefined ? toNullableNumber(data.christmasDinner) : toNullableNumber(fees.christmas_dinner_fee),
+    new_year_dinner_fee: data.newYearDinner !== undefined ? toNullableNumber(data.newYearDinner) : toNullableNumber(fees.new_year_dinner_fee)
+  };
+}
+
+function normalizeHotelPromotions(rawPromotions) {
+  return asArray(rawPromotions)
+    .filter(p => p && typeof p === 'object')
+    .filter(p => [
+      p.name, p.code, p.promotion_code, p.bookingFrom, p.booking_date_from,
+      p.bookingTo, p.booking_date_to, p.travelFrom, p.travel_date_from,
+      p.travelTo, p.travel_date_to, p.earlyBird, p.early_bird_days,
+      p.minNights, p.minimum_nights, p.discount, p.discount_amount,
+      p.freeMeals, p.free_meals_abf, p.free_meals_lunch, p.free_meals_dinner,
+      p.description
+    ].some(hasMeaningfulValue))
+    .map(p => {
+      const name = (p.name ?? '').toString().trim();
+      const discountAmount = p.discount !== undefined ? toNumber(p.discount) : toNumber(p.discount_amount);
+      return {
+        name: name || (p.code || p.promotion_code || 'Promotion').toString().trim(),
+        promotion_code: (p.code || p.promotion_code || '').toString().trim(),
+        booking_date_from: toDateOrNull(p.bookingFrom ?? p.booking_date_from),
+        booking_date_to: toDateOrNull(p.bookingTo ?? p.booking_date_to),
+        travel_date_from: toDateOrNull(p.travelFrom ?? p.travel_date_from),
+        travel_date_to: toDateOrNull(p.travelTo ?? p.travel_date_to),
+        is_early_bird: p.earlyBird !== undefined ? toInt(p.earlyBird) > 0 : toBoolean(p.is_early_bird),
+        early_bird_days: p.earlyBird !== undefined ? toNullableInt(p.earlyBird) : toNullableInt(p.early_bird_days),
+        minimum_nights: p.minNights !== undefined ? toNullableInt(p.minNights) : toNullableInt(p.minimum_nights),
+        enabled: toBoolean(p.enabled, true),
+        discount_amount: discountAmount,
+        discount_type: p.discount_type || '%',
+        free_meals_abf: p.freeMeals !== undefined ? (toBoolean(p.freeMeals) ? 1 : 0) : toInt(p.free_meals_abf),
+        free_meals_lunch: toInt(p.free_meals_lunch),
+        free_meals_dinner: toInt(p.free_meals_dinner),
+        valid_for_extra_beds: toBoolean(p.valid_for_extra_beds),
+        description: textOrNull(p.description)
+      };
+    })
+    .filter(p => p.name || p.promotion_code || p.discount_amount);
+}
+
 export function formatHotelResponse(hotel, markupGroup = '', markups = []) {
   if (!hotel) return null;
   const fees = hotel.hotel_fees && hotel.hotel_fees[0] ? hotel.hotel_fees[0] : {};
@@ -69,6 +249,8 @@ export function formatHotelResponse(hotel, markupGroup = '', markups = []) {
       toDate: finalRt.end_date ? finalRt.end_date.toISOString().split('T')[0] : '',
       start_date: finalRt.start_date,
       end_date: finalRt.end_date,
+      updated_at: finalRt.updated_at,
+      updatedAt: finalRt.updated_at,
       price: finalRt.single_price ? parseFloat(finalRt.single_price) : 0,
       extraBed: finalRt.extra_bed_adult ? parseFloat(finalRt.extra_bed_adult) : 0,
       foodCostAdult: finalRt.food_adult_abf ? parseFloat(finalRt.food_adult_abf) : 0,
@@ -138,6 +320,8 @@ export function formatHotelResponse(hotel, markupGroup = '', markups = []) {
     address: hotel.address,
     notes: hotel.notes,
     display_order: hotel.display_order,
+    updated_at: hotel.updated_at,
+    updatedAt: hotel.updated_at,
     order: (hotel.display_order === 0 || hotel.display_order === null || hotel.display_order === undefined) ? 100000 : hotel.display_order,
     user_id: hotel.user_id,
     earlyCheckinAdd: fees.early_checkin_fee ? parseFloat(fees.early_checkin_fee) : 0,
@@ -155,71 +339,33 @@ export function formatHotelResponse(hotel, markupGroup = '', markups = []) {
 export async function createHotel(req, res, next) {
   try {
     const data = req.body;
+    const name = requiredText(data.name, 'Hotel Name');
+    const city = requiredText(data.city, 'City');
     const contacts = normalizeHotelContacts(data.contacts ?? data.hotel_contacts);
+    const rawRoomTypes = asArray(data.roomTypes ?? data.room_types);
+    const roomTypes = normalizeRoomTypes(rawRoomTypes);
+    const promotions = normalizeHotelPromotions(data.promotions ?? data.hotel_promotions);
     const hotel = await prisma.hotels.create({
       data: cleanForPrisma({
-        name: data.name,
-        city: data.city,
-        notes: data.notes || null,
-        address: data.address || null,
-        country: data.country || "Thailand",
-        display_order: data.display_order !== undefined ? parseInt(data.display_order) : 0,
-        user_id: data.user_id ? parseInt(data.user_id) : null,
+        name,
+        city,
+        notes: textOrNull(data.notes),
+        address: textOrNull(data.address),
+        country: textOrDefault(data.country, 'Thailand'),
+        display_order: toInt(data.display_order),
+        user_id: toNullableInt(data.user_id),
         hotel_contacts: contacts.length ? { create: contacts } : undefined,
-        room_types: (data.roomTypes || data.room_types) ? {
-          create: (data.roomTypes || data.room_types).map(rt => ({
-            name: rt.roomType || rt.name,
-            start_date: new Date(rt.fromDate || rt.start_date),
-            end_date: new Date(rt.toDate || rt.end_date),
-            allotment: rt.allotment !== undefined ? parseInt(rt.allotment) : 0,
-            single_price: rt.price !== undefined ? parseFloat(rt.price) : (rt.single_price ? parseFloat(rt.single_price) : 0),
-            double_price: rt.price !== undefined ? parseFloat(rt.price) : (rt.double_price ? parseFloat(rt.double_price) : 0),
-            extra_bed_adult: rt.extraBed !== undefined ? parseFloat(rt.extraBed) : (rt.extra_bed_adult ? parseFloat(rt.extra_bed_adult) : 0),
-            extra_bed_child: rt.extraBed !== undefined ? parseFloat(rt.extraBed) : (rt.extra_bed_child ? parseFloat(rt.extra_bed_child) : 0),
-            extra_bed_shared: rt.extraBed !== undefined ? parseFloat(rt.extraBed) : (rt.extra_bed_shared ? parseFloat(rt.extra_bed_shared) : 0),
-            food_adult_abf: rt.foodCostAdult !== undefined ? parseFloat(rt.foodCostAdult) : (rt.food_adult_abf ? parseFloat(rt.food_adult_abf) : 0),
-            food_child_abf: rt.foodCostChild !== undefined ? parseFloat(rt.foodCostChild) : (rt.food_child_abf ? parseFloat(rt.food_child_abf) : 0),
-            food_adult_lunch: rt.foodAdultLunch !== undefined ? parseFloat(rt.foodAdultLunch) : (rt.food_adult_lunch ? parseFloat(rt.food_adult_lunch) : 0),
-            food_adult_dinner: rt.foodAdultDinner !== undefined ? parseFloat(rt.foodAdultDinner) : (rt.food_adult_dinner ? parseFloat(rt.food_adult_dinner) : 0),
-            food_child_lunch: rt.foodChildLunch !== undefined ? parseFloat(rt.foodChildLunch) : (rt.food_child_lunch ? parseFloat(rt.food_child_lunch) : 0),
-            food_child_dinner: rt.foodChildDinner !== undefined ? parseFloat(rt.foodChildDinner) : (rt.food_child_dinner ? parseFloat(rt.food_child_dinner) : 0),
-            boarding_full_price: rt.foodAdultAllinclusive !== undefined ? parseFloat(rt.foodAdultAllinclusive) : (rt.food_adult_all_inclusive !== undefined ? parseFloat(rt.food_adult_all_inclusive) : (rt.boarding_full_price ? parseFloat(rt.boarding_full_price) : 0)),
-            boarding_half_price: rt.foodChildAllinclusive !== undefined ? parseFloat(rt.foodChildAllinclusive) : (rt.food_child_all_inclusive !== undefined ? parseFloat(rt.food_child_all_inclusive) : (rt.boarding_half_price ? parseFloat(rt.boarding_half_price) : 0)),
-            currency_id: rt.currency_id !== undefined ? parseInt(rt.currency_id) : null
-          }))
-        } : undefined,
-        hotel_fees: (data.earlyCheckinAdd !== undefined || data.lateCheckoutAdd !== undefined || data.fees) ? {
-          create: [{
-            late_checkout_fee: data.lateCheckoutAdd !== undefined ? parseFloat(data.lateCheckoutAdd) : (data.fees?.late_checkout_fee || 0),
-            early_checkin_fee: data.earlyCheckinAdd !== undefined ? parseFloat(data.earlyCheckinAdd) : (data.fees?.early_checkin_fee || 0),
-            late_checkout_21_fee: data.lateCheckout21Add !== undefined ? parseFloat(data.lateCheckout21Add) : (data.fees?.late_checkout_21_fee || 0),
-            currency_id: data.fees?.currency_id,
-            christmas_dinner_fee: data.christmasDinner !== undefined ? data.christmasDinner : (data.fees?.christmas_dinner_fee || ""),
-            new_year_dinner_fee: data.newYearDinner !== undefined ? data.newYearDinner : (data.fees?.new_year_dinner_fee || "")
-          }]
-        } : undefined,
-        hotel_promotions: (data.promotions || data.hotel_promotions) ? {
-          create: (data.promotions || data.hotel_promotions).map(p => ({
-            name: p.name,
-            promotion_code: p.code || p.promotion_code || '',
-            booking_date_from: p.bookingFrom ? new Date(p.bookingFrom) : (p.booking_date_from ? new Date(p.booking_date_from) : null),
-            booking_date_to: p.bookingTo ? new Date(p.bookingTo) : (p.booking_date_to ? new Date(p.booking_date_to) : null),
-            travel_date_from: p.travelFrom ? new Date(p.travelFrom) : (p.travel_date_from ? new Date(p.travel_date_from) : null),
-            travel_date_to: p.travelTo ? new Date(p.travelTo) : (p.travel_date_to ? new Date(p.travel_date_to) : null),
-            is_early_bird: p.earlyBird !== undefined ? (parseInt(p.earlyBird) > 0) : (p.is_early_bird || false),
-            early_bird_days: p.earlyBird !== undefined ? parseInt(p.earlyBird) : (p.early_bird_days || null),
-            minimum_nights: p.minNights !== undefined ? parseInt(p.minNights) : (p.minimum_nights || null),
-            enabled: p.enabled !== undefined ? Boolean(p.enabled) : true,
-            discount_amount: p.discount !== undefined ? parseFloat(p.discount) : (p.discount_amount ? parseFloat(p.discount_amount) : 0),
-            discount_type: p.discount_type || '%',
-            free_meals_abf: p.freeMeals !== undefined ? (p.freeMeals ? 1 : 0) : (p.free_meals_abf || 0)
-          }))
-        } : undefined
+        room_types: roomTypes.length ? { create: roomTypes } : undefined,
+        hotel_fees: { create: [normalizeHotelFees(data)] },
+        hotel_promotions: promotions.length ? { create: promotions } : undefined
       }),
       include: { hotel_contacts: true, room_types: true, hotel_fees: true, hotel_promotions: true }
     });
     return res.status(201).json(formatHotelResponse(hotel));
-  } catch (err) { next(err); }
+  } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).send(err.message);
+    next(err);
+  }
 }
 
 export async function getHotel(req, res, next) {
@@ -356,7 +502,12 @@ export async function updateHotel(req, res, next) {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid hotel ID');
     const data = req.body;
+    const name = requiredText(data.name, 'Hotel Name');
+    const city = requiredText(data.city, 'City');
     const contacts = normalizeHotelContacts(data.contacts ?? data.hotel_contacts);
+    const rawRoomTypes = asArray(data.roomTypes ?? data.room_types);
+    const roomTypes = normalizeRoomTypes(rawRoomTypes);
+    const promotions = normalizeHotelPromotions(data.promotions ?? data.hotel_promotions);
 
     // Delete existing related data and recreate
     await prisma.$transaction(async (tx) => {
@@ -368,63 +519,17 @@ export async function updateHotel(req, res, next) {
       await tx.hotels.update({
         where: { id },
         data: cleanForPrisma({
-          name: data.name,
-          city: data.city,
-          notes: data.notes,
-          address: data.address,
-          country: data.country !== undefined ? data.country : undefined,
-          display_order: data.display_order !== undefined ? parseInt(data.display_order) : undefined,
-          user_id: data.user_id !== undefined ? (data.user_id ? parseInt(data.user_id) : null) : undefined,
+          name,
+          city,
+          notes: textOrNull(data.notes),
+          address: textOrNull(data.address),
+          country: textOrDefault(data.country, 'Thailand'),
+          display_order: toInt(data.display_order),
+          user_id: data.user_id !== undefined ? toNullableInt(data.user_id) : undefined,
           hotel_contacts: contacts.length ? { create: contacts } : undefined,
-          room_types: (data.roomTypes || data.room_types) ? {
-            create: (data.roomTypes || data.room_types).map(rt => ({
-              name: rt.roomType || rt.name,
-              start_date: new Date(rt.fromDate || rt.start_date),
-              end_date: new Date(rt.toDate || rt.end_date),
-              allotment: rt.allotment !== undefined ? parseInt(rt.allotment) : 0,
-              single_price: rt.price !== undefined ? parseFloat(rt.price) : (rt.single_price ? parseFloat(rt.single_price) : 0),
-              double_price: rt.price !== undefined ? parseFloat(rt.price) : (rt.double_price ? parseFloat(rt.double_price) : 0),
-              extra_bed_adult: rt.extraBed !== undefined ? parseFloat(rt.extraBed) : (rt.extra_bed_adult ? parseFloat(rt.extra_bed_adult) : 0),
-              extra_bed_child: rt.extraBed !== undefined ? parseFloat(rt.extraBed) : (rt.extra_bed_child ? parseFloat(rt.extra_bed_child) : 0),
-              extra_bed_shared: rt.extraBed !== undefined ? parseFloat(rt.extraBed) : (rt.extra_bed_shared ? parseFloat(rt.extra_bed_shared) : 0),
-              food_adult_abf: rt.foodCostAdult !== undefined ? parseFloat(rt.foodCostAdult) : (rt.food_adult_abf ? parseFloat(rt.food_adult_abf) : 0),
-              food_child_abf: rt.foodCostChild !== undefined ? parseFloat(rt.foodCostChild) : (rt.food_child_abf ? parseFloat(rt.food_child_abf) : 0),
-              food_adult_lunch: rt.foodAdultLunch !== undefined ? parseFloat(rt.foodAdultLunch) : (rt.food_adult_lunch ? parseFloat(rt.food_adult_lunch) : 0),
-              food_adult_dinner: rt.foodAdultDinner !== undefined ? parseFloat(rt.foodAdultDinner) : (rt.food_adult_dinner ? parseFloat(rt.food_adult_dinner) : 0),
-              food_child_lunch: rt.foodChildLunch !== undefined ? parseFloat(rt.foodChildLunch) : (rt.food_child_lunch ? parseFloat(rt.food_child_lunch) : 0),
-              food_child_dinner: rt.foodChildDinner !== undefined ? parseFloat(rt.foodChildDinner) : (rt.food_child_dinner ? parseFloat(rt.food_child_dinner) : 0),
-              boarding_full_price: rt.foodAdultAllinclusive !== undefined ? parseFloat(rt.foodAdultAllinclusive) : (rt.food_adult_all_inclusive !== undefined ? parseFloat(rt.food_adult_all_inclusive) : (rt.boarding_full_price ? parseFloat(rt.boarding_full_price) : 0)),
-              boarding_half_price: rt.foodChildAllinclusive !== undefined ? parseFloat(rt.foodChildAllinclusive) : (rt.food_child_all_inclusive !== undefined ? parseFloat(rt.food_child_all_inclusive) : (rt.boarding_half_price ? parseFloat(rt.boarding_half_price) : 0)),
-              currency_id: rt.currency_id !== undefined ? parseInt(rt.currency_id) : null
-            }))
-          } : undefined,
-          hotel_fees: (data.earlyCheckinAdd !== undefined || data.lateCheckoutAdd !== undefined || data.fees) ? {
-            create: [{
-              late_checkout_fee: data.lateCheckoutAdd !== undefined ? parseFloat(data.lateCheckoutAdd) : (data.fees?.late_checkout_fee || 0),
-              early_checkin_fee: data.earlyCheckinAdd !== undefined ? parseFloat(data.earlyCheckinAdd) : (data.fees?.early_checkin_fee || 0),
-              late_checkout_21_fee: data.lateCheckout21Add !== undefined ? parseFloat(data.lateCheckout21Add) : (data.fees?.late_checkout_21_fee || 0),
-              currency_id: data.fees?.currency_id,
-              christmas_dinner_fee: data.christmasDinner !== undefined ? data.christmasDinner : (data.fees?.christmas_dinner_fee || ""),
-              new_year_dinner_fee: data.newYearDinner !== undefined ? data.newYearDinner : (data.fees?.new_year_dinner_fee || "")
-            }]
-          } : undefined,
-          hotel_promotions: (data.promotions || data.hotel_promotions) ? {
-            create: (data.promotions || data.hotel_promotions).map(p => ({
-              name: p.name,
-              promotion_code: p.code || p.promotion_code || '',
-              booking_date_from: p.bookingFrom ? new Date(p.bookingFrom) : (p.booking_date_from ? new Date(p.booking_date_from) : null),
-              booking_date_to: p.bookingTo ? new Date(p.bookingTo) : (p.booking_date_to ? new Date(p.booking_date_to) : null),
-              travel_date_from: p.travelFrom ? new Date(p.travelFrom) : (p.travel_date_from ? new Date(p.travel_date_from) : null),
-              travel_date_to: p.travelTo ? new Date(p.travelTo) : (p.travel_date_to ? new Date(p.travel_date_to) : null),
-              is_early_bird: p.earlyBird !== undefined ? (parseInt(p.earlyBird) > 0) : (p.is_early_bird || false),
-              early_bird_days: p.earlyBird !== undefined ? parseInt(p.earlyBird) : (p.early_bird_days || null),
-              minimum_nights: p.minNights !== undefined ? parseInt(p.minNights) : (p.minimum_nights || null),
-              enabled: p.enabled !== undefined ? Boolean(p.enabled) : true,
-              discount_amount: p.discount !== undefined ? parseFloat(p.discount) : (p.discount_amount ? parseFloat(p.discount_amount) : 0),
-              discount_type: p.discount_type || '%',
-              free_meals_abf: p.freeMeals !== undefined ? (p.freeMeals ? 1 : 0) : (p.free_meals_abf || 0)
-            }))
-          } : undefined
+          room_types: roomTypes.length ? { create: roomTypes } : undefined,
+          hotel_fees: { create: [normalizeHotelFees(data)] },
+          hotel_promotions: promotions.length ? { create: promotions } : undefined
         })
       });
     }, {
@@ -438,7 +543,10 @@ export async function updateHotel(req, res, next) {
     });
 
     return res.json(formatHotelResponse(updatedHotel));
-  } catch (err) { next(err); }
+  } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).send(err.message);
+    next(err);
+  }
 }
 
 export async function deleteHotel(req, res, next) {
