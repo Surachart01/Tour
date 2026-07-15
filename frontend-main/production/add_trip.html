@@ -6360,22 +6360,22 @@
                   // Check if response is JSON before parsing
                   const contentType = response.headers.get("content-type");
                   if (contentType && contentType.includes("application/json")) {
+                    let errorData = {};
                     try {
-                      const errorData = await response.json();
-                      console.error("Error Response:", errorData);
-                      throw new Error(
-                        "Failed to save quotation: " +
-                          (errorData.message ||
-                            errorData.error ||
-                            "Unknown error")
-                      );
+                      errorData = await response.json();
                     } catch (parseError) {
                       console.error(
                         "Failed to parse JSON error response:",
                         parseError
                       );
-                      throw new Error("Failed to save quotation.");
                     }
+                    console.error("Error Response:", errorData);
+                    throw new Error(
+                      "Failed to save quotation: " +
+                        (errorData.message ||
+                          errorData.error ||
+                          "Unknown error")
+                    );
                   } else {
                     // Handle non-JSON error responses
                     const errorText = await response.text();

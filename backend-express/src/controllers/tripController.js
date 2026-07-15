@@ -19,6 +19,23 @@ function parseSafeInt(value, fallback = null) {
   return isNaN(parsed) ? fallback : parsed;
 }
 
+async function resolveAgentIdFromRequest(data, claims, client = prisma) {
+  const explicitAgentId = parseSafeInt(data.agent_id);
+  if (explicitAgentId) return explicitAgentId;
+  const claimAgentId = parseSafeInt(claims?.agent_id);
+  if (claimAgentId) return claimAgentId;
+
+  const agentName = (data.agent_name || '').toString().trim();
+  if (!agentName) return null;
+
+  const agent = await client.agent.findFirst({
+    where: { name: { equals: agentName, mode: 'insensitive' } },
+    select: { id: true }
+  });
+
+  return agent?.id || null;
+}
+
 /** Ensure tot is always 'SIC' or 'PVT' (DB check constraint). Defaults to 'SIC'. */
 function parseTot(value, fallback = 'SIC') {
   const v = (value || '').toString().trim().toUpperCase();
@@ -408,6 +425,7 @@ export async function createQuotation(req, res, next) {
   try {
     const data = req.body;
     const claims = req.user;
+    const resolvedAgentId = await resolveAgentIdFromRequest(data, claims);
 
     const trip_start_date = data.trip_start_date
       ? parseOptionalDate(data.trip_start_date)
@@ -595,7 +613,7 @@ export async function createQuotation(req, res, next) {
 
       const trip = await tx.trips.create({
         data: {
-          agent_id: parseSafeInt(data.agent_id, claims ? claims.agent_id : null),
+          agent_id: resolvedAgentId,
           client_name: data.client_name,
           client_phone: data.client_phone,
           client_email: data.client_email || null,
@@ -915,6 +933,9 @@ export async function updateQuotation(req, res, next) {
         return res.status(403).send('Forbidden: Access denied to this quotation');
       }
     }
+    const resolvedAgentId = (data.agent_id !== undefined || data.agent_name)
+      ? await resolveAgentIdFromRequest(data, claims)
+      : undefined;
 
     const trip_start_date = data.trip_start_date !== undefined
       ? parseOptionalDate(data.trip_start_date)
@@ -1147,7 +1168,7 @@ export async function updateQuotation(req, res, next) {
           number_of_adults: parseSafeInt(data.number_of_adults) || 1,
           number_of_kids: parseSafeInt(data.number_of_kids) || 0,
           booking_reference: data.booking_reference, file_reference: data.file_reference,
-          remarks: data.remarks, agent_id: data.agent_id ? parseSafeInt(data.agent_id) : undefined,
+          remarks: data.remarks, agent_id: resolvedAgentId,
           total_amount, discount_amount, final_amount,
           trip_start_date,
           client_email: data.client_email !== undefined ? data.client_email : undefined,
