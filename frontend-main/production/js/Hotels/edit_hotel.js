@@ -718,6 +718,28 @@ function sortPromotionTableRows() {
   rows.forEach((row) => tbody.appendChild(row));
 }
 
+function normalizeCountryText(value) {
+  return (value || "").toString().trim().toLowerCase();
+}
+
+function findCountryOption(dropdown, country) {
+  const target = normalizeCountryText(country);
+  if (!dropdown || !target) return null;
+
+  return Array.from(dropdown.options).find((option) => {
+    return normalizeCountryText(option.value) === target
+      || normalizeCountryText(option.textContent) === target
+      || normalizeCountryText(option.dataset?.name) === target
+      || normalizeCountryText(option.dataset?.code) === target;
+  });
+}
+
+function getSelectedCountryName() {
+  const countryDropdown = document.getElementById("country");
+  const selectedOption = countryDropdown?.selectedOptions?.[0];
+  return (selectedOption?.textContent || countryDropdown?.value || "Thailand").trim();
+}
+
 // NOTE: The old populateCitiesDropdown function has been replaced.
 // Cities are now loaded based on the hotel's country when editing,
 // using the loadCitiesForCountry function defined in DOMContentLoaded.
@@ -883,6 +905,11 @@ document.addEventListener("DOMContentLoaded", function () {
   
   // Initialize location cache functionality - load countries dropdown first
   LocationCache.populateCountriesDropdown("country");
+
+  $("#promotionModal").on("hidden.bs.modal", function () {
+    document.getElementById("earlyBird").disabled = false;
+    document.getElementById("minNights").disabled = false;
+  });
   
   // Country change handler - loads cities for the selected country
   document.getElementById("country").addEventListener("change", function () {
@@ -1015,10 +1042,7 @@ document.addEventListener("DOMContentLoaded", function () {
         attempts++;
       }
       
-      // Find the country option by name (backend returns country name like "Thailand")
-      const countryOption = Array.from(countryDropdown.options).find(option => 
-        option.textContent.toLowerCase() === hotel.country.toLowerCase()
-      );
+      const countryOption = findCountryOption(countryDropdown, hotel.country);
       
       if (countryOption) {
         countryDropdown.value = countryOption.value;
@@ -1167,7 +1191,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const updatedHotelData = {
         name: document.getElementById("hotelName").value,
         display_order: parseInt(document.getElementById("displayOrder").value) || 0,
-        country: document.getElementById("country").value,
+        country: getSelectedCountryName(),
         city: document.getElementById("hotelLocation").value,
         address: document.getElementById("hotelAddress").value,
         fees: {
@@ -1652,8 +1676,8 @@ document.addEventListener("DOMContentLoaded", function () {
         return ""; // Return empty string if the format is invalid
       };
 
-      const discountDisplay = promotion.discount_amount
-        ? promotion.discount_amount + " " + (promotion.discount_type || "")
+      const discountDisplay = promotion.discount_amount !== undefined && promotion.discount_amount !== null && promotion.discount_amount !== ""
+        ? promotion.discount_amount + " " + (promotion.discount_type || "%")
         : "";
 
       const freeMealsDisplay = `ABF: ${promotion.free_meals_abf || "0"}, Lunch: ${promotion.free_meals_lunch || "0"}, Dinner: ${promotion.free_meals_dinner || "0"}`;
@@ -1667,8 +1691,8 @@ document.addEventListener("DOMContentLoaded", function () {
         <td>${promotion.name || ""}</td>
         <td>${formatDate(promotion.booking_date_from)}</td>
         <td>${formatDate(promotion.booking_date_to)}</td>
-        <td>${promotion.early_bird_days || ""}</td>
-        <td>${promotion.minimum_nights || ""}</td>
+        <td>${promotion.early_bird_days ?? 0}</td>
+        <td>${promotion.minimum_nights ?? 0}</td>
         <td>${freeMealsDisplay}</td>
         <td>${discountDisplay}</td>
         <td style="display:none;">${validForExtraBedsDisplay}</td>
@@ -1687,6 +1711,12 @@ document.addEventListener("DOMContentLoaded", function () {
                         <i class="fas fa-trash"></i>
                     </button>
                     <span class="tooltip-text">Delete</span>
+                </div>
+                <div class="tooltip-btn">
+                    <button type="button" class="btn btn-warning btn-sm" onclick="clonePromotionRow(this)" style="min-width: 32px; padding: 6px 8px;">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <span class="tooltip-text">Clone</span>
                 </div>
             </div>
         </td>
@@ -1851,7 +1881,7 @@ document.addEventListener("DOMContentLoaded", function () {
         discount_amount: parseFloatOrDefault(
           cells[7].textContent.split(" ")[0]
         ),
-        discount_type: cells[7].textContent.split(" ")[1],
+        discount_type: cells[7].textContent.split(" ")[1] || "%",
         valid_for_extra_beds: cells[8].textContent === "Yes",
         enabled: cells[9].textContent === "Yes",
         description: cells[10].textContent,
@@ -2031,6 +2061,37 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Show the modal
     $("#editPromotionModal").modal("show");
+  };
+
+  window.clonePromotionRow = function (button) {
+    const cells = button.closest("tr").getElementsByTagName("td");
+    const freeMeals = cells[6].textContent.split(", ");
+    const discountParts = cells[7].textContent.trim().split(" ");
+
+    document.getElementById("promotionForm").reset();
+    document.getElementById("promotionCode").value = cells[0].textContent.trim();
+    document.getElementById("promotionName").value = cells[1].textContent.trim();
+    document.getElementById("bookingDateFrom").value = formatToYYYYMMDD(cells[2].textContent.trim());
+    document.getElementById("bookingDateTo").value = formatToYYYYMMDD(cells[3].textContent.trim());
+    document.getElementById("earlyBird").value = cells[4].textContent.trim();
+    document.getElementById("minNights").value = cells[5].textContent.trim();
+    document.getElementById("free_meals_abf").value = (freeMeals[0] || "").replace("ABF: ", "").trim();
+    document.getElementById("free_meals_lunch").value = (freeMeals[1] || "").replace("Lunch: ", "").trim();
+    document.getElementById("free_meals_dinner").value = (freeMeals[2] || "").replace("Dinner: ", "").trim();
+    document.getElementById("discount").value = discountParts[0] || "";
+    document.getElementById("discounttype").value = discountParts[1] || "%";
+    document.getElementById("validforextrabeds").checked = cells[8].textContent.trim() === "Yes";
+    document.getElementById("enabled").checked = cells[9].textContent.trim() === "Yes";
+    document.getElementById("promotiondescription").value = cells[10].textContent.trim();
+
+    const earlyBirdInput = document.getElementById("earlyBird");
+    const minNightsInput = document.getElementById("minNights");
+    const earlyBird = parseIntegerOrDefault(earlyBirdInput.value, 0);
+    const minNights = parseIntegerOrDefault(minNightsInput.value, 0);
+    earlyBirdInput.disabled = minNights > 0;
+    minNightsInput.disabled = earlyBird > 0;
+
+    $("#promotionModal").modal("show");
   };
   
 
@@ -2364,6 +2425,12 @@ document.addEventListener("DOMContentLoaded", function () {
                       <i class="fas fa-trash"></i>
                   </button>
                   <span class="tooltip-text">Delete</span>
+              </div>
+              <div class="tooltip-btn">
+                  <button type="button" class="btn btn-warning btn-sm" onclick="clonePromotionRow(this)" style="min-width: 32px; padding: 6px 8px;">
+                      <i class="fas fa-copy"></i>
+                  </button>
+                  <span class="tooltip-text">Clone</span>
               </div>
           </div>
       </td>

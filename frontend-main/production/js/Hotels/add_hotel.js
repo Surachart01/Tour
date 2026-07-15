@@ -1345,13 +1345,56 @@ function savePromotion() {
             </button>
             <span class="tooltip-text">Delete</span>
         </div>
+        <div class="tooltip-btn">
+            <button type="button" class="btn btn-warning btn-sm" onclick="clonePromotionRow(this)" style="min-width: 32px; padding: 6px 8px;">
+                <i class="fas fa-copy"></i>
+            </button>
+            <span class="tooltip-text">Clone</span>
+        </div>
     </div>
 </td>
 `;
 
   sortPromotionTableRows();
   document.getElementById("promotionForm").reset();
+  document.getElementById("earlyBird").disabled = false;
+  document.getElementById("minNights").disabled = false;
   $("#promotionModal").modal("hide");
+}
+
+function setPromotionDependencyState(earlyBirdId, minNightsId) {
+  const earlyBirdInput = document.getElementById(earlyBirdId);
+  const minNightsInput = document.getElementById(minNightsId);
+  if (!earlyBirdInput || !minNightsInput) return;
+
+  const earlyBird = parseIntegerOrDefault(earlyBirdInput.value, 0);
+  const minNights = parseIntegerOrDefault(minNightsInput.value, 0);
+  earlyBirdInput.disabled = minNights > 0;
+  minNightsInput.disabled = earlyBird > 0;
+}
+
+function clonePromotionRow(button) {
+  const cells = button.closest("tr").getElementsByTagName("td");
+  const freeMeals = cells[6].textContent.split(", ");
+  const discountParts = cells[7].textContent.trim().split(" ");
+
+  document.getElementById("promotionForm").reset();
+  document.getElementById("promotionCode").value = cells[0].textContent.trim();
+  document.getElementById("promotionName").value = cells[1].textContent.trim();
+  document.getElementById("bookingDateFrom").value = formatToYYYYMMDD(cells[2].textContent.trim());
+  document.getElementById("bookingDateTo").value = formatToYYYYMMDD(cells[3].textContent.trim());
+  document.getElementById("earlyBird").value = cells[4].textContent.trim();
+  document.getElementById("minNights").value = cells[5].textContent.trim();
+  document.getElementById("free_meals_abf").value = (freeMeals[0] || "").replace("ABF: ", "").trim();
+  document.getElementById("free_meals_lunch").value = (freeMeals[1] || "").replace("Lunch: ", "").trim();
+  document.getElementById("free_meals_dinner").value = (freeMeals[2] || "").replace("Dinner: ", "").trim();
+  document.getElementById("discount").value = discountParts[0] || "";
+  document.getElementById("discounttype").value = discountParts[1] || "%";
+  document.getElementById("validforextrabeds").checked = cells[8].textContent.trim() === "Yes";
+  document.getElementById("enabled").checked = cells[9].textContent.trim() === "Yes";
+  document.getElementById("promotiondescription").value = cells[10].textContent.trim();
+  setPromotionDependencyState("earlyBird", "minNights");
+  $("#promotionModal").modal("show");
 }
 
 // Edit an existing promotion row
@@ -1535,7 +1578,7 @@ function getPromotionsFromTable() {
       discount_amount: parseFloatOrDefault(
         cells[7].textContent.split(" ")[0]
       ),
-      discount_type: cells[7].textContent.split(" ")[1],
+      discount_type: cells[7].textContent.split(" ")[1] || "%",
       valid_for_extra_beds: cells[8].textContent === "Yes",
       enabled: cells[9].textContent === "Yes",
       description: cells[10].textContent,
@@ -1545,9 +1588,20 @@ function getPromotionsFromTable() {
   return promotions;
 }
 
+function getSelectedCountryName() {
+  const countryDropdown = document.getElementById("country");
+  const selectedOption = countryDropdown?.selectedOptions?.[0];
+  return (selectedOption?.textContent || countryDropdown?.value || "Thailand").trim();
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   // Initialize location cache functionality
   LocationCache.populateCountriesDropdown("country");
+
+  $("#promotionModal").on("hidden.bs.modal", function () {
+    document.getElementById("earlyBird").disabled = false;
+    document.getElementById("minNights").disabled = false;
+  });
   
   // Country change handler
   document
@@ -2083,7 +2137,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const hotelData = {
         name,
         display_order: displayOrder,
-        country: document.getElementById("country").value,
+        country: getSelectedCountryName(),
         city,
         address,
         notes: hotelNotesForAgent,

@@ -309,8 +309,13 @@ export function formatHotelResponse(hotel, markupGroup = '', markups = []) {
     minimum_nights: p.minimum_nights || 0,
     freeMeals: p.free_meals_abf > 0,
     free_meals_abf: p.free_meals_abf || 0,
+    free_meals_lunch: p.free_meals_lunch || 0,
+    free_meals_dinner: p.free_meals_dinner || 0,
     discount: p.discount_amount ? parseFloat(p.discount_amount) : 0,
     discount_amount: p.discount_amount ? parseFloat(p.discount_amount) : 0,
+    discount_type: p.discount_type || '%',
+    valid_for_extra_beds: p.valid_for_extra_beds || false,
+    description: p.description || '',
     enabled: p.enabled ?? true
   }));
 
