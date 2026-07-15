@@ -1230,6 +1230,38 @@ function parseIntegerOrDefault(value, defaultValue = 0) {
   return isNaN(parsedValue) ? defaultValue : parsedValue;
 }
 
+function parsePromotionTableDate(value) {
+  const text = (value || "").trim();
+  const dmy = text.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+
+  if (dmy) {
+    const [, day, month, year] = dmy;
+    const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+    return isNaN(date.getTime()) ? Number.MAX_SAFE_INTEGER : date.getTime();
+  }
+
+  const date = new Date(text);
+  return isNaN(date.getTime()) ? Number.MAX_SAFE_INTEGER : date.getTime();
+}
+
+function sortPromotionTableRows() {
+  const tbody = document.querySelector("#promotionsTable tbody");
+  if (!tbody) return;
+
+  const rows = Array.from(tbody.querySelectorAll("tr"));
+  rows.sort((a, b) => {
+    const aCells = a.querySelectorAll("td");
+    const bCells = b.querySelectorAll("td");
+
+    return parsePromotionTableDate(aCells[2]?.textContent) - parsePromotionTableDate(bCells[2]?.textContent)
+      || parsePromotionTableDate(aCells[3]?.textContent) - parsePromotionTableDate(bCells[3]?.textContent)
+      || (aCells[0]?.textContent || "").localeCompare(bCells[0]?.textContent || "", undefined, { numeric: true, sensitivity: "base" })
+      || (aCells[1]?.textContent || "").localeCompare(bCells[1]?.textContent || "", undefined, { numeric: true, sensitivity: "base" });
+  });
+
+  rows.forEach((row) => tbody.appendChild(row));
+}
+
 // Add a new promotion row from the modal form
 function savePromotion() {
   const fromDateInputBooking = document.getElementById("bookingDateFrom");
@@ -1317,6 +1349,7 @@ function savePromotion() {
 </td>
 `;
 
+  sortPromotionTableRows();
   document.getElementById("promotionForm").reset();
   $("#promotionModal").modal("hide");
 }
@@ -1425,6 +1458,7 @@ function saveEditedPromotion() {
       .value.trim();
 
     $("#editPromotionModal").modal("hide");
+    sortPromotionTableRows();
     currentPromotionRow = null; // Reset current row reference
   }
 }

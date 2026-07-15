@@ -7324,7 +7324,6 @@ ALTER TABLE "public"."hotel_markup_percentages" ADD CONSTRAINT "hotel_markup_per
 -- ----------------------------
 -- Uniques structure for table hotel_promotions
 -- ----------------------------
-ALTER TABLE "public"."hotel_promotions" ADD CONSTRAINT "hotel_promotions_hotel_id_discount_amount_discount_type_key" UNIQUE ("hotel_id", "discount_amount", "discount_type");
 
 -- ----------------------------
 -- Checks structure for table hotel_promotions

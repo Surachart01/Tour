@@ -219,6 +219,18 @@ function normalizeHotelPromotions(rawPromotions) {
     .filter(p => p.name || p.promotion_code || p.discount_amount);
 }
 
+function promotionSortValue(value) {
+  const date = toDateOrNull(value);
+  return date ? date.getTime() : Number.MAX_SAFE_INTEGER;
+}
+
+function comparePromotions(a, b) {
+  return promotionSortValue(a.booking_date_from) - promotionSortValue(b.booking_date_from)
+    || promotionSortValue(a.booking_date_to) - promotionSortValue(b.booking_date_to)
+    || String(a.promotion_code || '').localeCompare(String(b.promotion_code || ''), undefined, { numeric: true, sensitivity: 'base' })
+    || String(a.name || '').localeCompare(String(b.name || ''), undefined, { numeric: true, sensitivity: 'base' });
+}
+
 export function formatHotelResponse(hotel, markupGroup = '', markups = []) {
   if (!hotel) return null;
   const fees = hotel.hotel_fees && hotel.hotel_fees[0] ? hotel.hotel_fees[0] : {};
@@ -277,7 +289,7 @@ export function formatHotelResponse(hotel, markupGroup = '', markups = []) {
     };
   });
 
-  const promotions = (hotel.hotel_promotions || []).map(p => ({
+  const promotions = [...(hotel.hotel_promotions || [])].sort(comparePromotions).map(p => ({
     key: p.id,
     id: p.id,
     code: p.promotion_code,
@@ -613,11 +625,16 @@ export async function calculateHotelCost(req, res, next) {
     // Fetch promotion if coupon code provided
     let promotion = null;
     if (request.coupon_code) {
-      promotion = await prisma.hotel_promotions.findFirst({
+      promotion = await prisma.hotel_promotions.findMany({
         where: {
           hotel_id: parseInt(request.hotel_id),
           promotion_code: request.coupon_code
-        }
+        },
+        orderBy: [
+          { booking_date_from: 'asc' },
+          { booking_date_to: 'asc' },
+          { id: 'asc' }
+        ]
       });
     }
 

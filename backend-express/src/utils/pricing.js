@@ -524,20 +524,31 @@ export function calculateHotelCostLogic(hotel, request, markupGroup, markups, ma
 
   // Handle promotions / coupon code
   let promotionForExtraBedApplied = false;
-  if (promotion) {
-    const bookingStart = normalizeDate(promotion.booking_date_from);
-    const bookingEnd = normalizeDate(promotion.booking_date_to);
-    const travelStart = normalizeDate(promotion.travel_date_from) || bookingStart;
-    const travelEnd = normalizeDate(promotion.travel_date_to) || bookingEnd;
+  const promotionCandidates = Array.isArray(promotion) ? promotion : (promotion ? [promotion] : []);
+  const isPromotionApplicable = (candidate) => {
+    const hasExplicitTravelWindow = Boolean(candidate.travel_date_from || candidate.travel_date_to);
+    const bookingStart = hasExplicitTravelWindow ? normalizeDate(candidate.booking_date_from) : null;
+    const bookingEnd = hasExplicitTravelWindow ? normalizeDate(candidate.booking_date_to) : null;
+    const travelStart = normalizeDate(hasExplicitTravelWindow ? candidate.travel_date_from : candidate.booking_date_from);
+    const travelEnd = normalizeDate(hasExplicitTravelWindow ? candidate.travel_date_to : candidate.booking_date_to);
+    const lastStayDate = addDays(endDate, -1);
 
     const isBookingDateValid = (!bookingStart || bookingDate >= bookingStart) && (!bookingEnd || bookingDate <= bookingEnd);
-    const isTravelDatesValid = (!travelStart || startDate >= travelStart) && (!travelEnd || endDate <= travelEnd);
+    const isTravelDatesValid = (!travelStart || startDate >= travelStart) && (!travelEnd || lastStayDate <= travelEnd);
     const daysToTravel = Math.floor((startDate.getTime() - bookingDate.getTime()) / (24 * 60 * 60 * 1000));
-    const isEarlyBirdValid = !(promotion.early_bird_days > 0 && daysToTravel < promotion.early_bird_days);
-    const isMinNightsValid = !(promotion.minimum_nights > 1 && numNights < promotion.minimum_nights);
+    const isEarlyBirdValid = !(candidate.early_bird_days > 0 && daysToTravel < candidate.early_bird_days);
+    const isMinNightsValid = !(candidate.minimum_nights > 1 && numNights < candidate.minimum_nights);
 
-    if (promotion.enabled && isBookingDateValid && isTravelDatesValid && isEarlyBirdValid && isMinNightsValid) {
-      if (promotion.valid_for_extra_beds) {
+    return candidate.enabled !== false && isBookingDateValid && isTravelDatesValid && isEarlyBirdValid && isMinNightsValid;
+  };
+
+  const activePromotion = promotionCandidates.find(isPromotionApplicable);
+  if (request.coupon_code && promotionCandidates.length === 0) {
+    throw new Error('the provided promotion code is not applicable for the requested dates');
+  }
+  if (promotionCandidates.length > 0) {
+    if (activePromotion) {
+      if (activePromotion.valid_for_extra_beds) {
         // Adding extra beds cost
         for (const rtReq of roomTypesReq) {
           const roomType = requestedRoomTypes[rtReq.room_type_id];
@@ -556,11 +567,11 @@ export function calculateHotelCostLogic(hotel, request, markupGroup, markups, ma
         promotionForExtraBedApplied = true;
       }
 
-      if (promotion.discount_type === '%') {
-        discount = finalCost * parseFloat(promotion.discount_amount) / 100;
+      if (activePromotion.discount_type === '%') {
+        discount = finalCost * parseFloat(activePromotion.discount_amount) / 100;
         finalCost -= discount;
       } else {
-        discount = parseFloat(promotion.discount_amount);
+        discount = parseFloat(activePromotion.discount_amount);
         finalCost -= discount;
       }
     } else {

@@ -686,6 +686,38 @@ function parseIntOrDefault(value, defaultValue = 0) {
   return isNaN(parsed) ? defaultValue : parsed;
 }
 
+function parsePromotionTableDate(value) {
+  const text = (value || "").trim();
+  const dmy = text.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+
+  if (dmy) {
+    const [, day, month, year] = dmy;
+    const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+    return isNaN(date.getTime()) ? Number.MAX_SAFE_INTEGER : date.getTime();
+  }
+
+  const date = new Date(text);
+  return isNaN(date.getTime()) ? Number.MAX_SAFE_INTEGER : date.getTime();
+}
+
+function sortPromotionTableRows() {
+  const tbody = document.querySelector("#promotionsTable tbody");
+  if (!tbody) return;
+
+  const rows = Array.from(tbody.querySelectorAll("tr"));
+  rows.sort((a, b) => {
+    const aCells = a.querySelectorAll("td");
+    const bCells = b.querySelectorAll("td");
+
+    return parsePromotionTableDate(aCells[2]?.textContent) - parsePromotionTableDate(bCells[2]?.textContent)
+      || parsePromotionTableDate(aCells[3]?.textContent) - parsePromotionTableDate(bCells[3]?.textContent)
+      || (aCells[0]?.textContent || "").localeCompare(bCells[0]?.textContent || "", undefined, { numeric: true, sensitivity: "base" })
+      || (aCells[1]?.textContent || "").localeCompare(bCells[1]?.textContent || "", undefined, { numeric: true, sensitivity: "base" });
+  });
+
+  rows.forEach((row) => tbody.appendChild(row));
+}
+
 // NOTE: The old populateCitiesDropdown function has been replaced.
 // Cities are now loaded based on the hotel's country when editing,
 // using the loadCitiesForCountry function defined in DOMContentLoaded.
@@ -1339,6 +1371,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Hide the modal after saving
       $("#editPromotionModal").modal("hide");
+      sortPromotionTableRows();
       currentPromotionRow = null; // Reset current row reference
     }
   }
@@ -1599,11 +1632,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const tableBody = document.querySelector("#promotionsTable tbody");
     tableBody.innerHTML = ""; // Clear existing rows
 
-    // Sort promotions by promotion_code (case-insensitive)
     promotions.sort((a, b) => {
-        const codeA = a.promotion_code.toLowerCase(); // Convert to lowercase for case-insensitive comparison
-        const codeB = b.promotion_code.toLowerCase();
-        return codeA.localeCompare(codeB); // Alphabetical sorting
+      return parsePromotionTableDate(a.booking_date_from) - parsePromotionTableDate(b.booking_date_from)
+        || parsePromotionTableDate(a.booking_date_to) - parsePromotionTableDate(b.booking_date_to)
+        || (a.promotion_code || "").localeCompare(b.promotion_code || "", undefined, { numeric: true, sensitivity: "base" })
+        || (a.name || "").localeCompare(b.name || "", undefined, { numeric: true, sensitivity: "base" });
     });
 
     promotions.forEach((promotion) => {
@@ -2337,6 +2370,7 @@ document.addEventListener("DOMContentLoaded", function () {
     `;
 
     // Clear form and hide modal
+    sortPromotionTableRows();
     document.getElementById("promotionForm").reset();
     $("#promotionModal").modal("hide");
   }

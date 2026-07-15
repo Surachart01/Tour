@@ -363,8 +363,6 @@ model hotel_promotions {
   updated_at           DateTime?          @default(now()) @db.Timestamp(6)
   hotels               hotels?            @relation(fields: [hotel_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   hotel_trip_items     hotel_trip_items[]
-
-  @@unique([hotel_id, discount_amount, discount_type])
 }
 
 model hotel_room_type_items {
