@@ -497,34 +497,51 @@ function addNewRoomType() {
       .getElementById("roomTypesTable")
       .getElementsByTagName("tbody")[0];
 
-  // Select all dynamic room entries within the modal
-  const dynamicEntries = document.querySelectorAll("#dynamicRoomEntriesContainer .form-row.dynamic-entry");
+  const dynamicEntries = document.querySelectorAll("#dynamicRoomEntriesContainer .dynamic-entry");
 
   if (dynamicEntries.length === 0) {
       alert("No room types available to add.");
       return;
   }
 
-  const fromDate = formatToDDMMYYYY(document.getElementById("massEditFromDate").value);
-  const toDate = formatToDDMMYYYY(document.getElementById("massEditToDate").value);
+  const fromDateInput = document.getElementById("massEditFromDate").value;
+  const toDateInput = document.getElementById("massEditToDate").value;
+  const fromDateObj = new Date(fromDateInput);
+  const toDateObj = new Date(toDateInput);
+
+  if (!fromDateInput || !toDateInput || isNaN(fromDateObj.getTime()) || isNaN(toDateObj.getTime())) {
+      alert("Please enter From and To dates before adding a new period.");
+      return;
+  }
+
+  if (toDateObj <= fromDateObj) {
+      alert("The 'To' date must be greater than the 'From' date.");
+      return;
+  }
+
+  const fromDate = formatToDDMMYYYY(fromDateInput);
+  const toDate = formatToDDMMYYYY(toDateInput);
+
+  const valueOrZero = (value) => {
+      const text = (value || "").toString().trim();
+      return text === "" ? "0" : text;
+  };
 
   // Validate all entries before adding
   const existingRows = roomTypesTable.getElementsByTagName("tr");
   for (const entry of dynamicEntries) {
-      const roomTypeInput = entry.querySelector('input[placeholder="Name"]');
-      const allotmentInput = entry.querySelector('input[placeholder="Allotment"]');
-      const cutoffInput = entry.querySelector('input[placeholder="Cut-Off"]');
-      const maxCapacityInput = entry.querySelector('input[placeholder="Max Capacity"]');
-      const singlePriceInput = entry.querySelector('input[placeholder="Single Price"]');
-      const doublePriceInput = entry.querySelector('input[placeholder="Double Price"]');
+      const inputs = entry.querySelectorAll("input");
+      const roomTypeInput = inputs[0];
+      const singlePriceInput = inputs[4];
+      const doublePriceInput = inputs[5];
 
-      if (!roomTypeInput || !allotmentInput || !cutoffInput || !maxCapacityInput || !singlePriceInput || !doublePriceInput) {
+      if (!roomTypeInput || !singlePriceInput || !doublePriceInput) {
           alert("Some input fields are missing. Please ensure all fields are present.");
           return;
       }
 
-      if (!roomTypeInput.value || !allotmentInput.value || !cutoffInput.value || !singlePriceInput.value || !doublePriceInput.value) {
-          alert("Some input fields are empty. Please fill all fields before proceeding.");
+      if (!roomTypeInput.value.trim() || !singlePriceInput.value.trim() || !doublePriceInput.value.trim()) {
+          alert("Room Type, Single price, and Double price are required before adding a new period.");
           return;
       }
 
@@ -543,31 +560,32 @@ function addNewRoomType() {
 
   // ✅ If no issues, add the rows to the table
   for (const entry of dynamicEntries) {
-      const roomTypeInput = entry.querySelector('input[placeholder="Name"]');
-      const allotmentInput = entry.querySelector('input[placeholder="Allotment"]');
-      const cutoffInput = entry.querySelector('input[placeholder="Cut-Off"]');
-      const maxCapacityInput = entry.querySelector('input[placeholder="Max Capacity"]');
-      const singlePriceInput = entry.querySelector('input[placeholder="Single Price"]');
-      const doublePriceInput = entry.querySelector('input[placeholder="Double Price"]');
+      const inputs = entry.querySelectorAll("input");
+      const roomTypeInput = inputs[0];
+      const allotmentInput = inputs[1];
+      const cutoffInput = inputs[2];
+      const maxCapacityInput = inputs[3];
+      const singlePriceInput = inputs[4];
+      const doublePriceInput = inputs[5];
 
       const newRow = roomTypesTable.insertRow();
       newRow.innerHTML = `
           <td><input type="checkbox" class="rowCheckbox" onchange="toggleEditButtonVisibility()"/></td>
           <td>${fromDate}</td>
           <td>${toDate}</td>
-          <td>${roomTypeInput.value}<br>Allotment: ${allotmentInput.value}<br>CutOff Days: ${cutoffInput.value}<br>Max Capacity: ${maxCapacityInput.value}</td>
-          <td>Single: ${singlePriceInput.value}<br>Double: ${doublePriceInput.value}</td>
-          <td>Adult: ${document.getElementById("massEditExtraBedAdult").value}<br>
-              Child: ${document.getElementById("massEditExtraBedChild").value}<br>
-              Shared: ${document.getElementById("massEditExtraBedShared").value}</td>
-          <td>ABF: ${document.getElementById("massEditFoodCostAdultABF").value}<br>
-              Lunch: ${document.getElementById("massEditFoodCostAdultLunch").value}<br>
-              Dinner: ${document.getElementById("massEditFoodCostAdultDinner").value}<br>
-              All Inclusive: ${document.getElementById("massEditFoodCostAdultAllinclusive").value}</td>
-          <td>ABF: ${document.getElementById("massEditFoodCostChildABF").value}<br>
-              Lunch: ${document.getElementById("massEditFoodCostChildLunch").value}<br>
-              Dinner: ${document.getElementById("massEditFoodCostChildDinner").value}<br>
-              All Inclusive: ${document.getElementById("massEditFoodCostChildAllinclusive").value}</td>
+          <td>${roomTypeInput.value.trim()}<br>Allotment: ${valueOrZero(allotmentInput?.value)}<br>CutOff Days: ${valueOrZero(cutoffInput?.value)}<br>Max Capacity: ${valueOrZero(maxCapacityInput?.value)}</td>
+          <td>Single: ${valueOrZero(singlePriceInput.value)}<br>Double: ${valueOrZero(doublePriceInput.value)}</td>
+          <td>Adult: ${valueOrZero(document.getElementById("massEditExtraBedAdult").value)}<br>
+              Child: ${valueOrZero(document.getElementById("massEditExtraBedChild").value)}<br>
+              Shared: ${valueOrZero(document.getElementById("massEditExtraBedShared").value)}</td>
+          <td>ABF: ${valueOrZero(document.getElementById("massEditFoodCostAdultABF").value)}<br>
+              Lunch: ${valueOrZero(document.getElementById("massEditFoodCostAdultLunch").value)}<br>
+              Dinner: ${valueOrZero(document.getElementById("massEditFoodCostAdultDinner").value)}<br>
+              All Inclusive: ${valueOrZero(document.getElementById("massEditFoodCostAdultAllinclusive").value)}</td>
+          <td>ABF: ${valueOrZero(document.getElementById("massEditFoodCostChildABF").value)}<br>
+              Lunch: ${valueOrZero(document.getElementById("massEditFoodCostChildLunch").value)}<br>
+              Dinner: ${valueOrZero(document.getElementById("massEditFoodCostChildDinner").value)}<br>
+              All Inclusive: ${valueOrZero(document.getElementById("massEditFoodCostChildAllinclusive").value)}</td>
           <td>
               <div style="display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: nowrap;">
                   <div class="tooltip-btn">
