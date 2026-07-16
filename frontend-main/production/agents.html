@@ -548,12 +548,13 @@
             }
           })
           .then((agents) => {
+            const agentList = window.ApiResponse.list(agents, ["agents", "data", "items", "results"]);
             // Store original table data and filtered data
-            originalTableData = agents;
-            filteredTableData = agents;
+            originalTableData = agentList;
+            filteredTableData = agentList;
             totalPages = Math.ceil(
               filteredTableData.length / currentRowsPerPage
-            );
+            ) || 1;
             renderTable(filteredTableData);
             updatePaginationButtons();
             updateAgentsCount();

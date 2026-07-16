@@ -791,9 +791,10 @@
           })
             .then((response) => response.json())
             .then((data) => {
-              transfers = data.sort((a, b) => (a.order || 0) - (b.order || 0));
+              const transferList = window.ApiResponse.list(data, ["transfers", "data", "items", "results"]);
+              transfers = [...transferList].sort((a, b) => (a.order || 0) - (b.order || 0));
               filteredTransfers = [...transfers];
-              totalPages = Math.ceil(filteredTransfers.length / rowsPerPage);
+              totalPages = Math.ceil(filteredTransfers.length / rowsPerPage) || 1;
               updateTransfersCount();
               renderTransfers();
               populateFilterDropdowns();

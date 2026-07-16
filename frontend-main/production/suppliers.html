@@ -547,7 +547,8 @@
             return response.json();
           })
           .then((suppliers) => {
-            if (!suppliers || suppliers.length === 0) {
+            const supplierList = window.ApiResponse.list(suppliers, ["suppliers", "data", "items", "results"]);
+            if (supplierList.length === 0) {
               // No suppliers found, handle it
               document.getElementById("supplierTableBody").innerHTML = `
               <tr>
@@ -560,11 +561,11 @@
               return; // Exit the function as there are no suppliers to process
             }
             // Store original table data and filtered data
-            originalTableData = suppliers;
-            filteredTableData = suppliers;
+            originalTableData = supplierList;
+            filteredTableData = supplierList;
             totalPages = Math.ceil(
               filteredTableData.length / currentRowsPerPage
-            );
+            ) || 1;
 
             renderTable(filteredTableData);
             updatePaginationButtons();

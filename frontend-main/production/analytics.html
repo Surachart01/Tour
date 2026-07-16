@@ -19,8 +19,8 @@
     />
     <!-- Custom Theme Style -->
     <link rel="stylesheet" href="../build/css/custom.min.css" />
-    <!-- Chart.js for visualizations -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js bundled with the application -->
+    <script src="../vendors/Chart.js/dist/Chart.min.js"></script>
 
     <style>
       .analytics-card {
@@ -814,7 +814,7 @@
     <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom Theme Scripts -->
     <script src="../build/js/custom.min.js"></script>
-    <script src="js/config.js"></script>
+    <script src="js/config.js?v=20260716"></script>
 
     <script>
       // Global variables
@@ -855,6 +855,7 @@
 
         // Show/hide agent selector based on role
         if (role === "admin" || role === "superadmin") {
+          currentAgentId = "0";
           document.getElementById("agentSelectorDiv").style.display = "block";
           loadAgents(); // Load all agents for admin and superadmin
         } else {
@@ -1015,30 +1016,56 @@
       // Build API URL based on period type
       function buildApiUrl(endpoint, params) {
         var baseUrl = Endpoint + "/api/v1/analytics/" + endpoint;
+        var query = new URLSearchParams();
+        query.set("year", params.year);
 
         if (params.month) {
-          // Single month
-          var url = baseUrl + "?year=" + params.year + "&month=" + params.month;
+          query.set("month", params.month);
         } else if (params.startMonth && params.endMonth) {
-          // Date range
-          var url =
-            baseUrl +
-            "/range?year=" +
-            params.year +
-            "&start_month=" +
-            params.startMonth +
-            "&end_month=" +
-            params.endMonth;
+          baseUrl += "/range";
+          query.set("start_month", params.startMonth);
+          query.set("end_month", params.endMonth);
         } else {
-          // Full year
-          var url = baseUrl + "/year?year=" + params.year;
+          baseUrl += "/year";
         }
 
-        if (currentAgentId !== null) {
-          url += "&agent_id=" + currentAgentId;
+        if (currentAgentId !== null && currentAgentId !== undefined) {
+          query.set("agent_id", currentAgentId);
         }
 
-        return url;
+        return baseUrl + "?" + query.toString();
+      }
+
+      function apiFetch(url, options, attempts) {
+        var remainingAttempts = attempts || 2;
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function () {
+          controller.abort();
+        }, 20000);
+        var requestOptions = Object.assign({}, options || {}, {
+          signal: controller.signal,
+        });
+
+        return fetch(url, requestOptions)
+          .then(function (response) {
+            clearTimeout(timeoutId);
+            if (response.status === 401) {
+              localStorage.removeItem("token");
+              window.location.href = "login.html";
+              throw new Error("Your session has expired. Please sign in again.");
+            }
+            return response;
+          })
+          .catch(function (error) {
+            clearTimeout(timeoutId);
+            if (remainingAttempts > 1 && error.name !== "AbortError") {
+              return apiFetch(url, options, remainingAttempts - 1);
+            }
+            if (error.name === "AbortError") {
+              throw new Error("The analytics request timed out. Please try again.");
+            }
+            throw error;
+          });
       }
 
       // Get period display text
@@ -1072,7 +1099,7 @@
       function loadAgents() {
         var token = localStorage.getItem("token");
 
-        fetch(Endpoint + "/api/v1/agents/names", {
+        apiFetch(Endpoint + "/api/v1/agents/names", {
           method: "GET",
           headers: {
             Authorization: "Bearer " + token,
@@ -1128,7 +1155,7 @@
 
         console.log("Making request to:", url);
 
-        fetch(url, {
+        apiFetch(url, {
           method: "GET",
           headers: {
             Authorization: "Bearer " + token,
@@ -1138,9 +1165,13 @@
           .then(function (response) {
             console.log("Response status:", response.status);
             if (!response.ok) {
-              throw new Error(
-                "HTTP " + response.status + ": " + response.statusText
-              );
+              return response.text().then(function (body) {
+                var message = body;
+                try {
+                  message = JSON.parse(body).message || body;
+                } catch (error) {}
+                throw new Error(message || "HTTP " + response.status);
+              });
             }
             return response.json();
           })
@@ -1164,8 +1195,18 @@
 
         // Get data sections from actual API response structure
         var responseData = analyticsData.data || analyticsData;
-        var sales = responseData.sales || {};
-        var revenue = responseData.revenue || {};
+        var sales = responseData.sales || {
+          total_quotations: responseData.total_quotations || 0,
+          approved_bookings: responseData.total_bookings || 0,
+          conversion_rate: responseData.conversion_rate || 0,
+          average_deal_size: responseData.average_deal_size || 0,
+          avg_quote_to_close_days: responseData.avg_quote_to_close_days || 0,
+        };
+        var revenue = responseData.revenue || {
+          monthly_revenue: responseData.total_revenue || 0,
+          payment_collection_rate: responseData.payment_collection_rate || 0,
+          outstanding_amount: responseData.outstanding_amount || 0,
+        };
         var efficiency = responseData.efficiency || {};
         var customers = responseData.customers || {};
 
@@ -1293,7 +1334,7 @@
 
         console.log("Loading trends data:", url);
 
-        fetch(url, {
+        apiFetch(url, {
           method: "GET",
           headers: {
             Authorization: "Bearer " + token,
@@ -1404,42 +1445,42 @@
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                display: false,
-              },
+            legend: {
+              display: false,
             },
             scales: {
-              y: {
-                beginAtZero: true,
-                ticks: {
-                  callback: function (value) {
-                    if (metricType === "revenue") {
-                      return formatCurrency(value);
-                    }
-                    return value;
+              yAxes: [
+                {
+                  ticks: {
+                    beginAtZero: true,
+                    callback: function (value) {
+                      if (metricType === "revenue") {
+                        return formatCurrency(value);
+                      }
+                      return value;
+                    },
                   },
                 },
-              },
-              x: {
-                ticks: {
-                  maxRotation: 45,
-                  minRotation: 45,
+              ],
+              xAxes: [
+                {
+                  ticks: {
+                    maxRotation: 45,
+                    minRotation: 45,
+                  },
                 },
-              },
+              ],
             },
-            plugins: {
-              tooltip: {
-                callbacks: {
-                  label: function (context) {
-                    var label = getMetricLabel(metricType) + ": ";
-                    if (metricType === "revenue") {
-                      label += formatCurrency(context.parsed.y);
-                    } else {
-                      label += context.parsed.y;
-                    }
-                    return label;
-                  },
+            tooltips: {
+              callbacks: {
+                label: function (tooltipItem) {
+                  var label = getMetricLabel(metricType) + ": ";
+                  if (metricType === "revenue") {
+                    label += formatCurrency(tooltipItem.yLabel);
+                  } else {
+                    label += tooltipItem.yLabel;
+                  }
+                  return label;
                 },
               },
             },

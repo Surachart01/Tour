@@ -443,9 +443,9 @@
               return response.json();
             })
             .then((data) => {
-              markups = data;
+              markups = window.ApiResponse.list(data, ["markups", "data", "items", "results"]);
               filteredMarkups = markups;
-              totalPages = Math.ceil(markups.length / rowsPerPage);
+              totalPages = Math.ceil(markups.length / rowsPerPage) || 1;
               renderMarkups();
               updateMarkupsCount();
             })

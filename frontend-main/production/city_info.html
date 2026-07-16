@@ -286,7 +286,7 @@
           return res.json();
         })
         .then(data => {
-          allCities = data || [];
+          allCities = window.ApiResponse.list(data, ["cities", "data", "items", "results"]);
           renderCities(allCities);
         })
         .catch(err => {

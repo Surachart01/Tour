@@ -242,16 +242,22 @@ function loadHotels() {
       return response.json();
     })
     .then((hotels) => {
-      if (!hotels || hotels.length === 0) {
+      const hotelList = window.ApiResponse.list(hotels, ["hotels", "data", "items", "results"]);
+      if (hotelList.length === 0) {
         console.log("No hotels found.");
+        hotelsData = [];
+        filteredHotelsData = [];
+        totalPages = 1;
+        updateHotelsCount();
+        renderTable();
         return; // Exit if there are no hotels
       }
-      hotelsData = hotels;
-      populateRateSeasonFilter(hotels);
+      hotelsData = hotelList;
+      populateRateSeasonFilter(hotelList);
       annotateHotelsWithRateStatus();
       filteredHotelsData = hotelsData; // Initially, filtered data is the same as the original data
-      totalPages = Math.ceil(hotels.length / rowsPerPage) || 1;
-      populateFilters(hotels);
+      totalPages = Math.ceil(hotelList.length / rowsPerPage) || 1;
+      populateFilters(hotelList);
       updateHotelsCount();
       renderTable();
     })

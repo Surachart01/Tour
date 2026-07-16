@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", function () {
           return response.json();
         })
         .then((data) => {
-          charges = data || [];
+          charges = window.ApiResponse.list(data, ["charges", "others", "data", "items", "results"]);
           filteredCharges = [...charges];
           
           // Expose globally for HTML count script

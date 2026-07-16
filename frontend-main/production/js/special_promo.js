@@ -159,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return res.json();
       })
       .then(data => {
-        allAgents = data || [];
+        allAgents = window.ApiResponse.list(data, ["agents", "data", "items", "results"]);
         renderAgentsList(allAgents);
       })
       .catch(err => {
@@ -508,16 +508,17 @@ document.addEventListener("DOMContentLoaded", () => {
         return res.json();
       })
       .then(data => {
+        const promoList = window.ApiResponse.list(data, ["promotions", "specialPromos", "data", "items", "results"]);
         if (promoHistoryLoading) promoHistoryLoading.style.display = "none";
         if (promoHistoryContent) promoHistoryContent.style.display = "block";
 
         promoHistoryTableBody.innerHTML = "";
-        if (data.length === 0) {
+        if (promoList.length === 0) {
           promoHistoryTableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No promotions found</td></tr>';
           return;
         }
 
-        data.forEach(promo => {
+        promoList.forEach(promo => {
           const row = document.createElement("tr");
 
           // Date column

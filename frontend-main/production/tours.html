@@ -609,9 +609,10 @@
         })
           .then((res) => res.json())
           .then((tours) => {
-            toursData = tours;
-            filteredToursData = tours;
-            totalPages = Math.ceil(tours.length / rowsPerPage);
+            const tourList = window.ApiResponse.list(tours, ["tours", "data", "items", "results"]);
+            toursData = tourList;
+            filteredToursData = tourList;
+            totalPages = Math.ceil(tourList.length / rowsPerPage) || 1;
             updateToursCount();
             renderTable();
             populateFilterDropdowns();

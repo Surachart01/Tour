@@ -580,8 +580,9 @@
               return response.json();
             })
             .then((data) => {
+              const excursionList = window.ApiResponse.list(data, ["excursions", "data", "items", "results"]);
               // ✅ Sort excursions in ascending order based on `order`
-              excursions = data.sort((a, b) => (a.order || 0) - (b.order || 0));
+              excursions = [...excursionList].sort((a, b) => (a.order || 0) - (b.order || 0));
 
               filteredExcursions = [...excursions]; // Copy sorted data for filtering
               totalPages = Math.ceil(filteredExcursions.length / rowsPerPage) || 1;

@@ -42,9 +42,9 @@ document.addEventListener("DOMContentLoaded", function () {
         return response.json();
       })
       .then((data) => {
-        users = data;
+        users = window.ApiResponse.list(data, ["users", "data", "items", "results"]);
         filteredUsers = [...users]; // Initialize filteredUsers with all users
-        totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
+        totalPages = Math.ceil(filteredUsers.length / rowsPerPage) || 1;
         updateUsersCount();
         renderTable();
       })

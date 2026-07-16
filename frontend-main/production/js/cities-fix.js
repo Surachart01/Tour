@@ -59,20 +59,9 @@
       const data = await response.json();
       console.log("Cities API response:", data);
       
-      // Handle different response formats
-      let cities = [];
-      if (Array.isArray(data)) {
-        // Direct array response
-        cities = data;
-      } else if (data.cities && Array.isArray(data.cities)) {
-        // Response with cities property
-        cities = data.cities;
-      } else if (data.data && Array.isArray(data.data)) {
-        // Response with data property
-        cities = data.data;
-      } else {
+      const cities = window.ApiResponse.list(data, ["cities", "data", "items", "results"]);
+      if (cities.length === 0 && data && typeof data === "object" && !Array.isArray(data)) {
         console.error("Unexpected API response format:", data);
-        throw new Error("Invalid cities data format received from server");
       }
 
       // Extract city names from objects or use strings directly

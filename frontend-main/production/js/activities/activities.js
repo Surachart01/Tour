@@ -3,6 +3,17 @@ let currentActivitiesPage = 1;
 let currentActivitiesLimit = 100;
 let currentActivityFilters = {};
 
+function normalizeListResponse(data, keys = ['data', 'items', 'results']) {
+    if (Array.isArray(data)) return data;
+    if (!data || typeof data !== 'object') return [];
+
+    for (const key of keys) {
+        if (Array.isArray(data[key])) return data[key];
+    }
+
+    return [];
+}
+
 // Initialize the page when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     initializeActivitiesPage();
@@ -80,7 +91,7 @@ function loadActivityStats() {
         return response.json();
     })
     .then(data => {
-        renderStatsCards(data);
+        renderStatsCards(normalizeListResponse(data, ['stats', 'data', 'items', 'results']));
     })
     .catch(error => {
         console.error('Error loading activity stats:', error);
@@ -106,8 +117,9 @@ function loadOverviewData() {
         return response.json();
     })
     .then(data => {
-        renderOverviewTable(data);
-        renderCharts(data);
+        const overviewData = normalizeListResponse(data, ['stats', 'data', 'items', 'results']);
+        renderOverviewTable(overviewData);
+        renderCharts(overviewData);
     })
     .catch(error => {
         console.error('Error loading overview data:', error);
@@ -175,8 +187,9 @@ function loadActivities(page = 1) {
     })
     .then(data => {
         console.log('Activities API response:', data);
-        renderActivitiesTable(data);
-        renderActivitiesPagination(data);
+        const activities = normalizeListResponse(data, ['activities', 'data', 'items', 'results']);
+        renderActivitiesTable(activities);
+        renderActivitiesPagination(activities);
     })
     .catch(error => {
         console.error('Error loading activities:', error);
@@ -205,7 +218,7 @@ function loadUserStats() {
         return response.json();
     })
     .then(data => {
-        renderUserStatsTable(data);
+        renderUserStatsTable(normalizeListResponse(data, ['users', 'stats', 'data', 'items', 'results']));
     })
     .catch(error => {
         console.error('Error loading user stats:', error);
@@ -240,7 +253,7 @@ function loadPopularEntities() {
         return response.json();
     })
     .then(data => {
-        renderPopularEntitiesTable(data);
+        renderPopularEntitiesTable(normalizeListResponse(data, ['entities', 'data', 'items', 'results']));
     })
     .catch(error => {
         console.error('Error loading popular entities:', error);
@@ -266,8 +279,8 @@ function renderStatsCards(data) {
     // Calculate totals
     const totalActions = data.reduce((sum, item) => sum + item.count, 0);
     const totalUsers = new Set(data.map(item => item.unique_users)).size;
-    const topEntity = data.sort((a, b) => b.count - a.count)[0];
-    const recentActivity = data.sort((a, b) => new Date(b.last_activity) - new Date(a.last_activity))[0];
+    const topEntity = [...data].sort((a, b) => (b.count || 0) - (a.count || 0))[0];
+    const recentActivity = [...data].sort((a, b) => new Date(b.last_activity || 0) - new Date(a.last_activity || 0))[0];
     
     statsContainer.innerHTML = `
         <div class="stats-card">
@@ -312,7 +325,7 @@ function renderOverviewTable(data) {
     }
     
     // Sort by count descending
-    const sortedData = data.sort((a, b) => b.count - a.count);
+    const sortedData = [...data].sort((a, b) => (b.count || 0) - (a.count || 0));
     
     tableBody.innerHTML = sortedData.map(item => `
         <tr>
@@ -777,4 +790,4 @@ function showPopularEntitiesError() {
             </td>
         </tr>
     `;
-} 
+}
