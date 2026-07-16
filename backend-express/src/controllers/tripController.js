@@ -19,6 +19,23 @@ function parseSafeInt(value, fallback = null) {
   return isNaN(parsed) ? fallback : parsed;
 }
 
+export function resolveServiceApprovalState(savedById, item = {}) {
+  const itemId = parseSafeInt(item.id || item.trip_item_id);
+  const saved = itemId ? savedById.get(itemId) : null;
+  if (saved) {
+    return { approved: Boolean(saved.approved), declined: Boolean(saved.declined) };
+  }
+  return {
+    approved: item.approved === true || item.approved === 'true' || item.approved === 1,
+    declined: item.declined === true || item.declined === 'true' || item.declined === 1
+  };
+}
+
+export function resolveBookingStatusAfterSave(existingStatus, allServicesConfirmed, requestedStatus) {
+  if (existingStatus === 'Confirmed' && !allServicesConfirmed) return 'InProgress';
+  return requestedStatus !== undefined ? requestedStatus : undefined;
+}
+
 async function resolveAgentIdFromRequest(data, claims, client = prisma) {
   const explicitAgentId = parseSafeInt(data.agent_id);
   if (explicitAgentId) return explicitAgentId;
@@ -1152,6 +1169,42 @@ export async function updateQuotation(req, res, next) {
         }
       }
 
+      // Approval is workflow state. Preserve it for existing services when a
+      // booking is edited; only the dedicated approve/decline actions change it.
+      const [savedHotels, savedExcursions, savedTransfers] = await Promise.all([
+        tx.hotel_trip_items.findMany({
+          where: { trip_item_id: id },
+          select: { id: true, approved: true, declined: true }
+        }),
+        tx.excursion_trip_items.findMany({
+          where: { trip_item_id: id },
+          select: { id: true, approved: true, declined: true }
+        }),
+        tx.transfer_trip_items.findMany({
+          where: { trip_item_id: id },
+          select: { id: true, approved: true, declined: true }
+        })
+      ]);
+      const approvalMaps = {
+        hotel: new Map(savedHotels.map((item) => [item.id, item])),
+        excursion: new Map(savedExcursions.map((item) => [item.id, item])),
+        transfer: new Map(savedTransfers.map((item) => [item.id, item]))
+      };
+      const getApprovalState = (type, item) =>
+        resolveServiceApprovalState(approvalMaps[type], item);
+      const confirmableStates = [
+        ...hotelItems.map((item) => getApprovalState('hotel', item)),
+        ...excursionItems.map((item) => getApprovalState('excursion', item)),
+        ...transferItems.map((item) => getApprovalState('transfer', item))
+      ];
+      const allServicesConfirmed = confirmableStates.length > 0 &&
+        confirmableStates.every((item) => item.approved);
+      const statusAfterSave = resolveBookingStatusAfterSave(
+        existing.status,
+        allServicesConfirmed,
+        data.status
+      );
+
       // Delete existing trip items
       await tx.hotel_trip_items.deleteMany({ where: { trip_item_id: id } });
       await tx.excursion_trip_items.deleteMany({ where: { trip_item_id: id } });
@@ -1176,7 +1229,7 @@ export async function updateQuotation(req, res, next) {
           is_booking: data.is_booking !== undefined ? data.is_booking : undefined,
           amount_paid: data.amount_paid !== undefined ? parseFloat(data.amount_paid) : undefined,
           penalty_cost: data.penalty_cost !== undefined ? parseFloat(data.penalty_cost) : undefined,
-          status: data.status !== undefined ? data.status : undefined,
+          status: statusAfterSave,
           include_assistance_fee: calculated.include_assistance_fee,
           assistance_fee_amount: calculated.assistance_fee_amount,
           include_description_in_itinerary: data.include_description_in_itinerary !== undefined ? data.include_description_in_itinerary : undefined,
@@ -1200,6 +1253,7 @@ export async function updateQuotation(req, res, next) {
       if (hotelItems.length) {
         for (const item of hotelItems) {
           const rtItems = item.room_type_items || item.room_types || [];
+          const approvalState = getApprovalState('hotel', item);
           await tx.hotel_trip_items.create({
             data: {
               trip_item_id: id, hotel_id: parseSafeInt(item.hotel_id), from_date: parseRequiredDate(item.from_date, tripFallbackDate),
@@ -1208,7 +1262,7 @@ export async function updateQuotation(req, res, next) {
               extra_bed_price: parseFloat(item.extra_bed_price) || 0, room_type: item.room_type || item.room_type_summary || null,
               abf_price: parseFloat(item.abf_price) || 0, lunch_price: parseFloat(item.lunch_price) || 0, dinner_price: parseFloat(item.dinner_price) || 0,
               promotions: parseSafeInt(item.promotions), tour_package: item.tour_package,
-              notes: item.notes, approved: item.approved || false, declined: item.declined || false,
+              notes: item.notes, approved: approvalState.approved, declined: approvalState.declined,
               promotion: item.promotion || null,
               meals: item.meals || null,
               room_types_json: item.room_types_json || null,
@@ -1246,6 +1300,7 @@ export async function updateQuotation(req, res, next) {
       if (excursionItems.length) {
         for (const item of excursionItems) {
           const excursionDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
+          const approvalState = getApprovalState('excursion', item);
           await tx.excursion_trip_items.create({
             data: {
               trip_item_id: id, excursion_id: parseSafeInt(item.excursion_id), supplier_id: parseSafeInt(item.supplier_id),
@@ -1253,7 +1308,7 @@ export async function updateQuotation(req, res, next) {
               to_date: excursionDate, hotel: item.hotel,
               guide_name: item.guide_name, guide_contact: item.guide_contact,
               price: parseFloat(item.price) || 0, currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
-              approved: item.approved || false, declined: item.declined || false,
+              approved: approvalState.approved, declined: approvalState.declined,
               pickup_time: item.pickup_time || null
             }
           });
@@ -1282,6 +1337,7 @@ export async function updateQuotation(req, res, next) {
       if (transferItems.length) {
         for (const item of transferItems) {
           const transferDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
+          const approvalState = getApprovalState('transfer', item);
           await tx.transfer_trip_items.create({
             data: {
               trip_item_id: id,
@@ -1292,7 +1348,7 @@ export async function updateQuotation(req, res, next) {
               supplier_id: parseSafeInt(item.supplier_id), guide_name: item.guide_name,
               guide_contact: item.guide_contact, price: parseFloat(item.price) || 0,
               currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
-              approved: item.approved || false, declined: item.declined || false,
+              approved: approvalState.approved, declined: approvalState.declined,
               city: item.city || item.transferCity || null,
               transfer_description: item.transfer_description || item.transferType || null,
               pickup_time: item.pickup_time || item.transferPickupTime || null,
@@ -1385,6 +1441,7 @@ export async function finalizeQuotation(req, res, next) {
     const updateData = {
       approved: false,
       declined: false,
+      is_booking: true,
       status: 'InProgress',
       updated_at: new Date()
     };

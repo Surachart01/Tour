@@ -220,6 +220,10 @@
         margin-bottom: 25px;
       }
 
+      .table-responsive.booking-actions-open {
+        overflow: visible !important;
+      }
+
       .table {
         background: white;
         margin-bottom: 0;
@@ -698,6 +702,98 @@
 
       .tooltip-btn .btn i {
         pointer-events: none;
+      }
+
+      .booking-actions-dropdown {
+        position: relative;
+        display: inline-flex !important;
+        justify-content: center;
+      }
+
+      .booking-actions-toggle {
+        width: 38px;
+        height: 36px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        background: #334e68;
+        border: 1px solid #334e68;
+        border-radius: 6px;
+      }
+
+      .booking-actions-toggle:hover,
+      .booking-actions-toggle:focus {
+        color: #ffffff;
+        background: #243b53;
+        border-color: #243b53;
+        box-shadow: 0 0 0 3px rgba(51, 78, 104, 0.14);
+      }
+
+      .booking-actions-toggle::after {
+        display: none;
+      }
+
+      .booking-actions-menu {
+        min-width: 210px;
+        padding: 6px;
+        background: #ffffff;
+        border: 1px solid #d9e2ec;
+        border-radius: 6px;
+        box-shadow: 0 10px 24px rgba(31, 41, 55, 0.16);
+        z-index: 1100;
+      }
+
+      .booking-actions-menu .tooltip-btn {
+        width: 100%;
+        min-height: 40px;
+        margin: 0 !important;
+        padding: 4px 6px;
+        display: flex !important;
+        align-items: center;
+        gap: 10px;
+        border-radius: 4px;
+      }
+
+      .booking-actions-menu .tooltip-btn:hover {
+        background: #f0f4f8;
+      }
+
+      .booking-actions-menu .tooltip-btn.booking-action-enabled {
+        cursor: pointer;
+      }
+
+      .booking-actions-menu .tooltip-btn.booking-action-disabled {
+        cursor: not-allowed;
+      }
+
+      .booking-actions-menu .tooltip-btn .btn {
+        width: 34px;
+        min-width: 34px;
+        height: 32px;
+        min-height: 32px;
+        padding: 5px;
+        flex: 0 0 34px;
+      }
+
+      .booking-actions-menu .tooltip-text {
+        position: static;
+        visibility: visible;
+        width: auto;
+        margin: 0;
+        padding: 0;
+        opacity: 1;
+        color: #243b53;
+        background: transparent;
+        font-size: 13px;
+        font-weight: 600;
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      .booking-actions-menu .tooltip-text::after {
+        display: none;
       }
 
       /* Page Loader Overlay */
@@ -3474,6 +3570,53 @@
           return confirm(`Are you sure you want to send supplier emails for the ${totalCount} selected item(s)?`);
         }
 
+        function groupHotelItemsForBulkEmail(items = []) {
+          const groups = new Map();
+
+          items.forEach((item) => {
+            if (!item.id || String(item.id).startsWith("temp-")) return;
+            const key = item.hotel_name
+              ? `name:${String(item.hotel_name).trim().toLowerCase()}`
+              : `id:${item.hotel_id || "unknown-hotel"}`;
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(item);
+          });
+
+          return Array.from(groups.values()).map((hotelItems) => {
+            const sorted = [...hotelItems].sort((a, b) => new Date(a.from_date) - new Date(b.from_date));
+            const checkIn = sorted.reduce((earliest, item) => {
+              const date = new Date(item.from_date);
+              return !earliest || date < earliest ? date : earliest;
+            }, null);
+            const checkOut = sorted.reduce((latest, item) => {
+              const date = new Date(item.to_date || item.from_date);
+              return !latest || date > latest ? date : latest;
+            }, null);
+            const sentCount = sorted.filter((item) => hasSupplierEmailBeenSent(item.email_sent)).length;
+
+            return {
+              ...sorted[0],
+              id: sorted.map((item) => item.id).join("_"),
+              from_date: checkIn,
+              to_date: checkOut,
+              nights: sorted.reduce((sum, item) => sum + (Number(item.nights) || 1), 0),
+              roomTypes: [...new Set(sorted.map((item) => item.room_type || "Standard"))],
+              itemCount: sorted.length,
+              email_sent: sentCount === sorted.length,
+              email_sent_any: sentCount > 0
+            };
+          });
+        }
+
+        function formatBulkEmailDate(value) {
+          if (!value) return "N/A";
+          return new Date(value).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric"
+          });
+        }
+
         function openBulkEmailModal(filterType = "all") {
           const container = document.getElementById("bulkEmailItemsContainer");
           if (!container) return;
@@ -3491,10 +3634,8 @@
           };
 
           if (typeof hotelsArray !== "undefined") {
-            hotelsArray.forEach(item => {
-              if (item.id && !String(item.id).startsWith("temp-")) {
-                addItem(item, "hotel", item.from_date);
-              }
+            groupHotelItemsForBulkEmail(hotelsArray).forEach(item => {
+              addItem(item, "hotel", item.from_date);
             });
           }
 
@@ -3557,9 +3698,12 @@
               let details = "";
               let badgeColor = "#1abb9c";
               const emailAlreadySent = hasSupplierEmailBeenSent(item.email_sent);
+              const emailPartiallySent = !emailAlreadySent && hasSupplierEmailBeenSent(item.email_sent_any);
 
               if (item.type === "hotel") {
-                details = `🏨 <strong>Hotel:</strong> ${item.hotel_name || "TBD"} - Room: ${item.room_type || "TBD"} (${item.nights} Night(s))`;
+                const period = `${formatBulkEmailDate(item.from_date)} - ${formatBulkEmailDate(item.to_date)}`;
+                const roomTypes = (item.roomTypes || [item.room_type || "Standard"]).join(", ");
+                details = `🏨 <strong>Hotel:</strong> ${item.hotel_name || "TBD"}<br><small>${period} · ${item.nights} Room-night(s) · Room: ${roomTypes}</small>`;
                 badgeColor = "#3498db";
               } else if (item.type === "transfer") {
                 details = `🚐 <strong>Transfer:</strong> ${item.transfer_description || "TBD"} (From ${item.from_location || "TBD"} to ${item.to_location || "TBD"})`;
@@ -3574,12 +3718,14 @@
 
               const statusBadge = emailAlreadySent
                 ? `<span class="badge badge-success" style="background-color: #28a745; color: white; margin-left: 10px; font-size: 0.7rem;">Sent</span>`
-                : `<span class="badge badge-warning" style="background-color: #f39c12; color: white; margin-left: 10px; font-size: 0.7rem;">Not Sent</span>`;
+                : emailPartiallySent
+                  ? `<span class="badge badge-warning" style="background-color: #e67e22; color: white; margin-left: 10px; font-size: 0.7rem;">Partially Sent</span>`
+                  : `<span class="badge badge-warning" style="background-color: #f39c12; color: white; margin-left: 10px; font-size: 0.7rem;">Not Sent</span>`;
               details += statusBadge;
 
               itemDiv.innerHTML = `
                 <div style="margin-right: 15px;">
-                  <input type="checkbox" class="booking-bulk-email-checkbox" data-id="${item.id}" data-type="${item.type}" data-email-sent="${emailAlreadySent ? "true" : "false"}" style="width: 18px; height: 18px; cursor: pointer;" checked />
+                  <input type="checkbox" class="booking-bulk-email-checkbox" data-id="${item.id}" data-type="${item.type}" data-email-sent="${emailAlreadySent || emailPartiallySent ? "true" : "false"}" style="width: 18px; height: 18px; cursor: pointer;" checked />
                 </div>
                 <div style="flex: 1;">
                   <span class="badge" style="background-color: ${badgeColor}; color: white; margin-bottom: 4px; font-size: 0.75rem;">${item.type.toUpperCase()}</span>
@@ -3626,7 +3772,8 @@
 
           try {
             if (byType.hotel.length > 0) {
-              const itemID = byType.hotel.length === 1 ? byType.hotel[0] : `group_${byType.hotel.join("_")}`;
+              const hotelItemIds = [...new Set(byType.hotel.flatMap((value) => value.split("_")).filter(Boolean))];
+              const itemID = hotelItemIds.length === 1 ? hotelItemIds[0] : `group_${hotelItemIds.join("_")}`;
               try {
                 const res = await fetch(`${Endpoint}/api/v1/bookings/${tripId}/notify/hotel/${itemID}`, {
                   method: "POST",
@@ -3635,8 +3782,9 @@
                     "Content-Type": "application/json"
                   }
                 });
-                if (!res.ok) throw new Error("Failed to send hotel bulk email");
-                successCount += byType.hotel.length;
+                const result = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(result.message || "Failed to send hotel bulk email");
+                successCount += Number(result.emailCount) || byType.hotel.length;
               } catch (e) {
                 console.error(e);
                 failCount += byType.hotel.length;
@@ -4520,6 +4668,8 @@
           row.dataset.excursionId = excursion.excursion_id; // ✅ Store Excursion ID
           row.dataset.quotationStatus = quotationStatus; // ✅ Store quotation status
           row.dataset.remarks = remarksVal;
+          row.dataset.approved = excursion.approved ? "true" : "false";
+          row.dataset.declined = excursion.declined ? "true" : "false";
           row.dataset.emailSent = excursion.email_sent ? "true" : "false";
 
           if (isPackage) {
@@ -7039,17 +7189,20 @@
           const hotelTableBody = document.getElementById("hotelsTableBody");
           const row = document.createElement("tr");
 
-          if (!hotel.hotel_id) {
-            console.error("Error: Hotel ID is missing", hotel);
+          if (!hotel.hotel_id && !hotel.hotel_name) {
+            console.error("Error: Hotel information is missing", hotel);
             return;
           }
 
           row.dataset.trip_hotel_id = hotel.id;
-          row.dataset.hotelId = hotel.hotel_id;
+          row.dataset.tripItemId = hotel.id || "";
+          row.dataset.hotelId = hotel.hotel_id || "";
           row.dataset.quotationStatus = quotationStatus; // ✅ Store quotation status
           row.dataset.singleRooms = hotel.single_rooms || 0;
           row.dataset.doubleRooms = hotel.double_rooms || 0;
           row.dataset.extraBeds = hotel.extra_beds || 0;
+          row.dataset.approved = hotel.approved ? "true" : "false";
+          row.dataset.declined = hotel.declined ? "true" : "false";
           row.dataset.emailSent = hotel.email_sent ? "true" : "false";
 
           // ✅ Save Boolean fields properly
@@ -8187,6 +8340,34 @@
         }
 
         // Booking action handlers
+        function updateConfirmedServiceRow(row, itemType) {
+          row.dataset.approved = "true";
+          row.dataset.declined = "false";
+          row.classList.remove("service-declined-row");
+          row.classList.add("service-confirmed-row");
+
+          const approveButton = row.querySelector(`.approve-${itemType}`);
+          if (approveButton) {
+            approveButton.disabled = true;
+            approveButton.title = "Confirmed";
+            approveButton.classList.remove("fa-check");
+            approveButton.style.opacity = "0.5";
+            approveButton.style.cursor = "not-allowed";
+            approveButton.innerHTML = '<i class="fa fa-check"></i>';
+
+            const actionItem = approveButton.closest(".tooltip-btn");
+            if (actionItem) {
+              actionItem.classList.remove("booking-action-enabled");
+              actionItem.classList.add("booking-action-disabled");
+              const label = actionItem.querySelector(".tooltip-text");
+              if (label) label.textContent = "Confirmed";
+            }
+          }
+
+          $(row).find(".booking-actions-dropdown").dropdown("hide");
+          updateBookingConfirmedButtonState();
+        }
+
         function approveItem(row, itemType) {
           const tripId = urlParams.get("id");
           let itemId;
@@ -8215,6 +8396,9 @@
           }
 
           const token = localStorage.getItem("token");
+          const approveButton = row.querySelector(`.approve-${itemType}`);
+          if (approveButton) approveButton.disabled = true;
+
           fetch(`${Endpoint}/api/v1/bookings/${tripId}/approveItem/${itemType}/${itemId}`, {
             method: "POST",
             headers: {
@@ -8227,11 +8411,12 @@
             return res.json();
           })
           .then((data) => {
+            updateConfirmedServiceRow(row, itemType);
             alert(usesConfirmedWording ? `${itemType.toUpperCase()} marked as confirmed successfully!` : `${itemType.toUpperCase()} approved successfully!`);
-            window.location.reload();
           })
           .catch((err) => {
             console.error(err);
+            if (approveButton) approveButton.disabled = false;
             alert(`Error: ${err.message}`);
           });
         }
@@ -8265,9 +8450,62 @@
           };
         }
 
+        function compactBookingActionCell(row) {
+          if (!row || !row.lastElementChild) return;
+          const actionCell = row.lastElementChild;
+          if (actionCell.querySelector(".booking-actions-dropdown")) return;
+
+          const source = Array.from(actionCell.children).find((child) =>
+            child.querySelector && child.querySelector(".tooltip-btn")
+          );
+          if (!source) return;
+
+          const actionItems = Array.from(source.children).filter((child) =>
+            child.classList && child.classList.contains("tooltip-btn")
+          );
+          if (!actionItems.length) return;
+
+          const dropdown = document.createElement("div");
+          dropdown.className = "dropdown booking-actions-dropdown";
+          dropdown.innerHTML = `
+            <button
+              type="button"
+              class="booking-actions-toggle dropdown-toggle"
+              data-toggle="dropdown"
+              aria-haspopup="true"
+              aria-expanded="false"
+              title="Actions"
+            >
+              <i class="fa fa-ellipsis-v" aria-hidden="true"></i>
+              <span class="sr-only">Actions</span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right booking-actions-menu"></div>
+          `;
+
+          const menu = dropdown.querySelector(".booking-actions-menu");
+          actionItems.forEach((item) => {
+            const button = item.querySelector("button");
+            item.classList.add(
+              button?.disabled ? "booking-action-disabled" : "booking-action-enabled"
+            );
+            menu.appendChild(item);
+          });
+          source.replaceWith(dropdown);
+        }
+
+        function compactBookingActionRows(body) {
+          Array.from(body?.children || []).forEach((row) => compactBookingActionCell(row));
+        }
+
         function updateBookingConfirmedButtonState() {
           const button = document.getElementById("bookingConfirmedBtn");
           if (!button) return;
+
+          if (String(quotationStatus || "").toLowerCase() === "confirmed") {
+            button.disabled = true;
+            button.title = "This booking is already confirmed";
+            return;
+          }
 
           const readiness = getBookingConfirmationReadiness();
           button.disabled = !readiness.isReady;
@@ -8284,6 +8522,11 @@
         }
 
         async function confirmBookingWhenServicesReady() {
+          if (String(quotationStatus || "").toLowerCase() === "confirmed") {
+            alert("This booking is already confirmed.");
+            return;
+          }
+
           const readiness = getBookingConfirmationReadiness();
           if (!readiness.isReady) {
             alert("Please confirm all hotel, transfer and excursion services before confirming the booking.");
@@ -11486,10 +11729,28 @@
         if (bookingConfirmedBtn) {
           bookingConfirmedBtn.addEventListener("click", confirmBookingWhenServicesReady);
         }
+
+        $(document)
+          .on("show.bs.dropdown", ".booking-actions-dropdown", function () {
+            this.closest(".table-responsive")?.classList.add("booking-actions-open");
+          })
+          .on("hidden.bs.dropdown", ".booking-actions-dropdown", function () {
+            this.closest(".table-responsive")?.classList.remove("booking-actions-open");
+          })
+          .on("click", ".booking-actions-menu .tooltip-btn", function (event) {
+            if (event.target.closest("button")) return;
+            const button = this.querySelector("button");
+            if (button && !button.disabled) button.click();
+          });
+
         ["hotelsTableBody", "transferTableBody", "excursionTableBody"].forEach((bodyId) => {
           const body = document.getElementById(bodyId);
           if (body) {
-            new MutationObserver(updateBookingConfirmedButtonState).observe(body, { childList: true });
+            compactBookingActionRows(body);
+            new MutationObserver(() => {
+              updateBookingConfirmedButtonState();
+              compactBookingActionRows(body);
+            }).observe(body, { childList: true, subtree: true });
           }
         });
 
@@ -11579,7 +11840,8 @@
 
                 // Ensure correct ISO format for date fields
                 const transferDate = getCellDateValue(cells[0]).substring(0, 10) || row.dataset.transferDate || "";
-                rowData["trip_item_id"] = 0;
+                rowData["id"] = parseInt(row.dataset.id, 10) || null;
+                rowData["trip_item_id"] = rowData["id"];
                 rowData["transfer_id"] = parseInt(row.dataset.transferId, 10) || 0;
                 rowData["type_of_transfer"] = normalizeTransferDirection(row.dataset.typeOfTransfer || cells[1]?.textContent.trim() || "");
 
@@ -11620,6 +11882,8 @@
                 rowData["discount"] = 0.0;
                 rowData["final_cost"] = rowData["total_cost"];
                 rowData["notify_supplier"] = false;
+                rowData["approved"] = row.dataset.approved === "true";
+                rowData["declined"] = row.dataset.declined === "true";
                 rowData["created_at"] = new Date().toISOString();
                 rowData["updated_at"] = new Date().toISOString();
 
@@ -11750,6 +12014,8 @@
                 const cells = row.querySelectorAll("td");
 
                 // ✅ Fetch excursion_id from dataset
+                rowData["id"] =
+                  parseInt(row.dataset.trip_excursion_id, 10) || null;
                 rowData["excursion_id"] =
                   parseInt(row.getAttribute("data-excursion-id"), 10) || 0;
                 console.log("Extracted Excursion ID:", rowData["excursion_id"]); // Debugging
@@ -11768,6 +12034,8 @@
                 rowData["price"] = rowData["total_cost"];
                 rowData["discount"] = 0.0;
                 rowData["final_cost"] = rowData["total_cost"];
+                rowData["approved"] = row.dataset.approved === "true";
+                rowData["declined"] = row.dataset.declined === "true";
 
                 dataArray.push(rowData);
               });
@@ -11785,8 +12053,10 @@
                 const cells = row.querySelectorAll("td");
 
                 // ✅ Basic Fields
+                rowData["id"] =
+                  parseInt(row.dataset.trip_hotel_id, 10) || null;
                 rowData["trip_item_id"] =
-                  parseInt(row.dataset.tripItemId, 10) || 0;
+                  rowData["id"];
                 rowData["hotel_id"] = parseInt(row.dataset.hotelId, 10) || 0;
                 rowData["room_id"] = parseInt(row.dataset.roomId, 10) || 0;
                 rowData["hotel_name"] =

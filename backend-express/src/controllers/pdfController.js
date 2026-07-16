@@ -9,6 +9,97 @@ const transporter = nodemailer.createTransport({
   auth: { user: process.env.SMTP_USER || '', pass: process.env.SMTP_PASS || '' }
 });
 
+function normalizeHotelEmailKey(item) {
+  const hotelName = item.hotel_name || item.hotels?.name;
+  if (hotelName) return `name:${String(hotelName).trim().toLowerCase()}`;
+  if (item.hotel_id) return `id:${item.hotel_id}`;
+  return 'name:unknown-hotel';
+}
+
+function toValidDate(value) {
+  const date = value instanceof Date ? new Date(value) : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function hotelItemNights(item, fromDate, toDate) {
+  const storedNights = Number(item.nights);
+  if (Number.isFinite(storedNights) && storedNights > 0) return storedNights;
+  if (!fromDate || !toDate) return 1;
+  return Math.max(1, Math.round((toDate.getTime() - fromDate.getTime()) / 86400000));
+}
+
+export function groupHotelItemsForSupplierEmail(hotelItems = []) {
+  const groups = new Map();
+
+  hotelItems.forEach((item) => {
+    const key = normalizeHotelEmailKey(item);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  });
+
+  return Array.from(groups.values()).map((items) => {
+    const sortedItems = [...items].sort((a, b) => {
+      return (toValidDate(a.from_date)?.getTime() || 0) - (toValidDate(b.from_date)?.getTime() || 0);
+    });
+    const segments = [];
+
+    sortedItems.forEach((item) => {
+      const fromDate = toValidDate(item.from_date);
+      const toDate = toValidDate(item.to_date) || fromDate;
+      const nights = hotelItemNights(item, fromDate, toDate);
+      const roomType = item.room_type || 'Standard';
+      const current = segments[segments.length - 1];
+      const isConsecutive = current && fromDate && current.to_date &&
+        current.to_date.toDateString() === fromDate.toDateString();
+
+      if (isConsecutive && current.room_type === roomType) {
+        current.to_date = toDate;
+        current.nights += nights;
+        current.remarks.push(item.notes || item.remarks);
+        current.originalItems.push(item);
+      } else {
+        segments.push({
+          room_type: roomType,
+          from_date: fromDate,
+          to_date: toDate,
+          nights,
+          remarks: [item.notes || item.remarks].filter(Boolean),
+          originalItems: [item]
+        });
+      }
+    });
+
+    const datedSegments = segments.filter((segment) => segment.from_date || segment.to_date);
+    const checkIn = datedSegments.reduce((earliest, segment) => {
+      if (!segment.from_date) return earliest;
+      return !earliest || segment.from_date < earliest ? segment.from_date : earliest;
+    }, null);
+    const checkOut = datedSegments.reduce((latest, segment) => {
+      if (!segment.to_date) return latest;
+      return !latest || segment.to_date > latest ? segment.to_date : latest;
+    }, null);
+
+    return {
+      hotel_id: sortedItems[0]?.hotel_id || null,
+      hotel_name: sortedItems[0]?.hotel_name || sortedItems[0]?.hotels?.name || 'Hotel',
+      hotel: sortedItems[0]?.hotels || null,
+      check_in: checkIn,
+      check_out: checkOut,
+      segments,
+      originalItems: sortedItems
+    };
+  });
+}
+
+function escapeEmailHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // ==================== PDF GENERATION ====================
 export async function generateQuotationPDF(req, res, next) {
   try {
@@ -104,6 +195,300 @@ export async function generateReceiptPDF(req, res, next) {
     doc.text(`Total Amount: ${trip.total_amount || 0}`);
     doc.text(`Discount: ${trip.discount_amount || 0}`);
     doc.fontSize(14).text(`Amount Paid: ${trip.final_amount || 0}`, { underline: true });
+    doc.end();
+  } catch (err) { next(err); }
+}
+
+function proformaNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function firstPositive(...values) {
+  for (const value of values) {
+    const parsed = proformaNumber(value);
+    if (parsed > 0) return parsed;
+  }
+  return 0;
+}
+
+function proformaDate(value) {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleDateString('en-GB').replace(/\//g, '-');
+}
+
+function proformaCurrency(value) {
+  return `THB ${proformaNumber(value).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`;
+}
+
+function proformaPax(item, trip) {
+  const itemPax = proformaNumber(item?.pax || item?.number_of_adults) + proformaNumber(item?.number_of_kids);
+  const tripPax = proformaNumber(trip?.number_of_adults) + proformaNumber(trip?.number_of_kids);
+  return itemPax > 0 ? itemPax : (tripPax > 0 ? tripPax : '-');
+}
+
+function buildProformaServiceRows(trip) {
+  const rows = [];
+
+  (trip.hotel_trip_items || []).forEach((item) => {
+    const dates = `${proformaDate(item.from_date)} - ${proformaDate(item.to_date)}`;
+    const details = [
+      item.room_type,
+      item.city,
+      item.nights ? `${item.nights} night(s)` : ''
+    ].filter(Boolean).join(' | ') || '-';
+    rows.push({
+      type: 'Hotel',
+      date: dates,
+      description: item.hotel_name || item.hotels?.name || 'Hotel',
+      details,
+      pax: proformaPax(item, trip),
+      amount: firstPositive(
+        item.total_price,
+        item.final_cost,
+        item.total_cost,
+        item.price,
+        proformaNumber(item.single_price) + proformaNumber(item.double_price) + proformaNumber(item.extra_bed_price)
+      )
+    });
+  });
+
+  (trip.tour_trip_items || []).forEach((item) => {
+    rows.push({
+      type: 'Tour',
+      date: proformaDate(item.from_date),
+      description: item.tour_name || item.tours?.name || 'Tour',
+      details: [item.from_location, item.to_location, item.remarks].filter(Boolean).join(' | ') || '-',
+      pax: proformaPax(item, trip),
+      amount: firstPositive(item.total_price, item.final_cost, item.total_cost, item.price)
+    });
+  });
+
+  (trip.transfer_trip_items || []).forEach((item) => {
+    const route = [item.from_location, item.to_location].filter(Boolean).join(' -> ');
+    rows.push({
+      type: 'Transfer',
+      date: proformaDate(item.from_date),
+      description: item.transfer_description || item.transfers?.description || route || 'Transfer',
+      details: [route, item.pickup_time ? `Pickup ${item.pickup_time}` : '', item.flight_number || item.flight_time].filter(Boolean).join(' | ') || '-',
+      pax: proformaPax(item, trip),
+      amount: firstPositive(item.total_price, item.final_cost, item.total_cost, item.price)
+    });
+  });
+
+  (trip.excursion_trip_items || []).forEach((item) => {
+    rows.push({
+      type: 'Excursion',
+      date: proformaDate(item.from_date),
+      description: item.excursion_name || item.excursions?.name || 'Excursion',
+      details: item.city || item.remarks || '-',
+      pax: proformaPax(item, trip),
+      amount: firstPositive(item.total_price, item.final_cost, item.total_cost, item.price)
+    });
+  });
+
+  (trip.flight_trip_items || []).forEach((item) => {
+    rows.push({
+      type: 'Flight',
+      date: proformaDate(item.from_date),
+      description: item.flight_number || item.route || 'Flight',
+      details: item.route || item.remarks || '-',
+      pax: proformaPax(item, trip),
+      amount: firstPositive(item.total_price, item.final_cost, item.total_cost, item.price)
+    });
+  });
+
+  (trip.other_trip_items || []).forEach((item) => {
+    rows.push({
+      type: 'Other',
+      date: proformaDate(item.from_date),
+      description: item.other_name || item.others?.name || item.description || 'Other Service',
+      details: item.remarks || item.notes || '-',
+      pax: proformaPax(item, trip),
+      amount: firstPositive(item.total_price, item.final_cost, item.total_cost, item.price)
+    });
+  });
+
+  const total = firstPositive(trip.final_amount, trip.final_cost, trip.total_amount, trip.total_cost);
+  const amountSum = rows.reduce((sum, row) => sum + proformaNumber(row.amount), 0);
+  if (rows.length && amountSum === 0 && total > 0) {
+    const perRow = Math.floor((total / rows.length) * 100) / 100;
+    rows.forEach((row, index) => {
+      row.amount = index === rows.length - 1
+        ? Math.round((total - perRow * (rows.length - 1)) * 100) / 100
+        : perRow;
+    });
+  }
+
+  return rows;
+}
+
+function ensureProformaSpace(doc, neededHeight) {
+  if (doc.y + neededHeight > doc.page.height - 70) {
+    doc.addPage();
+  }
+}
+
+function drawProformaSectionTitle(doc, title, brandColor) {
+  ensureProformaSpace(doc, 24);
+  doc.fillColor(brandColor).fontSize(11).font('Helvetica-Bold').text(title, 50, doc.y);
+  doc.moveTo(50, doc.y + 3).lineTo(545, doc.y + 3).strokeColor(brandColor).lineWidth(1).stroke();
+  doc.moveDown(0.7);
+}
+
+function drawProformaRow(doc, columns, widths, options = {}) {
+  const x = 50;
+  const y = doc.y;
+  const padding = 5;
+  const fontSize = options.fontSize || 8;
+  const fill = options.fill;
+  const color = options.color || '#111111';
+  const bold = options.bold;
+  const heights = columns.map((col, index) => {
+    doc.font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(fontSize);
+    return doc.heightOfString(String(col ?? ''), { width: widths[index] - padding * 2 });
+  });
+  const rowHeight = Math.max(options.minHeight || 22, Math.max(...heights) + padding * 2);
+  ensureProformaSpace(doc, rowHeight + 4);
+  if (fill) {
+    doc.rect(x, doc.y, widths.reduce((a, b) => a + b, 0), rowHeight).fill(fill);
+  }
+  let cursorX = x;
+  columns.forEach((col, index) => {
+    doc.fillColor(color)
+      .font(bold ? 'Helvetica-Bold' : 'Helvetica')
+      .fontSize(fontSize)
+      .text(String(col ?? ''), cursorX + padding, doc.y + padding, {
+        width: widths[index] - padding * 2,
+        align: options.align?.[index] || 'left'
+      });
+    cursorX += widths[index];
+  });
+  doc.y = y + rowHeight;
+  doc.moveTo(x, doc.y).lineTo(x + widths.reduce((a, b) => a + b, 0), doc.y).strokeColor('#eeeeee').lineWidth(0.5).stroke();
+}
+
+export async function generateProformaInvoicePDF(req, res, next) {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).send('Invalid booking ID');
+
+    const trip = await prisma.trips.findUnique({
+      where: { id },
+      include: {
+        agents: true,
+        hotel_trip_items: { orderBy: [{ display_order: 'asc' }, { from_date: 'asc' }], include: { hotels: true, hotel_room_type_items: true } },
+        excursion_trip_items: { orderBy: { from_date: 'asc' }, include: { excursions: true, suppliers: true } },
+        tour_trip_items: { orderBy: { from_date: 'asc' }, include: { tours: true, suppliers: true } },
+        transfer_trip_items: { orderBy: { from_date: 'asc' }, include: { transfers: true, suppliers: true } },
+        flight_trip_items: { orderBy: { from_date: 'asc' } },
+        other_trip_items: { orderBy: { from_date: 'asc' }, include: { others: true } }
+      }
+    });
+
+    if (!trip) return res.status(404).send('Booking not found');
+
+    const brandColor = '#f47b20';
+    const brandDark = '#c85f0f';
+    const brandLight = '#fff4ec';
+    const bookingRef = trip.booking_reference || trip.quotation_reference || `booking-${trip.id}`;
+    const total = firstPositive(trip.final_amount, trip.final_cost, trip.total_amount, trip.total_cost);
+    const rows = buildProformaServiceRows(trip);
+
+    const doc = new PDFDocument({ size: 'A4', margin: 50, bufferPages: true });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=proforma_${bookingRef}.pdf`);
+    doc.pipe(res);
+
+    const logoPath = path.resolve(process.cwd(), '../frontend-main/production/images/Verathailand_logo.png');
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 50, 45, { width: 115 });
+    }
+    doc.fillColor(brandDark).font('Helvetica-Bold').fontSize(11).text('VeraThailandia Travel Co., Ltd.', 335, 50, { align: 'right', width: 210 });
+    doc.fillColor('#111111').font('Helvetica').fontSize(8)
+      .text('Email: info@verathailandia.com', 335, 66, { align: 'right', width: 210 })
+      .text('Contact: +66 123 456 789', 335, 78, { align: 'right', width: 210 })
+      .text('Website: www.verathailandia.com', 335, 90, { align: 'right', width: 210 });
+    doc.moveTo(50, 112).lineTo(545, 112).strokeColor(brandColor).lineWidth(1.5).stroke();
+
+    doc.y = 132;
+    doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(19).text('PROFORMA INVOICE', { align: 'center' });
+    doc.moveDown(2);
+
+    drawProformaSectionTitle(doc, 'Booking Details', brandColor);
+    const detailsY = doc.y;
+    doc.fillColor('#111111').fontSize(9).font('Helvetica-Bold').text('Booking ID:', 60, detailsY);
+    doc.font('Helvetica').text(bookingRef, 125, detailsY);
+    doc.font('Helvetica-Bold').text('Payment Date:', 315, detailsY);
+    doc.font('Helvetica').text(proformaDate(trip.created_at || trip.booking_date), 395, detailsY);
+    doc.font('Helvetica-Bold').text('Status:', 60, detailsY + 14);
+    doc.font('Helvetica').text(trip.status || 'Confirmed', 125, detailsY + 14);
+    doc.y = detailsY + 42;
+
+    drawProformaSectionTitle(doc, 'Client Details', brandColor);
+    const clientBoxY = doc.y;
+    doc.roundedRect(50, clientBoxY, 495, 70, 4).strokeColor('#e9ecef').stroke();
+    doc.rect(50, clientBoxY, 3, 70).fill(brandColor);
+    doc.fillColor('#111111').font('Helvetica-Bold').fontSize(10).text(trip.client_name || '-', 62, clientBoxY + 12);
+    doc.font('Helvetica').fontSize(9)
+      .text(`Email: ${trip.client_email || '-'}`, 62, clientBoxY + 28)
+      .text(`Contact: ${trip.client_phone || '-'}`, 62, clientBoxY + 42)
+      .text(`Agent: ${trip.agents?.name || trip.agent_name || '-'}`, 62, clientBoxY + 56);
+    doc.y = clientBoxY + 92;
+
+    drawProformaSectionTitle(doc, 'Booked Services', brandColor);
+    if (rows.length) {
+      const widths = [28, 58, 86, 208, 35, 80];
+      drawProformaRow(doc, ['#', 'Type', 'Date', 'Booked Detail', 'Pax', 'Amount'], widths, {
+        fill: brandColor,
+        color: '#ffffff',
+        bold: true,
+        fontSize: 8,
+        minHeight: 22,
+        align: ['center', 'left', 'left', 'left', 'center', 'right']
+      });
+      rows.forEach((row, index) => {
+        drawProformaRow(doc, [
+          index + 1,
+          row.type,
+          row.date,
+          `${row.description}\n${row.details}`,
+          row.pax,
+          proformaCurrency(row.amount)
+        ], widths, {
+          fontSize: 8,
+          minHeight: 34,
+          align: ['center', 'left', 'left', 'left', 'center', 'right']
+        });
+      });
+      doc.moveDown(1.4);
+    } else {
+      doc.roundedRect(50, doc.y, 495, 28, 4).fillAndStroke(brandLight, brandColor);
+      doc.fillColor('#555555').fontSize(9).text('No service details were found for this booking.', 60, doc.y + 9);
+      doc.moveDown(2);
+    }
+
+    drawProformaSectionTitle(doc, 'Amount Details', brandColor);
+    const amountY = doc.y;
+    doc.roundedRect(320, amountY, 225, 28, 4).fill(brandColor);
+    doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(10).text('Total (Excluding Tax):', 332, amountY + 9);
+    doc.text(proformaCurrency(total), 430, amountY + 9, { width: 100, align: 'right' });
+    doc.y = amountY + 58;
+
+    ensureProformaSpace(doc, 45);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor(brandColor).lineWidth(1).stroke();
+    doc.moveDown(1.3);
+    doc.fillColor(brandColor).font('Helvetica-Bold').fontSize(8).text('Thank you for choosing VeraThailandia!', { align: 'center' });
+    doc.fillColor('#666666').font('Helvetica').fontSize(7)
+      .text('We appreciate your business and look forward to serving you again.', { align: 'center' })
+      .text('This is a computer-generated invoice and does not require a signature.', { align: 'center' })
+      .text('For any queries, please contact us at info@verathailandia.com or +66 123 456 789', { align: 'center' });
+
     doc.end();
   } catch (err) { next(err); }
 }
@@ -216,18 +601,21 @@ export async function notifySupplierOrHotel(req, res, next) {
     };
 
     if (itemType === 'hotel') {
-      let whereClause = {};
+      let itemFilter = {};
       if (itemID === 'all') {
-        whereClause = { trip_item_id: tripId };
+        itemFilter = {};
       } else if (itemID.startsWith('group_')) {
         const ids = itemID.replace('group_', '').split('_').map(x => parseInt(x)).filter(Boolean);
-        whereClause = { id: { in: ids } };
+        if (ids.length === 0) return res.status(400).json({ success: false, message: 'Invalid hotel item selection' });
+        itemFilter = { id: { in: ids } };
       } else {
-        whereClause = { id: parseInt(itemID) };
+        const parsedItemId = parseInt(itemID);
+        if (Number.isNaN(parsedItemId)) return res.status(400).json({ success: false, message: 'Invalid hotel item ID' });
+        itemFilter = { id: parsedItemId };
       }
 
       const hotelItems = await prisma.hotel_trip_items.findMany({
-        where: whereClause,
+        where: { trip_item_id: tripId, ...itemFilter },
         include: { hotels: { include: { hotel_contacts: true } } }
       });
 
@@ -235,59 +623,30 @@ export async function notifySupplierOrHotel(req, res, next) {
         return res.status(404).json({ success: false, message: 'No hotel items found' });
       }
 
-      // Group items by hotel_id / hotel_name
-      const grouped = {};
-      hotelItems.forEach(item => {
-        const key = item.hotel_id || item.hotel_name;
-        if (!grouped[key]) grouped[key] = [];
-        grouped[key].push(item);
-      });
+      const hotelGroups = groupHotelItemsForSupplierEmail(hotelItems);
+      let emailsSentCount = 0;
 
-      // For each group, sort by from_date and consolidate consecutive stays
-      for (const key in grouped) {
-        const sortedItems = grouped[key].sort((a, b) => new Date(a.from_date) - new Date(b.from_date));
-        
-        const consolidatedList = [];
-        let currentConsolidated = null;
-
-        for (const item of sortedItems) {
-          const itemFrom = new Date(item.from_date);
-          const itemTo = new Date(item.to_date);
-
-          if (currentConsolidated && 
-              new Date(currentConsolidated.to_date).toDateString() === itemFrom.toDateString() &&
-              currentConsolidated.room_type === item.room_type
-          ) {
-            currentConsolidated.to_date = itemTo;
-            currentConsolidated.nights += item.nights || 1;
-            currentConsolidated.remarks.push(item.notes);
-            currentConsolidated.originalItems.push(item);
-          } else {
-            currentConsolidated = {
-              hotel_id: item.hotel_id,
-              hotel_name: item.hotel_name,
-              room_type: item.room_type || 'Standard',
-              from_date: itemFrom,
-              to_date: itemTo,
-              nights: item.nights || 1,
-              remarks: [item.notes].filter(Boolean),
-              originalItems: [item]
-            };
-            consolidatedList.push(currentConsolidated);
-          }
-        }
-
-        // For each consolidated stay, build and send the email
-        for (const stay of consolidatedList) {
+      // One message per hotel. Different room types/periods remain as detail rows.
+      for (const hotelGroup of hotelGroups) {
           // Get hotel contact email
           let recipientEmail = 'reservation@verathailandia.com'; // fallback
-          const firstOriginalItem = stay.originalItems[0];
+          const firstOriginalItem = hotelGroup.originalItems[0];
           if (firstOriginalItem.hotels?.hotel_contacts?.length) {
             const contact = firstOriginalItem.hotels.hotel_contacts.find(c => c.email);
             if (contact?.email) recipientEmail = contact.email;
           }
 
-          const remarksStr = [...new Set(stay.remarks)].join(', ');
+          const stayRows = hotelGroup.segments.map((stay) => {
+            const remarksStr = [...new Set(stay.remarks.filter(Boolean))].join(', ');
+            return `
+              <tr>
+                <td style="padding: 8px; border: 1px solid #dfe6e9;">${escapeEmailHtml(stay.room_type)}</td>
+                <td style="padding: 8px; border: 1px solid #dfe6e9; white-space: nowrap;">${escapeEmailHtml(formatDate(stay.from_date))}</td>
+                <td style="padding: 8px; border: 1px solid #dfe6e9; white-space: nowrap;">${escapeEmailHtml(formatDate(stay.to_date))}</td>
+                <td style="padding: 8px; border: 1px solid #dfe6e9; text-align: center;">${escapeEmailHtml(stay.nights)}</td>
+                <td style="padding: 8px; border: 1px solid #dfe6e9; color: #d9534f;">${escapeEmailHtml(remarksStr || '-')}</td>
+              </tr>`;
+          }).join('');
 
           const emailHtml = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
@@ -314,29 +673,24 @@ export async function notifySupplierOrHotel(req, res, next) {
                 <table style="width: 100%; border-collapse: collapse;">
                   <tr>
                     <td style="padding: 4px 0; color: #73879C; font-weight: bold; width: 120px;">Hotel Name:</td>
-                    <td style="padding: 4px 0; color: #2A3F54; font-weight: bold;">${stay.hotel_name}</td>
+                    <td style="padding: 4px 0; color: #2A3F54; font-weight: bold;">${escapeEmailHtml(hotelGroup.hotel_name)}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 4px 0; color: #73879C; font-weight: bold;">Room Type:</td>
-                    <td style="padding: 4px 0; color: #2A3F54;">${stay.room_type}</td>
+                    <td style="padding: 4px 0; color: #73879C; font-weight: bold;">Overall Period:</td>
+                    <td style="padding: 4px 0; color: #2A3F54;">${escapeEmailHtml(formatDate(hotelGroup.check_in))} - ${escapeEmailHtml(formatDate(hotelGroup.check_out))}</td>
                   </tr>
-                  <tr>
-                    <td style="padding: 4px 0; color: #73879C; font-weight: bold;">Check-in:</td>
-                    <td style="padding: 4px 0; color: #2A3F54;">${formatDate(stay.from_date)}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 4px 0; color: #73879C; font-weight: bold;">Check-out:</td>
-                    <td style="padding: 4px 0; color: #2A3F54;">${formatDate(stay.to_date)}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 4px 0; color: #73879C; font-weight: bold;">Total Nights:</td>
-                    <td style="padding: 4px 0; color: #2A3F54;">${stay.nights} night(s)</td>
-                  </tr>
-                  ${remarksStr ? `
-                  <tr>
-                    <td style="padding: 4px 0; color: #73879C; font-weight: bold; vertical-align: top;">Remarks:</td>
-                    <td style="padding: 4px 0; color: #d9534f;">${remarksStr}</td>
-                  </tr>` : ''}
+                </table>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 13px;">
+                  <thead>
+                    <tr style="background: #2A3F54; color: #fff;">
+                      <th style="padding: 8px; border: 1px solid #2A3F54; text-align: left;">Room Type</th>
+                      <th style="padding: 8px; border: 1px solid #2A3F54; text-align: left;">Check-in</th>
+                      <th style="padding: 8px; border: 1px solid #2A3F54; text-align: left;">Check-out</th>
+                      <th style="padding: 8px; border: 1px solid #2A3F54;">Nights</th>
+                      <th style="padding: 8px; border: 1px solid #2A3F54; text-align: left;">Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody>${stayRows}</tbody>
                 </table>
               </div>
               <p style="color: #73879C; font-size: 12px; text-align: center; margin-top: 30px; border-top: 1px solid #e0e0e0; padding-top: 10px;">
@@ -351,21 +705,26 @@ export async function notifySupplierOrHotel(req, res, next) {
             await transporter.sendMail({
               from: process.env.SMTP_FROM || process.env.SMTP_USER,
               to: recipientEmail,
-              subject: `Hotel Stay Booking - Ref: ${trip.booking_reference || trip.id} - ${stay.hotel_name}`,
+              subject: `Hotel Stay Booking - Ref: ${trip.booking_reference || trip.id} - ${hotelGroup.hotel_name}`,
               html: emailHtml
             });
           }
 
           // Mark all original items as email_sent = true in DB
-          const ids = stay.originalItems.map(x => x.id);
+          const ids = hotelGroup.originalItems.map(x => x.id);
           await prisma.hotel_trip_items.updateMany({
-            where: { id: { in: ids } },
+            where: { trip_item_id: tripId, id: { in: ids } },
             data: { email_sent: true }
           });
-        }
+          emailsSentCount += 1;
       }
 
-      return res.json({ success: true, message: `Consolidated notification(s) sent successfully for hotels.` });
+      return res.json({
+        success: true,
+        emailCount: emailsSentCount,
+        itemCount: hotelItems.length,
+        message: `${emailsSentCount} consolidated hotel email${emailsSentCount === 1 ? '' : 's'} sent successfully.`
+      });
     }
 
     // Handles transfer notifications

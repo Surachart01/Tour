@@ -325,7 +325,7 @@ function generatePdfOnly() {
   generateInvoicePDF(formData);
   
   // Show success message
-  showSuccessMessage('PDF generated successfully!');
+  showSuccessMessage('PDF download started successfully!');
 }
 
 // Save invoice (legacy function - kept for compatibility)
@@ -333,26 +333,66 @@ function saveInvoice() {
   saveInvoiceOnly();
 }
 
-// Load invoices
-function loadInvoices() {
-  const savedInvoices = localStorage.getItem('invoices');
-  if (savedInvoices) {
-    invoices = JSON.parse(savedInvoices);
+// Load confirmed bookings directly from the database.
+async function loadInvoices() {
+  const tableBody = document.getElementById("invoiceTableBody");
+  tableBody.innerHTML = `
+    <tr><td colspan="9" class="text-center" style="padding: 40px;">
+      <i class="fa fa-spinner fa-spin"></i> Loading confirmed bookings...
+    </td></tr>`;
+
+  try {
+    const response = await fetch(`${Endpoint}/api/v1/bookings`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+    });
+    if (!response.ok) throw new Error("Failed to load confirmed bookings");
+
+    const bookings = await response.json();
+    invoices = (Array.isArray(bookings) ? bookings : [])
+      .filter((booking) => String(booking.status || "").toLowerCase() === "confirmed")
+      .map((booking) => {
+        const amount = Number(booking.final_amount || booking.final_cost || 0);
+        return {
+          id: booking.id,
+          tripId: booking.id,
+          bookingId: booking.booking_reference || booking.quotation_reference || String(booking.id),
+          paymentDate: booking.created_at || booking.booking_date,
+          customerName: booking.client_name || "-",
+          customerEmail: booking.client_email || "",
+          customerContact: booking.client_phone || "-",
+          agentName: booking.agents?.name || booking.agent_name || "-",
+          pax: (Number(booking.number_of_adults) || 0) + (Number(booking.number_of_kids) || 0),
+          totalFee: amount,
+          gstAmount: 0,
+          netAmount: amount,
+          billingAddress: "-",
+          status: "Confirmed",
+          isConfirmedBooking: true
+        };
+      });
+
+    filteredInvoices = [...invoices];
+    totalPages = Math.ceil(filteredInvoices.length / rowsPerPage);
+    currentPage = 1;
+    renderInvoiceTable();
+    updatePaginationButtons();
+  } catch (error) {
+    console.error("Error loading proforma invoices:", error);
+    tableBody.innerHTML = `
+      <tr><td colspan="9" class="text-center text-danger" style="padding: 40px;">
+        <i class="fa fa-exclamation-triangle"></i> ${error.message}
+      </td></tr>`;
   }
-  filteredInvoices = [...invoices];
-  totalPages = Math.ceil(filteredInvoices.length / rowsPerPage);
-  currentPage = 1;
-  renderInvoiceTable();
-  updatePaginationButtons();
 }
 
 // Filter table by search box
 function filterTable() {
   const searchText = document.getElementById("searchBox").value.toLowerCase();
   filteredInvoices = invoices.filter(inv =>
-    inv.bookingId.toLowerCase().includes(searchText) ||
-    inv.customerName.toLowerCase().includes(searchText) ||
-    inv.customerEmail.toLowerCase().includes(searchText)
+    String(inv.bookingId || "").toLowerCase().includes(searchText) ||
+    String(inv.customerName || "").toLowerCase().includes(searchText) ||
+    String(inv.customerEmail || "").toLowerCase().includes(searchText) ||
+    String(inv.agentName || "").toLowerCase().includes(searchText)
   );
   totalPages = Math.ceil(filteredInvoices.length / rowsPerPage);
   currentPage = 1;
@@ -412,10 +452,10 @@ function renderInvoiceTable() {
   if (filteredInvoices.length === 0) {
     tableBody.innerHTML = `
       <tr>
-        <td colspan="10" class="text-center" style="padding: 40px;">
+        <td colspan="9" class="text-center" style="padding: 40px;">
           <i class="fa fa-file-text-o fa-3x" style="color: #ddd; margin-bottom: 15px;"></i>
-          <h4>No Invoices Found</h4>
-          <p class="text-muted">Click "Add New Invoice" to create your first invoice.</p>
+          <h4>No Confirmed Bookings Found</h4>
+          <p class="text-muted">A proforma invoice appears after every required service and the booking are confirmed.</p>
         </td>
       </tr>
     `;
@@ -429,23 +469,19 @@ function renderInvoiceTable() {
     const row = document.createElement("tr");
     row.innerHTML = `
       <td>${invoice.bookingId}</td>
-      <td>${invoice.bookingType}</td>
       <td>${formatDate(invoice.paymentDate)}</td>
       <td>${invoice.customerName}</td>
-      <td>${invoice.customerEmail}</td>
+      <td>${invoice.agentName || "-"}</td>
       <td>${invoice.customerContact}</td>
+      <td>${invoice.pax || 0}</td>
       <td>${formatCurrency(invoice.totalFee)}</td>
-      <td>${formatCurrency(invoice.gstAmount)}</td>
-      <td>${formatCurrency(invoice.netAmount)}</td>
+      <td><span class="badge badge-success">CONFIRMED</span></td>
       <td>
-        <button class="btn btn-sm btn-info btn-action" onclick="editInvoice(${invoice.id})" title="Edit">
-          <i class="fa fa-edit"></i>
+        <button class="btn btn-sm btn-info btn-action" onclick="window.location.href='edit_booking.html?id=${invoice.tripId}'" title="View Booking">
+          <i class="fa fa-eye"></i>
         </button>
         <button class="btn btn-sm btn-success btn-action" onclick="generateInvoicePDF(${JSON.stringify(invoice).replace(/"/g, '&quot;')})" title="Generate PDF">
           <i class="fa fa-file-pdf-o"></i>
-        </button>
-        <button class="btn btn-sm btn-danger btn-action" onclick="deleteInvoice(${invoice.id})" title="Delete">
-          <i class="fa fa-trash"></i>
         </button>
       </td>
     `;
@@ -471,130 +507,543 @@ function deleteInvoice(invoiceId) {
   }
 }
 
-// Generate PDF
-function generateInvoicePDF(invoice) {
-  const printWindow = window.open('', '_blank', 'width=800,height=600');
-  
-  const invoiceHTML = `
+function escapeInvoiceHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function serviceDate(value) {
+  return value ? formatDate(value) : '-';
+}
+
+function formatPax(value, fallbackInvoice) {
+  const pax = Number(value || fallbackInvoice?.pax || 0);
+  return pax > 0 ? pax : '-';
+}
+
+function asInvoiceNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function firstPositiveAmount(...values) {
+  for (const value of values) {
+    const parsed = asInvoiceNumber(value);
+    if (parsed > 0) return parsed;
+  }
+  return 0;
+}
+
+function buildBookedServiceRows(invoice) {
+  const rows = [];
+
+  (invoice.hotels || invoice.hotel_trip_items || []).forEach((item) => {
+    const hotelName = item.hotel_name || item.hotels?.name || item.name || 'Hotel';
+    const dates = [serviceDate(item.from_date), serviceDate(item.to_date)].filter((date) => date !== '-').join(' - ') || '-';
+    const roomInfo = item.room_type || item.room_types?.[0]?.room_type || item.hotel_room_type_items?.[0]?.room_type || '';
+    const detailParts = [
+      roomInfo,
+      item.city,
+      item.nights ? `${item.nights} night(s)` : ''
+    ].filter(Boolean);
+    rows.push({
+      type: 'Hotel',
+      date: dates,
+      description: hotelName,
+      details: detailParts.join(' | ') || '-',
+      pax: formatPax(item.pax || item.number_of_adults, invoice),
+      amount: firstPositiveAmount(
+        item.total_price,
+        item.total_cost,
+        item.final_cost,
+        item.price,
+        asInvoiceNumber(item.single_price) + asInvoiceNumber(item.double_price) + asInvoiceNumber(item.extra_bed_price)
+      )
+    });
+  });
+
+  (invoice.tours || invoice.tour_trip_items || []).forEach((item) => {
+    const tourName = item.tour_name || item.tours?.name || item.name || 'Tour';
+    const detailParts = [
+      item.from_location || item.city,
+      item.route,
+      item.remarks
+    ].filter(Boolean);
+    rows.push({
+      type: 'Tour',
+      date: serviceDate(item.from_date || item.date),
+      description: tourName,
+      details: detailParts.join(' | ') || '-',
+      pax: formatPax(item.pax || item.number_of_adults, invoice),
+      amount: firstPositiveAmount(item.total_price, item.total_cost, item.final_cost, item.price)
+    });
+  });
+
+  (invoice.transfers || invoice.transfer_trip_items || []).forEach((item) => {
+    const transferName = item.transfer_description || item.transfers?.description || item.description || 'Transfer';
+    const route = [item.from_location, item.to_location].filter(Boolean).join(' → ');
+    const detailParts = [
+      route,
+      item.pickup_time ? `Pickup ${item.pickup_time}` : '',
+      item.flight_number || item.flight_time || ''
+    ].filter(Boolean);
+    rows.push({
+      type: 'Transfer',
+      date: serviceDate(item.from_date || item.date),
+      description: transferName,
+      details: detailParts.join(' | ') || '-',
+      pax: formatPax(item.pax || item.number_of_adults, invoice),
+      amount: firstPositiveAmount(item.total_price, item.total_cost, item.final_cost, item.price)
+    });
+  });
+
+  (invoice.excursions || invoice.excursion_trip_items || []).forEach((item) => {
+    const excursionName = item.excursion_name || item.excursions?.name || item.name || 'Excursion';
+    rows.push({
+      type: 'Excursion',
+      date: serviceDate(item.from_date || item.date),
+      description: excursionName,
+      details: item.city || item.remarks || '-',
+      pax: formatPax(item.pax || item.number_of_adults, invoice),
+      amount: firstPositiveAmount(item.total_price, item.total_cost, item.final_cost, item.price)
+    });
+  });
+
+  (invoice.flights || invoice.flight_trip_items || []).forEach((item) => {
+    const flightName = item.flight_number || item.route || 'Flight';
+    rows.push({
+      type: 'Flight',
+      date: serviceDate(item.from_date || item.date),
+      description: flightName,
+      details: item.route || item.remarks || '-',
+      pax: formatPax(item.pax || item.number_of_adults, invoice),
+      amount: firstPositiveAmount(item.total_price, item.total_cost, item.final_cost, item.price)
+    });
+  });
+
+  (invoice.others || invoice.other_trip_items || []).forEach((item) => {
+    const otherName = item.other_name || item.others?.name || item.description || 'Other Service';
+    rows.push({
+      type: 'Other',
+      date: serviceDate(item.from_date || item.date),
+      description: otherName,
+      details: item.remarks || item.notes || '-',
+      pax: formatPax(item.pax || item.quantity, invoice),
+      amount: firstPositiveAmount(item.total_price, item.total_cost, item.final_cost, item.price)
+    });
+  });
+
+  const rowAmountTotal = rows.reduce((sum, row) => sum + asInvoiceNumber(row.amount), 0);
+  const invoiceTotal = firstPositiveAmount(invoice.totalFee, invoice.final_amount, invoice.final_cost, invoice.total_amount, invoice.total_cost);
+  if (rows.length && rowAmountTotal === 0 && invoiceTotal > 0) {
+    const perRow = Math.floor((invoiceTotal / rows.length) * 100) / 100;
+    rows.forEach((row, index) => {
+      row.amount = index === rows.length - 1
+        ? Math.round((invoiceTotal - perRow * (rows.length - 1)) * 100) / 100
+        : perRow;
+    });
+  }
+
+  return rows;
+}
+
+function renderBookedServicesTable(invoice, brandColor, brandLight) {
+  const rows = buildBookedServiceRows(invoice);
+  if (!rows.length) {
+    return `
+      <div style="margin-bottom: 20px;">
+        <h4 style="color: ${brandColor}; margin-bottom: 8px; border-bottom: 1px solid ${brandColor}; padding-bottom: 2px; font-size: 12px;">Booked Services</h4>
+        <div style="padding: 12px; border: 1px dashed ${brandColor}; background: ${brandLight}; border-radius: 5px; font-size: 11px; color: #555;">
+          No service details were found for this booking.
+        </div>
+      </div>
+    `;
+  }
+
+  const bodyRows = rows.map((item, index) => `
+    <tr>
+      <td style="padding: 7px; border-bottom: 1px solid #f1f1f1; text-align: center;">${index + 1}</td>
+      <td style="padding: 7px; border-bottom: 1px solid #f1f1f1;">${escapeInvoiceHtml(item.type)}</td>
+      <td style="padding: 7px; border-bottom: 1px solid #f1f1f1;">${escapeInvoiceHtml(item.date)}</td>
+      <td style="padding: 7px; border-bottom: 1px solid #f1f1f1;">
+        <strong>${escapeInvoiceHtml(item.description)}</strong><br>
+        <span style="color: #666; font-size: 10px;">${escapeInvoiceHtml(item.details)}</span>
+      </td>
+      <td style="padding: 7px; border-bottom: 1px solid #f1f1f1; text-align: center;">${escapeInvoiceHtml(item.pax)}</td>
+      <td style="padding: 7px; border-bottom: 1px solid #f1f1f1; text-align: right;">${formatCurrency(item.amount).replace('฿', 'THB ')}</td>
+    </tr>
+  `).join('');
+
+  return `
+    <div class="section">
+      <h4>Booked Services</h4>
+      <table class="services-table">
+        <thead>
+          <tr>
+            <th class="col-no">#</th>
+            <th class="col-type">Type</th>
+            <th class="col-date">Date</th>
+            <th class="col-detail">Booked Detail</th>
+            <th class="col-pax">Pax</th>
+            <th class="col-amount">Amount</th>
+          </tr>
+        </thead>
+        <tbody>${bodyRows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function getDetailedInvoiceForPrint(invoice) {
+  if (!invoice?.tripId || invoice.hotels || invoice.hotel_trip_items) return invoice;
+
+  try {
+    const response = await fetch(`${Endpoint}/api/v1/bookings/${invoice.tripId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+    });
+    if (!response.ok) throw new Error("Failed to load booking details");
+    const booking = await response.json();
+    return {
+      ...invoice,
+      ...booking,
+      id: invoice.id,
+      tripId: invoice.tripId,
+      bookingId: invoice.bookingId,
+      paymentDate: invoice.paymentDate,
+      customerName: invoice.customerName,
+      customerEmail: invoice.customerEmail,
+      customerContact: invoice.customerContact,
+      agentName: invoice.agentName,
+      totalFee: invoice.totalFee,
+      status: invoice.status
+    };
+  } catch (error) {
+    console.error("Unable to load full booking details for invoice:", error);
+    return invoice;
+  }
+}
+
+function buildProformaPreviewHTML(invoice) {
+  const brandColor = '#f47b20';
+  const brandDark = '#c85f0f';
+  const brandLight = '#fff4ec';
+  const totalAmount = firstPositiveAmount(invoice.totalFee, invoice.final_amount, invoice.final_cost, invoice.total_amount, invoice.total_cost);
+
+  return `
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Invoice - ${invoice.bookingId}</title>
+      <title>Proforma Invoice - ${escapeInvoiceHtml(invoice.bookingId)}</title>
       <meta charset="UTF-8">
       <style>
-        body { 
-          font-family: Arial, sans-serif; 
-          margin: 0; 
-          padding: 15px; 
-          background: white;
+        * { box-sizing: border-box; }
+        body {
+          margin: 0;
+          background: #2f2f2f;
+          color: #111;
+          font-family: Arial, Helvetica, sans-serif;
+          font-size: 12px;
+        }
+        .toolbar {
+          position: sticky;
+          top: 0;
+          z-index: 10;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          height: 54px;
+          padding: 0 22px;
+          background: #1f2933;
+          color: #fff;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.28);
+        }
+        .toolbar-title {
+          font-weight: 700;
+          font-size: 15px;
+        }
+        .toolbar-actions {
+          display: flex;
+          gap: 8px;
+        }
+        .toolbar button {
+          border: 0;
+          border-radius: 4px;
+          padding: 9px 14px;
+          font-weight: 700;
+          color: #fff;
+          background: ${brandColor};
+          cursor: pointer;
+        }
+        .toolbar button.secondary {
+          background: #4b5563;
+        }
+        .page-wrap {
+          padding: 28px 16px;
+        }
+        .invoice-page {
+          width: 210mm;
+          min-height: 297mm;
+          margin: 0 auto;
+          padding: 18mm 16mm;
+          background: #fff;
+          box-shadow: 0 4px 22px rgba(0,0,0,0.35);
+        }
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          border-bottom: 2px solid ${brandColor};
+          padding-bottom: 12px;
+        }
+        .logo {
+          max-height: 54px;
+          max-width: 150px;
+        }
+        .company {
+          text-align: right;
+          line-height: 1.35;
           font-size: 11px;
         }
-        @media print {
-          body { 
-            margin: 0; 
-            padding: 10px;
-          }
+        .company strong {
+          color: ${brandDark};
+          font-size: 13px;
+        }
+        .title {
+          margin: 18px 0 28px;
+          text-align: center;
+          color: ${brandColor};
+          font-size: 23px;
+          font-weight: 800;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+        }
+        .section {
+          margin-bottom: 20px;
+        }
+        .section h4 {
+          margin: 0 0 8px;
+          padding-bottom: 4px;
+          border-bottom: 1.5px solid ${brandColor};
+          color: ${brandColor};
+          font-size: 13px;
+          font-weight: 800;
+        }
+        .booking-box {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+          padding: 11px 12px;
+          background: ${brandLight};
+          border-radius: 5px;
+        }
+        .booking-box p,
+        .client-card p {
+          margin: 3px 0;
+        }
+        .client-card {
+          padding: 12px 14px;
+          border: 1px solid #e5e7eb;
+          border-left: 4px solid ${brandColor};
+          border-radius: 5px;
+        }
+        .services-table {
+          width: 100%;
+          table-layout: fixed;
+          border-collapse: collapse;
+          border: 1px solid #f0d6bf;
+          font-size: 11px;
+        }
+        .services-table th {
+          padding: 8px 7px;
+          background: ${brandColor};
+          color: #fff;
+          text-align: left;
+          font-weight: 800;
+        }
+        .services-table td {
+          padding: 8px 7px !important;
+          border-bottom: 1px solid #ececec !important;
+          vertical-align: top;
+          line-height: 1.35;
+          overflow-wrap: anywhere;
+          word-break: normal;
+        }
+        .services-table .col-no { width: 34px; text-align: center; }
+        .services-table .col-type { width: 72px; }
+        .services-table .col-date { width: 108px; }
+        .services-table .col-detail { width: auto; }
+        .services-table .col-pax { width: 46px; text-align: center; }
+        .services-table .col-amount { width: 108px; text-align: right; }
+        .amount-wrap {
+          display: flex;
+          justify-content: flex-end;
+        }
+        .amount-total {
+          display: grid;
+          grid-template-columns: auto auto;
+          gap: 28px;
+          min-width: 330px;
+          padding: 12px 16px;
+          border-radius: 6px;
+          background: ${brandColor};
+          color: #fff;
+          font-size: 14px;
+          font-weight: 800;
+        }
+        .footer {
+          margin-top: 34px;
+          padding-top: 16px;
+          border-top: 1.5px solid ${brandColor};
+          text-align: center;
+          color: #666;
+          font-size: 10px;
+        }
+        .footer strong {
+          color: ${brandColor};
+          font-size: 11px;
         }
         @page {
-          margin: 0.5cm;
           size: A4;
+          margin: 12mm;
+        }
+        @media print {
+          body {
+            background: #fff;
+          }
+          .toolbar {
+            display: none;
+          }
+          .page-wrap {
+            padding: 0;
+          }
+          .invoice-page {
+            width: auto;
+            min-height: auto;
+            margin: 0;
+            padding: 0;
+            box-shadow: none;
+          }
+          .services-table tr,
+          .client-card,
+          .booking-box,
+          .amount-total {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
         }
       </style>
     </head>
     <body>
-      <div style="max-width: 800px; margin: 0 auto; background: white; padding: 20px; font-family: Arial, sans-serif; font-size: 11px;">
-        <!-- Header -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; border-bottom: 2px solid #007bff; padding-bottom: 10px;">
-          <div>
-            <img src="images/Verathailand_logo.png" alt="VeraThailandia Logo" style="max-height: 50px;">
-          </div>
-          <div style="text-align: right; font-size: 10px; line-height: 1.3; color: #333;">
-            <strong style="font-size: 12px; color: #007bff;">VeraThailandia Travel Co., Ltd.</strong><br>
-            <strong>Email:</strong> info@verathailandia.com<br>
-            <strong>Contact:</strong> +66 123 456 789<br>
-            <strong>Website:</strong> www.verathailandia.com
-          </div>
-        </div>
-        
-        <!-- Payment Summary Title -->
-        <div style="text-align: center; font-size: 20px; font-weight: bold; color: #007bff; margin: 15px 0; text-transform: uppercase; letter-spacing: 1px;">
-          Payment Summary
-        </div>
-        
-        <!-- Booking Details -->
-        <div style="margin-bottom: 20px; background: #f8f9fa; padding: 12px; border-radius: 5px;">
-          <h4 style="color: #007bff; margin-bottom: 8px; border-bottom: 1px solid #007bff; padding-bottom: 2px; font-size: 12px;">Booking Details</h4>
-          <div style="display: flex; justify-content: space-between;">
-            <div style="flex: 1; margin-right: 10px;">
-              <p style="margin: 3px 0; font-size: 11px;"><strong>Booking ID:</strong> ${invoice.bookingId}</p>
-              <p style="margin: 3px 0; font-size: 11px;"><strong>Type:</strong> ${invoice.bookingType}</p>
-            </div>
-            <div style="flex: 1;">
-              <p style="margin: 3px 0; font-size: 11px;"><strong>Payment Date:</strong> ${formatDate(invoice.paymentDate)}</p>
-            </div>
-          </div>
-        </div>
-        
-        <!-- User Details -->
-        <div style="margin-bottom: 20px;">
-          <h4 style="color: #007bff; margin-bottom: 8px; border-bottom: 1px solid #007bff; padding-bottom: 2px; font-size: 12px;">User Details</h4>
-          <div style="background: #fff; padding: 12px; border: 1px solid #e9ecef; border-radius: 5px; border-left: 3px solid #007bff;">
-            <p style="margin: 3px 0; font-size: 12px;"><strong>${invoice.customerName}</strong></p>
-            <p style="margin: 3px 0; font-size: 11px;"><strong>Email:</strong> ${invoice.customerEmail}</p>
-            <p style="margin: 3px 0; font-size: 11px;"><strong>Contact:</strong> ${invoice.customerContact}</p>
-            ${invoice.customerGst ? `<p style="margin: 3px 0; font-size: 11px;"><strong>GST Number:</strong> ${invoice.customerGst}</p>` : ''}
-            <p style="margin: 3px 0; font-size: 11px;"><strong>Billing Address:</strong><br>${invoice.billingAddress.replace(/\n/g, '<br>')}</p>
-          </div>
-        </div>
-        
-        <!-- Amount Details -->
-        <div style="margin-bottom: 20px;">
-          <h4 style="color: #007bff; margin-bottom: 8px; border-bottom: 1px solid #007bff; padding-bottom: 2px; font-size: 12px;">Amount Details</h4>
-          <div style="max-width: 300px; margin-left: auto;">
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="padding: 6px 0; border-bottom: 1px solid #dee2e6; font-size: 11px;">Total Fee:</td>
-                <td style="padding: 6px 0; border-bottom: 1px solid #dee2e6; text-align: right; font-size: 11px;">${formatCurrency(invoice.totalFee)}</td>
-              </tr>
-              <tr>
-                <td style="padding: 6px 0; border-bottom: 1px solid #dee2e6; font-size: 11px;">GST Amount (Included):</td>
-                <td style="padding: 6px 0; border-bottom: 1px solid #dee2e6; text-align: right; font-size: 11px;">${formatCurrency(invoice.gstAmount)}</td>
-              </tr>
-              <tr style="background: #007bff; color: white;">
-                <td style="padding: 8px; font-weight: bold; font-size: 12px;">Net Amount:</td>
-                <td style="padding: 8px; text-align: right; font-weight: bold; font-size: 12px;">${formatCurrency(invoice.netAmount)}</td>
-              </tr>
-            </table>
-          </div>
-        </div>
-        
-        <!-- Footer -->
-        <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #007bff; color: #666; font-size: 9px;">
-          <p style="margin: 2px 0; font-weight: bold; color: #007bff;">Thank you for choosing VeraThailandia!</p>
-          <p style="margin: 2px 0;">We appreciate your business and look forward to serving you again.</p>
-          <p style="margin: 2px 0; font-size: 8px;">This is a computer-generated invoice and does not require a signature.</p>
-          <p style="margin: 2px 0; font-size: 8px;">For any queries, please contact us at info@verathailandia.com or +66 123 456 789</p>
+      <div class="toolbar">
+        <div class="toolbar-title">Proforma Preview - ${escapeInvoiceHtml(invoice.bookingId || invoice.tripId || '')}</div>
+        <div class="toolbar-actions">
+          <button onclick="window.print()">Print</button>
+          <button class="secondary" onclick="window.close()">Close</button>
         </div>
       </div>
-      <script>
-        window.onload = function() {
-          setTimeout(function() {
-            window.print();
-          }, 500);
-        }
-        
-        window.onafterprint = function() {
-          setTimeout(function() {
-            window.close();
-          }, 1000);
-        }
-      </script>
+      <div class="page-wrap">
+        <main class="invoice-page">
+          <div class="header">
+            <img class="logo" src="images/Verathailand_logo.png" alt="VeraThailandia Logo">
+            <div class="company">
+              <strong>VeraThailandia Travel Co., Ltd.</strong><br>
+              <b>Email:</b> info@verathailandia.com<br>
+              <b>Contact:</b> +66 123 456 789<br>
+              <b>Website:</b> www.verathailandia.com
+            </div>
+          </div>
+
+          <div class="title">Proforma Invoice</div>
+
+          <section class="section">
+            <h4>Booking Details</h4>
+            <div class="booking-box">
+              <div>
+                <p><strong>Booking ID:</strong> ${escapeInvoiceHtml(invoice.bookingId || '-')}</p>
+                <p><strong>Status:</strong> ${escapeInvoiceHtml(invoice.status || 'Confirmed')}</p>
+              </div>
+              <div>
+                <p><strong>Payment Date:</strong> ${formatDate(invoice.paymentDate)}</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <h4>Client Details</h4>
+            <div class="client-card">
+              <p><strong>${escapeInvoiceHtml(invoice.customerName || '-')}</strong></p>
+              <p><strong>Email:</strong> ${escapeInvoiceHtml(invoice.customerEmail || '-')}</p>
+              <p><strong>Contact:</strong> ${escapeInvoiceHtml(invoice.customerContact || '-')}</p>
+              ${invoice.agentName ? `<p><strong>Agent:</strong> ${escapeInvoiceHtml(invoice.agentName)}</p>` : ''}
+              <p><strong>Billing Address:</strong><br>${escapeInvoiceHtml(invoice.billingAddress || '-').replace(/\n/g, '<br>')}</p>
+            </div>
+          </section>
+
+          ${renderBookedServicesTable(invoice, brandColor, brandLight)}
+
+          <section class="section">
+            <h4>Amount Details</h4>
+            <div class="amount-wrap">
+              <div class="amount-total">
+                <span>Total (Excluding Tax):</span>
+                <span>${formatCurrency(totalAmount).replace('฿', 'THB ')}</span>
+              </div>
+            </div>
+          </section>
+
+          <div class="footer">
+            <p><strong>Thank you for choosing VeraThailandia!</strong></p>
+            <p>We appreciate your business and look forward to serving you again.</p>
+            <p>This is a computer-generated invoice and does not require a signature.</p>
+            <p>For any queries, please contact us at info@verathailandia.com or +66 123 456 789</p>
+          </div>
+        </main>
+      </div>
     </body>
     </html>
   `;
-  
-  printWindow.document.write(invoiceHTML);
-  printWindow.document.close();
+}
+
+// Generate PDF preview
+async function generateInvoicePDF(invoice) {
+  const previewWindow = window.open('', '_blank', 'width=1100,height=800');
+  if (!previewWindow) {
+    alert('Please allow pop-ups to preview the Proforma Invoice.');
+    return;
+  }
+
+  previewWindow.document.write(`
+    <html>
+      <body style="font-family: Arial, sans-serif; padding: 24px;">
+        Loading booking details...
+      </body>
+    </html>
+  `);
+  previewWindow.document.close();
+
+  try {
+    const detailedInvoice = await getDetailedInvoiceForPrint(invoice);
+    previewWindow.document.open();
+    previewWindow.document.write(buildProformaPreviewHTML(detailedInvoice));
+    previewWindow.document.close();
+    showSuccessMessage('Proforma preview opened successfully!');
+  } catch (error) {
+    console.error('Error opening Proforma preview:', error);
+    previewWindow.document.open();
+    previewWindow.document.write(`
+      <html>
+        <body style="font-family: Arial, sans-serif; padding: 24px; color: #b91c1c;">
+          ${escapeInvoiceHtml(error.message || 'Error opening Proforma preview')}
+        </body>
+      </html>
+    `);
+    previewWindow.document.close();
+  }
 }
 
 // Format currency

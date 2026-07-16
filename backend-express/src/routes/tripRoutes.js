@@ -8,7 +8,7 @@ import {
   listPaymentInfoFromBookings, listPaymentInfoByDateRange,
   listItinerary, updateInvoiceNumber
 } from '../controllers/tripController.js';
-import { generateQuotationPDF, generateReceiptPDF, generateTripPDF, generateTripServicesPDF, notifyAgentBookingConfirmed, notifySupplierOrHotel, sendQuotationEmail } from '../controllers/pdfController.js';
+import { generateQuotationPDF, generateProformaInvoicePDF, generateReceiptPDF, generateTripPDF, generateTripServicesPDF, notifyAgentBookingConfirmed, notifySupplierOrHotel, sendQuotationEmail } from '../controllers/pdfController.js';
 
 const router = express.Router();
 router.use(validateJWT);
@@ -39,6 +39,7 @@ router.get('/bookings/date-range', authorize('admin', 'agent'), listBookingsByDa
 router.get('/bookings/payments/date-range', authorize('admin', 'agent'), listPaymentInfoByDateRange);
 router.get('/bookings/all/payments', authorize('admin', 'agent'), listPaymentInfoFromBookings);
 router.get('/bookings', authorize('admin'), listBookings);
+router.get('/bookings/:id/proforma-pdf', authorize('admin'), generateProformaInvoicePDF);
 router.get('/bookings/:id/generate-pdf', authorize('admin'), generateQuotationPDF);
 router.get('/bookings/:id/receipt', authorize('admin'), generateReceiptPDF);
 router.get('/bookings/:id', authorize('admin'), getBooking);

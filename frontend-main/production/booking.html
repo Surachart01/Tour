@@ -1064,7 +1064,10 @@
                 let supportsEmail = false;
 
                 if (item.item_type === "hotel") {
-                  details = `🏨 <strong>Hotel:</strong> ${item.hotel_name || "TBD"} ${item.room_type ? `(${item.room_type})` : ""} - ${item.nights || 1} Night(s) in ${item.city || ""}`;
+                  const checkIn = new Date(item.from_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+                  const checkOut = new Date(item.to_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+                  const roomTypes = (item.roomTypes || [item.room_type || "Standard"]).join(", ");
+                  details = `🏨 <strong>Hotel:</strong> ${item.hotel_name || "TBD"}<br/><small>${checkIn} - ${checkOut} · ${item.nights || 1} Room-night(s) · Room: ${roomTypes}</small>`;
                   badgeColor = "#2ecc71";
                   supportsEmail = true;
                 } else if (item.item_type === "transfer") {
@@ -1096,10 +1099,14 @@
                 </div>`;
 
                 if (supportsEmail) {
-                  const itemAlreadySent = hasSupplierEmailBeenSent(item.email_sent) || hasSupplierEmailBeenSent(item.email_sent_any);
-                  const statusBadge = itemAlreadySent
+                  const itemFullySent = hasSupplierEmailBeenSent(item.email_sent);
+                  const itemPartiallySent = !itemFullySent && hasSupplierEmailBeenSent(item.email_sent_any);
+                  const itemAlreadySent = itemFullySent || itemPartiallySent;
+                  const statusBadge = itemFullySent
                     ? `<span class="badge badge-success" style="background-color: #28a745; color: white; margin-left: 10px; font-size: 0.7rem;">Sent</span>`
-                    : `<span class="badge badge-warning" style="background-color: #f39c12; color: white; margin-left: 10px; font-size: 0.7rem;">Not Sent</span>`;
+                    : itemPartiallySent
+                      ? `<span class="badge badge-warning" style="background-color: #e67e22; color: white; margin-left: 10px; font-size: 0.7rem;">Partially Sent</span>`
+                      : `<span class="badge badge-warning" style="background-color: #f39c12; color: white; margin-left: 10px; font-size: 0.7rem;">Not Sent</span>`;
                   
                   details += statusBadge;
 
@@ -1181,8 +1188,9 @@
                       "Content-Type": "application/json"
                     }
                   });
-                  if (!res.ok) throw new Error("Failed to send hotel bulk email");
-                  successCount += byType.hotel.length;
+                  const result = await res.json().catch(() => ({}));
+                  if (!res.ok) throw new Error(result.message || "Failed to send hotel bulk email");
+                  successCount += Number(result.emailCount) || byType.hotel.length;
                 } catch (e) {
                   console.error(e);
                   failCount += byType.hotel.length;
@@ -1536,54 +1544,36 @@
         function consolidateHotelStays(hotelItems) {
           const groups = {};
           hotelItems.forEach(item => {
-            const key = item.hotel_id || item.hotel_name;
+            const key = item.hotel_name
+              ? `name:${String(item.hotel_name).trim().toLowerCase()}`
+              : `id:${item.hotel_id || "unknown-hotel"}`;
             if (!groups[key]) groups[key] = [];
             groups[key].push(item);
           });
 
           const consolidated = [];
           for (const key in groups) {
-            const items = groups[key];
-            // Sort by check-in date
-            items.sort((a, b) => new Date(a.from_date) - new Date(b.from_date));
+            const items = groups[key].sort((a, b) => new Date(a.from_date) - new Date(b.from_date));
+            const sentCount = items.filter((item) => hasSupplierEmailBeenSent(item.email_sent)).length;
+            const fromDate = items.reduce((earliest, item) => {
+              const date = new Date(item.from_date);
+              return !earliest || date < earliest ? date : earliest;
+            }, null);
+            const toDate = items.reduce((latest, item) => {
+              const date = new Date(item.to_date || item.from_date);
+              return !latest || date > latest ? date : latest;
+            }, null);
 
-            let currentStay = null;
-            for (const item of items) {
-              const itemFrom = new Date(item.from_date);
-              const itemTo = new Date(item.to_date);
-
-              // We consider stays consecutive if they belong to the same hotel,
-              // check-out of current matches check-in of next, and same room type
-              if (currentStay && 
-                  new Date(currentStay.to_date).toDateString() === itemFrom.toDateString() &&
-                  currentStay.room_type === item.room_type
-              ) {
-                currentStay.to_date = itemTo;
-                currentStay.nights += item.nights || 1;
-                currentStay.itemIds.push(item.id);
-                currentStay.email_sent_any = currentStay.email_sent_any || hasSupplierEmailBeenSent(item.email_sent);
-                // Group is considered fully sent if all individual items are sent
-                currentStay.email_sent = currentStay.email_sent && item.email_sent;
-              } else {
-                if (currentStay) {
-                  consolidated.push(currentStay);
-                }
-                currentStay = {
-                  hotel_id: item.hotel_id,
-                  hotel_name: item.hotel_name,
-                  room_type: item.room_type || 'Standard',
-                  from_date: itemFrom,
-                  to_date: itemTo,
-                  nights: item.nights || 1,
-                  itemIds: [item.id],
-                  email_sent: item.email_sent,
-                  email_sent_any: hasSupplierEmailBeenSent(item.email_sent)
-                };
-              }
-            }
-            if (currentStay) {
-              consolidated.push(currentStay);
-            }
+            consolidated.push({
+              ...items[0],
+              from_date: fromDate,
+              to_date: toDate,
+              nights: items.reduce((sum, item) => sum + (Number(item.nights) || 1), 0),
+              itemIds: items.map((item) => item.id),
+              roomTypes: [...new Set(items.map((item) => item.room_type || "Standard"))],
+              email_sent: sentCount === items.length,
+              email_sent_any: sentCount > 0
+            });
           }
           return consolidated;
         }
