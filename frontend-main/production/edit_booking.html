@@ -12399,18 +12399,14 @@
               );
 
               if (paymentDeadlineInput && paymentDeadlineInput.value) {
-                // Convert YYYY-MM-DD to DD-MM-YYYY format for backend
-                paymentDeadline = formatToDDMMYYYY(paymentDeadlineInput.value);
+                paymentDeadline = paymentDeadlineInput.value;
               }
 
               if (
                 cancellationDeadlineInput &&
                 cancellationDeadlineInput.value
               ) {
-                // Convert YYYY-MM-DD to DD-MM-YYYY format for backend
-                cancellationDeadline = formatToDDMMYYYY(
-                  cancellationDeadlineInput.value
-                );
+                cancellationDeadline = cancellationDeadlineInput.value;
               }
             }
 
@@ -12437,8 +12433,6 @@
               discount_amount: discount,
               final_amount: finalPrice,
               include_description_in_itinerary: includeDescriptionInItinerary,
-              payment_deadline: paymentDeadline,
-              cancellation_deadline: cancellationDeadline,
               hotels: hotels,
               transfers: transfers,
               excursions: excursions,
@@ -12450,6 +12444,11 @@
               special_pkg_double_rooms: document.getElementById("specialPackageDoubleRoom").checked ? (parseInt(document.getElementById("specialPackageDoubleRoomCount").value) || 0) : 0,
               special_pkg_triple_rooms: document.getElementById("specialPackageTripleRoom").checked ? (parseInt(document.getElementById("specialPackageTripleRoomCount").value) || 0) : 0
             };
+
+            if (userRole === "admin" || userRole === "superadmin") {
+              quotationRequest.payment_deadline = paymentDeadline;
+              quotationRequest.cancellation_deadline = cancellationDeadline;
+            }
 
             console.log("Submitting Quotation:", quotationRequest); // Debugging Log
 

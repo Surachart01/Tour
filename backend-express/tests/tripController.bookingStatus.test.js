@@ -2,9 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   attachProformaBilling,
+  parseOptionalDate,
   resolveBookingStatusAfterSave,
   resolveServiceApprovalState
 } from '../src/controllers/tripController.js';
+
+test('parses booking deadline dates without changing the calendar day', () => {
+  assert.equal(parseOptionalDate('20-02-2027')?.toISOString(), '2027-02-20T00:00:00.000Z');
+  assert.equal(parseOptionalDate('2027-01-21')?.toISOString(), '2027-01-21T00:00:00.000Z');
+  assert.equal(parseOptionalDate('31-02-2027'), null);
+});
 
 test('preserves an existing service confirmation while saving a booking', () => {
   const savedById = new Map([

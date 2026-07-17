@@ -895,6 +895,8 @@ function buildProformaPreviewHTML(invoice) {
   const passengerFileNumber = invoice.bookingId || invoice.booking_reference || '-';
   const passengerCount = Number(invoice.pax) ||
     ((Number(invoice.number_of_adults) || 0) + (Number(invoice.number_of_kids) || 0));
+  const paymentDeadline = serviceDate(invoice.payment_deadline);
+  const cancellationDeadline = serviceDate(invoice.cancellation_deadline);
 
   return `
     <!DOCTYPE html>
@@ -949,6 +951,8 @@ function buildProformaPreviewHTML(invoice) {
           padding: 28px 16px;
         }
         .invoice-page {
+          display: flex;
+          flex-direction: column;
           width: 210mm;
           min-height: 297mm;
           margin: 0 auto;
@@ -1202,6 +1206,42 @@ function buildProformaPreviewHTML(invoice) {
           font-size: 14px;
           font-weight: 800;
         }
+        .document-end {
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          min-height: 42mm;
+          margin-top: auto;
+          padding-top: 20px;
+          break-inside: avoid;
+          page-break-inside: avoid;
+          font-family: Tahoma, Arial, sans-serif;
+        }
+        .payment-policy {
+          color: #111;
+          font-size: 9px;
+          line-height: 1.35;
+        }
+        .payment-policy-title {
+          margin-bottom: 2px;
+          font-weight: 700;
+          text-decoration: underline;
+        }
+        .payment-policy p {
+          margin: 0;
+        }
+        .document-company-footer {
+          text-align: center;
+          color: #111;
+          font-family: Georgia, 'Times New Roman', serif;
+          font-size: 8px;
+          line-height: 1.25;
+        }
+        .document-company-footer strong {
+          display: block;
+          font-size: 9px;
+          text-decoration: underline;
+        }
         @page {
           size: A4;
           margin: 12mm;
@@ -1217,6 +1257,8 @@ function buildProformaPreviewHTML(invoice) {
             padding: 0;
           }
           .invoice-page {
+            display: flex;
+            flex-direction: column;
             width: auto;
             min-height: auto;
             margin: 0;
@@ -1248,6 +1290,7 @@ function buildProformaPreviewHTML(invoice) {
       </div>
       <div class="page-wrap">
         <main class="invoice-page">
+          <div class="invoice-content">
           <div class="company-header">
             <div class="company-logo-cell">
               <img src="images/Verathailand_logo.png" alt="VeraThailandia Co., Ltd.">
@@ -1338,6 +1381,22 @@ function buildProformaPreviewHTML(invoice) {
               </div>
             </div>
           </section>
+          </div>
+
+          <div class="document-end">
+            <section class="payment-policy">
+              <div class="payment-policy-title">Payment &amp; Cancellation Policy</div>
+              <p>- Cancellation Deadline: ${escapeInvoiceHtml(cancellationDeadline)}</p>
+              <p>- Payment Deadline: ${escapeInvoiceHtml(paymentDeadline)}</p>
+              <p>- Please ensure that the payment is made before the deadline to confirm the booking.</p>
+              <p>- Cancellations made after the deadline will be subject to applicable charges.</p>
+            </section>
+
+            <div class="document-company-footer">
+              <strong>VeraThailandia Co., Ltd.</strong>
+              20th Floor, Room 160/424-425, ITF Silom Palace, 160 Silom Road, Suriya Wong, Bangrak, Bangkok 10500, Thailand
+            </div>
+          </div>
 
         </main>
       </div>

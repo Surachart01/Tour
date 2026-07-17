@@ -2,14 +2,26 @@ import prisma from '../config/db.js';
 
 // ==================== HELPERS ====================
 function parseRequiredDate(value, fallback) {
-  if (!value) return fallback || new Date();
-  const d = new Date(value);
-  return isNaN(d.getTime()) ? (fallback || new Date()) : d;
+  return parseOptionalDate(value) || fallback || new Date();
 }
 
-function parseOptionalDate(value) {
+export function parseOptionalDate(value) {
   if (!value) return null;
-  const d = new Date(value);
+  if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+
+  const text = String(value).trim();
+  const displayDateMatch = text.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  if (displayDateMatch) {
+    const [, day, month, year] = displayDateMatch;
+    const d = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+    return d.getUTCFullYear() === Number(year) &&
+      d.getUTCMonth() === Number(month) - 1 &&
+      d.getUTCDate() === Number(day)
+      ? d
+      : null;
+  }
+
+  const d = new Date(text);
   return isNaN(d.getTime()) ? null : d;
 }
 
@@ -1120,8 +1132,8 @@ export async function updateQuotation(req, res, next) {
     const final_amount = data.final_amount !== undefined ? parseFloat(data.final_amount) : (data.final_cost !== undefined ? parseFloat(data.final_cost) : calculated.final_amount);
 
     
-    let payment_deadline = undefined;
-    let cancellation_deadline = undefined;
+    let payment_deadline = existing.payment_deadline;
+    let cancellation_deadline = existing.cancellation_deadline;
 
     if (data.payment_deadline !== undefined) {
       payment_deadline = parseOptionalDate(data.payment_deadline);
@@ -1142,12 +1154,8 @@ export async function updateQuotation(req, res, next) {
         });
         if (currentTrip) {
           final_trip_start_date = currentTrip.trip_start_date;
-          if (payment_deadline === undefined) {
-            payment_deadline = currentTrip.payment_deadline;
-          }
-          if (cancellation_deadline === undefined) {
-            cancellation_deadline = currentTrip.cancellation_deadline;
-          }
+          if (payment_deadline === undefined) payment_deadline = currentTrip.payment_deadline;
+          if (cancellation_deadline === undefined) cancellation_deadline = currentTrip.cancellation_deadline;
         }
       }
 
