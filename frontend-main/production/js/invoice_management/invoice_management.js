@@ -1202,18 +1202,6 @@ function buildProformaPreviewHTML(invoice) {
           font-size: 14px;
           font-weight: 800;
         }
-        .footer {
-          margin-top: 34px;
-          padding-top: 16px;
-          border-top: 1.5px solid ${brandColor};
-          text-align: center;
-          color: #666;
-          font-size: 10px;
-        }
-        .footer strong {
-          color: ${brandColor};
-          font-size: 11px;
-        }
         @page {
           size: A4;
           margin: 12mm;
@@ -1351,12 +1339,6 @@ function buildProformaPreviewHTML(invoice) {
             </div>
           </section>
 
-          <div class="footer">
-            <p><strong>Thank you for choosing VeraThailandia!</strong></p>
-            <p>We appreciate your business and look forward to serving you again.</p>
-            <p>This is a computer-generated invoice and does not require a signature.</p>
-            <p>For any queries, please contact us at info@verathailandia.com or +66 123 456 789</p>
-          </div>
         </main>
       </div>
     </body>
