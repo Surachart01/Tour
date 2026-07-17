@@ -22,6 +22,21 @@
       .service-heading { background:var(--orange); border:1px solid var(--line); text-align:center; font-family:Georgia, serif; font-size:20px; padding:1mm; }
       .service-section { margin:0 0 4mm; border:1px solid var(--line); border-top:0; } .service-section h2 { margin:0; padding:1.5mm 2mm; background:#000; color:#fff; font-family:Georgia, serif; font-size:13px; }
       table { width:100%; border-collapse:collapse; } th, td { border:1px solid var(--line); padding:1.3mm 1.5mm; vertical-align:middle; } th { background:#fafafa; font-weight:700; text-align:left; } .money { text-align:right; white-space:nowrap; } .select-cell { width:7mm; text-align:center; } .description { min-width:55mm; } .adv-input, .total-input { width:100%; min-width:15mm; padding:1mm; border:1px solid #c9d3df; text-align:right; font:inherit; } .adv-input { color:#dc2626; } .tour-hotel td { background:#fffaf2; } .tour-hotel .description { padding-left:7mm; font-style:italic; } .document-empty { padding:8mm; text-align:center; color:var(--muted); }
+      /* Tax documents have up to nine columns. Keep the complete table inside the A4 paper. */
+      .service-section table { table-layout:fixed; font-size:8.5px; }
+      .service-section th, .service-section td { padding:.8mm 1mm; overflow-wrap:anywhere; word-break:normal; }
+      .service-section th:nth-child(1), .service-section td:nth-child(1) { width:6%; }
+      .service-section th:nth-child(2), .service-section td:nth-child(2) { width:8%; }
+      .service-section th:nth-child(3), .service-section td:nth-child(3) { width:13%; }
+      .service-section th:nth-child(4), .service-section td:nth-child(4) { width:21%; }
+      .service-section th:nth-child(5), .service-section td:nth-child(5) { width:13%; }
+      .service-section th:nth-child(6), .service-section td:nth-child(6) { width:10%; }
+      .service-section th:nth-child(7), .service-section td:nth-child(7) { width:11%; }
+      .service-section th:nth-child(8), .service-section td:nth-child(8) { width:11%; }
+      .service-section th:nth-child(9), .service-section td:nth-child(9) { width:7%; }
+      .service-section .description { min-width:0; }
+      .service-section .money { white-space:normal; }
+      .service-section .adv-input, .service-section .total-input { min-width:0; padding:.5mm; font-size:8.5px; }
       .total-box { margin-left:auto; width:92mm; border:1px solid var(--line); } .total-box td:first-child { text-align:right; font-weight:700; } .total-box tr:last-child td { font-weight:700; font-size:12px; background:#f5f5f5; } .total-box .adv-total { color:#dc2626; }
       .signature-row { display:flex; justify-content:space-between; gap:40mm; margin:20mm 6mm 7mm; font-family:Georgia, serif; } .footer { text-align:center; font-family:Georgia, serif; font-size:10px; }.footer strong { display:block; font-size:12px; }
       .loading { padding:60px; text-align:center; color:var(--muted); font-size:16px; }
