@@ -39,6 +39,11 @@ export async function ensureMarkupSchema() {
       ALTER TABLE hotel_trip_items
       ADD COLUMN IF NOT EXISTS late_checkout_type varchar(20)
     `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE trips
+      ADD COLUMN IF NOT EXISTS invoice_number varchar(100),
+      ADD COLUMN IF NOT EXISTS booking_date date
+    `);
 
   markupSchemaReady = true;
   await prisma.$disconnect();

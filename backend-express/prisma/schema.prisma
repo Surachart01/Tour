@@ -782,6 +782,8 @@ model trips {
   number_of_kids                   Int
   booking_reference                String?                @db.VarChar(100)
   file_reference                   String?                @db.VarChar(100)
+  invoice_number                   String?                @db.VarChar(100)
+  booking_date                     DateTime?              @db.Date
   remarks                          String?
   total_amount                     Decimal?               @db.Decimal(20, 2)
   discount_amount                  Decimal?               @db.Decimal(10, 2)

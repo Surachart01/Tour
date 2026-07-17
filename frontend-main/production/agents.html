@@ -514,6 +514,17 @@
       let currentPage = 1;
       let totalPages = 1;
 
+      function sortAgentsByName(agents) {
+        return [...agents].sort((left, right) => {
+          const nameComparison = String(left?.name || "").localeCompare(
+            String(right?.name || ""),
+            "en",
+            { sensitivity: "base", numeric: true }
+          );
+          return nameComparison || (Number(left?.id) || 0) - (Number(right?.id) || 0);
+        });
+      }
+
       // Function to load agents
       function loadAgents() {
         const token = localStorage.getItem("token");
@@ -548,7 +559,9 @@
             }
           })
           .then((agents) => {
-            const agentList = window.ApiResponse.list(agents, ["agents", "data", "items", "results"]);
+            const agentList = sortAgentsByName(
+              window.ApiResponse.list(agents, ["agents", "data", "items", "results"])
+            );
             // Store original table data and filtered data
             originalTableData = agentList;
             filteredTableData = agentList;

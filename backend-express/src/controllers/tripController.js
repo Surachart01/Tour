@@ -347,7 +347,7 @@ function mapTripResponse(trip) {
     discount: toFloat(trip.discount_amount),
     final_cost: toFloat(trip.final_amount),
     start_date: fmtDate(trip.trip_start_date),
-    booking_date: fmtDate(trip.created_at),
+    booking_date: fmtDate(trip.booking_date || trip.created_at),
     // child item aliases
     hotels: (trip.hotel_trip_items || []).map((h) => ({
       ...h,
@@ -621,7 +621,7 @@ export async function createQuotation(req, res, next) {
       }
     }
 
-    const refNumber = data.booking_reference || generateQuotationNumber();
+    const refNumber = data.booking_reference || data.client_booking || generateQuotationNumber();
 
     const createdTrip = await prisma.$transaction(async (tx) => {
       await validateHotelAvailability(tx, hotelItems);
@@ -638,6 +638,8 @@ export async function createQuotation(req, res, next) {
           number_of_kids: parseSafeInt(data.number_of_kids) || 0,
           booking_reference: refNumber,
           file_reference: data.file_reference || null,
+          invoice_number: data.invoice_number || null,
+          booking_date: parseOptionalDate(data.booking_date) || new Date(),
           remarks: data.remarks || null,
           total_amount,
           discount_amount,
@@ -839,6 +841,7 @@ export async function createQuotation(req, res, next) {
         flight_trip_items: {
           orderBy: { from_date: 'asc' }
         },
+        special_packages: true,
         other_trip_items: {
           orderBy: { from_date: 'asc' },
           include: { others: true }
@@ -1220,7 +1223,10 @@ export async function updateQuotation(req, res, next) {
           client_name: data.client_name, client_phone: data.client_phone,
           number_of_adults: parseSafeInt(data.number_of_adults) || 1,
           number_of_kids: parseSafeInt(data.number_of_kids) || 0,
-          booking_reference: data.booking_reference, file_reference: data.file_reference,
+          booking_reference: data.booking_reference !== undefined ? data.booking_reference : data.client_booking,
+          file_reference: data.file_reference,
+          invoice_number: data.invoice_number !== undefined ? data.invoice_number : undefined,
+          booking_date: data.booking_date !== undefined ? parseOptionalDate(data.booking_date) : undefined,
           remarks: data.remarks, agent_id: resolvedAgentId,
           total_amount, discount_amount, final_amount,
           trip_start_date,
@@ -1498,14 +1504,64 @@ export async function deleteQuotation(req, res, next) {
 // ==================== BOOKINGS ====================
 const bookingStatusWhere = { status: { in: ['InProgress', 'Approved', 'Confirmed'] } };
 
+const bookingAgentWithBillingProfile = {
+  users: {
+    select: {
+      userProfile: {
+        select: {
+          isPrimaryProfile: true,
+          companyName: true,
+          billingName: true,
+          address: true,
+          billingAddress: true,
+          city: true,
+          billingCity: true,
+          state: true,
+          billingState: true,
+          country: true,
+          billingCountry: true,
+          postalCode: true,
+          billingPostalCode: true,
+          taxId: true,
+          vatNumber: true
+        }
+      }
+    }
+  }
+};
+
+export function attachProformaBilling(trip) {
+  if (!trip) return trip;
+  const agent = trip.agents || null;
+  const profiles = (agent?.users || [])
+    .map((user) => user.userProfile)
+    .filter(Boolean);
+  const profile = profiles.find((item) => item.isPrimaryProfile) || profiles[0] || null;
+  const { users, ...publicAgent } = agent || {};
+
+  return {
+    ...trip,
+    agents: agent ? publicAgent : null,
+    proforma_billing: {
+      agent_name: agent?.name || profile?.billingName || profile?.companyName || '',
+      address: agent?.address || profile?.billingAddress || profile?.address || '',
+      city: profile?.billingCity || profile?.city || '',
+      state: profile?.billingState || profile?.state || '',
+      postal_code: profile?.billingPostalCode || profile?.postalCode || '',
+      country: profile?.billingCountry || profile?.country || '',
+      tax_id: agent?.fax || profile?.taxId || profile?.vatNumber || ''
+    }
+  };
+}
+
 export async function listBookings(req, res, next) {
   try {
     const bookings = await prisma.trips.findMany({
       where: bookingStatusWhere,
-      include: { agents: true },
+      include: { agents: { include: bookingAgentWithBillingProfile } },
       orderBy: [{ updated_at: 'desc' }, { created_at: 'desc' }]
     });
-    return res.json(bookings);
+    return res.json(bookings.map(attachProformaBilling));
   } catch (err) { next(err); }
 }
 
@@ -1521,8 +1577,8 @@ export async function listBookingsByDateRange(req, res, next) {
     if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       where.agent_id = claims.agent_id || 0;
     }
-    const bookings = await prisma.trips.findMany({ where, include: { agents: true }, orderBy: [{ updated_at: 'desc' }, { created_at: 'desc' }] });
-    return res.json(bookings);
+    const bookings = await prisma.trips.findMany({ where, include: { agents: { include: bookingAgentWithBillingProfile } }, orderBy: [{ updated_at: 'desc' }, { created_at: 'desc' }] });
+    return res.json(bookings.map(attachProformaBilling));
   } catch (err) { next(err); }
 }
 
@@ -1533,7 +1589,7 @@ export async function getBooking(req, res, next) {
     const trip = await prisma.trips.findUnique({
       where: { id },
       include: {
-        agents: true,
+        agents: { include: bookingAgentWithBillingProfile },
         hotel_trip_items: {
           orderBy: [
             { display_order: 'asc' },
@@ -1564,7 +1620,7 @@ export async function getBooking(req, res, next) {
       }
     });
     if (!trip) return res.status(404).send('Booking not found');
-    return res.json(mapTripResponse(trip));
+    return res.json(mapTripResponse(attachProformaBilling(trip)));
   } catch (err) { next(err); }
 }
 
@@ -1783,7 +1839,7 @@ export async function updateInvoiceNumber(req, res, next) {
     const { invoice_number } = req.body;
     const trip = await prisma.trips.update({
       where: { id },
-      data: { booking_reference: invoice_number }
+      data: { invoice_number }
     });
     return res.json(trip);
   } catch (err) { next(err); }

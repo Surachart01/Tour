@@ -483,7 +483,7 @@
                                 class="sortable"
                                 data-column="booking_reference"
                               >
-                                Booking Ref
+                                File Number
                                 <i
                                   class="fa fa-sort-up sort-icon active"
                                   id="sort-booking_reference"
@@ -553,7 +553,7 @@
                   <div style="margin-bottom: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
                     <table style="width: 100%; font-size: 14px;">
                       <tr>
-                        <td style="color: #64748b; font-weight: 600; width: 140px; padding: 4px 0;">Booking Ref:</td>
+                        <td style="color: #64748b; font-weight: 600; width: 140px; padding: 4px 0;">File Number:</td>
                         <td id="emailModalRef" style="color: #0f172a; font-weight: 700; padding: 4px 0;">-</td>
                       </tr>
                       <tr>
@@ -1490,7 +1490,7 @@
                   <table class="header-table">
                     <tr>
                       <td class="col-half">
-                        <strong>Booking Reference:</strong> ${trip.booking_reference || trip.id}<br/>
+                        <strong>File Number:</strong> ${trip.booking_reference || trip.id}<br/>
                         <strong>Client Name:</strong> ${trip.client_name || "-"}<br/>
                         <strong>Contact Info:</strong> ${trip.client_phone || "-"} / ${trip.client_email || "-"}
                       </td>
@@ -2114,7 +2114,7 @@
 
         let html = `<h2 style="color:#1a3c5e;">Booking Confirmation</h2>
           <p>Dear <strong>${agentName}</strong>,<br>we are delighted to confirm your booking with the following details:</p>
-          <p><strong>Booking Reference:</strong> ${ref}<br>
+          <p><strong>File Number:</strong> ${ref}<br>
           <strong>Client Name:</strong> ${trip.client_name || ""}<br>
           <strong>Start Date:</strong> ${startDate}<br>
           <strong>Number of Pax:</strong> ${pax}<br>

@@ -352,20 +352,29 @@ async function loadInvoices() {
       .filter((booking) => String(booking.status || "").toLowerCase() === "confirmed")
       .map((booking) => {
         const amount = Number(booking.final_amount || booking.final_cost || 0);
+        const billing = booking.proforma_billing || {};
         return {
           id: booking.id,
           tripId: booking.id,
           bookingId: booking.booking_reference || booking.quotation_reference || String(booking.id),
-          paymentDate: booking.created_at || booking.booking_date,
+          invoiceNumber: booking.invoice_number || "",
+          bookingDate: booking.booking_date || booking.created_at,
+          paymentDate: booking.payment_date || booking.booking_date || booking.created_at,
           customerName: booking.client_name || "-",
           customerEmail: booking.client_email || "",
           customerContact: booking.client_phone || "-",
           agentName: booking.agents?.name || booking.agent_name || "-",
+          billingName: billing.agent_name || booking.agents?.name || booking.agent_name || "",
+          billingAddress: billing.address || booking.agents?.address || "",
+          billingCity: billing.city || "",
+          billingState: billing.state || "",
+          billingPostalCode: billing.postal_code || "",
+          billingCountry: billing.country || "",
+          billingTaxId: billing.tax_id || "",
           pax: (Number(booking.number_of_adults) || 0) + (Number(booking.number_of_kids) || 0),
           totalFee: amount,
           gstAmount: 0,
           netAmount: amount,
-          billingAddress: "-",
           status: "Confirmed",
           isConfirmedBooking: true
         };
@@ -517,7 +526,11 @@ function escapeInvoiceHtml(value) {
 }
 
 function serviceDate(value) {
-  return value ? formatDate(value) : '-';
+  if (!value) return '-';
+  const text = String(value).trim();
+  if (/^\d{2}-\d{2}-\d{4}$/.test(text)) return text;
+  const formatted = formatDate(text);
+  return formatted === 'Invalid Date' || formatted === 'N/A' ? '-' : formatted;
 }
 
 function formatPax(value, fallbackInvoice) {
@@ -543,19 +556,27 @@ function buildBookedServiceRows(invoice) {
 
   (invoice.hotels || invoice.hotel_trip_items || []).forEach((item) => {
     const hotelName = item.hotel_name || item.hotels?.name || item.name || 'Hotel';
-    const dates = [serviceDate(item.from_date), serviceDate(item.to_date)].filter((date) => date !== '-').join(' - ') || '-';
-    const roomInfo = item.room_type || item.room_types?.[0]?.room_type || item.hotel_room_type_items?.[0]?.room_type || '';
+    const roomTypeItems = item.room_types || item.hotel_room_type_items || [];
+    const roomInfo = item.room_type || [...new Set(roomTypeItems.map((room) => room.room_type).filter(Boolean))].join(', ');
+    const roomPax = roomTypeItems.reduce(
+      (sum, room) => sum + asInvoiceNumber(room.adults) + asInvoiceNumber(room.children),
+      0
+    );
     const detailParts = [
       roomInfo,
       item.city,
       item.nights ? `${item.nights} night(s)` : ''
     ].filter(Boolean);
     rows.push({
-      type: 'Hotel',
-      date: dates,
+      section: 'Hotel',
+      fromDate: serviceDate(item.from_date),
+      toDate: serviceDate(item.to_date),
       description: hotelName,
       details: detailParts.join(' | ') || '-',
-      pax: formatPax(item.pax || item.number_of_adults, invoice),
+      city: item.city || '-',
+      type: roomInfo || 'Hotel',
+      nights: item.nights || '-',
+      pax: formatPax(item.pax || item.number_of_adults || roomPax, invoice),
       amount: firstPositiveAmount(
         item.total_price,
         item.total_cost,
@@ -574,12 +595,29 @@ function buildBookedServiceRows(invoice) {
       item.remarks
     ].filter(Boolean);
     rows.push({
-      type: 'Tour',
-      date: serviceDate(item.from_date || item.date),
+      section: 'Tour',
+      fromDate: serviceDate(item.from_date || item.date),
+      toDate: serviceDate(item.to_date),
       description: tourName,
       details: detailParts.join(' | ') || '-',
+      city: item.from_location || item.city || '-',
+      type: item.tot || 'Tour',
       pax: formatPax(item.pax || item.number_of_adults, invoice),
       amount: firstPositiveAmount(item.total_price, item.total_cost, item.final_cost, item.price)
+    });
+
+    (item.tour_hotels || []).forEach((hotel) => {
+      rows.push({
+        section: 'Tour',
+        fromDate: serviceDate(hotel.check_in_date),
+        toDate: serviceDate(hotel.check_out_date),
+        description: hotel.hotel_name || 'Tour Accommodation',
+        details: hotel.room_type || '-',
+        city: hotel.city || '-',
+        type: 'Hotel',
+        pax: '-',
+        amount: 0
+      });
     });
   });
 
@@ -592,10 +630,12 @@ function buildBookedServiceRows(invoice) {
       item.flight_number || item.flight_time || ''
     ].filter(Boolean);
     rows.push({
-      type: 'Transfer',
+      section: 'Transfer',
       date: serviceDate(item.from_date || item.date),
       description: transferName,
       details: detailParts.join(' | ') || '-',
+      city: item.city || '-',
+      type: item.tot || item.type_of_transfer || item.transfer_type || 'Transfer',
       pax: formatPax(item.pax || item.number_of_adults, invoice),
       amount: firstPositiveAmount(item.total_price, item.total_cost, item.final_cost, item.price)
     });
@@ -604,10 +644,12 @@ function buildBookedServiceRows(invoice) {
   (invoice.excursions || invoice.excursion_trip_items || []).forEach((item) => {
     const excursionName = item.excursion_name || item.excursions?.name || item.name || 'Excursion';
     rows.push({
-      type: 'Excursion',
+      section: 'Excursion',
       date: serviceDate(item.from_date || item.date),
       description: excursionName,
       details: item.city || item.remarks || '-',
+      city: item.city || '-',
+      type: item.toe || item.tot || 'Excursion',
       pax: formatPax(item.pax || item.number_of_adults, invoice),
       amount: firstPositiveAmount(item.total_price, item.total_cost, item.final_cost, item.price)
     });
@@ -616,47 +658,90 @@ function buildBookedServiceRows(invoice) {
   (invoice.flights || invoice.flight_trip_items || []).forEach((item) => {
     const flightName = item.flight_number || item.route || 'Flight';
     rows.push({
-      type: 'Flight',
+      section: 'Flight',
       date: serviceDate(item.from_date || item.date),
       description: flightName,
       details: item.route || item.remarks || '-',
+      route: item.route || [item.from_location, item.to_location].filter(Boolean).join(' → ') || '-',
+      etd: item.edt || item.etd || item.departure_time || '-',
+      eta: item.eat || item.eta || item.arrival_time || '-',
+      type: item.flight_type || 'Flight',
       pax: formatPax(item.pax || item.number_of_adults, invoice),
       amount: firstPositiveAmount(item.total_price, item.total_cost, item.final_cost, item.price)
     });
   });
 
   (invoice.others || invoice.other_trip_items || []).forEach((item) => {
-    const otherName = item.other_name || item.others?.name || item.description || 'Other Service';
+    const otherName = item.other_name || item.others?.description || item.description || 'Other Service';
+    const otherAmount = item.others?.amount || item.amount;
     rows.push({
-      type: 'Other',
+      section: 'Other',
       date: serviceDate(item.from_date || item.date),
       description: otherName,
       details: item.remarks || item.notes || '-',
+      type: item.type || 'Other',
       pax: formatPax(item.pax || item.quantity, invoice),
-      amount: firstPositiveAmount(item.total_price, item.total_cost, item.final_cost, item.price)
+      amount: firstPositiveAmount(item.total_price, item.total_cost, item.final_cost, item.price, otherAmount)
     });
   });
 
-  const rowAmountTotal = rows.reduce((sum, row) => sum + asInvoiceNumber(row.amount), 0);
-  const invoiceTotal = firstPositiveAmount(invoice.totalFee, invoice.final_amount, invoice.final_cost, invoice.total_amount, invoice.total_cost);
-  if (rows.length && rowAmountTotal === 0 && invoiceTotal > 0) {
-    const perRow = Math.floor((invoiceTotal / rows.length) * 100) / 100;
-    rows.forEach((row, index) => {
-      row.amount = index === rows.length - 1
-        ? Math.round((invoiceTotal - perRow * (rows.length - 1)) * 100) / 100
-        : perRow;
+  const specialPackage = invoice.special_packages || invoice.special_package;
+  if (invoice.special_package_id && specialPackage) {
+    // Package child services are inclusions. Their stored prices must not be added again.
+    rows.forEach((row) => { row.amount = 0; });
+    const packageAssistanceFee = invoice.include_assistance_fee === false
+      ? 0
+      : asInvoiceNumber(invoice.assistance_fee_amount);
+    const packageBaseAmount = Math.max(
+      0,
+      firstPositiveAmount(invoice.total_amount, invoice.total_cost, invoice.final_amount, invoice.final_cost) - packageAssistanceFee
+    );
+    const packagePax = Number(invoice.pax) ||
+      ((Number(invoice.number_of_adults) || 0) + (Number(invoice.number_of_kids) || 0));
+    rows.push({
+      section: 'Special Package',
+      fromDate: serviceDate(invoice.trip_start_date || invoice.start_date),
+      toDate: specialPackage.duration ? `${specialPackage.duration} day(s)` : '-',
+      description: specialPackage.name || 'Special Package',
+      details: specialPackage.description || specialPackage.inclusions || '-',
+      city: specialPackage.city || '-',
+      type: specialPackage.category || 'Package',
+      pax: packagePax || '-',
+      amount: packageBaseAmount
     });
   }
+
+  rows.forEach((row) => {
+    const pax = asInvoiceNumber(row.pax);
+    row.unitAmount = row.amount > 0 && pax > 0 ? row.amount / pax : 0;
+  });
 
   return rows;
 }
 
-function renderBookedServicesTable(invoice, brandColor, brandLight) {
-  const rows = buildBookedServiceRows(invoice);
+function renderInvoiceAmount(value) {
+  const amount = asInvoiceNumber(value);
+  return amount > 0 ? amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
+}
+
+function renderServiceDetail(item) {
+  const details = item.details && item.details !== '-'
+    ? `<br><span class="service-row-note">${escapeInvoiceHtml(item.details)}</span>`
+    : '';
+  return `<strong>${escapeInvoiceHtml(item.description || '-')}</strong>${details}`;
+}
+
+function renderServiceCell(item, key) {
+  if (key === 'description') return renderServiceDetail(item);
+  if (key === 'unitAmount' || key === 'amount') return renderInvoiceAmount(item[key]);
+  return escapeInvoiceHtml(item[key] ?? '-');
+}
+
+function renderBookedServicesTables(rows, brandColor, brandLight) {
   if (!rows.length) {
     return `
       <div style="margin-bottom: 20px;">
-        <h4 style="color: ${brandColor}; margin-bottom: 8px; border-bottom: 1px solid ${brandColor}; padding-bottom: 2px; font-size: 12px;">Booked Services</h4>
+        <h4 style="color: ${brandColor}; margin-bottom: 8px; border-bottom: 1px solid ${brandColor}; padding-bottom: 2px; font-size: 12px;">Descriptions of Service</h4>
         <div style="padding: 12px; border: 1px dashed ${brandColor}; background: ${brandLight}; border-radius: 5px; font-size: 11px; color: #555;">
           No service details were found for this booking.
         </div>
@@ -664,36 +749,47 @@ function renderBookedServicesTable(invoice, brandColor, brandLight) {
     `;
   }
 
-  const bodyRows = rows.map((item, index) => `
-    <tr>
-      <td style="padding: 7px; border-bottom: 1px solid #f1f1f1; text-align: center;">${index + 1}</td>
-      <td style="padding: 7px; border-bottom: 1px solid #f1f1f1;">${escapeInvoiceHtml(item.type)}</td>
-      <td style="padding: 7px; border-bottom: 1px solid #f1f1f1;">${escapeInvoiceHtml(item.date)}</td>
-      <td style="padding: 7px; border-bottom: 1px solid #f1f1f1;">
-        <strong>${escapeInvoiceHtml(item.description)}</strong><br>
-        <span style="color: #666; font-size: 10px;">${escapeInvoiceHtml(item.details)}</span>
-      </td>
-      <td style="padding: 7px; border-bottom: 1px solid #f1f1f1; text-align: center;">${escapeInvoiceHtml(item.pax)}</td>
-      <td style="padding: 7px; border-bottom: 1px solid #f1f1f1; text-align: right;">${formatCurrency(item.amount).replace('฿', 'THB ')}</td>
-    </tr>
-  `).join('');
+  const sectionConfigs = [
+    { key: 'Flight', title: 'FLIGHTS', columns: [['Date', 'date'], ['Flight', 'description'], ['Route', 'route'], ['ETD', 'etd'], ['ETA', 'eta'], ['Pax', 'pax'], ['Net Price (THB)', 'unitAmount'], ['Total Price (THB)', 'amount']] },
+    { key: 'Transfer', title: 'TRANSFERS', columns: [['Date', 'date'], ['City', 'city'], ['Description', 'description'], ['Type', 'type'], ['Pax', 'pax'], ['Net Price (THB)', 'unitAmount'], ['Total Price (THB)', 'amount']] },
+    { key: 'Hotel', title: 'HOTELS', columns: [['Check In', 'fromDate'], ['Check Out', 'toDate'], ['City', 'city'], ['Hotel / Room Type', 'description'], ['Nights', 'nights'], ['Pax', 'pax'], ['Net Price (THB)', 'unitAmount'], ['Total Price (THB)', 'amount']] },
+    { key: 'Excursion', title: 'EXCURSIONS', columns: [['Date', 'date'], ['City', 'city'], ['Description', 'description'], ['Type', 'type'], ['Pax', 'pax'], ['Net Price (THB)', 'unitAmount'], ['Total Price (THB)', 'amount']] },
+    { key: 'Tour', title: 'TOURS', columns: [['From', 'fromDate'], ['To', 'toDate'], ['City', 'city'], ['Name / Hotel', 'description'], ['Type', 'type'], ['Pax', 'pax'], ['Net Price (THB)', 'unitAmount'], ['Total Price (THB)', 'amount']] },
+    { key: 'Special Package', title: 'SPECIAL PACKAGES', columns: [['From', 'fromDate'], ['Duration', 'toDate'], ['City', 'city'], ['Package', 'description'], ['Type', 'type'], ['Pax', 'pax'], ['Net Price (THB)', 'unitAmount'], ['Total Price (THB)', 'amount']] },
+    { key: 'Other', title: 'OTHER SERVICES', columns: [['Date', 'date'], ['Description', 'description'], ['Type', 'type'], ['Pax', 'pax'], ['Net Price (THB)', 'unitAmount'], ['Total Price (THB)', 'amount']] }
+  ];
+
+  const tables = sectionConfigs.map((config) => {
+    const sectionRows = rows.filter((row) => row.section === config.key);
+    if (!sectionRows.length) return '';
+
+    const subtotal = sectionRows.reduce((sum, row) => sum + asInvoiceNumber(row.amount), 0);
+    const headers = config.columns.map(([label]) => `<th>${escapeInvoiceHtml(label)}</th>`).join('');
+    const body = sectionRows.map((item) => `
+      <tr>${config.columns.map(([, key]) => `<td class="service-cell-${key}">${renderServiceCell(item, key)}</td>`).join('')}</tr>
+    `).join('');
+
+    return `
+      <section class="service-section">
+        <div class="service-section-title">${config.title}</div>
+        <table class="services-table">
+          <thead><tr>${headers}</tr></thead>
+          <tbody>
+            ${body}
+            <tr class="service-subtotal-row">
+              <td colspan="${config.columns.length - 1}">Subtotal ${config.title}</td>
+              <td>${renderInvoiceAmount(subtotal)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    `;
+  }).join('');
 
   return `
-    <div class="section">
-      <h4>Booked Services</h4>
-      <table class="services-table">
-        <thead>
-          <tr>
-            <th class="col-no">#</th>
-            <th class="col-type">Type</th>
-            <th class="col-date">Date</th>
-            <th class="col-detail">Booked Detail</th>
-            <th class="col-pax">Pax</th>
-            <th class="col-amount">Amount</th>
-          </tr>
-        </thead>
-        <tbody>${bodyRows}</tbody>
-      </table>
+    <div class="services-wrap">
+      <h4 class="services-heading">Descriptions of Service</h4>
+      ${tables}
     </div>
   `;
 }
@@ -707,19 +803,56 @@ async function getDetailedInvoiceForPrint(invoice) {
     });
     if (!response.ok) throw new Error("Failed to load booking details");
     const booking = await response.json();
+    const token = localStorage.getItem("token");
+    const tourItems = booking.tours || booking.tour_trip_items || [];
+    const toursWithHotels = await Promise.all(tourItems.map(async (tour) => {
+      if (!tour?.id) return tour;
+      try {
+        const hotelResponse = await fetch(`${Endpoint}/api/v1/trips/${booking.id}/tour-items/${tour.id}/hotels`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!hotelResponse.ok) return tour;
+        const hotelData = await hotelResponse.json();
+        return { ...tour, tour_hotels: hotelData.hotels || [] };
+      } catch (error) {
+        console.warn(`Unable to load tour accommodation for item ${tour.id}:`, error);
+        return tour;
+      }
+    }));
+    const billing = booking.proforma_billing || invoice.proforma_billing || {};
+    const amount = firstPositiveAmount(
+      booking.final_amount,
+      booking.final_cost,
+      booking.total_amount,
+      booking.total_cost,
+      invoice.totalFee
+    );
     return {
       ...invoice,
       ...booking,
+      tours: toursWithHotels,
       id: invoice.id,
       tripId: invoice.tripId,
-      bookingId: invoice.bookingId,
-      paymentDate: invoice.paymentDate,
-      customerName: invoice.customerName,
-      customerEmail: invoice.customerEmail,
-      customerContact: invoice.customerContact,
-      agentName: invoice.agentName,
-      totalFee: invoice.totalFee,
-      status: invoice.status
+      bookingId: booking.booking_reference || booking.quotation_reference || invoice.bookingId,
+      invoiceNumber: booking.invoice_number || invoice.invoiceNumber || "",
+      bookingDate: booking.booking_date || booking.created_at || invoice.bookingDate,
+      paymentDate: booking.payment_date || booking.booking_date || booking.created_at || invoice.paymentDate,
+      customerName: booking.client_name || invoice.customerName,
+      customerEmail: booking.client_email || invoice.customerEmail,
+      customerContact: booking.client_phone || invoice.customerContact,
+      agentName: booking.agents?.name || booking.agent_name || invoice.agentName,
+      billingName: billing.agent_name || booking.agents?.name || booking.agent_name || invoice.billingName,
+      billingAddress: billing.address || booking.agents?.address || invoice.billingAddress,
+      billingCity: billing.city || invoice.billingCity,
+      billingState: billing.state || invoice.billingState,
+      billingPostalCode: billing.postal_code || invoice.billingPostalCode,
+      billingCountry: billing.country || invoice.billingCountry,
+      billingTaxId: billing.tax_id || invoice.billingTaxId,
+      pax: (Number(booking.number_of_adults) || 0) + (Number(booking.number_of_kids) || 0) || invoice.pax,
+      totalFee: amount,
+      netAmount: amount,
+      status: booking.status || invoice.status,
+      proforma_billing: billing
     };
   } catch (error) {
     console.error("Unable to load full booking details for invoice:", error);
@@ -731,7 +864,37 @@ function buildProformaPreviewHTML(invoice) {
   const brandColor = '#f47b20';
   const brandDark = '#c85f0f';
   const brandLight = '#fff4ec';
-  const totalAmount = firstPositiveAmount(invoice.totalFee, invoice.final_amount, invoice.final_cost, invoice.total_amount, invoice.total_cost);
+  const bookedServiceRows = buildBookedServiceRows(invoice);
+  const calculatedServicesTotal = bookedServiceRows.reduce((sum, row) => sum + asInvoiceNumber(row.amount), 0);
+  const assistanceFee = invoice.include_assistance_fee === false
+    ? 0
+    : asInvoiceNumber(invoice.assistance_fee_amount);
+  const discountAmount = asInvoiceNumber(invoice.discount_amount || invoice.discount);
+  const calculatedNetTotal = Math.max(0, calculatedServicesTotal + assistanceFee - discountAmount);
+  const totalAmount = firstPositiveAmount(
+    invoice.totalFee,
+    invoice.final_amount,
+    invoice.final_cost,
+    invoice.total_amount,
+    invoice.total_cost,
+    calculatedNetTotal,
+    calculatedServicesTotal
+  );
+  const billing = invoice.proforma_billing || {};
+  const billedName = invoice.billingName || billing.agent_name || invoice.agentName || '';
+  const billedAddress = invoice.billingAddress || billing.address || '';
+  const billedLocation = [
+    invoice.billingPostalCode || billing.postal_code,
+    invoice.billingCity || billing.city,
+    invoice.billingState || billing.state,
+    invoice.billingCountry || billing.country
+  ].filter(Boolean).join(' - ');
+  const billedTaxId = invoice.billingTaxId || billing.tax_id || '';
+  const passengerDate = invoice.bookingDate || invoice.booking_date || invoice.created_at || invoice.paymentDate;
+  const passengerInvoiceNumber = invoice.invoiceNumber || invoice.invoice_number || '-';
+  const passengerFileNumber = invoice.bookingId || invoice.booking_reference || '-';
+  const passengerCount = Number(invoice.pax) ||
+    ((Number(invoice.number_of_adults) || 0) + (Number(invoice.number_of_kids) || 0));
 
   return `
     <!DOCTYPE html>
@@ -793,33 +956,94 @@ function buildProformaPreviewHTML(invoice) {
           background: #fff;
           box-shadow: 0 4px 22px rgba(0,0,0,0.35);
         }
-        .header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
+        .company-header {
+          display: grid;
+          grid-template-columns: 26% 74%;
+          width: 100%;
+          min-height: 31mm;
+          border: 1px solid #222;
           border-bottom: 2px solid ${brandColor};
-          padding-bottom: 12px;
+          background: #fff;
+          font-family: Tahoma, Arial, sans-serif;
         }
-        .logo {
-          max-height: 54px;
-          max-width: 150px;
+        .company-logo-cell {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 8px 12px;
+          border-right: 1px solid #222;
         }
-        .company {
-          text-align: right;
-          line-height: 1.35;
+        .company-logo-cell img {
+          display: block;
+          width: 100%;
+          max-width: 155px;
+          max-height: 72px;
+          object-fit: contain;
+        }
+        .company-details {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          padding: 7px 12px;
+          color: #111;
           font-size: 11px;
+          line-height: 1.38;
+          letter-spacing: 0;
         }
-        .company strong {
-          color: ${brandDark};
-          font-size: 13px;
+        .company-details .company-name {
+          margin-bottom: 2px;
+          font-size: 12px;
+          font-weight: 700;
+        }
+        .billing-payment-row {
+          display: grid;
+          grid-template-columns: minmax(0, 43fr) minmax(0, 57fr);
+          gap: 10px;
+          margin-top: 12px;
+          align-items: stretch;
+        }
+        .billed-to,
+        .bank-details {
+          border: 1px solid #222;
+          background: #fff;
+          font-family: Tahoma, Arial, sans-serif;
+        }
+        .billed-to-title,
+        .bank-details-title {
+          padding: 5px 10px;
+          background: #111;
+          color: #fff;
+          text-align: center;
+          font-size: 14px;
+          font-weight: 700;
+          letter-spacing: 0;
+        }
+        .billed-to-body,
+        .bank-details-body {
+          min-height: 27mm;
+          padding: 7px 12px;
+          font-size: 11px;
+          line-height: 1.45;
+        }
+        .billed-to-body strong {
+          display: inline-block;
+          min-width: 76px;
+        }
+        .bank-details-body strong {
+          font-weight: 700;
         }
         .title {
-          margin: 18px 0 28px;
+          margin: 0;
+          padding: 5px 10px;
+          border: 1px solid #222;
+          border-top: 0;
+          background: #ffc20e;
           text-align: center;
-          color: ${brandColor};
-          font-size: 23px;
-          font-weight: 800;
-          letter-spacing: 1px;
+          color: #111;
+          font-family: Georgia, 'Times New Roman', serif;
+          font-size: 18px;
+          font-weight: 700;
+          letter-spacing: 0;
           text-transform: uppercase;
         }
         .section {
@@ -851,47 +1075,130 @@ function buildProformaPreviewHTML(invoice) {
           border-left: 4px solid ${brandColor};
           border-radius: 5px;
         }
+        .passenger-section {
+          margin: 14px 0 20px;
+          font-family: Tahoma, Arial, sans-serif;
+        }
+        .passenger-title {
+          padding: 4px 10px;
+          border: 1px solid #222;
+          border-bottom: 0;
+          background: #111;
+          color: #fff;
+          text-align: center;
+          font-family: Georgia, 'Times New Roman', serif;
+          font-size: 15px;
+          font-weight: 700;
+        }
+        .passenger-table {
+          width: 100%;
+          table-layout: fixed;
+          border-collapse: collapse;
+          font-size: 11px;
+        }
+        .passenger-table td {
+          height: 25px;
+          padding: 5px 8px;
+          border: 1px solid #222;
+          vertical-align: middle;
+          overflow-wrap: anywhere;
+        }
+        .passenger-table .passenger-label {
+          width: 16%;
+          background: #f3f3f3;
+          font-weight: 700;
+        }
+        .passenger-table .passenger-value-short {
+          width: 17%;
+        }
+        .services-wrap {
+          margin: 16px 0 20px;
+        }
+        .services-heading {
+          margin: 0 0 10px;
+          color: #111;
+          font-size: 14px;
+          font-weight: 700;
+        }
+        .service-section {
+          margin: 0 0 13px;
+        }
+        .service-section-title {
+          padding: 4px 9px;
+          border: 1px solid #222;
+          border-bottom: 0;
+          background: #111;
+          color: #fff;
+          font-family: Georgia, 'Times New Roman', serif;
+          font-size: 12px;
+          font-weight: 700;
+          break-after: avoid;
+          page-break-after: avoid;
+        }
         .services-table {
           width: 100%;
           table-layout: fixed;
           border-collapse: collapse;
-          border: 1px solid #f0d6bf;
-          font-size: 11px;
+          border: 1px solid #333;
+          font-size: 9px;
         }
         .services-table th {
-          padding: 8px 7px;
-          background: ${brandColor};
-          color: #fff;
+          padding: 5px 4px;
+          border: 1px solid #333;
+          background: #f1f1f1;
+          color: #111;
           text-align: left;
-          font-weight: 800;
+          font-weight: 700;
+          vertical-align: middle;
         }
         .services-table td {
-          padding: 8px 7px !important;
-          border-bottom: 1px solid #ececec !important;
-          vertical-align: top;
-          line-height: 1.35;
+          padding: 5px 4px !important;
+          border: 1px solid #555 !important;
+          vertical-align: middle;
+          line-height: 1.25;
           overflow-wrap: anywhere;
           word-break: normal;
         }
-        .services-table .col-no { width: 34px; text-align: center; }
-        .services-table .col-type { width: 72px; }
-        .services-table .col-date { width: 108px; }
-        .services-table .col-detail { width: auto; }
-        .services-table .col-pax { width: 46px; text-align: center; }
-        .services-table .col-amount { width: 108px; text-align: right; }
+        .service-row-note {
+          color: #555;
+          font-size: 8px;
+        }
+        .service-cell-pax {
+          text-align: center;
+        }
+        .service-cell-unitAmount,
+        .service-cell-amount {
+          text-align: right;
+          white-space: nowrap;
+        }
+        .service-subtotal-row td {
+          background: #f7f7f7;
+          font-weight: 700;
+          text-align: right;
+        }
         .amount-wrap {
           display: flex;
           justify-content: flex-end;
         }
         .amount-total {
-          display: grid;
-          grid-template-columns: auto auto;
-          gap: 28px;
           min-width: 330px;
-          padding: 12px 16px;
+          padding: 9px 14px;
           border-radius: 6px;
           background: ${brandColor};
           color: #fff;
+        }
+        .amount-summary-row {
+          display: grid;
+          grid-template-columns: 1fr auto;
+          gap: 28px;
+          padding: 4px 0;
+          font-size: 11px;
+          font-weight: 600;
+        }
+        .amount-summary-row.net-total {
+          margin-top: 4px;
+          padding-top: 7px;
+          border-top: 1px solid rgba(255, 255, 255, 0.7);
           font-size: 14px;
           font-weight: 800;
         }
@@ -929,11 +1236,16 @@ function buildProformaPreviewHTML(invoice) {
             box-shadow: none;
           }
           .services-table tr,
+          .billing-payment-row,
+          .passenger-section,
           .client-card,
           .booking-box,
           .amount-total {
             break-inside: avoid;
             page-break-inside: avoid;
+          }
+          .services-table thead {
+            display: table-header-group;
           }
         }
       </style>
@@ -948,50 +1260,93 @@ function buildProformaPreviewHTML(invoice) {
       </div>
       <div class="page-wrap">
         <main class="invoice-page">
-          <div class="header">
-            <img class="logo" src="images/Verathailand_logo.png" alt="VeraThailandia Logo">
-            <div class="company">
-              <strong>VeraThailandia Travel Co., Ltd.</strong><br>
-              <b>Email:</b> info@verathailandia.com<br>
-              <b>Contact:</b> +66 123 456 789<br>
-              <b>Website:</b> www.verathailandia.com
+          <div class="company-header">
+            <div class="company-logo-cell">
+              <img src="images/Verathailand_logo.png" alt="VeraThailandia Co., Ltd.">
+            </div>
+            <div class="company-details">
+              <div class="company-name">บริษัท เวร่าไทยแลนด์เดีย จำกัด | Verathailandia Co., Ltd.</div>
+              <div>160/424-425 อาคารไอทีเอฟ สีลมพาเลซ ชั้น 20 | 160/424-425, ITF Silom Palace, 20th Floor</div>
+              <div>ถนน สีลม แขวงสุริยวงศ์ เขต บางรัก | Silom Road, Suriya Wong, Bangrak</div>
+              <div>กรุงเทพฯ 10500 ประเทศไทย | Bangkok 10500 - Thailand</div>
+              <div>ทะเบียนเลขที่ | Tax ID 0105547045569</div>
+              <div>ใบอนุญาตประกอบธุรกิจนำเที่ยวเลขที่ | TAT License number 14/03484</div>
             </div>
           </div>
 
           <div class="title">Proforma Invoice</div>
 
-          <section class="section">
-            <h4>Booking Details</h4>
-            <div class="booking-box">
-              <div>
-                <p><strong>Booking ID:</strong> ${escapeInvoiceHtml(invoice.bookingId || '-')}</p>
-                <p><strong>Status:</strong> ${escapeInvoiceHtml(invoice.status || 'Confirmed')}</p>
-              </div>
-              <div>
-                <p><strong>Payment Date:</strong> ${formatDate(invoice.paymentDate)}</p>
+          <div class="billing-payment-row">
+            <div class="billed-to">
+              <div class="billed-to-title">BILLED TO</div>
+              <div class="billed-to-body">
+                <div><strong>Agent Name:</strong> ${escapeInvoiceHtml(billedName)}</div>
+                <div><strong>Address:</strong> ${escapeInvoiceHtml(billedAddress)}</div>
+                <div><strong>City/Country:</strong> ${escapeInvoiceHtml(billedLocation)}</div>
+                <div><strong>Tax ID:</strong> ${escapeInvoiceHtml(billedTaxId)}</div>
               </div>
             </div>
-          </section>
-
-          <section class="section">
-            <h4>Client Details</h4>
-            <div class="client-card">
-              <p><strong>${escapeInvoiceHtml(invoice.customerName || '-')}</strong></p>
-              <p><strong>Email:</strong> ${escapeInvoiceHtml(invoice.customerEmail || '-')}</p>
-              <p><strong>Contact:</strong> ${escapeInvoiceHtml(invoice.customerContact || '-')}</p>
-              ${invoice.agentName ? `<p><strong>Agent:</strong> ${escapeInvoiceHtml(invoice.agentName)}</p>` : ''}
-              <p><strong>Billing Address:</strong><br>${escapeInvoiceHtml(invoice.billingAddress || '-').replace(/\n/g, '<br>')}</p>
+            <div class="bank-details">
+              <div class="bank-details-title">PAYMENT / BANK ACCOUNT</div>
+              <div class="bank-details-body">
+                <div><strong>VERATHAILANDIA Co., Ltd.</strong></div>
+                <div><strong>Bank Name:</strong> SIAM COMMERCIAL BANK</div>
+                <div><strong>Address:</strong> 4th Fl. Silom Complex, 191 Silom Road, Bang Rak City, 10500, Bangkok Thailand</div>
+                <div><strong>Account Number:</strong> 419-200606-3 | <strong>Swift Code:</strong> SICOTHBK</div>
+              </div>
             </div>
+          </div>
+
+          <section class="passenger-section">
+            <div class="passenger-title">PASSENGER INFORMATIONS</div>
+            <table class="passenger-table">
+              <tbody>
+                <tr>
+                  <td class="passenger-label">Date:</td>
+                  <td class="passenger-value-short">${formatDate(passengerDate)}</td>
+                  <td class="passenger-label">Invoice Nr:</td>
+                  <td class="passenger-value-short">${escapeInvoiceHtml(passengerInvoiceNumber)}</td>
+                  <td class="passenger-label">File Nr:</td>
+                  <td class="passenger-value-short">${escapeInvoiceHtml(passengerFileNumber)}</td>
+                </tr>
+                <tr>
+                  <td class="passenger-label">Client Name(s):</td>
+                  <td colspan="5">${escapeInvoiceHtml(invoice.customerName || invoice.client_name || '-')}</td>
+                </tr>
+                <tr>
+                  <td class="passenger-label">Nr. of Clients</td>
+                  <td colspan="5">${escapeInvoiceHtml(passengerCount || '-')}</td>
+                </tr>
+              </tbody>
+            </table>
           </section>
 
-          ${renderBookedServicesTable(invoice, brandColor, brandLight)}
+          ${renderBookedServicesTables(bookedServiceRows, brandColor, brandLight)}
 
           <section class="section">
             <h4>Amount Details</h4>
             <div class="amount-wrap">
               <div class="amount-total">
-                <span>Total (Excluding Tax):</span>
-                <span>${formatCurrency(totalAmount).replace('฿', 'THB ')}</span>
+                <div class="amount-summary-row">
+                  <span>Services Subtotal:</span>
+                  <span>THB ${renderInvoiceAmount(calculatedServicesTotal)}</span>
+                </div>
+                ${assistanceFee > 0 ? `
+                  <div class="amount-summary-row">
+                    <span>Assistance Fee:</span>
+                    <span>THB ${renderInvoiceAmount(assistanceFee)}</span>
+                  </div>
+                ` : ''}
+                ${discountAmount > 0 ? `
+                  <div class="amount-summary-row">
+                    <span>Discount:</span>
+                    <span>- THB ${renderInvoiceAmount(discountAmount)}</span>
+                  </div>
+                ` : ''}
+                <div class="amount-summary-row net-total">
+                  <span>Net Total (Excluding Tax):</span>
+                  <span>${formatCurrency(totalAmount).replace('฿', 'THB ')}</span>
+                </div>
               </div>
             </div>
           </section>
