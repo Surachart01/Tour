@@ -44,6 +44,24 @@ export async function ensureMarkupSchema() {
       ADD COLUMN IF NOT EXISTS invoice_number varchar(100),
       ADD COLUMN IF NOT EXISTS booking_date date
     `);
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS tax_invoice_documents (
+        id serial PRIMARY KEY,
+        trip_id integer NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+        document_type varchar(50) NOT NULL,
+        invoice_number varchar(100),
+        selected_services jsonb NOT NULL DEFAULT '[]'::jsonb,
+        adjustments jsonb NOT NULL DEFAULT '{}'::jsonb,
+        snapshot jsonb NOT NULL DEFAULT '{}'::jsonb,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        UNIQUE (trip_id, document_type)
+      )
+    `);
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX IF NOT EXISTS tax_invoice_documents_trip_id_idx
+      ON tax_invoice_documents (trip_id)
+    `);
 
   markupSchemaReady = true;
   await prisma.$disconnect();
