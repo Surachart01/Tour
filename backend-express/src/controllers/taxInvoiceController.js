@@ -13,8 +13,6 @@ const PUBLIC_DOCUMENT_TYPES = [
   'tax_invoice',
   'original_receipt_transportation'
 ];
-const TAX_TREATMENTS = new Set(['vat', 'adv', 'split']);
-
 const DOCUMENT_SERVICE_TYPES = {
   original_tax_invoice: ['transfer', 'excursion', 'tour', 'tour_hotel', 'hotel', 'other', 'special_package', 'assistance_fee'],
   tax_invoice: ['transfer', 'excursion', 'tour', 'tour_hotel', 'hotel', 'other', 'special_package', 'assistance_fee'],
@@ -209,56 +207,48 @@ function sanitizeServices(baseRows, submittedServices) {
 
   return baseRows.map((base) => {
     const input = submitted.get(base.id);
-    const hasExplicitTreatment = Boolean(input && (Object.prototype.hasOwnProperty.call(input, 'tax_treatment') || Object.prototype.hasOwnProperty.call(input, 'taxTreatment')));
     const submittedTreatment = String(input?.tax_treatment ?? input?.taxTreatment ?? '').trim().toLowerCase();
     const legacyAdv = input ? Math.max(0, number(input.adv)) : 0;
     const effectiveTotal = base.editable_total && input ? Math.max(0, number(input.total ?? base.total)) : Math.max(0, number(base.total));
-    const taxTreatment = TAX_TREATMENTS.has(submittedTreatment)
-      ? submittedTreatment
-      : input && legacyAdv >= effectiveTotal && legacyAdv > 0
-        ? 'adv'
-        : input && legacyAdv > 0
-          ? 'split'
-          : '';
-    const adv = taxTreatment === 'adv'
+    const hasAdvFlag = Boolean(input && Object.prototype.hasOwnProperty.call(input, 'adv_enabled'));
+    const legacyAdvRequested = submittedTreatment === 'adv'
+      || submittedTreatment === 'split'
+      || (submittedTreatment !== 'vat' && legacyAdv > 0);
+    const advEnabled = usesRemainingAmountVat(base)
+      && Boolean(input && (hasAdvFlag ? input.adv_enabled : legacyAdvRequested));
+    const adv = advEnabled && submittedTreatment === 'adv' && legacyAdv <= 0
       ? effectiveTotal
-      : taxTreatment === 'vat'
-        ? 0
-        : legacyAdv;
-    const submittedVatBase = input ? Math.max(0, number(input.vat_base ?? input.vat_taxable_amount)) : 0;
-    const hasExplicitVatBase = Boolean(input && (Object.prototype.hasOwnProperty.call(input, 'vat_base') || Object.prototype.hasOwnProperty.call(input, 'vat_taxable_amount')));
-    const vatBase = taxTreatment === 'vat'
-      ? round(Math.max(0, effectiveTotal - adv) / (1 + VAT_RATE))
-      : taxTreatment === 'split'
-        ? hasExplicitVatBase ? submittedVatBase : hasExplicitTreatment ? 0 : round(Math.max(0, effectiveTotal - adv) / (1 + VAT_RATE))
-        : 0;
-    const sanitized = {
+      : advEnabled ? legacyAdv : 0;
+    const taxTreatment = adv <= 0 ? 'vat' : adv >= effectiveTotal ? 'adv' : 'split';
+    const vatBase = round(Math.max(0, effectiveTotal - adv) / (1 + VAT_RATE));
+    return {
       ...base,
       // A missing row is treated as unselected, so partial payloads cannot add services by accident.
       selected: Boolean(input && input.selected !== false),
       // Booking prices are authoritative. Tour and Special Package detail allocations are editable.
       total: base.editable_total && input ? Math.max(0, number(input.total ?? base.total)) : base.total,
+      adv_enabled: advEnabled,
       adv,
-      ...(hasExplicitTreatment ? { tax_treatment: taxTreatment } : {})
+      tax_treatment: taxTreatment,
+      vat_base: vatBase
     };
-    if (hasExplicitTreatment || hasExplicitVatBase) sanitized.vat_base = vatBase;
-    return sanitized;
   });
 }
 
 function treatmentAdv(row, total) {
+  if (!usesRemainingAmountVat(row)) return 0;
   const treatment = String(row?.tax_treatment ?? row?.taxTreatment ?? '').trim().toLowerCase();
-  if (treatment === 'adv') return total;
-  if (treatment === 'vat') return 0;
+  const hasAdvFlag = Object.prototype.hasOwnProperty.call(row || {}, 'adv_enabled');
+  const advEnabled = hasAdvFlag
+    ? Boolean(row.adv_enabled)
+    : treatment === 'adv' || treatment === 'split' || (treatment !== 'vat' && number(row?.adv) > 0);
+  if (!advEnabled) return 0;
+  if (treatment === 'adv' && number(row?.adv) <= 0) return total;
   return Math.min(total, Math.max(0, round(row?.adv)));
 }
 
-function treatmentVatBase(row, total, adv) {
-  const treatment = String(row?.tax_treatment ?? row?.taxTreatment ?? '').trim().toLowerCase();
-  if (treatment === 'adv') return 0;
-  if (treatment === 'vat') return round(Math.max(0, total - adv) / (1 + VAT_RATE));
-  const submitted = Math.max(0, round(row?.vat_base ?? row?.vat_taxable_amount));
-  return submitted || round(Math.max(0, total - adv) / (1 + VAT_RATE));
+function usesRemainingAmountVat(row) {
+  return ['transfer', 'excursion', 'tour'].includes(String(row?.type || '').toLowerCase());
 }
 
 function calculateRows(rows, documentType) {
@@ -270,14 +260,16 @@ function calculateRows(rows, documentType) {
   const calculated = rows.filter((row) => row.selected).map((row) => {
     const total = Math.max(0, round(row.total) - (childTotals[row.id] || 0));
     const adv = treatmentAdv(row, total);
-    const taxableNet = noVat ? round(total - adv) : treatmentVatBase(row, total, adv);
-    const taxableGross = String(row?.tax_treatment ?? '').toLowerCase() === 'split' ? round(taxableNet * (1 + VAT_RATE)) : round(total - adv);
+    const treatment = adv <= 0 ? 'vat' : adv >= total ? 'adv' : 'split';
+    const remainingGross = round(Math.max(0, total - adv));
+    const taxableNet = noVat ? remainingGross : round(remainingGross / (1 + VAT_RATE));
+    const taxableGross = remainingGross;
     const vat = noVat ? 0 : round(taxableGross - taxableNet);
     const allocatedGross = round(adv + taxableGross);
-    const documentTotal = noVat ? adv : documentType === ORIGINAL_DOCUMENT_TYPE ? (String(row?.tax_treatment ?? '').toLowerCase() === 'split' ? allocatedGross : total) : taxableGross;
+    const documentTotal = noVat ? adv : documentType === ORIGINAL_DOCUMENT_TYPE ? total : taxableGross;
     const vatTaxableAmount = noVat ? 0 : taxableNet;
     const documentAdv = documentType === 'tax_invoice' || documentType === 'tax_invoice_hotel' ? 0 : adv;
-    return { ...row, total, gross_total: total, adv, vat_base: taxableNet, document_adv: documentAdv, taxable_gross: taxableGross, taxable_net: taxableNet, vat_taxable_amount: vatTaxableAmount, vat, allocated_gross: allocatedGross, document_total: documentTotal };
+    return { ...row, adv_enabled: usesRemainingAmountVat(row) && adv > 0, tax_treatment: treatment, total, gross_total: total, adv, vat_base: taxableNet, document_adv: documentAdv, taxable_gross: taxableGross, taxable_net: taxableNet, vat_taxable_amount: vatTaxableAmount, vat, allocated_gross: allocatedGross, document_total: documentTotal };
   });
   const totals = calculated.reduce((sum, row) => ({
     total: sum.total + row.total,
@@ -294,20 +286,23 @@ function calculateRows(rows, documentType) {
 
 function validateTaxTreatments(rows) {
   const selectedRows = rows.filter((row) => row.selected);
-  const missing = selectedRows.filter((row) => !TAX_TREATMENTS.has(String(row.tax_treatment || '').toLowerCase()));
-  if (missing.length) {
-    return `Please select VAT 7% or ADV (Non-VAT) for: ${missing.slice(0, 3).map((row) => row.name || row.id).join(', ')}${missing.length > 3 ? ' and more' : ''}.`;
-  }
-  const invalidSplit = selectedRows.filter((row) => {
-    if (String(row.tax_treatment).toLowerCase() !== 'split') return false;
-    const total = Math.max(0, round(row.total));
-    const adv = Math.max(0, round(row.adv));
-    const vatBase = Math.max(0, round(row.vat_base ?? row.vat_taxable_amount));
-    const allocatedGross = round(adv + vatBase * (1 + VAT_RATE));
-    return total <= 0 || adv <= 0 || vatBase <= 0 || allocatedGross > total + 0.01;
+  const childTotals = selectedRows.reduce((sum, row) => {
+    if (row.parent_id) sum[row.parent_id] = (sum[row.parent_id] || 0) + Math.max(0, round(row.total));
+    return sum;
+  }, {});
+  const invalidAdv = selectedRows.filter((row) => {
+    const treatment = String(row?.tax_treatment ?? row?.taxTreatment ?? '').trim().toLowerCase();
+    const hasAdvFlag = Object.prototype.hasOwnProperty.call(row || {}, 'adv_enabled');
+    const advEnabled = usesRemainingAmountVat(row) && (hasAdvFlag
+      ? Boolean(row.adv_enabled)
+      : treatment === 'adv' || treatment === 'split' || (treatment !== 'vat' && number(row.adv) > 0));
+    if (!advEnabled) return false;
+    const total = Math.max(0, round(row.total) - (childTotals[row.id] || 0));
+    const adv = treatment === 'adv' && number(row.adv) <= 0 ? total : Math.max(0, round(row.adv));
+    return total <= 0 || adv <= 0 || adv > total;
   });
-  if (invalidSplit.length) {
-    return `For VAT + ADV services, enter valid ADV and VAT Taxable Amount values. Their gross total must not exceed the service price: ${invalidSplit.slice(0, 3).map((row) => row.name || row.id).join(', ')}.`;
+  if (invalidAdv.length) {
+    return `Enter an ADV amount greater than zero and not exceeding the service price for: ${invalidAdv.slice(0, 3).map((row) => row.name || row.id).join(', ')}.`;
   }
   return null;
 }

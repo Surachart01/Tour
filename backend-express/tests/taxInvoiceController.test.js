@@ -19,6 +19,17 @@ test('calculates VAT only from the selling price remaining after ADV', () => {
   });
 });
 
+test('calculates the customer ADV example from a VAT-inclusive amount', () => {
+  const result = calculateRows([{
+    id: 'transfer-example', type: 'transfer', total: 1000, adv: 500, adv_enabled: true, selected: true
+  }], 'original_tax_invoice');
+
+  assert.equal(result.totals.document_total, 1000);
+  assert.equal(result.totals.adv, 500);
+  assert.equal(result.totals.vat_taxable_amount, 467.29);
+  assert.equal(result.totals.vat, 32.71);
+});
+
 test('keeps transportation receipt free of VAT', () => {
   const result = calculateRows([{
     id: 'transfer-1', type: 'transfer', total: 2500, adv: 1000, selected: true
@@ -51,17 +62,16 @@ test('keeps Booking service prices authoritative while allowing a tour hotel all
     { id: 'tour-hotel-1', selected: true, total: 2500, adv: 100 }
   ]);
 
-  assert.deepEqual(rows, [
-    { id: 'hotel-1', type: 'hotel', total: 8750, editable_total: false, selected: true, adv: 500 },
-    { id: 'tour-hotel-1', type: 'tour_hotel', total: 2500, editable_total: true, selected: true, adv: 100 }
-  ]);
+  assert.equal(rows[0].total, 8750);
+  assert.equal(rows[1].total, 2500);
+  assert.ok(rows.every((row) => row.selected && row.adv === 0 && row.tax_treatment === 'vat'));
 });
 
 test('applies explicit VAT, ADV and split treatments to document totals', () => {
   const result = calculateRows([
     { id: 'vat', type: 'hotel', total: 1070, adv: 0, tax_treatment: 'vat', selected: true },
     { id: 'adv', type: 'transfer', total: 1000, adv: 0, tax_treatment: 'adv', selected: true },
-    { id: 'split', type: 'transfer', total: 2000, adv: 500, vat_base: 1401.87, tax_treatment: 'split', selected: true }
+    { id: 'split', type: 'transfer', total: 2000, adv: 500, vat_base: 1, tax_treatment: 'split', selected: true }
   ], 'original_tax_invoice');
 
   assert.equal(result.totals.document_total, 4070);
@@ -78,19 +88,51 @@ test('applies explicit VAT, ADV and split treatments to document totals', () => 
   assert.equal(vatDocument.totals.document_total, 1070);
 });
 
-test('requires every selected original-invoice service to have a tax treatment', () => {
-  assert.match(validateTaxTreatments([
+test('deducts ADV before calculating VAT for transfers, excursions and tours', () => {
+  for (const type of ['transfer', 'excursion', 'tour']) {
+    const result = calculateRows([{
+      id: `${type}-split`, type, total: 1070, adv: 535, vat_base: 1, tax_treatment: 'split', selected: true
+    }], 'original_tax_invoice');
+
+    assert.equal(result.totals.document_total, 1070, `${type} keeps its full selling price`);
+    assert.equal(result.totals.adv, 535, `${type} deducts ADV first`);
+    assert.equal(result.totals.taxable_gross, 535, `${type} uses the remainder as VAT-inclusive gross`);
+    assert.equal(result.totals.vat_taxable_amount, 500, `${type} calculates the VAT taxable base automatically`);
+    assert.equal(result.totals.vat, 35, `${type} calculates VAT 7% from the remainder`);
+  }
+});
+
+test('ignores a submitted VAT base for automatic remainder VAT services', () => {
+  for (const type of ['transfer', 'excursion', 'tour']) {
+    const [saved] = sanitizeServices([
+      { id: `${type}-1`, type, total: 1070, editable_total: false }
+    ], [
+      { id: `${type}-1`, selected: true, total: 1070, adv: 535, vat_base: 1, tax_treatment: 'split' }
+    ]);
+
+    assert.equal(saved.vat_base, 500, `${type} derives VAT taxable amount during save`);
+  }
+});
+
+test('applies VAT automatically and validates optional ADV amounts', () => {
+  assert.equal(validateTaxTreatments([
     { id: 'hotel-1', name: 'Hotel', total: 1000, adv: 0, selected: true, tax_treatment: '' }
-  ]), /select VAT 7% or ADV/);
+  ]), null);
   assert.equal(validateTaxTreatments([
     { id: 'hotel-1', name: 'Hotel', total: 1000, adv: 0, selected: true, tax_treatment: 'vat' }
   ]), null);
   assert.equal(validateTaxTreatments([
-    { id: 'service-1', name: 'Service', total: 1070, adv: 500, vat_base: 532.71, selected: true, tax_treatment: 'split' }
+    { id: 'transfer-1', type: 'transfer', name: 'Transfer', total: 1070, adv: 500, adv_enabled: true, selected: true }
   ]), null);
   assert.match(validateTaxTreatments([
-    { id: 'service-1', name: 'Service', total: 1070, adv: 500, vat_base: 600, selected: true, tax_treatment: 'split' }
-  ]), /gross total must not exceed/);
+    { id: 'transfer-1', type: 'transfer', name: 'Transfer', total: 1070, adv: 0, adv_enabled: true, selected: true }
+  ]), /greater than zero/);
+  assert.equal(validateTaxTreatments([
+    { id: 'tour-1', type: 'tour', name: 'Tour', total: 1070, adv: 1070, adv_enabled: true, selected: true }
+  ]), null);
+  assert.match(validateTaxTreatments([
+    { id: 'tour-1', type: 'tour', name: 'Tour', total: 1070, adv: 1071, adv_enabled: true, selected: true }
+  ]), /not exceeding/);
 });
 
 test('treats omitted submitted services as unselected', () => {
