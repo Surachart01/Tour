@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildServices, calculateRows, sanitizeServices, servicesForDocument } from '../src/controllers/taxInvoiceController.js';
+import { buildServices, calculateRows, sanitizeServices, servicesForDocument, isPaymentReceived } from '../src/controllers/taxInvoiceController.js';
 
 test('calculates VAT only from the selling price remaining after ADV', () => {
   const result = calculateRows([{
@@ -62,7 +62,7 @@ test('treats omitted submitted services as unselected', () => {
   assert.equal(rows.find((row) => row.id === 'transfer-2').selected, true);
 });
 
-test('includes special-package and other-service totals from the Booking data', () => {
+test('includes special-package, other-service and assistance-fee totals from the Booking data', () => {
   const services = buildServices({
     id: 21,
     special_package_id: 8,
@@ -75,6 +75,12 @@ test('includes special-package and other-service totals from the Booking data', 
 
   assert.equal(services.find((service) => service.id === 'special_package-21').total, 24000);
   assert.equal(services.find((service) => service.id === 'other-4').total, 500);
+  assert.equal(services.find((service) => service.id === 'assistance_fee-21').total, 1000);
+  assert.deepEqual(servicesForDocument({
+    id: 21,
+    include_assistance_fee: true,
+    assistance_fee_amount: 1000
+  }, 'original_tax_invoice').map((service) => service.type), ['assistance_fee']);
 });
 
 test('limits a transportation receipt to transfers only', () => {
@@ -101,4 +107,15 @@ test('uses each tour accommodation day to calculate its own stay dates', () => {
 
   assert.equal(hotel.from_date.toISOString().slice(0, 10), '2026-11-28');
   assert.equal(hotel.to_date.toISOString().slice(0, 10), '2026-11-29');
+});
+
+test('requires a full recorded payment before a tax invoice is eligible', () => {
+  assert.equal(isPaymentReceived({ final_amount: 15000, received_amount: 15000, payment_date: '2026-07-18' }), true);
+  assert.equal(isPaymentReceived({ final_amount: 15000, received_amount: 14999.99, payment_date: '2026-07-18' }), false);
+  assert.equal(isPaymentReceived({ final_amount: 15000, received_amount: 15000, payment_date: null }), false);
+});
+
+test('includes a penalty in the amount that must be received', () => {
+  assert.equal(isPaymentReceived({ final_amount: 15000, penalty_cost: 500, received_amount: 15000, payment_date: '2026-07-18' }), false);
+  assert.equal(isPaymentReceived({ final_amount: 15000, penalty_cost: 500, received_amount: 15500, payment_date: '2026-07-18' }), true);
 });

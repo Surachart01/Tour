@@ -1,10 +1,12 @@
 const params = new URLSearchParams(window.location.search);
 const tripId = Number(params.get('trip_id'));
 const documentType = params.get('type') || 'original_tax_invoice';
+const ORIGINAL_DOCUMENT_TYPE = 'original_tax_invoice';
+const canManageInvoices = ['admin', 'superadmin'].includes(String(localStorage.getItem('role') || '').toLowerCase());
 const VAT_RATE = 0.07;
 const DOCUMENT_CONFIG = {
-  original_tax_invoice: { title: 'ORIGINAL TAX INVOICE', allowed: ['transfer', 'excursion', 'tour', 'tour_hotel', 'hotel', 'other', 'special_package'] },
-  tax_invoice: { title: 'TAX INVOICE', allowed: ['transfer', 'excursion', 'tour', 'tour_hotel', 'hotel', 'other', 'special_package'] },
+  original_tax_invoice: { title: 'ORIGINAL TAX INVOICE', allowed: ['transfer', 'excursion', 'tour', 'tour_hotel', 'hotel', 'other', 'special_package', 'assistance_fee'] },
+  tax_invoice: { title: 'TAX INVOICE', allowed: ['transfer', 'excursion', 'tour', 'tour_hotel', 'hotel', 'other', 'special_package', 'assistance_fee'] },
   original_receipt_transportation: { title: 'ORIGINAL RECEIPT TRANSPORTATION', allowed: ['transfer'], noVat: true },
   tax_invoice_hotel: { title: 'TAX INVOICE HOTEL', allowed: ['hotel', 'tour_hotel'] }
 };
@@ -18,6 +20,7 @@ const COMPANY = {
 let booking = null;
 let services = [];
 let savedDocument = null;
+let masterDocument = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!tripId || !DOCUMENT_CONFIG[documentType]) {
@@ -26,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   document.getElementById('saveButton').addEventListener('click', saveDocument);
   document.getElementById('printButton').addEventListener('click', openPrintView);
+  if (!canManageInvoices) document.getElementById('saveButton').style.display = 'none';
   loadDocument();
 });
 
@@ -35,7 +39,16 @@ async function loadDocument() {
     if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Failed to load booking.');
     const data = await response.json();
     booking = data.booking;
-    savedDocument = (data.documents || []).find((document) => document.document_type === documentType) || null;
+    const documents = data.documents || [];
+    savedDocument = documents.find((document) => document.document_type === documentType) || null;
+    masterDocument = documents.find((document) => document.document_type === ORIGINAL_DOCUMENT_TYPE) || null;
+    if (documentType !== ORIGINAL_DOCUMENT_TYPE && !masterDocument) {
+      document.getElementById('invoiceNotice').innerHTML = '<i class="fa fa-lock"></i> Save the Original Tax Invoice first. Its invoice date and selected services will be copied automatically to the other tax documents.';
+      document.getElementById('invoicePaper').innerHTML = '<div class="loading"><i class="fa fa-lock"></i><br>Save the Original Tax Invoice first, then return here to open this document.</div>';
+      document.getElementById('saveButton').disabled = true;
+      document.getElementById('printButton').disabled = true;
+      return;
+    }
     const stored = savedDocument ? parseJson(savedDocument.selected_services, []) : [];
     const byId = new Map(stored.map((row) => [row.id, row]));
     services = (data.services || []).filter((row) => DOCUMENT_CONFIG[documentType].allowed.includes(row.type)).map((row) => ({
@@ -45,6 +58,7 @@ async function loadDocument() {
       adv: number(byId.get(row.id)?.adv),
       total: number(byId.get(row.id)?.total ?? row.total)
     }));
+    updateNotice();
     document.getElementById('pageTitle').innerHTML = `<i class="fa fa-file-text-o"></i> ${DOCUMENT_CONFIG[documentType].title}`;
     render();
   } catch (error) {
@@ -54,28 +68,26 @@ async function loadDocument() {
 
 function render() {
   const config = DOCUMENT_CONFIG[documentType];
+  const isOriginal = documentType === ORIGINAL_DOCUMENT_TYPE && canManageInvoices;
   const calculation = calculate();
   const billing = booking.proforma_billing || {};
-  const address = [billing.address, billing.postal_code, billing.city, billing.state, billing.country].filter(Boolean).join(', ');
   document.getElementById('invoicePaper').innerHTML = `
     <section class="company-header">
       <img src="images/Verathailand_logo.png" alt="VeraThailandia" />
-      <div class="company-info"><strong>${COMPANY.thaiName} | ${COMPANY.name}</strong><br>${COMPANY.address}<br>Tax ID ${COMPANY.taxId}<br>TAT License number ${COMPANY.tat}</div>
+      <div class="company-info"><strong>${COMPANY.thaiName} | ${COMPANY.name}</strong><br><span class="company-address">${COMPANY.address}</span><br>Tax ID ${COMPANY.taxId}<br>TAT License number ${COMPANY.tat}</div>
     </section>
     <div class="title-band">${config.title}</div>
     <section class="party-grid">
       <div class="party"><div class="section-title">BILLED TO</div><div class="party-content"><strong>Agent Name:</strong> ${escapeHtml(billing.agent_name || booking.agents?.name || '-')}<br><strong>Address:</strong> ${escapeHtml(billing.address || '-')}<br><strong>City/Country:</strong> ${escapeHtml([billing.postal_code, billing.city, billing.country].filter(Boolean).join(' - ') || '-')}<br><strong>Tax ID:</strong> ${escapeHtml(billing.tax_id || '-')}</div></div>
-      <div class="party"><div class="section-title">PAYMENT / BANK ACCOUNT</div><div class="party-content"><strong>${COMPANY.name.toUpperCase()}</strong><br><strong>Bank Name:</strong> ${COMPANY.bank}<br><strong>Address:</strong> ${COMPANY.bankAddress}<br><strong>Account Number:</strong> ${COMPANY.account} | <strong>Swift Code:</strong> ${COMPANY.swift}</div></div>
+      <div class="party"><div class="section-title">PAYMENT / BANK ACCOUNT</div><div class="party-content"><strong>${COMPANY.name.toUpperCase()}</strong><br><strong>Bank Name:</strong> ${COMPANY.bank}<br><span class="bank-address"><strong>Address:</strong> ${COMPANY.bankAddress}</span><br><strong>Account Number:</strong> ${COMPANY.account} | <strong>Swift Code:</strong> ${COMPANY.swift}</div></div>
     </section>
     <section class="details-grid">
-      <div class="details-label">Agent Name</div><div>${escapeHtml(billing.agent_name || booking.agents?.name || '-')}</div>
-      <div class="details-label">Address</div><div>${escapeHtml(address || '-')}</div>
       <div class="details-label">Client Name(s)</div><div>${escapeHtml(booking.client_name || '-')}</div>
       <div class="details-label">Nr. of Clients</div><div>${number(booking.number_of_adults) + number(booking.number_of_kids)}</div>
-      <div class="details-label">Invoice Nr.</div><div><input id="invoiceNumber" class="invoice-number-input" value="${escapeAttribute(savedDocument?.invoice_number || booking.invoice_number || defaultInvoiceNumber())}" /></div>
+      <div class="details-label">Invoice Nr.</div><div>${escapeHtml(booking.invoice_number || '-')}</div>
       <div class="details-label">File Nr.</div><div>${escapeHtml(booking.file_reference || booking.booking_reference || '-')}</div>
-      <div class="details-label">Date</div><div>${formatDate(booking.booking_date || booking.created_at)}</div>
-      <div class="details-label">Booking Ref.</div><div>${escapeHtml(booking.booking_reference || '-')}</div>
+      <div class="details-label">Date</div><div><input id="invoiceDate" type="date" class="invoice-number-input" value="${escapeAttribute(toInputDate(savedDocument?.invoice_date || masterDocument?.invoice_date))}" ${isOriginal ? '' : 'readonly'} /></div>
+      <div class="details-label">Tax Invoice Number</div><div>${escapeHtml(savedDocument?.invoice_number || defaultInvoiceNumber())}</div>
     </section>
     <div class="service-heading">DESCRIPTION OF SERVICES</div>
     ${renderSections(calculation.rows)}
@@ -87,8 +99,8 @@ function render() {
 }
 
 function renderSections(rows) {
-  const order = ['transfer', 'excursion', 'tour', 'hotel', 'other', 'special_package'];
-  const title = { transfer: 'TRANSFERS', excursion: 'EXCURSIONS', tour: 'TOURS', hotel: 'HOTEL', other: 'OTHER SERVICES', special_package: 'SPECIAL PACKAGE' };
+  const order = ['transfer', 'excursion', 'tour', 'hotel', 'other', 'special_package', 'assistance_fee'];
+  const title = { transfer: 'TRANSFERS', excursion: 'EXCURSIONS', tour: 'TOURS', hotel: 'HOTEL', other: 'OTHER SERVICES', special_package: 'SPECIAL PACKAGE', assistance_fee: 'ASSISTANCE FEE' };
   const grouped = order.map((type) => [type, rows.filter((row) => row.type === type || (type === 'tour' && row.type === 'tour_hotel'))]).filter(([, values]) => values.length);
   if (!grouped.length) return '<div class="document-empty">There are no eligible services for this document.</div>';
   return grouped.map(([type, items]) => `
@@ -104,30 +116,34 @@ function renderSections(rows) {
 
 function renderRow(row) {
   const noVat = DOCUMENT_CONFIG[documentType].noVat;
-  const readOnlyTotal = !row.editable_total;
+  const dataLocked = documentType !== ORIGINAL_DOCUMENT_TYPE || !canManageInvoices;
+  const readOnlyTotal = dataLocked || !row.editable_total;
   const inputTotal = readOnlyTotal ? formatAmount(row.raw_total) : `<input class="total-input" data-id="${row.id}" value="${number(row.raw_total)}" aria-label="Total price" />`;
   return `<tr class="${row.type === 'tour_hotel' ? 'tour-hotel' : ''}">
-    <td class="select-cell"><input type="checkbox" data-select="${row.id}" ${row.selected ? 'checked' : ''} /></td>
+    <td class="select-cell"><input type="checkbox" data-select="${row.id}" ${row.selected ? 'checked' : ''} ${dataLocked ? 'disabled' : ''} /></td>
     <td>${formatDate(row.from_date || row.date)}</td>
     <td>${row.type === 'transfer' ? escapeHtml(row.from || '-') : formatDate(row.to_date)}</td>
     <td class="description">${escapeHtml(row.type === 'transfer' ? row.to || row.description : row.name)}${row.room_type ? `<br><small>[${escapeHtml(row.room_type)}]</small>` : ''}</td>
     <td class="money">${inputTotal}</td>
-    <td class="money"><input class="adv-input" data-adv="${row.id}" value="${number(row.adv)}" aria-label="ADV amount" /></td>
+    <td class="money"><input class="adv-input" data-adv="${row.id}" value="${number(row.adv)}" aria-label="ADV amount" ${dataLocked ? 'disabled' : ''} /></td>
     <td class="money">${formatAmount(row.taxable_gross)}</td>
     ${noVat ? '' : `<td class="money">${formatAmount(row.taxable_net)}</td><td class="money">${formatAmount(row.vat)}</td>`}
   </tr>`;
 }
 
 function renderTotals(totals, noVat) {
+  const vatTaxableAmount = noVat ? totals.taxable_gross : totals.taxable_net;
+  const vatAmount = noVat ? 0 : totals.vat;
   return `<table class="total-box"><tbody>
-    <tr><td>Total (Incl. VAT)</td><td class="money">${formatAmount(totals.total)} THB</td></tr>
-    <tr><td>ADV (Non-VAT)</td><td class="money adv-total">${formatAmount(totals.adv)} THB</td></tr>
-    <tr><td>Unit Price (Excl. ADV)</td><td class="money">${formatAmount(totals.taxable_gross)} THB</td></tr>
-    ${noVat ? '' : `<tr><td>Unit Price (Excl. VAT)</td><td class="money">${formatAmount(totals.taxable_net)} THB</td></tr><tr><td>VAT 7%</td><td class="money">${formatAmount(totals.vat)} THB</td></tr>`}
+    <tr><td>VAT Taxable Amount</td><td class="money">${formatAmount(vatTaxableAmount)} THB</td></tr>
+    <tr><td>VAT 7%</td><td class="money">${formatAmount(vatAmount)} THB</td></tr>
+    <tr><td>ADV (Non-VAT Services)</td><td class="money adv-total">${formatAmount(totals.adv)} THB</td></tr>
+    <tr><td>Total Amount</td><td class="money">${formatAmount(totals.total)} THB</td></tr>
   </tbody></table>`;
 }
 
 function bindInputs() {
+  if (documentType !== ORIGINAL_DOCUMENT_TYPE || !canManageInvoices) return;
   document.querySelectorAll('[data-select]').forEach((input) => input.addEventListener('change', () => {
     const row = findRow(input.dataset.select); if (row) row.selected = input.checked; render();
   }));
@@ -157,17 +173,26 @@ function calculate() {
 }
 
 async function saveDocument() {
+  const invoiceDate = document.getElementById('invoiceDate')?.value;
+  if (documentType === ORIGINAL_DOCUMENT_TYPE && !invoiceDate) {
+    window.alert('Invoice Date is required and must match the payment received date.');
+    return;
+  }
   const button = document.getElementById('saveButton');
   button.disabled = true; button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving...';
   try {
     const response = await fetch(`${Endpoint}/api/v1/tax-invoice/booking/${tripId}/document`, {
       method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ document_type: documentType, invoice_number: document.getElementById('invoiceNumber').value.trim(), services, adjustments: {} })
+      body: JSON.stringify({ document_type: documentType, invoice_date: documentType === ORIGINAL_DOCUMENT_TYPE ? invoiceDate : undefined, services, adjustments: {} })
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.message || 'Failed to save tax invoice.');
     savedDocument = data.document;
-    window.alert('Tax invoice saved successfully.');
+    if (documentType === ORIGINAL_DOCUMENT_TYPE) masterDocument = data.document;
+    updateNotice();
+    window.alert(data.synchronized?.length
+      ? 'Original Tax Invoice saved. The other tax documents were synchronized automatically.'
+      : 'Tax invoice saved successfully.');
   } catch (error) { window.alert(error.message); }
   finally { button.disabled = false; button.innerHTML = '<i class="fa fa-save"></i> Save Tax Invoice'; }
 }
@@ -188,12 +213,22 @@ function openPrintView() {
 }
 
 function findRow(id) { return services.find((row) => row.id === id); }
+function updateNotice() {
+  const notice = document.getElementById('invoiceNotice');
+  if (!notice) return;
+  notice.innerHTML = !canManageInvoices
+    ? '<i class="fa fa-file-pdf-o"></i> This is the saved Original Tax Invoice. You can open or print it for your records.'
+    : documentType === ORIGINAL_DOCUMENT_TYPE
+    ? '<i class="fa fa-info-circle"></i> Enter the Invoice Date manually to match the payment received date. Saving the Original Tax Invoice copies the selected services and amounts to the other tax documents. ADV is not subject to VAT.'
+    : '<i class="fa fa-lock"></i> This document is copied from the Original Tax Invoice. Service details, selections, ADV and Invoice Date are locked to keep all tax documents consistent.';
+}
 function authHeaders() { return { Authorization: `Bearer ${localStorage.getItem('token')}` }; }
 function parseJson(value, fallback) { try { return typeof value === 'string' ? JSON.parse(value) : (value || fallback); } catch { return fallback; } }
 function number(value) { const parsed = Number(value); return Number.isFinite(parsed) ? parsed : 0; }
 function round(value) { return Math.round((number(value) + Number.EPSILON) * 100) / 100; }
 function formatAmount(value) { return number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function formatDate(value) { if (!value) return '-'; const date = new Date(value); return Number.isNaN(date.getTime()) ? '-' : date.toLocaleDateString('en-GB').replaceAll('/', '-'); }
+function toInputDate(value) { if (!value) return ''; const date = new Date(value); return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10); }
 function defaultInvoiceNumber() { return `${documentType === 'original_tax_invoice' ? 'OTI' : 'TI'}-${new Date().getFullYear()}-${String(tripId).padStart(5, '0')}`; }
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character])); }
 function escapeAttribute(value) { return escapeHtml(value).replace(/`/g, '&#96;'); }

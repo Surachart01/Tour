@@ -14,10 +14,10 @@
       .button-secondary { background:#edf2f7; color:#1f354d; } .button-save { background:#18a76f; color:#fff; } .button-print { background:#1989d9; color:#fff; }
       .notice { max-width:1100px; margin:16px auto 0; padding:12px 16px; background:#e8f7ff; color:#075985; border:1px solid #bae6fd; border-radius:6px; font-size:13px; }
       .invoice-paper { width:210mm; min-height:297mm; margin:18px auto 40px; padding:8mm; background:var(--paper); box-shadow:0 2px 18px #0003; font-family:Tahoma, Arial, sans-serif; font-size:11px; }
-      .company-header { display:grid; grid-template-columns:52mm 1fr; border:1px solid var(--line); min-height:30mm; } .company-header img { max-width:48mm; max-height:27mm; padding:4mm; object-fit:contain; } .company-info { padding:3mm 4mm; font-size:11px; line-height:1.28; }
+      .company-header { display:grid; grid-template-columns:48mm 1fr; border:1px solid var(--line); min-height:30mm; } .company-header img { max-width:46mm; max-height:27mm; padding:4mm 2mm; object-fit:contain; } .company-info { padding:3mm; font-size:10px; line-height:1.28; } .company-address, .bank-address { white-space:nowrap; }
       .title-band { background:var(--orange); border:1px solid var(--line); border-top:0; text-align:center; font-family:Georgia, serif; font-size:20px; padding:1mm; }
       .party-grid { display:grid; grid-template-columns:1fr 1.7fr; margin-top:3mm; border:1px solid var(--line); } .party { min-height:24mm; } .party + .party { border-left:1px solid var(--line); }
-      .section-title { padding:1mm 2mm; background:#000; color:#fff; text-align:center; font-family:Georgia, serif; font-size:14px; } .party-content { padding:2mm 3mm; line-height:1.32; }
+      .section-title { padding:1mm 2mm; background:#000; color:#fff; text-align:center; font-family:Georgia, serif; font-size:14px; } .party-content { padding:2mm 3mm; line-height:1.32; } .party-content .bank-address { font-size:10px; }
       .details-grid { display:grid; grid-template-columns:1.1fr .9fr; margin:3mm auto 7mm; width:93%; border:1px solid var(--line); } .details-grid > div { padding:1.2mm 2mm; border-bottom:1px solid var(--line); min-height:5.5mm; } .details-grid > div:nth-last-child(-n+2) { border-bottom:0; } .details-label { font-weight:700; background:#f5f5f5; } .invoice-number-input { width:100%; border:0; border-bottom:1px dotted #666; font:inherit; text-align:center; }
       .service-heading { background:var(--orange); border:1px solid var(--line); text-align:center; font-family:Georgia, serif; font-size:20px; padding:1mm; }
       .service-section { margin:0 0 4mm; border:1px solid var(--line); border-top:0; } .service-section h2 { margin:0; padding:1.5mm 2mm; background:#000; color:#fff; font-family:Georgia, serif; font-size:13px; }
@@ -53,9 +53,9 @@
         <button id="printButton" class="button-print"><i class="fa fa-file-pdf-o"></i> Open PDF / Print</button>
       </div>
     </header>
-    <div class="notice"><i class="fa fa-info-circle"></i> Select only the services needed for this document. ADV is not subject to VAT. VAT is calculated at 7% from the remaining selling price.</div>
-    <main id="invoicePaper" class="invoice-paper"><div class="loading"><i class="fa fa-spinner fa-spin"></i> Loading confirmed booking...</div></main>
+    <div id="invoiceNotice" class="notice"><i class="fa fa-info-circle"></i> Loading payment and invoice information...</div>
+    <main id="invoicePaper" class="invoice-paper"><div class="loading"><i class="fa fa-spinner fa-spin"></i> Loading paid booking...</div></main>
     <script src="js/config.js"></script>
-    <script src="js/tax_invoices/tax_invoice_editor.js?v=20260717"></script>
+    <script src="js/tax_invoices/tax_invoice_editor.js?v=20260720-3"></script>
   </body>
 </html>

@@ -449,6 +449,14 @@
                     />
                   </div>
                   <div class="form-group">
+                    <label for="editPaymentDate">Payment Received Date</label>
+                    <input
+                      type="date"
+                      class="form-control"
+                      id="editPaymentDate"
+                    />
+                  </div>
+                  <div class="form-group">
                     <label for="editBalance">Balance</label>
                     <input
                       type="text"
@@ -840,7 +848,7 @@
           for (const payment of filteredPayments.slice(start, end)) {
             let row = document.createElement("tr");
 
-            let formattedDate = payment.payment_date.startsWith("0001-01-01")
+            let formattedDate = !payment.payment_date || payment.payment_date.startsWith("0001-01-01")
               ? ""
               : formatToDDMMYYYY(payment.payment_date.split("T")[0]);
 
@@ -868,7 +876,7 @@
             }</a></td>
                 <td>${payment.agent_name}</td>
                 <td>${payment.booking_reference}</td>
-                <td>${formatToDDMMYYYY(payment.start_date.split("T")[0])}</td>
+                <td>${payment.start_date ? formatToDDMMYYYY(String(payment.start_date).split("T")[0]) : "-"}</td>
                 <td>${payment.final_cost.toFixed(2)}</td>
                 <td>${payment.received_amount.toFixed(2)}</td>
                 <td>${payment.balance.toFixed(2)}</td>
@@ -977,7 +985,10 @@
             payment.received_amount;
           document.getElementById("editBalance").value = payment.balance;
           document.getElementById("editPaymentReference").value =
-            payment.payment_reference;
+            payment.payment_reference || "";
+          document.getElementById("editPaymentDate").value = payment.payment_date
+            ? payment.payment_date.split("T")[0]
+            : "";
 
           let penaltyCostInput = document.getElementById("editPenaltyCost");
 
@@ -1021,14 +1032,19 @@
         document
           .getElementById("editAmountPaid")
           .addEventListener("input", function () {
-            let finalCost = parseFloat(
-              document.getElementById("editFinalCost").value
-            );
+            let finalCost = parseFloat(document.getElementById("editFinalCost").value) || 0;
+            let penaltyCost = parseFloat(document.getElementById("editPenaltyCost").value) || 0;
             let amountPaid =
               parseFloat(document.getElementById("editAmountPaid").value) || 0;
-            let newBalance = finalCost - amountPaid;
+            let newBalance = finalCost + penaltyCost - amountPaid;
             document.getElementById("editBalance").value =
               newBalance.toFixed(2);
+          });
+
+        document
+          .getElementById("editPenaltyCost")
+          .addEventListener("input", function () {
+            document.getElementById("editAmountPaid").dispatchEvent(new Event("input"));
           });
 
         document
@@ -1043,10 +1059,13 @@
             ).value;
             let updatedPenaltyCost = parseFloat(
               document.getElementById("editPenaltyCost").value
-            );
-            let updatedBalance = parseFloat(
-              document.getElementById("editBalance").value
-            );
+            ) || 0;
+            let updatedPaymentDate = document.getElementById("editPaymentDate").value;
+
+            if (updatedAmountPaid > 0 && !updatedPaymentDate) {
+              alert("Payment Received Date is required when an amount has been received.");
+              return;
+            }
 
             try {
               const response = await fetch(
@@ -1059,7 +1078,8 @@
                   },
                   body: JSON.stringify({
                     received_amount: updatedAmountPaid,
-                    balance: updatedBalance,
+                    penalty_cost: updatedPenaltyCost,
+                    payment_date: updatedPaymentDate || null,
                     payment_reference: updatedPaymentReference,
                   }),
                 }

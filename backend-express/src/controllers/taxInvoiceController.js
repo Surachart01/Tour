@@ -10,11 +10,12 @@ const DOCUMENT_TYPES = new Set([
 ]);
 
 const DOCUMENT_SERVICE_TYPES = {
-  original_tax_invoice: ['transfer', 'excursion', 'tour', 'tour_hotel', 'hotel', 'other', 'special_package'],
-  tax_invoice: ['transfer', 'excursion', 'tour', 'tour_hotel', 'hotel', 'other', 'special_package'],
+  original_tax_invoice: ['transfer', 'excursion', 'tour', 'tour_hotel', 'hotel', 'other', 'special_package', 'assistance_fee'],
+  tax_invoice: ['transfer', 'excursion', 'tour', 'tour_hotel', 'hotel', 'other', 'special_package', 'assistance_fee'],
   original_receipt_transportation: ['transfer'],
   tax_invoice_hotel: ['hotel', 'tour_hotel']
 };
+const ORIGINAL_DOCUMENT_TYPE = 'original_tax_invoice';
 
 const billingProfileSelect = {
   isPrimaryProfile: true,
@@ -140,9 +141,31 @@ function buildServices(booking) {
     name: item.others?.description || 'Other service',
     total: item.others?.amount || 0
   })));
+  const assistanceFee = booking.include_assistance_fee === false ? 0 : Math.max(0, number(booking.assistance_fee_amount));
+  if (assistanceFee > 0) {
+    rows.push({
+      id: `assistance_fee-${booking.id}`,
+      source_id: booking.id,
+      type: 'assistance_fee',
+      date: booking.booking_date || booking.created_at || null,
+      from_date: null,
+      to_date: null,
+      city: '',
+      name: 'Assistance Fee',
+      from: '',
+      to: '',
+      description: 'Assistance Fee',
+      room_type: '',
+      total: assistanceFee,
+      selected: true,
+      adv: 0,
+      parent_id: null,
+      editable_total: false
+    });
+  }
   if (booking.special_package_id && booking.special_packages) {
     const total = Math.max(0, number(booking.final_amount ?? booking.total_amount) -
-      (booking.include_assistance_fee === false ? 0 : number(booking.assistance_fee_amount)));
+      assistanceFee);
     rows.push({
       id: `special_package-${booking.id}`,
       source_id: booking.special_package_id,
@@ -215,6 +238,64 @@ async function getDocumentRows(tripId) {
   );
 }
 
+function parseJson(value, fallback) {
+  try { return typeof value === 'string' ? JSON.parse(value) : (value || fallback); } catch { return fallback; }
+}
+
+function normalizeInvoiceDate(value) {
+  const raw = value instanceof Date
+    ? value.toISOString().slice(0, 10)
+    : String(value || '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
+  const date = new Date(`${raw}T00:00:00.000Z`);
+  return Number.isNaN(date.getTime()) ? null : raw;
+}
+
+function isPaymentReceived(booking) {
+  const dueAmount = Math.max(0, number(booking?.final_amount ?? booking?.total_amount) + number(booking?.penalty_cost));
+  return Boolean(booking?.payment_date) && number(booking?.received_amount) >= dueAmount;
+}
+
+function buildSnapshot(booking, calculated, invoiceDate) {
+  return {
+    booking: {
+      id: booking.id,
+      booking_reference: booking.booking_reference,
+      file_reference: booking.file_reference,
+      invoice_number: booking.invoice_number,
+      booking_date: booking.booking_date,
+      payment_date: booking.payment_date,
+      payment_reference: booking.payment_reference,
+      client_name: booking.client_name,
+      client_phone: booking.client_phone,
+      client_email: booking.client_email,
+      number_of_adults: booking.number_of_adults,
+      number_of_kids: booking.number_of_kids,
+      proforma_billing: booking.proforma_billing
+    },
+    invoice_date: invoiceDate,
+    rows: calculated.rows,
+    totals: calculated.totals
+  };
+}
+
+async function upsertDocument({ tripId, documentType, invoiceNumber, invoiceDate, services, adjustments, snapshot }) {
+  const rows = await prisma.$queryRawUnsafe(`
+    INSERT INTO tax_invoice_documents
+      (trip_id, document_type, invoice_number, invoice_date, selected_services, adjustments, snapshot, updated_at)
+    VALUES ($1, $2, $3, $4::date, $5::jsonb, $6::jsonb, $7::jsonb, now())
+    ON CONFLICT (trip_id, document_type)
+    DO UPDATE SET invoice_number = EXCLUDED.invoice_number,
+                  invoice_date = EXCLUDED.invoice_date,
+                  selected_services = EXCLUDED.selected_services,
+                  adjustments = EXCLUDED.adjustments,
+                  snapshot = EXCLUDED.snapshot,
+                  updated_at = now()
+    RETURNING *
+  `, tripId, documentType, invoiceNumber, invoiceDate, JSON.stringify(services), JSON.stringify(adjustments), JSON.stringify(snapshot));
+  return rows[0];
+}
+
 async function loadBooking(tripId) {
   const booking = await prisma.trips.findUnique({ where: { id: tripId }, include: bookingInclude });
   return booking ? attachProformaBilling(booking) : null;
@@ -227,20 +308,25 @@ function assertType(documentType, res) {
 }
 
 function bookingAllowed(booking) {
-  return String(booking?.status || '').toLowerCase() === 'confirmed';
+  return String(booking?.status || '').toLowerCase() === 'confirmed' && isPaymentReceived(booking);
 }
 
 export async function listEligibleBookings(req, res, next) {
   try {
+    const claims = req.user;
+    const where = { status: { equals: 'Confirmed', mode: 'insensitive' } };
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
+      where.agent_id = Number(claims.agent_id) || 0;
+    }
     const bookings = await prisma.trips.findMany({
-      where: { status: 'Confirmed' },
+      where,
       include: { agents: { include: agentWithBillingProfile } },
       orderBy: [{ booking_date: 'desc' }, { created_at: 'desc' }]
     });
-    const result = await Promise.all(bookings.map(async (booking) => ({
+    const result = (await Promise.all(bookings.map(async (booking) => ({
       ...attachProformaBilling(booking),
       tax_documents: await getDocumentRows(booking.id)
-    })));
+    })))).filter(bookingAllowed);
     return res.json({ bookings: result });
   } catch (error) { next(error); }
 }
@@ -251,7 +337,11 @@ export async function getTaxInvoiceBooking(req, res, next) {
     if (!Number.isInteger(tripId)) return res.status(400).json({ message: 'Invalid booking ID.' });
     const booking = await loadBooking(tripId);
     if (!booking) return res.status(404).json({ message: 'Booking not found.' });
-    if (!bookingAllowed(booking)) return res.status(400).json({ message: 'Only confirmed bookings can generate a tax invoice.' });
+    const claims = req.user;
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin' && Number(booking.agent_id) !== Number(claims.agent_id)) {
+      return res.status(403).json({ message: 'You do not have access to this booking.' });
+    }
+    if (!bookingAllowed(booking)) return res.status(400).json({ message: 'A tax invoice can be issued only after the confirmed booking has a recorded full payment date and amount.' });
     return res.json({ booking, services: buildServices(booking), documents: await getDocumentRows(tripId) });
   } catch (error) { next(error); }
 }
@@ -259,52 +349,68 @@ export async function getTaxInvoiceBooking(req, res, next) {
 export async function saveTaxInvoiceDocument(req, res, next) {
   try {
     const tripId = Number(req.params.tripID);
-    const { document_type: documentType, invoice_number: invoiceNumber, services = [], adjustments = {} } = req.body || {};
+    const { document_type: documentType, invoice_date: invoiceDateInput, services = [], adjustments = {} } = req.body || {};
     if (!Number.isInteger(tripId)) return res.status(400).json({ message: 'Invalid booking ID.' });
     if (!assertType(documentType, res)) return;
     const booking = await loadBooking(tripId);
     if (!booking) return res.status(404).json({ message: 'Booking not found.' });
-    if (!bookingAllowed(booking)) return res.status(400).json({ message: 'Only confirmed bookings can generate a tax invoice.' });
+    if (!bookingAllowed(booking)) return res.status(400).json({ message: 'A tax invoice can be issued only after the confirmed booking has a recorded full payment date and amount.' });
 
+    const existingDocuments = await getDocumentRows(tripId);
+    const byType = new Map(existingDocuments.map((document) => [document.document_type, document]));
+    const original = byType.get(ORIGINAL_DOCUMENT_TYPE);
     const allowedRows = servicesForDocument(booking, documentType);
-    const submittedRows = Array.isArray(services) ? services : [];
-    const knownServiceIds = new Set(allowedRows.map((service) => service.id));
-    if (submittedRows.some((row) => row?.id && !knownServiceIds.has(row.id))) {
-      return res.status(400).json({ message: 'The request contains a service that is not available for this document.' });
+    let visibleRows;
+    let resolvedInvoiceDate;
+    let effectiveAdjustments = adjustments;
+
+    if (documentType === ORIGINAL_DOCUMENT_TYPE) {
+      resolvedInvoiceDate = normalizeInvoiceDate(invoiceDateInput);
+      if (!resolvedInvoiceDate) return res.status(400).json({ message: 'Invoice Date is required and must match the payment received date.' });
+      const paymentReceivedDate = normalizeInvoiceDate(booking.payment_date);
+      if (paymentReceivedDate && resolvedInvoiceDate !== paymentReceivedDate) {
+        return res.status(400).json({ message: 'Invoice Date must match the Payment Received Date recorded for this booking.' });
+      }
+      const submittedRows = Array.isArray(services) ? services : [];
+      const knownServiceIds = new Set(allowedRows.map((service) => service.id));
+      if (submittedRows.some((row) => row?.id && !knownServiceIds.has(row.id))) {
+        return res.status(400).json({ message: 'The request contains a service that is not available for this document.' });
+      }
+      visibleRows = sanitizeServices(allowedRows, submittedRows);
+    } else {
+      if (!original) return res.status(400).json({ message: 'Create and save the Original Tax Invoice first. The remaining tax documents will then be copied automatically.' });
+      resolvedInvoiceDate = normalizeInvoiceDate(original.invoice_date);
+      if (!resolvedInvoiceDate) return res.status(400).json({ message: 'The Original Tax Invoice does not have a valid Invoice Date.' });
+      visibleRows = sanitizeServices(allowedRows, parseJson(original.selected_services, []));
+      effectiveAdjustments = parseJson(original.adjustments, {});
     }
-    const visibleRows = sanitizeServices(allowedRows, submittedRows);
+
     const calculated = calculateRows(visibleRows, documentType);
-    const snapshot = {
-      booking: {
-        id: booking.id,
-        booking_reference: booking.booking_reference,
-        file_reference: booking.file_reference,
-        invoice_number: booking.invoice_number,
-        booking_date: booking.booking_date,
-        client_name: booking.client_name,
-        client_phone: booking.client_phone,
-        client_email: booking.client_email,
-        number_of_adults: booking.number_of_adults,
-        number_of_kids: booking.number_of_kids,
-        proforma_billing: booking.proforma_billing
-      },
-      rows: calculated.rows,
-      totals: calculated.totals
-    };
-    const resolvedInvoiceNumber = String(invoiceNumber || buildInvoiceNumber(booking, documentType)).trim();
-    const rows = await prisma.$queryRawUnsafe(`
-      INSERT INTO tax_invoice_documents
-        (trip_id, document_type, invoice_number, selected_services, adjustments, snapshot, updated_at)
-      VALUES ($1, $2, $3, $4::jsonb, $5::jsonb, $6::jsonb, now())
-      ON CONFLICT (trip_id, document_type)
-      DO UPDATE SET invoice_number = EXCLUDED.invoice_number,
-                    selected_services = EXCLUDED.selected_services,
-                    adjustments = EXCLUDED.adjustments,
-                    snapshot = EXCLUDED.snapshot,
-                    updated_at = now()
-      RETURNING *
-    `, tripId, documentType, resolvedInvoiceNumber, JSON.stringify(visibleRows), JSON.stringify(adjustments), JSON.stringify(snapshot));
-    return res.json({ document: rows[0], calculated, booking });
+    const resolvedInvoiceNumber = String(byType.get(documentType)?.invoice_number || buildInvoiceNumber(booking, documentType)).trim();
+    const document = await upsertDocument({
+      tripId, documentType, invoiceNumber: resolvedInvoiceNumber, invoiceDate: resolvedInvoiceDate,
+      services: visibleRows, adjustments: effectiveAdjustments,
+      snapshot: buildSnapshot(booking, calculated, resolvedInvoiceDate)
+    });
+
+    const synchronized = [];
+    if (documentType === ORIGINAL_DOCUMENT_TYPE) {
+      for (const secondaryType of [...DOCUMENT_TYPES].filter((type) => type !== ORIGINAL_DOCUMENT_TYPE)) {
+        const copiedRows = sanitizeServices(servicesForDocument(booking, secondaryType), visibleRows);
+        const copiedCalculation = calculateRows(copiedRows, secondaryType);
+        const copiedDocument = await upsertDocument({
+          tripId,
+          documentType: secondaryType,
+          invoiceNumber: String(byType.get(secondaryType)?.invoice_number || buildInvoiceNumber(booking, secondaryType)).trim(),
+          invoiceDate: resolvedInvoiceDate,
+          services: copiedRows,
+          adjustments,
+          snapshot: buildSnapshot(booking, copiedCalculation, resolvedInvoiceDate)
+        });
+        synchronized.push(copiedDocument);
+      }
+    }
+    return res.json({ document, synchronized, calculated, booking });
   } catch (error) { next(error); }
 }
 
@@ -325,9 +431,19 @@ export async function listTaxInvoices(req, res, next) {
 export async function getTaxInvoice(req, res, next) {
   try {
     const id = Number(req.params.id);
-    const rows = await prisma.$queryRawUnsafe('SELECT * FROM tax_invoice_documents WHERE id = $1', id);
+    const rows = await prisma.$queryRawUnsafe(`
+      SELECT d.*, t.agent_id
+      FROM tax_invoice_documents d
+      JOIN trips t ON t.id = d.trip_id
+      WHERE d.id = $1
+    `, id);
     if (!rows[0]) return res.status(404).json({ message: 'Tax invoice not found.' });
-    return res.json(rows[0]);
+    const claims = req.user;
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin' && Number(rows[0].agent_id) !== Number(claims.agent_id)) {
+      return res.status(403).json({ message: 'You do not have access to this tax invoice.' });
+    }
+    const { agent_id: _, ...document } = rows[0];
+    return res.json(document);
   } catch (error) { next(error); }
 }
 
@@ -340,7 +456,16 @@ export async function deleteTaxInvoice(req, res, next) {
 }
 
 export async function getTaxInvoiceByTripID(req, res, next) {
-  try { return res.json(await getDocumentRows(Number(req.params.tripID))); } catch (error) { next(error); }
+  try {
+    const tripId = Number(req.params.tripID);
+    const booking = await prisma.trips.findUnique({ where: { id: tripId }, select: { agent_id: true } });
+    if (!booking) return res.status(404).json({ message: 'Booking not found.' });
+    const claims = req.user;
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin' && Number(booking.agent_id) !== Number(claims.agent_id)) {
+      return res.status(403).json({ message: 'You do not have access to this booking.' });
+    }
+    return res.json(await getDocumentRows(tripId));
+  } catch (error) { next(error); }
 }
 
 export async function updateTaxInvoice(req, res, next) {
@@ -387,4 +512,4 @@ export async function listTaxInvoicesByDateRange(req, res, next) { return listTa
 export async function generateTaxInvoicePDF(req, res, next) { return res.status(501).json({ message: 'Open the saved tax invoice and use Open PDF / Print.' }); }
 export async function generateTaxInvoicePDFWithProfile(req, res, next) { return generateTaxInvoicePDF(req, res, next); }
 
-export { buildServices, calculateRows, sanitizeServices, servicesForDocument, VAT_RATE };
+export { buildServices, calculateRows, sanitizeServices, servicesForDocument, isPaymentReceived, VAT_RATE };

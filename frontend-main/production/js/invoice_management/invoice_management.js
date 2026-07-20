@@ -1375,7 +1375,7 @@ function buildProformaPreviewHTML(invoice) {
                   </div>
                 ` : ''}
                 <div class="amount-summary-row net-total">
-                  <span>Net Total (Excluding Tax):</span>
+                  <span>Total:</span>
                   <span>${formatCurrency(totalAmount).replace('฿', 'THB ')}</span>
                 </div>
               </div>

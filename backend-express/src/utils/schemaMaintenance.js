@@ -50,6 +50,7 @@ export async function ensureMarkupSchema() {
         trip_id integer NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
         document_type varchar(50) NOT NULL,
         invoice_number varchar(100),
+        invoice_date date,
         selected_services jsonb NOT NULL DEFAULT '[]'::jsonb,
         adjustments jsonb NOT NULL DEFAULT '{}'::jsonb,
         snapshot jsonb NOT NULL DEFAULT '{}'::jsonb,
@@ -57,6 +58,10 @@ export async function ensureMarkupSchema() {
         updated_at timestamptz NOT NULL DEFAULT now(),
         UNIQUE (trip_id, document_type)
       )
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE tax_invoice_documents
+      ADD COLUMN IF NOT EXISTS invoice_date date
     `);
     await prisma.$executeRawUnsafe(`
       CREATE INDEX IF NOT EXISTS tax_invoice_documents_trip_id_idx

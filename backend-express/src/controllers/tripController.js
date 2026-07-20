@@ -31,6 +31,36 @@ function parseSafeInt(value, fallback = null) {
   return isNaN(parsed) ? fallback : parsed;
 }
 
+function paymentNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function parsePaymentDate(value) {
+  if (!value) return null;
+  const text = String(value).trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return null;
+  const parsed = new Date(`${text}T12:00:00.000Z`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function formatPaymentInfo(trip) {
+  const finalCost = Math.max(0, paymentNumber(trip.final_amount ?? trip.total_amount));
+  const penaltyCost = Math.max(0, paymentNumber(trip.penalty_cost));
+  const receivedAmount = Math.max(0, paymentNumber(trip.received_amount));
+  const amountDue = finalCost + penaltyCost;
+  return {
+    ...trip,
+    agent_name: trip.agents?.name || '-',
+    start_date: trip.trip_start_date || trip.created_at || null,
+    final_cost: finalCost,
+    penalty_cost: penaltyCost,
+    received_amount: receivedAmount,
+    balance: Math.max(0, amountDue - receivedAmount),
+    payment_reference: trip.payment_reference || ''
+  };
+}
+
 export function resolveServiceApprovalState(savedById, item = {}) {
   const itemId = parseSafeInt(item.id || item.trip_item_id);
   const saved = itemId ? savedById.get(itemId) : null;
@@ -1736,11 +1766,13 @@ export async function getPaymentInfo(req, res, next) {
       where,
       select: {
         id: true, client_name: true, total_amount: true, discount_amount: true,
-        final_amount: true, booking_reference: true, agents: { select: { name: true } }
+        final_amount: true, penalty_cost: true, received_amount: true, balance: true,
+        payment_date: true, payment_reference: true, trip_start_date: true,
+        booking_reference: true, file_reference: true, agents: { select: { name: true } }
       }
     });
     if (!trip) return res.status(404).send('Booking not found');
-    return res.json(trip);
+    return res.json(formatPaymentInfo(trip));
   } catch (err) { next(err); }
 }
 
@@ -1748,15 +1780,43 @@ export async function updatePaymentInfo(req, res, next) {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid booking ID');
-    const data = req.body;
+    const claims = req.user;
+    const where = { id };
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
+      where.agent_id = claims.agent_id || 0;
+    }
+    const current = await prisma.trips.findFirst({
+      where,
+      select: { id: true, final_amount: true, total_amount: true, penalty_cost: true, payment_date: true, payment_reference: true }
+    });
+    if (!current) return res.status(404).send('Booking not found');
+
+    const data = req.body || {};
+    const receivedAmount = Math.max(0, paymentNumber(data.received_amount));
+    const penaltyCost = data.penalty_cost === undefined
+      ? paymentNumber(current.penalty_cost)
+      : Math.max(0, paymentNumber(data.penalty_cost));
+    const amountDue = Math.max(0, paymentNumber(current.final_amount ?? current.total_amount) + penaltyCost);
+    const paymentDate = Object.prototype.hasOwnProperty.call(data, 'payment_date')
+      ? parsePaymentDate(data.payment_date)
+      : current.payment_date;
+    if (receivedAmount > 0 && !paymentDate) {
+      return res.status(400).json({ message: 'Payment Received Date is required when an amount has been received.' });
+    }
     const trip = await prisma.trips.update({
-      where: { id },
+      where: { id: current.id },
       data: {
-        total_amount: data.total_amount, discount_amount: data.discount_amount,
-        final_amount: data.final_amount
+        penalty_cost: penaltyCost,
+        received_amount: receivedAmount,
+        amount_paid: receivedAmount,
+        balance: Math.max(0, amountDue - receivedAmount),
+        payment_date: paymentDate,
+        payment_reference: Object.prototype.hasOwnProperty.call(data, 'payment_reference')
+          ? (String(data.payment_reference || '').trim() || null)
+          : current.payment_reference
       }
     });
-    return res.json(trip);
+    return res.json({ ...formatPaymentInfo(trip), amount_due: amountDue });
   } catch (err) { next(err); }
 }
 
@@ -1771,18 +1831,21 @@ export async function listPaymentInfoFromBookings(req, res, next) {
       where,
       select: {
         id: true, client_name: true, booking_reference: true,
-        total_amount: true, discount_amount: true, final_amount: true,
+        file_reference: true, trip_start_date: true, total_amount: true, discount_amount: true,
+        final_amount: true, penalty_cost: true, received_amount: true, balance: true,
+        payment_date: true, payment_reference: true,
         agents: { select: { name: true } }, created_at: true
       },
       orderBy: { created_at: 'desc' }
     });
-    return res.json(bookings);
+    return res.json(bookings.map(formatPaymentInfo));
   } catch (err) { next(err); }
 }
 
 export async function listPaymentInfoByDateRange(req, res, next) {
   try {
-    const { from_date, to_date } = req.query;
+    const from_date = req.query.from_date || req.query.start_date;
+    const to_date = req.query.to_date || req.query.end_date;
     const claims = req.user;
     const where = { approved: true };
     if (from_date && to_date) {
@@ -1795,12 +1858,14 @@ export async function listPaymentInfoByDateRange(req, res, next) {
       where,
       select: {
         id: true, client_name: true, booking_reference: true,
-        total_amount: true, discount_amount: true, final_amount: true,
+        file_reference: true, trip_start_date: true, total_amount: true, discount_amount: true,
+        final_amount: true, penalty_cost: true, received_amount: true, balance: true,
+        payment_date: true, payment_reference: true,
         agents: { select: { name: true } }, created_at: true
       },
       orderBy: { created_at: 'desc' }
     });
-    return res.json(bookings);
+    return res.json(bookings.map(formatPaymentInfo));
   } catch (err) { next(err); }
 }
 
