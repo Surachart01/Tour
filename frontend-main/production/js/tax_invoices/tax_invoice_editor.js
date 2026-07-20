@@ -153,14 +153,16 @@ function renderRow(row) {
     : inputTotal;
   const treatment = normalizeTreatment(row.tax_treatment);
   const treatmentLabel = treatmentLabelFor(treatment);
+  const vatSelected = treatment === 'vat' || treatment === 'split';
+  const advSelected = treatment === 'adv' || treatment === 'split';
   const treatmentControl = dataLocked
     ? `<span class="treatment-value ${treatment || 'treatment-missing'}">${escapeHtml(treatmentLabel || 'Not selected')}</span>`
     : `<div class="treatment-checks" aria-label="Tax treatment">
-        <label><input type="checkbox" data-treatment-option="vat" data-treatment-id="${row.id}" ${treatment === 'vat' ? 'checked' : ''} /> VAT 7%</label>
-        <label><input type="checkbox" data-treatment-option="adv" data-treatment-id="${row.id}" ${treatment === 'adv' || treatment === 'split' ? 'checked' : ''} /> ADV (Non-VAT)</label>
-        ${treatment === 'split' ? '<small>Manual ADV amount</small>' : ''}
+        <label><input type="checkbox" data-treatment-option="vat" data-treatment-id="${row.id}" ${vatSelected ? 'checked' : ''} /> VAT 7%</label>
+        <label><input type="checkbox" data-treatment-option="adv" data-treatment-id="${row.id}" ${advSelected ? 'checked' : ''} /> ADV (Non-VAT)</label>
+        ${treatment === 'split' ? '<small>Enter ADV amount; the remaining amount is VAT.</small>' : ''}
       </div>`;
-  const advDisabled = dataLocked || treatment === 'vat';
+  const advDisabled = dataLocked || !advSelected;
   return `<tr class="${row.type === 'tour_hotel' ? 'tour-hotel' : ''}">
     <td class="select-cell"><input type="checkbox" data-select="${row.id}" ${row.selected ? 'checked' : ''} ${dataLocked ? 'disabled' : ''} /></td>
     <td>${formatDate(row.from_date || row.date)}</td>
@@ -193,19 +195,22 @@ function bindInputs() {
     if (row) {
       row.adv = Math.min(Math.max(0, number(input.value)), Math.max(0, number(row.total)));
       if (row.tax_treatment === 'adv' && row.adv < number(row.total) && row.adv > 0) row.tax_treatment = 'split';
+      if (row.tax_treatment === 'split' && row.adv >= number(row.total) && number(row.total) > 0) row.tax_treatment = 'adv';
     }
     render();
   }));
   document.querySelectorAll('[data-treatment-option]').forEach((input) => input.addEventListener('change', () => {
     const row = findRow(input.dataset.treatmentId); if (!row) return;
-    if (input.checked) {
-      row.tax_treatment = normalizeTreatment(input.dataset.treatmentOption);
-      if (row.tax_treatment === 'vat') row.adv = 0;
-      if (row.tax_treatment === 'adv') row.adv = Math.max(0, number(row.total));
-    } else if (row.tax_treatment === normalizeTreatment(input.dataset.treatmentOption)) {
-      row.tax_treatment = '';
-      row.adv = 0;
-    }
+    const option = normalizeTreatment(input.dataset.treatmentOption);
+    const current = normalizeTreatment(row.tax_treatment);
+    const vatWasSelected = current === 'vat' || current === 'split';
+    const advWasSelected = current === 'adv' || current === 'split';
+    const vatIsSelected = option === 'vat' ? input.checked : vatWasSelected;
+    const advIsSelected = option === 'adv' ? input.checked : advWasSelected;
+    row.tax_treatment = treatmentFromFlags(vatIsSelected, advIsSelected);
+    if (row.tax_treatment === 'vat') row.adv = 0;
+    if (row.tax_treatment === 'adv') row.adv = Math.max(0, number(row.total));
+    if (row.tax_treatment === 'split' && row.adv >= number(row.total)) row.adv = 0;
     render();
   }));
   document.querySelectorAll('[data-id]').forEach((input) => input.addEventListener('change', () => {
@@ -317,7 +322,7 @@ function updateNotice() {
   notice.innerHTML = !canManageInvoices
     ? '<i class="fa fa-file-pdf-o"></i> This is the saved Original Tax Invoice. You can open or print it for your records.'
     : documentType === ORIGINAL_DOCUMENT_TYPE
-    ? `<i class="fa fa-info-circle"></i> Set each selected service with the checkboxes. Transfers default to ADV (Non-VAT); all other services default to VAT 7%. You may edit the ADV amount when needed. Save Tax Settings to unlock the three document previews.${packageNotice}`
+    ? `<i class="fa fa-info-circle"></i> Set each selected service with the checkboxes. VAT 7% and ADV (Non-VAT) may be selected together for one service. When both are selected, enter the ADV amount and the remaining amount is VAT. Transfers default to ADV (Non-VAT); all other services default to VAT 7%. Save Tax Settings to unlock the three document previews.${packageNotice}`
     : '<i class="fa fa-lock"></i> This document is copied from the Original Tax Invoice. Service details, selections, ADV and Invoice Date are locked to keep all tax documents consistent.';
 }
 function isIncludedPackageComponent(row) {
@@ -358,7 +363,13 @@ function inferTreatment(adv, total) {
 }
 function defaultTreatmentFor(row) { return row?.type === 'transfer' ? 'adv' : 'vat'; }
 function treatmentLabelFor(value) {
-  return { vat: 'VAT 7%', adv: 'ADV (Non-VAT)', split: 'Split (manual ADV)' }[normalizeTreatment(value)] || '';
+  return { vat: 'VAT 7%', adv: 'ADV (Non-VAT)', split: 'VAT 7% + ADV (manual split)' }[normalizeTreatment(value)] || '';
+}
+function treatmentFromFlags(vatSelected, advSelected) {
+  if (vatSelected && advSelected) return 'split';
+  if (vatSelected) return 'vat';
+  if (advSelected) return 'adv';
+  return '';
 }
 function validateTreatmentSelection() {
   const calculation = calculate();

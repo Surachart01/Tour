@@ -89,7 +89,7 @@ test('tax invoice editor uses the Proforma document structure and correct docume
   assert.match(taxInvoiceEditorSource, /tax_invoice_hotel: 'TIH'/);
   assert.match(taxInvoiceEditorSource, /VAT 7%/);
   assert.match(taxInvoiceEditorSource, /ADV \(Non-VAT\)/);
-  assert.match(taxInvoiceEditorSource, /Split \(manual ADV\)/);
+  assert.match(taxInvoiceEditorSource, /VAT 7% \+ ADV \(manual split\)/);
   assert.match(taxInvoiceEditorSource, /validateTreatmentSelection/);
   assert.match(taxInvoiceEditorPage, /Open PDF \/ Print/);
 });
@@ -104,5 +104,8 @@ test('tax invoice list exposes the three required downloadable documents', () =>
   assert.match(taxInvoiceEditorSource, /defaultTreatmentFor/);
   assert.match(taxInvoiceEditorSource, /data-treatment-option="vat"/);
   assert.match(taxInvoiceEditorSource, /data-treatment-option="adv"/);
+  assert.match(taxInvoiceEditorSource, /treatmentFromFlags/);
+  assert.match(taxInvoiceEditorSource, /vatSelected = treatment === 'vat' \|\| treatment === 'split'/);
+  assert.match(taxInvoiceEditorSource, /advSelected = treatment === 'adv' \|\| treatment === 'split'/);
   assert.doesNotMatch(taxInvoiceListSource, /type: 'tax_invoice_hotel'/);
 });
