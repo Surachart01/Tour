@@ -66,8 +66,7 @@ export async function ensureMarkupSchema() {
     await prisma.$executeRawUnsafe(`
       CREATE INDEX IF NOT EXISTS tax_invoice_documents_trip_id_idx
       ON tax_invoice_documents (trip_id)
-    `);
+  `);
 
   markupSchemaReady = true;
-  await prisma.$disconnect();
 }

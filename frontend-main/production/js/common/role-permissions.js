@@ -105,6 +105,7 @@ function applyModulePermissions() {
     "invoice_management.html": "proforma_invoices",
     "edit_invoices.html": "proforma_invoices",
     "tax_invoices.html": "tax_invoices",
+    "tax_invoice_editor.html": "tax_invoices",
     "test_tax_invoices.html": "tax_invoices"
   };
 
@@ -226,4 +227,4 @@ function configureElementVisibility(elementId, allowedRoles) {
   } else {
     element.style.display = "none";
   }
-} 
+}

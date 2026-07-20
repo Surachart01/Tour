@@ -8,6 +8,12 @@ const DOCUMENT_TYPES = new Set([
   'original_receipt_transportation',
   'tax_invoice_hotel'
 ]);
+const PUBLIC_DOCUMENT_TYPES = [
+  'original_tax_invoice',
+  'tax_invoice',
+  'original_receipt_transportation'
+];
+const TAX_TREATMENTS = new Set(['vat', 'adv', 'split']);
 
 const DOCUMENT_SERVICE_TYPES = {
   original_tax_invoice: ['transfer', 'excursion', 'tour', 'tour_hotel', 'hotel', 'other', 'special_package', 'assistance_fee'],
@@ -196,15 +202,39 @@ function sanitizeServices(baseRows, submittedServices) {
 
   return baseRows.map((base) => {
     const input = submitted.get(base.id);
+    const hasExplicitTreatment = Boolean(input && (Object.prototype.hasOwnProperty.call(input, 'tax_treatment') || Object.prototype.hasOwnProperty.call(input, 'taxTreatment')));
+    const submittedTreatment = String(input?.tax_treatment ?? input?.taxTreatment ?? '').trim().toLowerCase();
+    const legacyAdv = input ? Math.max(0, number(input.adv)) : 0;
+    const effectiveTotal = base.editable_total && input ? Math.max(0, number(input.total ?? base.total)) : Math.max(0, number(base.total));
+    const taxTreatment = TAX_TREATMENTS.has(submittedTreatment)
+      ? submittedTreatment
+      : input && legacyAdv >= effectiveTotal && legacyAdv > 0
+        ? 'adv'
+        : input && legacyAdv > 0
+          ? 'split'
+          : '';
+    const adv = taxTreatment === 'adv'
+      ? effectiveTotal
+      : taxTreatment === 'vat'
+        ? 0
+        : legacyAdv;
     return {
       ...base,
       // A missing row is treated as unselected, so partial payloads cannot add services by accident.
       selected: Boolean(input && input.selected !== false),
       // Booking prices are authoritative. Only tour accommodation allocations are manually editable.
       total: base.editable_total && input ? Math.max(0, number(input.total ?? base.total)) : base.total,
-      adv: input ? Math.max(0, number(input.adv)) : 0
+      adv,
+      ...(hasExplicitTreatment ? { tax_treatment: taxTreatment } : {})
     };
   });
+}
+
+function treatmentAdv(row, total) {
+  const treatment = String(row?.tax_treatment ?? row?.taxTreatment ?? '').trim().toLowerCase();
+  if (treatment === 'adv') return total;
+  if (treatment === 'vat') return 0;
+  return Math.min(total, Math.max(0, round(row?.adv)));
 }
 
 function calculateRows(rows, documentType) {
@@ -215,20 +245,44 @@ function calculateRows(rows, documentType) {
   }, {});
   const calculated = rows.filter((row) => row.selected).map((row) => {
     const total = Math.max(0, round(row.total) - (childTotals[row.id] || 0));
-    const adv = Math.min(total, Math.max(0, round(row.adv)));
+    const adv = treatmentAdv(row, total);
     const taxableGross = round(total - adv);
     const taxableNet = noVat ? round(total - adv) : round(taxableGross / (1 + VAT_RATE));
     const vat = noVat ? 0 : round(taxableGross - taxableNet);
-    return { ...row, total, adv, taxable_gross: taxableGross, taxable_net: taxableNet, vat };
+    const documentTotal = noVat ? adv : documentType === ORIGINAL_DOCUMENT_TYPE ? total : taxableGross;
+    const vatTaxableAmount = noVat ? 0 : taxableNet;
+    const documentAdv = documentType === 'tax_invoice' || documentType === 'tax_invoice_hotel' ? 0 : adv;
+    return { ...row, total, gross_total: total, adv, document_adv: documentAdv, taxable_gross: taxableGross, taxable_net: taxableNet, vat_taxable_amount: vatTaxableAmount, vat, document_total: documentTotal };
   });
   const totals = calculated.reduce((sum, row) => ({
     total: sum.total + row.total,
+    document_total: sum.document_total + row.document_total,
     adv: sum.adv + row.adv,
+    document_adv: sum.document_adv + row.document_adv,
     taxable_gross: sum.taxable_gross + row.taxable_gross,
     taxable_net: sum.taxable_net + row.taxable_net,
+    vat_taxable_amount: sum.vat_taxable_amount + row.vat_taxable_amount,
     vat: sum.vat + row.vat
-  }), { total: 0, adv: 0, taxable_gross: 0, taxable_net: 0, vat: 0 });
+  }), { total: 0, document_total: 0, adv: 0, document_adv: 0, taxable_gross: 0, taxable_net: 0, vat_taxable_amount: 0, vat: 0 });
   return { rows: calculated, totals: Object.fromEntries(Object.entries(totals).map(([key, value]) => [key, round(value)])) };
+}
+
+function validateTaxTreatments(rows) {
+  const selectedRows = rows.filter((row) => row.selected);
+  const missing = selectedRows.filter((row) => !TAX_TREATMENTS.has(String(row.tax_treatment || '').toLowerCase()));
+  if (missing.length) {
+    return `Please select VAT 7% or ADV (Non-VAT) for: ${missing.slice(0, 3).map((row) => row.name || row.id).join(', ')}${missing.length > 3 ? ' and more' : ''}.`;
+  }
+  const invalidSplit = selectedRows.filter((row) => {
+    if (String(row.tax_treatment).toLowerCase() !== 'split') return false;
+    const total = Math.max(0, round(row.total));
+    const adv = Math.max(0, round(row.adv));
+    return total <= 0 || adv <= 0 || adv >= total;
+  });
+  if (invalidSplit.length) {
+    return `Enter an ADV amount between 0.01 and the service total for: ${invalidSplit.slice(0, 3).map((row) => row.name || row.id).join(', ')}.`;
+  }
+  return null;
 }
 
 async function getDocumentRows(tripId) {
@@ -253,7 +307,9 @@ function normalizeInvoiceDate(value) {
 
 function isPaymentReceived(booking) {
   const dueAmount = Math.max(0, number(booking?.final_amount ?? booking?.total_amount) + number(booking?.penalty_cost));
-  return Boolean(booking?.payment_date) && number(booking?.received_amount) >= dueAmount;
+  // Older bookings stored the received amount in `amount_paid`; current payment updates keep both fields in sync.
+  const recordedAmount = Math.max(number(booking?.received_amount), number(booking?.amount_paid));
+  return Boolean(booking?.payment_date) && recordedAmount >= dueAmount;
 }
 
 function buildSnapshot(booking, calculated, invoiceDate) {
@@ -377,6 +433,8 @@ export async function saveTaxInvoiceDocument(req, res, next) {
         return res.status(400).json({ message: 'The request contains a service that is not available for this document.' });
       }
       visibleRows = sanitizeServices(allowedRows, submittedRows);
+      const treatmentError = validateTaxTreatments(visibleRows);
+      if (treatmentError) return res.status(400).json({ message: treatmentError });
     } else {
       if (!original) return res.status(400).json({ message: 'Create and save the Original Tax Invoice first. The remaining tax documents will then be copied automatically.' });
       resolvedInvoiceDate = normalizeInvoiceDate(original.invoice_date);
@@ -395,7 +453,7 @@ export async function saveTaxInvoiceDocument(req, res, next) {
 
     const synchronized = [];
     if (documentType === ORIGINAL_DOCUMENT_TYPE) {
-      for (const secondaryType of [...DOCUMENT_TYPES].filter((type) => type !== ORIGINAL_DOCUMENT_TYPE)) {
+      for (const secondaryType of PUBLIC_DOCUMENT_TYPES.filter((type) => type !== ORIGINAL_DOCUMENT_TYPE)) {
         const copiedRows = sanitizeServices(servicesForDocument(booking, secondaryType), visibleRows);
         const copiedCalculation = calculateRows(copiedRows, secondaryType);
         const copiedDocument = await upsertDocument({
@@ -512,4 +570,4 @@ export async function listTaxInvoicesByDateRange(req, res, next) { return listTa
 export async function generateTaxInvoicePDF(req, res, next) { return res.status(501).json({ message: 'Open the saved tax invoice and use Open PDF / Print.' }); }
 export async function generateTaxInvoicePDFWithProfile(req, res, next) { return generateTaxInvoicePDF(req, res, next); }
 
-export { buildServices, calculateRows, sanitizeServices, servicesForDocument, isPaymentReceived, VAT_RATE };
+export { buildServices, calculateRows, sanitizeServices, servicesForDocument, isPaymentReceived, validateTaxTreatments, VAT_RATE, PUBLIC_DOCUMENT_TYPES };

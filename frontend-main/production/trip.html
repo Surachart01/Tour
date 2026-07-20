@@ -1036,8 +1036,8 @@
                ? `<button class="btn-action btn-action-notify notify-hotels-btn" data-id="${trip.id}" data-quotation-ref="${escapedRef}" title="Notify Hotels & Stay Summaries"><i class="fa fa-bell-o"></i></button>`
                : '';
  
-             const proformaButton = (role === 'agent' && (trip.status === 'Approved' || trip.status === 'Confirmed'))
-               ? `<button class="btn-action btn-action-save print-btn proforma-btn" data-id="${trip.id}" title="Print Proforma Invoice" style="color: #9b59b6 !important; border-color: #9b59b6 !important;"><i class="fa fa-file-text-o"></i></button>`
+             const proformaButton = ((role === 'admin' || role === 'superadmin') && trip.status === 'Confirmed')
+               ? `<button class="btn-action btn-action-save proforma-btn" data-id="${trip.id}" title="Open Proforma Invoice" style="color: #9b59b6 !important; border-color: #9b59b6 !important;"><i class="fa fa-file-text-o"></i></button>`
                : '';
  
              const emailIcon = trip.email_sent ? 'fa-paper-plane text-success' : 'fa-envelope';
@@ -1380,6 +1380,38 @@
               .catch((error) => {
                 console.error("Error deleting quotation:", error);
                 alert(`Error: ${error.message}`);
+              });
+            return;
+          }
+
+          const proformaBtn = event.target.closest(".proforma-btn");
+          if (proformaBtn) {
+            const tripId = proformaBtn.getAttribute("data-id");
+            if (!tripId) {
+              alert("Invalid booking ID.");
+              return;
+            }
+
+            fetch(`${Endpoint}/api/v1/bookings/${tripId}/proforma-pdf`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/pdf",
+              },
+            })
+              .then((response) => {
+                if (!response.ok) {
+                  throw new Error("Failed to fetch Proforma Invoice PDF");
+                }
+                return response.blob();
+              })
+              .then((blob) => {
+                const blobUrl = window.URL.createObjectURL(blob);
+                window.open(blobUrl, "_blank");
+              })
+              .catch((error) => {
+                console.error("Error fetching Proforma Invoice PDF:", error);
+                alert("Failed to open Proforma Invoice.");
               });
             return;
           }

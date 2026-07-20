@@ -45,6 +45,17 @@ test('saving confirmed services does not confirm an InProgress booking automatic
   );
 });
 
+test('a normal save cannot overwrite workflow status from its request payload', () => {
+  assert.equal(
+    resolveBookingStatusAfterSave('InProgress', false, 'Pending'),
+    undefined
+  );
+  assert.equal(
+    resolveBookingStatusAfterSave('Confirmed', true, 'InProgress'),
+    undefined
+  );
+});
+
 test('uses the booking agent as the primary Proforma billing source', () => {
   const booking = attachProformaBilling({
     id: 74,

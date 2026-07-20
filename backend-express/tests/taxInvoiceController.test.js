@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildServices, calculateRows, sanitizeServices, servicesForDocument, isPaymentReceived } from '../src/controllers/taxInvoiceController.js';
+import { buildServices, calculateRows, sanitizeServices, servicesForDocument, isPaymentReceived, validateTaxTreatments } from '../src/controllers/taxInvoiceController.js';
 
 test('calculates VAT only from the selling price remaining after ADV', () => {
   const result = calculateRows([{
@@ -9,9 +9,12 @@ test('calculates VAT only from the selling price remaining after ADV', () => {
 
   assert.deepEqual(result.totals, {
     total: 2500,
+    document_total: 2500,
     adv: 1000,
+    document_adv: 1000,
     taxable_gross: 1500,
     taxable_net: 1401.87,
+    vat_taxable_amount: 1401.87,
     vat: 98.13
   });
 });
@@ -24,6 +27,8 @@ test('keeps transportation receipt free of VAT', () => {
   assert.equal(result.totals.taxable_net, 1500);
   assert.equal(result.totals.taxable_gross, 1500);
   assert.equal(result.totals.vat, 0);
+  assert.equal(result.totals.document_total, 1000);
+  assert.equal(result.totals.document_adv, 1000);
 });
 
 test('deducts manually allocated tour accommodation from the tour selling price', () => {
@@ -50,6 +55,34 @@ test('keeps Booking service prices authoritative while allowing a tour hotel all
     { id: 'hotel-1', type: 'hotel', total: 8750, editable_total: false, selected: true, adv: 500 },
     { id: 'tour-hotel-1', type: 'tour_hotel', total: 2500, editable_total: true, selected: true, adv: 100 }
   ]);
+});
+
+test('applies explicit VAT, ADV and split treatments to document totals', () => {
+  const result = calculateRows([
+    { id: 'vat', type: 'hotel', total: 1070, adv: 0, tax_treatment: 'vat', selected: true },
+    { id: 'adv', type: 'transfer', total: 1000, adv: 0, tax_treatment: 'adv', selected: true },
+    { id: 'split', type: 'transfer', total: 2000, adv: 500, tax_treatment: 'split', selected: true }
+  ], 'original_tax_invoice');
+
+  assert.equal(result.totals.document_total, 4070);
+  assert.equal(result.totals.adv, 1500);
+  assert.equal(result.totals.vat_taxable_amount, 2401.87);
+  assert.equal(result.totals.vat, 168.13);
+
+  const vatDocument = calculateRows([
+    { id: 'vat', type: 'hotel', total: 1070, adv: 0, tax_treatment: 'vat', selected: true },
+    { id: 'adv', type: 'transfer', total: 1000, adv: 0, tax_treatment: 'adv', selected: true }
+  ], 'tax_invoice');
+  assert.equal(vatDocument.totals.document_total, 1070);
+});
+
+test('requires every selected original-invoice service to have a tax treatment', () => {
+  assert.match(validateTaxTreatments([
+    { id: 'hotel-1', name: 'Hotel', total: 1000, adv: 0, selected: true, tax_treatment: '' }
+  ]), /select VAT 7% or ADV/);
+  assert.equal(validateTaxTreatments([
+    { id: 'hotel-1', name: 'Hotel', total: 1000, adv: 0, selected: true, tax_treatment: 'vat' }
+  ]), null);
 });
 
 test('treats omitted submitted services as unselected', () => {
@@ -111,6 +144,7 @@ test('uses each tour accommodation day to calculate its own stay dates', () => {
 
 test('requires a full recorded payment before a tax invoice is eligible', () => {
   assert.equal(isPaymentReceived({ final_amount: 15000, received_amount: 15000, payment_date: '2026-07-18' }), true);
+  assert.equal(isPaymentReceived({ final_amount: 15000, received_amount: 0, amount_paid: 15000, payment_date: '2026-07-18' }), true);
   assert.equal(isPaymentReceived({ final_amount: 15000, received_amount: 14999.99, payment_date: '2026-07-18' }), false);
   assert.equal(isPaymentReceived({ final_amount: 15000, received_amount: 15000, payment_date: null }), false);
 });

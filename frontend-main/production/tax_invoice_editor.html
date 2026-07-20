@@ -4,10 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tax Invoice</title>
+    <link href="../vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="../vendors/font-awesome/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
     <style>
       :root { --navy:#1f354d; --orange:#ffbd00; --line:#202020; --paper:#fff; --muted:#64748b; --teal:#14b8a6; }
       * { box-sizing:border-box; } body { margin:0; background:#e8edf3; color:#111; font-family:Tahoma, Arial, sans-serif; }
+      .right_col { min-height:100vh; background:#e8edf3; }
+      .left_col.scroll-view { overflow-y:auto; max-height:100vh; } body.nav-sm .left_col.scroll-view { overflow-y:visible; max-height:none; }
       .tool-bar { position:sticky; top:0; z-index:10; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 24px; background:var(--navy); color:white; box-shadow:0 2px 10px #0002; }
       .tool-bar h1 { margin:0; font-size:19px; } .tool-actions { display:flex; flex-wrap:wrap; gap:8px; }
       button, .button { border:0; border-radius:5px; padding:10px 14px; font:600 14px Tahoma, Arial, sans-serif; cursor:pointer; text-decoration:none; }
@@ -21,7 +25,7 @@
       .details-grid { display:grid; grid-template-columns:1.1fr .9fr; margin:3mm auto 7mm; width:93%; border:1px solid var(--line); } .details-grid > div { padding:1.2mm 2mm; border-bottom:1px solid var(--line); min-height:5.5mm; } .details-grid > div:nth-last-child(-n+2) { border-bottom:0; } .details-label { font-weight:700; background:#f5f5f5; } .invoice-number-input { width:100%; border:0; border-bottom:1px dotted #666; font:inherit; text-align:center; }
       .service-heading { background:var(--orange); border:1px solid var(--line); text-align:center; font-family:Georgia, serif; font-size:20px; padding:1mm; }
       .service-section { margin:0 0 4mm; border:1px solid var(--line); border-top:0; } .service-section h2 { margin:0; padding:1.5mm 2mm; background:#000; color:#fff; font-family:Georgia, serif; font-size:13px; }
-      table { width:100%; border-collapse:collapse; } th, td { border:1px solid var(--line); padding:1.3mm 1.5mm; vertical-align:middle; } th { background:#fafafa; font-weight:700; text-align:left; } .money { text-align:right; white-space:nowrap; } .select-cell { width:7mm; text-align:center; } .description { min-width:55mm; } .adv-input, .total-input { width:100%; min-width:15mm; padding:1mm; border:1px solid #c9d3df; text-align:right; font:inherit; } .adv-input { color:#dc2626; } .tour-hotel td { background:#fffaf2; } .tour-hotel .description { padding-left:7mm; font-style:italic; } .document-empty { padding:8mm; text-align:center; color:var(--muted); }
+      table { width:100%; border-collapse:collapse; } th, td { border:1px solid var(--line); padding:1.3mm 1.5mm; vertical-align:middle; } th { background:#fafafa; font-weight:700; text-align:left; } .money { text-align:right; white-space:nowrap; } .select-cell { width:7mm; text-align:center; } .description { min-width:55mm; } .adv-input, .total-input, .tax-treatment { width:100%; min-width:15mm; padding:1mm; border:1px solid #c9d3df; text-align:right; font:inherit; } .tax-treatment { min-width:0; padding:.7mm; text-align:left; background:#fff; } .adv-input { color:#dc2626; } .treatment-value { display:inline-block; font-size:8px; font-weight:700; line-height:1.2; } .treatment-value.adv { color:#b91c1c; } .treatment-value.vat { color:#075985; } .treatment-value.split { color:#92400e; } .treatment-missing { color:#b91c1c; } .tour-hotel td { background:#fffaf2; } .tour-hotel .description { padding-left:7mm; font-style:italic; } .document-empty { padding:8mm; text-align:center; color:var(--muted); }
       /* Tax documents have up to nine columns. Keep the complete table inside the A4 paper. */
       .service-section table { table-layout:fixed; font-size:8.5px; }
       .service-section th, .service-section td { padding:.8mm 1mm; overflow-wrap:anywhere; word-break:normal; }
@@ -34,17 +38,80 @@
       .service-section th:nth-child(7), .service-section td:nth-child(7) { width:11%; }
       .service-section th:nth-child(8), .service-section td:nth-child(8) { width:11%; }
       .service-section th:nth-child(9), .service-section td:nth-child(9) { width:7%; }
+      .service-section th:nth-child(10), .service-section td:nth-child(10) { width:7%; }
       .service-section .description { min-width:0; }
       .service-section .money { white-space:normal; }
       .service-section .adv-input, .service-section .total-input { min-width:0; padding:.5mm; font-size:8.5px; }
+      .treatment-checks { display:flex; flex-direction:column; gap:1mm; text-align:left; font-size:8px; line-height:1.15; }
+      .treatment-checks label { display:flex; align-items:flex-start; gap:1mm; margin:0; font-weight:700; }
+      .treatment-checks input { margin:0; accent-color:#168f76; }
+      .treatment-checks small { color:#92400e; font-weight:700; }
       .total-box { margin-left:auto; width:92mm; border:1px solid var(--line); } .total-box td:first-child { text-align:right; font-weight:700; } .total-box tr:last-child td { font-weight:700; font-size:12px; background:#f5f5f5; } .total-box .adv-total { color:#dc2626; }
       .signature-row { display:flex; justify-content:space-between; gap:40mm; margin:20mm 6mm 7mm; font-family:Georgia, serif; } .footer { text-align:center; font-family:Georgia, serif; font-size:10px; }.footer strong { display:block; font-size:12px; }
       .loading { padding:60px; text-align:center; color:var(--muted); font-size:16px; }
       @media (max-width:900px) { .invoice-paper { width:100%; min-height:0; margin:0; padding:12px; box-shadow:none; overflow-x:auto; } .tool-bar { align-items:flex-start; flex-direction:column; } .company-header { grid-template-columns:120px 1fr; } .party-grid, .details-grid { min-width:720px; } .service-section { min-width:900px; } }
-      @media print { @page { size:A4; margin:0; } body { background:white; } .tool-bar, .notice { display:none !important; } .invoice-paper { width:210mm; min-height:297mm; margin:0; padding:8mm; box-shadow:none; } .adv-input, .total-input, .invoice-number-input { border:0 !important; appearance:none; background:transparent; } .service-section, tr { break-inside:avoid; } }
+      @media print { @page { size:A4; margin:0; } body { background:white; } .left_col, .top_nav, .sidebar-footer, .tool-bar, .notice { display:none !important; } .right_col { margin-left:0 !important; min-height:0 !important; background:white !important; } .invoice-paper { width:210mm; min-height:297mm; margin:0; padding:8mm; box-shadow:none; } .adv-input, .total-input, .invoice-number-input { border:0 !important; appearance:none; background:transparent; } .service-section, tr { break-inside:avoid; } }
+
+      /* Use the same document language as the Proforma Invoice. */
+      .invoice-paper { padding:12mm; font-size:11px; }
+      .company-header { grid-template-columns:48mm 1fr; min-height:31mm; }
+      .company-header img { max-width:46mm; max-height:28mm; padding:4mm 2mm; }
+      .company-info { padding:3mm 4mm; font-size:10px; line-height:1.3; }
+      .company-info strong { font-size:11px; }
+      .title-band { padding:1.5mm 3mm; font-size:19px; font-weight:700; text-transform:uppercase; }
+      .party-grid { grid-template-columns:1fr 1.7fr; margin-top:3mm; }
+      .party { min-height:27mm; }
+      .section-title { padding:1.4mm 3mm; font-size:14px; font-weight:700; }
+      .party-content { padding:2.5mm 3mm; line-height:1.42; }
+      .passenger-section { margin:4mm 0 5mm; }
+      .passenger-title { padding:1.3mm 3mm; background:#000; color:#fff; text-align:center; font-family:Georgia, serif; font-size:15px; font-weight:700; }
+      .passenger-table { table-layout:fixed; font-size:10px; }
+      .passenger-table td { height:6mm; padding:1.3mm 2mm; border:1px solid var(--line); overflow-wrap:anywhere; }
+      .passenger-table .passenger-label { width:19%; background:#f3f3f3; font-weight:700; }
+      .invoice-number-input { width:100%; min-height:4mm; padding:0; text-align:left; color:#111; }
+      .services-wrap { margin:4mm 0 5mm; }
+      .services-heading { margin:0 0 2.5mm; color:#111; font-size:13px; font-weight:700; }
+      .service-section { margin:0 0 3mm; border:0; }
+      .service-section-title { margin:0; padding:1.3mm 2.5mm; border:1px solid var(--line); border-bottom:0; background:#000; color:#fff; font-family:Georgia, serif; font-size:12px; font-weight:700; }
+      .services-table { width:100%; table-layout:fixed; border-collapse:collapse; font-size:8.5px; }
+      .services-table th { padding:1.1mm 1mm; border:1px solid var(--line); background:#f3f3f3; color:#111; font-weight:700; }
+      .services-table td { padding:1.1mm 1mm; border:1px solid var(--line); line-height:1.25; vertical-align:middle; overflow-wrap:anywhere; }
+      .services-table .select-cell { width:6%; text-align:center; }
+      .services-table .money { text-align:right; white-space:normal; }
+      .services-table .description { min-width:0; }
+      .services-table .adv-input, .services-table .total-input, .services-table .tax-treatment { min-width:0; padding:.6mm; font-size:8.5px; }
+      .services-table .tax-treatment { line-height:1.1; }
+      .tour-hotel td { background:#fffaf2; }
+      .amount-section { margin-top:5mm; }
+      .amount-section h2 { margin:0 0 2mm; padding-bottom:1.2mm; border-bottom:1px solid #bd8a2d; color:#bd7d16; font-size:13px; font-weight:800; }
+      .amount-wrap { display:flex; justify-content:flex-end; }
+      .total-box { width:88mm; margin:0; border:0; border-radius:6px; overflow:hidden; background:#f5821f; color:#fff; }
+      .total-box td { padding:1.7mm 2.8mm; border:0; color:#fff; font-weight:600; }
+      .total-box td:first-child { text-align:left; }
+      .total-box .money { text-align:right; white-space:nowrap; }
+      .total-box tr:last-child td { padding-top:2mm; border-top:1px solid rgba(255,255,255,.72); background:transparent; color:#fff; font-size:13px; font-weight:800; }
+      .total-box .adv-total { color:#fff; }
+      .signature-row { margin:18mm 5mm 8mm; font-size:10px; }
+      .footer { padding-top:2mm; border-top:1px solid #222; font-size:8px; line-height:1.3; }
+      .footer strong { font-size:9px; text-decoration:underline; }
+      @media (max-width:900px) { .invoice-paper { padding:12px; } .passenger-section, .party-grid, .service-section { min-width:720px; } .services-table { min-width:900px; } }
+      @media print { .invoice-paper { padding:12mm; } .services-table th, .services-table td { padding:.8mm 1mm; } }
     </style>
   </head>
-  <body>
+  <body class="nav-md">
+    <div class="container body"><div class="main_container">
+      <div class="col-md-3 left_col menu_fixed"><div class="left_col scroll-view">
+        <div class="navbar nav_title" style="border:0"><a href="index.html" class="site_title" style="display:block;text-align:center;font-size:2rem;font-weight:bold;color:#fff;text-decoration:none"><span style="font-size:1.5rem">VeraThailandia!</span></a></div><div class="clearfix"></div>
+        <div class="profile clearfix"><div class="profile_pic"><img id="navProfileImage" src="images/verathailandlogo.png" alt="" class="img-circle profile_img" /></div><div class="profile_info"><span>Welcome,</span><h2 id="profileName"></h2></div></div><br />
+        <div id="sidebar-menu" class="main_menu_side hidden-print main_menu"><div class="menu_section"><h3>General</h3><ul class="nav side-menu">
+          <li><a href="index.html"><i class="fa fa-home"></i> Home</a></li>
+          <li id="controlPanelMenu"><a><i class="fa fa-edit"></i> Control-Panel <span class="fa fa-chevron-down"></span></a><ul class="nav child_menu"><li><a href="activities.html">Activities</a></li><li><a href="agents.html">Agents</a></li><li><a href="booking.html">Bookings</a></li><li><a href="city_info.html">City Information</a></li><li><a href="excursions.html">Excursions</a></li><li><a href="hotels.html">Hotels</a></li><li><a href="markup.html">Markups</a></li><li><a href="special_packages.html">Special Packages</a></li><li><a href="suppliers.html">Suppliers</a></li><li><a href="tours.html">Tours</a></li><li><a href="transfers.html">Transfers</a></li><li><a href="users.html">Users</a></li></ul></li>
+          <li><a href="trip.html"><i class="fa fa-book"></i> Quotation</a></li><li><a href="payment.html"><i class="fa fa-pencil-square-o"></i> Payment</a></li><li><a href="invoice_management.html"><i class="fa fa-file-o"></i> Proforma Invoice</a></li><li class="current-page"><a href="tax_invoices.html"><i class="fa fa-file-text-o"></i> Tax Invoices</a></li><li><a href="itinerary.html"><i class="fa fa-ticket"></i> Itinerary</a></li><li><a href="analytics.html"><i class="fa fa-bar-chart"></i> Analytics</a></li><li><a href="special_promo.html"><i class="fa fa-bullhorn"></i> Special Promo</a></li>
+        </ul></div></div>
+        <div class="sidebar-footer hidden-small"><a title="Settings"><span class="glyphicon glyphicon-cog"></span></a><a title="FullScreen"><span class="glyphicon glyphicon-fullscreen"></span></a><a title="Lock"><span class="glyphicon glyphicon-eye-close"></span></a><a title="Logout" href="logout.html"><span class="glyphicon glyphicon-off"></span></a></div>
+      </div></div>
+      <div class="top_nav"><div class="nav_menu"><div class="nav toggle"><a id="menu_toggle"><i class="fa fa-bars"></i></a></div><nav class="nav navbar-nav"><ul class="navbar-right"><li class="nav-item dropdown open" style="padding-left:15px"><a href="javascript:;" class="user-profile dropdown-toggle" data-toggle="dropdown"><img src="images/verathailandlogo.png" alt="" /><span id="navProfileName"></span></a><div class="dropdown-menu dropdown-usermenu pull-right"><a class="dropdown-item" href="profile.html"><i class="fa fa-user pull-right"></i> Profile</a><a class="dropdown-item" href="logout.html"><i class="fa fa-sign-out pull-right"></i> Log Out</a></div></li></ul></nav></div></div>
+      <div class="right_col" role="main">
     <header class="tool-bar">
       <h1 id="pageTitle"><i class="fa fa-file-text-o"></i> Tax Invoice</h1>
       <div class="tool-actions">
@@ -55,7 +122,14 @@
     </header>
     <div id="invoiceNotice" class="notice"><i class="fa fa-info-circle"></i> Loading payment and invoice information...</div>
     <main id="invoicePaper" class="invoice-paper"><div class="loading"><i class="fa fa-spinner fa-spin"></i> Loading paid booking...</div></main>
-    <script src="js/config.js"></script>
-    <script src="js/tax_invoices/tax_invoice_editor.js?v=20260720-3"></script>
+      </div>
+    </div></div>
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <script src="../vendors/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/common/sidebar-profile.js"></script>
+    <script src="js/common/role-permissions.js"></script>
+    <script src="js/config.js?v=20260720"></script>
+    <script src="js/tax_invoices/tax_invoice_editor.js?v=20260720-5"></script>
   </body>
 </html>

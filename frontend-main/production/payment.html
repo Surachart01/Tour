@@ -33,9 +33,81 @@
 
     <style>
       .edit-btn,
-      .delete-btn,
-      .print-btn {
+      .delete-btn {
         cursor: pointer;
+      }
+
+      .payment-status {
+        display: inline-block;
+        padding: 4px 9px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1.2;
+        white-space: nowrap;
+      }
+
+      .payment-status-confirmed {
+        color: #237443;
+        background: #d9f3df;
+      }
+
+      .payment-status-inprogress {
+        color: #175aa6;
+        background: #dceeff;
+      }
+
+      .payment-status-approved {
+        color: #795400;
+        background: #fff0c2;
+      }
+
+      .payment-status-pending {
+        color: #8a5b00;
+        background: #fff4d6;
+      }
+
+      .payment-status-other {
+        color: #56616f;
+        background: #edf0f3;
+      }
+
+      .page-loading-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15, 30, 48, 0.24);
+        backdrop-filter: blur(2px);
+      }
+
+      .page-loading-overlay[hidden] {
+        display: none;
+      }
+
+      .page-loading-card {
+        min-width: 230px;
+        padding: 24px 30px;
+        text-align: center;
+        color: #243b53;
+        background: #fff;
+        border: 1px solid #d9e2ec;
+        border-radius: 14px;
+        box-shadow: 0 12px 34px rgba(15, 30, 48, 0.18);
+      }
+
+      .page-loading-card .fa {
+        display: block;
+        margin-bottom: 10px;
+        color: #16b89a;
+      }
+
+      .page-loading-message {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
       }
       /* Removed constraining CSS for sidebar-menu to allow proper submenu expansion */
 
@@ -53,6 +125,12 @@
     </style>
   </head>
   <body class="nav-md">
+    <div id="pageLoadingOverlay" class="page-loading-overlay" hidden aria-live="polite">
+      <div class="page-loading-card">
+        <i class="fa fa-spinner fa-spin fa-2x" aria-hidden="true"></i>
+        <p id="pageLoadingMessage" class="page-loading-message">Loading payments...</p>
+      </div>
+    </div>
     <div class="container body">
       <div class="main_container">
         <div class="col-md-3 left_col menu_fixed">
@@ -312,6 +390,7 @@
               <div class="x_panel">
                 <div class="x_title">
                   <h2>List of Payments</h2>
+                  <p class="text-muted" style="margin:4px 0 0">Only confirmed bookings are shown here. After payment is fully received, configure and preview tax documents from <a href="tax_invoices.html">Tax Invoices</a>.</p>
                   <ul class="nav navbar-right panel_toolbox">
                     <li>
                       <a class="collapse-link"
@@ -335,6 +414,7 @@
                               <th>Trip ID</th>
                               <th>Agent</th>
                               <th>File Number</th>
+                              <th>Status</th>
                               <!-- <th>Total Cost</th>
                               <th>Discount</th> -->
                               <th>Start Date</th>
@@ -344,8 +424,6 @@
                               <th>Pmt Date</th>
                               <th>Payment Reference</th>
                               <th>Penalty</th>
-                              <th>Invoice</th>
-                              <th>Tax Invoice</th>
                               <th id="adminUpdateHeader" style="display: none">
                                 Update
                               </th>
@@ -552,6 +630,17 @@
         let totalPages = 1;
         let currentFilterMode = "all"; // 'all' or 'date_range'
         let currentDateRange = { start: null, end: null };
+        const pageLoadingOverlay = document.getElementById("pageLoadingOverlay");
+        const pageLoadingMessage = document.getElementById("pageLoadingMessage");
+
+        function showPageLoading(message = "Loading payments...") {
+          pageLoadingMessage.textContent = message;
+          pageLoadingOverlay.hidden = false;
+        }
+
+        function hidePageLoading() {
+          pageLoadingOverlay.hidden = true;
+        }
 
         // Initialize page with current month dates
         function initializePage() {
@@ -592,7 +681,7 @@
         function showLoadingState() {
           tableBody.innerHTML = `
             <tr>
-              <td colspan="14" class="text-center">
+              <td colspan="13" class="text-center">
                 <i class="fa fa-spinner fa-spin fa-2x"></i>
                 <p>Loading payments...</p>
               </td>
@@ -727,6 +816,7 @@
             currentDateRange = { start: fromDate, end: toDate };
           }
 
+          showPageLoading("Loading confirmed payments...");
           console.log("Loading payments from:", url);
 
           try {
@@ -797,6 +887,8 @@
             currentPage = 1;
             renderPayments();
             updatePaginationButtons();
+          } finally {
+            hidePageLoading();
           }
         }
 
@@ -847,14 +939,22 @@
 
           for (const payment of filteredPayments.slice(start, end)) {
             let row = document.createElement("tr");
+            const normalizedStatus = String(payment.status || "").toLowerCase().replace(/[^a-z]/g, "");
+            const statusLabels = {
+              confirmed: "Confirmed",
+              inprogress: "In Progress",
+              approved: "Approved",
+              pending: "Pending",
+              cancelled: "Cancelled",
+            };
+            const statusLabel = statusLabels[normalizedStatus] || "Unknown";
+            const statusClass = statusLabels[normalizedStatus]
+              ? `payment-status-${normalizedStatus}`
+              : "payment-status-other";
 
             let formattedDate = !payment.payment_date || payment.payment_date.startsWith("0001-01-01")
               ? ""
               : formatToDDMMYYYY(payment.payment_date.split("T")[0]);
-
-            let taxInvoiceDisabled = payment.balance > 0.0 ? "disabled" : "";
-            let taxInvoiceClass =
-              payment.balance > 0 ? "btn-secondary disabled" : "btn-success";
 
             // Apply row color logic using existing payment data
             const tripStartDate = new Date(payment.start_date);
@@ -876,6 +976,7 @@
             }</a></td>
                 <td>${payment.agent_name}</td>
                 <td>${payment.booking_reference}</td>
+                <td><span class="payment-status ${statusClass}" title="Tax invoices require Confirmed status">${statusLabel}</span></td>
                 <td>${payment.start_date ? formatToDDMMYYYY(String(payment.start_date).split("T")[0]) : "-"}</td>
                 <td>${payment.final_cost.toFixed(2)}</td>
                 <td>${payment.received_amount.toFixed(2)}</td>
@@ -883,16 +984,6 @@
                 <td>${formattedDate}</td>
                 <td>${payment.payment_reference}</td>
                 <td>${payment.penalty_cost.toFixed(2)}</td>
-                <td>
-                    <button class="btn btn-outline-primary btn-sm edit-btn">
-                        <i class="fa fa-file-text"></i>
-                    </button>
-                </td>
-                <td>
-                    <button class="btn ${taxInvoiceClass} btn-sm print-btn" ${taxInvoiceDisabled}>
-                        <i class="fa fa-print"></i>
-                    </button>
-                </td>
             `;
 
             // Add an extra Update button for admin users
@@ -1047,9 +1138,11 @@
             document.getElementById("editAmountPaid").dispatchEvent(new Event("input"));
           });
 
-        document
+          document
           .getElementById("savePaymentChanges")
           .addEventListener("click", async function () {
+            const saveButton = document.getElementById("savePaymentChanges");
+            const saveButtonLabel = saveButton.innerHTML;
             let paymentId = document.getElementById("editPaymentId").value;
             console.log(paymentId);
             let updatedAmountPaid =
@@ -1068,6 +1161,8 @@
             }
 
             try {
+              saveButton.disabled = true;
+              saveButton.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving...';
               const response = await fetch(
                 `${Endpoint}/api/v1/bookings/${paymentId}/payment`,
                 {
@@ -1089,10 +1184,13 @@
                 throw new Error(`HTTP error! Status: ${response.status}`);
 
               $("#editPaymentModal").modal("hide");
-              fetchPayments(currentFilterMode === "all"); // Reload with current filter mode
+              await fetchPayments(currentFilterMode === "all"); // Reload with current filter mode
             } catch (error) {
               console.error("Error updating payment:", error);
               alert("Failed to update payment.");
+            } finally {
+              saveButton.disabled = false;
+              saveButton.innerHTML = saveButtonLabel;
             }
           });
 

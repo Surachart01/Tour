@@ -73,9 +73,12 @@ export function resolveServiceApprovalState(savedById, item = {}) {
   };
 }
 
-export function resolveBookingStatusAfterSave(existingStatus, allServicesConfirmed, requestedStatus) {
+export function resolveBookingStatusAfterSave(existingStatus, allServicesConfirmed, _requestedStatus) {
   if (existingStatus === 'Confirmed' && !allServicesConfirmed) return 'InProgress';
-  return requestedStatus !== undefined ? requestedStatus : undefined;
+  // Status is workflow state. It must only change through conversion,
+  // service confirmation/decline, cancellation, or final booking confirmation.
+  // A normal save must not accidentally move a quotation or booking backward.
+  return undefined;
 }
 
 async function resolveAgentIdFromRequest(data, claims, client = prisma) {
@@ -690,10 +693,12 @@ export async function createQuotation(req, res, next) {
           declined: false,
           trip_start_date,
           user_id: parseSafeInt(data.user_id, claims ? claims.user_id : null),
-          is_booking: data.is_booking || false,
+          // A newly created trip is always a quotation. Conversion is the only
+          // action that turns it into a booking and changes it to InProgress.
+          is_booking: false,
           amount_paid: data.amount_paid !== undefined ? parseFloat(data.amount_paid) : 0.00,
           penalty_cost: data.penalty_cost !== undefined ? parseFloat(data.penalty_cost) : 0.00,
-          status: data.status || "Pending",
+          status: 'Pending',
           include_assistance_fee: calculated.include_assistance_fee,
           assistance_fee_amount: calculated.assistance_fee_amount,
           include_description_in_itinerary: data.include_description_in_itinerary || false,
@@ -1270,7 +1275,8 @@ export async function updateQuotation(req, res, next) {
           trip_start_date,
           client_email: data.client_email !== undefined ? data.client_email : undefined,
           user_id: data.user_id !== undefined ? (data.user_id ? parseSafeInt(data.user_id) : null) : undefined,
-          is_booking: data.is_booking !== undefined ? data.is_booking : undefined,
+          // Keep conversion state intact during normal saves.
+          is_booking: undefined,
           amount_paid: data.amount_paid !== undefined ? parseFloat(data.amount_paid) : undefined,
           penalty_cost: data.penalty_cost !== undefined ? parseFloat(data.penalty_cost) : undefined,
           status: statusAfterSave,
@@ -1482,6 +1488,12 @@ export async function finalizeQuotation(req, res, next) {
       }
     }
 
+    if (existing.status !== 'Pending' || existing.is_booking) {
+      return res.status(409).json({
+        message: 'Only a pending quotation can be converted to a booking.'
+      });
+    }
+
     const updateData = {
       approved: false,
       declined: false,
@@ -1514,7 +1526,7 @@ export async function cancelQuotation(req, res, next) {
 
     const trip = await prisma.trips.update({
       where: { id },
-      data: { declined: true, approved: false }
+      data: { declined: true, approved: false, status: 'Cancelled', updated_at: new Date() }
     });
     return res.json(trip);
   } catch (err) { next(err); }
@@ -1682,6 +1694,12 @@ export async function confirmBooking(req, res, next) {
 
     if (!trip) return res.status(404).json({ message: 'Booking not found' });
 
+    if (!trip.is_booking && trip.status === 'Pending') {
+      return res.status(409).json({
+        message: 'Convert the quotation to a booking before confirming it.'
+      });
+    }
+
     const serviceItems = [
       ...(trip.hotel_trip_items || []),
       ...(trip.transfer_trip_items || []),
@@ -1731,6 +1749,12 @@ export async function approveItem(req, res, next) {
     };
     const model = modelMap[itemType];
     if (!model) return res.status(400).send('Invalid item type');
+    const item = await prisma[model].findFirst({
+      where: { id, trip_item_id: parseInt(req.params.id, 10) },
+      select: { id: true }
+    });
+    if (!item) return res.status(404).send('Booking service not found');
+
     await prisma[model].update({ where: { id }, data: { approved: true, declined: false } });
     return res.json({ status: 'approved' });
   } catch (err) { next(err); }
@@ -1748,7 +1772,22 @@ export async function declineItem(req, res, next) {
     };
     const model = modelMap[itemType];
     if (!model) return res.status(400).send('Invalid item type');
-    await prisma[model].update({ where: { id }, data: { declined: true, approved: false } });
+    const tripId = parseInt(req.params.id, 10);
+    if (isNaN(tripId)) return res.status(400).send('Invalid booking ID');
+    const item = await prisma[model].findFirst({
+      where: { id, trip_item_id: tripId },
+      select: { id: true }
+    });
+    if (!item) return res.status(404).send('Booking service not found');
+
+    await prisma.$transaction([
+      prisma[model].update({ where: { id }, data: { declined: true, approved: false } }),
+      // A declined supplier service means the booking can no longer remain final.
+      prisma.trips.updateMany({
+        where: { id: tripId, status: 'Confirmed' },
+        data: { status: 'InProgress', approved: false, updated_at: new Date() }
+      })
+    ]);
     return res.json({ status: 'declined' });
   } catch (err) { next(err); }
 }
@@ -1768,10 +1807,14 @@ export async function getPaymentInfo(req, res, next) {
         id: true, client_name: true, total_amount: true, discount_amount: true,
         final_amount: true, penalty_cost: true, received_amount: true, balance: true,
         payment_date: true, payment_reference: true, trip_start_date: true,
-        booking_reference: true, file_reference: true, agents: { select: { name: true } }
+        booking_reference: true, file_reference: true, status: true,
+        agents: { select: { name: true } }
       }
     });
     if (!trip) return res.status(404).send('Booking not found');
+    if (trip.status !== 'Confirmed') {
+      return res.status(409).json({ message: 'Payment is available only after the booking is confirmed.' });
+    }
     return res.json(formatPaymentInfo(trip));
   } catch (err) { next(err); }
 }
@@ -1787,9 +1830,20 @@ export async function updatePaymentInfo(req, res, next) {
     }
     const current = await prisma.trips.findFirst({
       where,
-      select: { id: true, final_amount: true, total_amount: true, penalty_cost: true, payment_date: true, payment_reference: true }
+      select: {
+        id: true,
+        final_amount: true,
+        total_amount: true,
+        penalty_cost: true,
+        payment_date: true,
+        payment_reference: true,
+        status: true
+      }
     });
     if (!current) return res.status(404).send('Booking not found');
+    if (current.status !== 'Confirmed') {
+      return res.status(409).json({ message: 'Payment is available only after the booking is confirmed.' });
+    }
 
     const data = req.body || {};
     const receivedAmount = Math.max(0, paymentNumber(data.received_amount));
@@ -1823,7 +1877,7 @@ export async function updatePaymentInfo(req, res, next) {
 export async function listPaymentInfoFromBookings(req, res, next) {
   try {
     const claims = req.user;
-    const where = { approved: true };
+    const where = { approved: true, status: 'Confirmed' };
     if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       where.agent_id = claims.agent_id || 0;
     }
@@ -1833,7 +1887,7 @@ export async function listPaymentInfoFromBookings(req, res, next) {
         id: true, client_name: true, booking_reference: true,
         file_reference: true, trip_start_date: true, total_amount: true, discount_amount: true,
         final_amount: true, penalty_cost: true, received_amount: true, balance: true,
-        payment_date: true, payment_reference: true,
+        payment_date: true, payment_reference: true, status: true,
         agents: { select: { name: true } }, created_at: true
       },
       orderBy: { created_at: 'desc' }
@@ -1847,7 +1901,7 @@ export async function listPaymentInfoByDateRange(req, res, next) {
     const from_date = req.query.from_date || req.query.start_date;
     const to_date = req.query.to_date || req.query.end_date;
     const claims = req.user;
-    const where = { approved: true };
+    const where = { approved: true, status: 'Confirmed' };
     if (from_date && to_date) {
       where.created_at = { gte: new Date(from_date), lte: new Date(to_date) };
     }
@@ -1860,7 +1914,7 @@ export async function listPaymentInfoByDateRange(req, res, next) {
         id: true, client_name: true, booking_reference: true,
         file_reference: true, trip_start_date: true, total_amount: true, discount_amount: true,
         final_amount: true, penalty_cost: true, received_amount: true, balance: true,
-        payment_date: true, payment_reference: true,
+        payment_date: true, payment_reference: true, status: true,
         agents: { select: { name: true } }, created_at: true
       },
       orderBy: { created_at: 'desc' }

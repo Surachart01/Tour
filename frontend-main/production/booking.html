@@ -102,10 +102,8 @@
         background: #dbeafe !important;
         transform: translateY(-1px) !important;
       }
-      .table-action-btn.invoice-btn { background: #fef3c7 !important; color: #d97706 !important; }
-      .table-action-btn.invoice-btn:hover { background: #fde68a !important; transform: translateY(-1px) !important; }
-      .table-action-btn.summary-btn { background: #f0fdf4 !important; color: #16a34a !important; }
-      .table-action-btn.summary-btn:hover { background: #dcfce7 !important; transform: translateY(-1px) !important; }
+      .table-action-btn.proforma-btn { background: #fef3c7 !important; color: #d97706 !important; }
+      .table-action-btn.proforma-btn:hover { background: #fde68a !important; transform: translateY(-1px) !important; }
       .table-action-btn:disabled {
         opacity: 0.45 !important;
         cursor: not-allowed !important;
@@ -829,10 +827,10 @@
             return;
           }
 
-          const invoiceBtn = event.target.closest(".invoice-btn");
-          if (invoiceBtn) {
-            const tripId = invoiceBtn.getAttribute("data-id");
-            fetch(`${Endpoint}/api/v1/bookings/${tripId}/generate-pdf`, {
+          const proformaBtn = event.target.closest(".proforma-btn");
+          if (proformaBtn) {
+            const tripId = proformaBtn.getAttribute("data-id");
+            fetch(`${Endpoint}/api/v1/bookings/${tripId}/proforma-pdf`, {
               method: "GET", headers: { Authorization: `Bearer ${token}` }
             }).then(r => r.ok ? r.blob() : r.text().then(t => { throw new Error(t); }))
               .then(blob => window.open(window.URL.createObjectURL(blob), "_blank"))
@@ -1755,8 +1753,8 @@
                <button class="btn table-action-btn save-btn print-btn" data-id="${trip.id}" title="Save PDF"><i class="fa fa-save"></i></button>
                <button class="btn table-action-btn email-btn" data-id="${trip.id}" title="View Itinerary & Email"><i class="fa fa-envelope"></i></button>
                <button class="btn table-action-btn bulk-email-direct-btn" data-id="${trip.id}" title="Bulk Email All Suppliers" style="background-color: #1abc9c; color: #fff; border-color: #1abc9c;"><i class="fa fa-send"></i></button>
-               <button class="btn table-action-btn invoice-btn" data-id="${trip.id}" title="Invoice"><i class="fa fa-file-text-o"></i></button>
-               <button class="btn table-action-btn summary-btn notify-agent-btn" data-id="${trip.id}" title="${notifyAgentTitle}"${notifyAgentDisabled}><i class="fa fa-bell"></i></button>
+               ${isConfirmed ? `<button class="btn table-action-btn proforma-btn" data-id="${trip.id}" title="Open Proforma Invoice"><i class="fa fa-file-text-o"></i></button>` : ""}
+               <button class="btn table-action-btn notify-agent-btn" data-id="${trip.id}" title="${notifyAgentTitle}"${notifyAgentDisabled}><i class="fa fa-bell"></i></button>
              </td>
         `;
 

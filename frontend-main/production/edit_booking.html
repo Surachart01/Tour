@@ -8368,6 +8368,24 @@
           updateBookingConfirmedButtonState();
         }
 
+        function updateDeclinedServiceRow(row, itemType) {
+          row.dataset.approved = "false";
+          row.dataset.declined = "true";
+          row.classList.remove("service-confirmed-row");
+          row.classList.add("service-declined-row");
+
+          const approveButton = row.querySelector(`.approve-${itemType}`);
+          if (approveButton) {
+            approveButton.disabled = false;
+            approveButton.title = "Mark as Confirmed";
+            approveButton.style.opacity = "";
+            approveButton.style.cursor = "";
+          }
+
+          $(row).find(".booking-actions-dropdown").dropdown("hide");
+          updateBookingConfirmedButtonState();
+        }
+
         function approveItem(row, itemType) {
           const tripId = urlParams.get("id");
           let itemId;
@@ -8557,8 +8575,9 @@
             if (!response.ok) {
               throw new Error(result.message || "Failed to confirm booking.");
             }
+            quotationStatus = "Confirmed";
+            updateBookingConfirmedButtonState();
             alert(result.message || "Booking confirmed successfully.");
-            window.location.reload();
           } catch (error) {
             console.error(error);
             alert(error.message);
@@ -8600,8 +8619,9 @@
             return res.json();
           })
           .then((data) => {
+            quotationStatus = "InProgress";
+            updateDeclinedServiceRow(row, itemType);
             alert(`${itemType.toUpperCase()} declined successfully!`);
-            window.location.reload();
           })
           .catch((err) => {
             console.error(err);
@@ -11372,7 +11392,14 @@
             const role = localStorage.getItem("role") || "";
             console.log("User Role:", role); // Debugging output
 
-            const isAdmin = role.trim().toLowerCase() === "admin";
+            const normalizedRole = role.trim().toLowerCase();
+            const isAdmin = normalizedRole === "admin" || normalizedRole === "superadmin";
+
+            const bookingConfirmedBtn = document.getElementById("bookingConfirmedBtn");
+            if (bookingConfirmedBtn) {
+              // Supplier confirmation and final booking confirmation are admin actions.
+              bookingConfirmedBtn.classList.toggle("d-none", !isAdmin);
+            }
 
             // Initialize assistance fee fields based on user role
             const assistanceFeeAmount = document.getElementById(
