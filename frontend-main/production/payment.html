@@ -109,6 +109,21 @@
         font-size: 14px;
         font-weight: 700;
       }
+
+      .payment-summary { margin: 0 0 18px; }
+      .payment-summary-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+      .payment-summary-card { padding: 16px 18px; border: 1px solid #d9e2ec; border-radius: 10px; background: #fff; box-shadow: 0 3px 10px rgba(15, 30, 48, .06); }
+      .payment-summary-card .label { display: block; color: #718096; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+      .payment-summary-card .value { display: block; margin-top: 5px; color: #243b53; font-size: 20px; font-weight: 800; }
+      .payment-summary-card.outstanding .value { color: #c0392b; }
+      .payment-summary-card.received .value { color: #237443; }
+      .payment-summary-table { width: 100%; margin: 0; background: #fff; border: 1px solid #d9e2ec; }
+      .payment-summary-table th { background: #243b53; color: #fff; font-size: 12px; }
+      .payment-summary-table td, .payment-summary-table th { padding: 9px 10px; vertical-align: middle; }
+      .payment-summary-table .money { text-align: right; white-space: nowrap; }
+      .payment-summary-table .deadline { color: #a13b2d; font-weight: 700; white-space: nowrap; }
+      @media (max-width: 900px) { .payment-summary-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+      @media (max-width: 520px) { .payment-summary-cards { grid-template-columns: 1fr; } }
       /* Removed constraining CSS for sidebar-menu to allow proper submenu expansion */
 
       /* Sidebar scrolling - allow scroll when expanded, but not when collapsed */
@@ -385,6 +400,8 @@
             </div>
           </div>
 
+          <div id="paymentSummary" class="payment-summary" hidden></div>
+
           <div class="row">
             <div class="col-md-12 col-sm-12">
               <div class="x_panel">
@@ -418,6 +435,7 @@
                               <!-- <th>Total Cost</th>
                               <th>Discount</th> -->
                               <th>Start Date</th>
+                              <th>Payment Deadline</th>
                               <th>Final Cost</th>
                               <th>Amt Paid</th>
                               <th>Balance</th>
@@ -872,6 +890,7 @@
             filteredPayments = [...allPayments];
 
             updateFilterStatus(allPayments.length);
+            renderPaymentSummary(filteredPayments);
             totalPages = Math.ceil(filteredPayments.length / rowsPerPage);
             currentPage = 1;
             renderPayments();
@@ -883,6 +902,7 @@
             // Reset data on error
             allPayments = [];
             filteredPayments = [];
+            renderPaymentSummary([]);
             totalPages = 1;
             currentPage = 1;
             renderPayments();
@@ -904,6 +924,56 @@
             return `${day}-${month}-${year}`;
           }
           return null;
+        }
+
+        function formatMoney(value) {
+          return Number(value || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function escapeHtml(value) {
+          return String(value ?? "").replace(/[&<>\"']/g, (character) => ({
+            "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
+          }[character]));
+        }
+
+        function renderPaymentSummary(payments) {
+          const summary = document.getElementById("paymentSummary");
+          if (!summary) return;
+          if (!payments.length) {
+            summary.hidden = true;
+            summary.innerHTML = "";
+            return;
+          }
+          const totals = payments.reduce((result, payment) => {
+            result.total += Number(payment.final_cost || 0) + Number(payment.penalty_cost || 0);
+            result.received += Number(payment.received_amount || 0);
+            result.balance += Number(payment.balance || 0);
+            return result;
+          }, { total: 0, received: 0, balance: 0 });
+          const agents = new Map();
+          payments.forEach((payment) => {
+            const name = payment.agent_name || "Unknown Agent";
+            const row = agents.get(name) || { name, bookings: 0, total: 0, received: 0, balance: 0, deadlines: [] };
+            row.bookings += 1;
+            row.total += Number(payment.final_cost || 0) + Number(payment.penalty_cost || 0);
+            row.received += Number(payment.received_amount || 0);
+            row.balance += Number(payment.balance || 0);
+            if (payment.payment_deadline) row.deadlines.push(String(payment.payment_deadline).split("T")[0]);
+            agents.set(name, row);
+          });
+          const agentRows = [...agents.values()].sort((a, b) => b.balance - a.balance).map((agent) => {
+            const deadline = agent.deadlines.sort()[0];
+            return `<tr><td><strong>${escapeHtml(agent.name)}</strong></td><td>${agent.bookings}</td><td class="deadline">${deadline ? formatToDDMMYYYY(deadline) : "-"}</td><td class="money">THB ${formatMoney(agent.total)}</td><td class="money">THB ${formatMoney(agent.received)}</td><td class="money">THB ${formatMoney(agent.balance)}</td></tr>`;
+          }).join("");
+          summary.innerHTML = `
+            <div class="payment-summary-cards">
+              <div class="payment-summary-card"><span class="label">Confirmed Bookings</span><span class="value">${payments.length}</span></div>
+              <div class="payment-summary-card"><span class="label">Total Amount Due</span><span class="value">THB ${formatMoney(totals.total)}</span></div>
+              <div class="payment-summary-card received"><span class="label">Received Amount</span><span class="value">THB ${formatMoney(totals.received)}</span></div>
+              <div class="payment-summary-card outstanding"><span class="label">Outstanding Amount</span><span class="value">THB ${formatMoney(totals.balance)}</span></div>
+            </div>
+            <div class="x_panel" style="padding:0"><div class="x_title" style="padding:10px 14px;margin:0"><h2>Outstanding by Agent</h2><div class="clearfix"></div></div><div class="x_content" style="padding:0;overflow-x:auto"><table class="payment-summary-table"><thead><tr><th>Agent</th><th>Bookings</th><th>Payment Deadline</th><th class="money">Total Amount</th><th class="money">Received</th><th class="money">Outstanding</th></tr></thead><tbody>${agentRows}</tbody></table></div></div>`;
+          summary.hidden = false;
         }
 
         function formatToYYYYMMDD(dateString) {
@@ -978,9 +1048,10 @@
                 <td>${payment.booking_reference}</td>
                 <td><span class="payment-status ${statusClass}" title="Tax invoices require Confirmed status">${statusLabel}</span></td>
                 <td>${payment.start_date ? formatToDDMMYYYY(String(payment.start_date).split("T")[0]) : "-"}</td>
-                <td>${payment.final_cost.toFixed(2)}</td>
-                <td>${payment.received_amount.toFixed(2)}</td>
-                <td>${payment.balance.toFixed(2)}</td>
+                <td class="${payment.payment_deadline ? "" : "text-muted"}">${payment.payment_deadline ? formatToDDMMYYYY(String(payment.payment_deadline).split("T")[0]) : "-"}</td>
+                <td>${formatMoney(payment.final_cost)}</td>
+                <td>${formatMoney(payment.received_amount)}</td>
+                <td>${formatMoney(payment.balance)}</td>
                 <td>${formattedDate}</td>
                 <td>${payment.payment_reference}</td>
                 <td>${payment.penalty_cost.toFixed(2)}</td>
@@ -1030,6 +1101,7 @@
 
           currentPage = 1;
           totalPages = Math.ceil(filteredPayments.length / rowsPerPage);
+          renderPaymentSummary(filteredPayments);
           renderPayments();
           updatePaginationButtons();
         }

@@ -1806,7 +1806,7 @@ export async function getPaymentInfo(req, res, next) {
       select: {
         id: true, client_name: true, total_amount: true, discount_amount: true,
         final_amount: true, penalty_cost: true, received_amount: true, balance: true,
-        payment_date: true, payment_reference: true, trip_start_date: true,
+        payment_date: true, payment_reference: true, trip_start_date: true, payment_deadline: true, booking_date: true,
         booking_reference: true, file_reference: true, status: true,
         agents: { select: { name: true } }
       }
@@ -1887,7 +1887,7 @@ export async function listPaymentInfoFromBookings(req, res, next) {
         id: true, client_name: true, booking_reference: true,
         file_reference: true, trip_start_date: true, total_amount: true, discount_amount: true,
         final_amount: true, penalty_cost: true, received_amount: true, balance: true,
-        payment_date: true, payment_reference: true, status: true,
+        payment_date: true, payment_reference: true, payment_deadline: true, booking_date: true, status: true,
         agents: { select: { name: true } }, created_at: true
       },
       orderBy: { created_at: 'desc' }
@@ -1914,7 +1914,7 @@ export async function listPaymentInfoByDateRange(req, res, next) {
         id: true, client_name: true, booking_reference: true,
         file_reference: true, trip_start_date: true, total_amount: true, discount_amount: true,
         final_amount: true, penalty_cost: true, received_amount: true, balance: true,
-        payment_date: true, payment_reference: true, status: true,
+        payment_date: true, payment_reference: true, payment_deadline: true, booking_date: true, status: true,
         agents: { select: { name: true } }, created_at: true
       },
       orderBy: { created_at: 'desc' }

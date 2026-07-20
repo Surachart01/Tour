@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildServices, calculateRows, sanitizeServices, servicesForDocument, isPaymentReceived, validateTaxTreatments } from '../src/controllers/taxInvoiceController.js';
+import { buildServices, calculateRows, sanitizeServices, servicesForDocument, isPaymentReceived, validateTaxTreatments, validateAllocations } from '../src/controllers/taxInvoiceController.js';
 
 test('calculates VAT only from the selling price remaining after ADV', () => {
   const result = calculateRows([{
@@ -114,6 +114,35 @@ test('includes special-package, other-service and assistance-fee totals from the
     include_assistance_fee: true,
     assistance_fee_amount: 1000
   }, 'original_tax_invoice').map((service) => service.type), ['assistance_fee']);
+});
+
+test('allows Special Package detail allocations without double counting the package price', () => {
+  const services = buildServices({
+    id: 22,
+    special_package_id: 9,
+    special_packages: { name: 'Bangkok Package', city: 'Bangkok', description: 'Package services' },
+    final_amount: 14000,
+    transfer_trip_items: [{ id: 1, from_date: '2026-11-01', to_date: '2026-11-01', from_location: 'Airport', to_location: 'Hotel', price: 0 }],
+    excursion_trip_items: [{ id: 2, from_date: '2026-11-02', to_date: '2026-11-02', name: 'Market Tour', price: 0 }]
+  });
+  const packageRow = services.find((row) => row.type === 'special_package');
+  const details = services.filter((row) => row.parent_id === packageRow.id);
+
+  assert.equal(details.length, 2);
+  assert.ok(details.every((row) => row.editable_total));
+  const allocated = details.map((row) => ({ id: row.id, selected: true, total: row.type === 'transfer' ? 6000 : 8000, tax_treatment: 'vat' }));
+  const savedRows = sanitizeServices(services, [
+    { id: packageRow.id, selected: true, total: 14000, tax_treatment: 'vat' },
+    ...allocated
+  ]);
+  assert.equal(validateAllocations(savedRows), null);
+  assert.equal(calculateRows(savedRows, 'original_tax_invoice').totals.total, 14000);
+
+  const exceededRows = sanitizeServices(services, [
+    { id: packageRow.id, selected: true, total: 14000, tax_treatment: 'vat' },
+    ...allocated.map((row) => ({ ...row, total: 9000 }))
+  ]);
+  assert.match(validateAllocations(exceededRows), /cannot exceed 14000\.00/);
 });
 
 test('limits a transportation receipt to transfers only', () => {

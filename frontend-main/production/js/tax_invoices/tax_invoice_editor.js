@@ -65,6 +65,10 @@ async function loadDocument() {
       return {
         ...row,
         ...(storedRow || {}),
+        // Keep allocation rules from the booking payload; saved JSON may come
+        // from an older version that did not expose package detail pricing.
+        parent_id: row.parent_id || null,
+        editable_total: Boolean(row.editable_total),
         selected: hasStoredRow ? storedRow.selected !== false : true,
         tax_treatment: inferredTreatment,
         adv: inferredTreatment === 'adv' ? number(storedRow?.total ?? row.total) : number(storedRow?.adv),
@@ -139,7 +143,14 @@ function renderRow(row) {
   const dataLocked = documentType !== ORIGINAL_DOCUMENT_TYPE || !canManageInvoices;
   const readOnlyTotal = dataLocked || !row.editable_total;
   const documentAmount = documentType === ORIGINAL_DOCUMENT_TYPE ? row.total : row.document_total;
-  const inputTotal = readOnlyTotal ? formatAmount(documentAmount) : `<input class="total-input" data-id="${row.id}" value="${number(row.raw_total)}" aria-label="Total price" />`;
+  const allocationLimit = allocationLimitFor(row);
+  const inputTotal = readOnlyTotal
+    ? formatAmount(documentAmount)
+    : `<input class="total-input" data-id="${row.id}" value="${number(row.total)}" ${allocationLimit !== null ? `max="${allocationLimit}"` : ''} min="0" step="0.01" inputmode="decimal" aria-label="Amount for This Document" />`;
+  const includedInPackage = isIncludedPackageComponent(row);
+  const amountDisplay = includedInPackage
+    ? '<span class="included-package-note">Included in Special Package</span>'
+    : inputTotal;
   const treatment = normalizeTreatment(row.tax_treatment);
   const treatmentLabel = treatmentLabelFor(treatment);
   const treatmentControl = dataLocked
@@ -155,7 +166,7 @@ function renderRow(row) {
     <td>${formatDate(row.from_date || row.date)}</td>
     <td>${row.type === 'transfer' ? escapeHtml(row.from || '-') : formatDate(row.to_date)}</td>
     <td class="description">${escapeHtml(row.type === 'transfer' ? row.to || row.description : row.name)}${row.room_type ? `<br><small>[${escapeHtml(row.room_type)}]</small>` : ''}</td>
-    <td class="money">${inputTotal}</td>
+    <td class="money" title="${includedInPackage ? 'This service is included in the Special Package selling price.' : ''}">${amountDisplay}</td>
     <td>${treatmentControl}</td>
     <td class="money"><input class="adv-input" data-adv="${row.id}" value="${number(documentType === ORIGINAL_DOCUMENT_TYPE ? row.adv : row.document_adv)}" aria-label="ADV amount" ${advDisabled ? 'disabled' : ''} /></td>
     <td class="money">${formatAmount(row.vat_taxable_amount)}</td>
@@ -198,7 +209,18 @@ function bindInputs() {
     render();
   }));
   document.querySelectorAll('[data-id]').forEach((input) => input.addEventListener('change', () => {
-    const row = findRow(input.dataset.id); if (row) row.total = number(input.value); render();
+    const row = findRow(input.dataset.id);
+    if (row) {
+      const requested = Math.max(0, round(number(input.value)));
+      const limit = allocationLimitFor(row);
+      if (limit !== null && requested > limit) {
+        row.total = limit;
+        window.alert(`The allocated detail price cannot exceed ${formatAmount(limit)}. The value was adjusted to the remaining amount.`);
+      } else {
+        row.total = requested;
+      }
+    }
+    render();
   }));
 }
 
@@ -226,10 +248,15 @@ function calculate() {
 async function saveDocument() {
   const invoiceDate = document.getElementById('invoiceDate')?.value;
   if (documentType === ORIGINAL_DOCUMENT_TYPE && !invoiceDate) {
-    window.alert('Invoice Date is required and must match the payment received date.');
+    window.alert('Invoice Date is required.');
     return;
   }
   if (documentType === ORIGINAL_DOCUMENT_TYPE) {
+    const allocationError = validateAllocationInputs();
+    if (allocationError) {
+      window.alert(allocationError);
+      return;
+    }
     const validationError = validateTreatmentSelection();
     if (validationError) {
       window.alert(validationError);
@@ -284,11 +311,40 @@ function findRow(id) { return services.find((row) => row.id === id); }
 function updateNotice() {
   const notice = document.getElementById('invoiceNotice');
   if (!notice) return;
+  const packageNotice = services.some((row) => row.type === 'special_package')
+    ? '<br><i class="fa fa-gift"></i> For Tour or Special Package details, enter the allocation in <strong>Amount for This Document</strong>. The detail allocations cannot exceed the main Tour or Special Package price.'
+    : '';
   notice.innerHTML = !canManageInvoices
     ? '<i class="fa fa-file-pdf-o"></i> This is the saved Original Tax Invoice. You can open or print it for your records.'
     : documentType === ORIGINAL_DOCUMENT_TYPE
-    ? '<i class="fa fa-info-circle"></i> Set each selected service with the checkboxes. Transfers default to ADV (Non-VAT); all other services default to VAT 7%. You may edit the ADV amount when needed. Save Tax Settings to unlock the three document previews.'
+    ? `<i class="fa fa-info-circle"></i> Set each selected service with the checkboxes. Transfers default to ADV (Non-VAT); all other services default to VAT 7%. You may edit the ADV amount when needed. Save Tax Settings to unlock the three document previews.${packageNotice}`
     : '<i class="fa fa-lock"></i> This document is copied from the Original Tax Invoice. Service details, selections, ADV and Invoice Date are locked to keep all tax documents consistent.';
+}
+function isIncludedPackageComponent(row) {
+  return services.some((item) => item.type === 'special_package')
+    && row.type !== 'special_package'
+    && row.type !== 'assistance_fee'
+    && !row.editable_total
+    && number(row.total) === 0;
+}
+function allocationLimitFor(row) {
+  if (!row?.parent_id || !row.editable_total) return null;
+  const parent = findRow(row.parent_id);
+  if (!parent) return null;
+  const allocatedByOthers = services
+    .filter((candidate) => candidate.parent_id === row.parent_id && candidate.id !== row.id && candidate.selected)
+    .reduce((sum, candidate) => sum + Math.max(0, round(candidate.total)), 0);
+  return Math.max(0, round(number(parent.total) - allocatedByOthers));
+}
+function validateAllocationInputs() {
+  const parentRows = services.filter((row) => row.id && services.some((child) => child.parent_id === row.id && child.selected));
+  const exceeded = parentRows.find((parent) => {
+    const allocated = services
+      .filter((child) => child.parent_id === parent.id && child.selected)
+      .reduce((sum, child) => sum + Math.max(0, round(child.total)), 0);
+    return allocated > Math.max(0, round(parent.total)) + 0.01;
+  });
+  return exceeded ? `The allocated detail prices for ${exceeded.name || exceeded.id} cannot exceed ${formatAmount(exceeded.total)}.` : '';
 }
 function authHeaders() { return { Authorization: `Bearer ${localStorage.getItem('token')}` }; }
 function normalizeTreatment(value) {

@@ -20,12 +20,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadBookings() {
   const body = document.getElementById('taxInvoiceTableBody');
-  body.innerHTML = '<tr><td colspan="10" class="text-center" style="padding:40px"><i class="fa fa-spinner fa-spin"></i> Loading paid bookings...</td></tr>';
+  body.innerHTML = '<tr><td colspan="10" class="text-center" style="padding:40px"><i class="fa fa-spinner fa-spin"></i> Loading confirmed bookings...</td></tr>';
   try {
     const response = await fetch(`${Endpoint}/api/v1/tax-invoice/eligible-bookings`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     });
-    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Failed to load paid bookings.');
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Failed to load confirmed bookings.');
     const data = await response.json();
     paidBookings = data.bookings || [];
     renderBookings();
@@ -41,14 +41,15 @@ function renderBookings() {
     booking.file_reference, booking.booking_reference, booking.client_name,
     booking.agents?.name, booking.invoice_number
   ].some((value) => String(value || '').toLowerCase().includes(term)));
-  document.getElementById('bookingCount').textContent = `${rows.length} paid booking${rows.length === 1 ? '' : 's'}`;
+  document.getElementById('bookingCount').textContent = `${rows.length} confirmed booking${rows.length === 1 ? '' : 's'}`;
   if (!rows.length) {
-    body.innerHTML = '<tr><td colspan="10"><div class="empty-state"><i class="fa fa-file-text-o"></i><strong>No eligible bookings found</strong><div>A booking appears here only when its status is Confirmed, the received amount covers the final cost plus any penalty, and the Payment Received Date is recorded.</div><div style="margin-top:10px"><i class="fa fa-refresh"></i> Click Refresh after saving a payment.</div></div></td></tr>';
+    body.innerHTML = '<tr><td colspan="10"><div class="empty-state"><i class="fa fa-file-text-o"></i><strong>No confirmed bookings found</strong><div>Bookings appear here as soon as their status is Confirmed. Tax Settings and document previews are available immediately.</div><div style="margin-top:10px"><i class="fa fa-refresh"></i> Click Refresh after confirming a booking.</div></div></td></tr>';
     return;
   }
   body.innerHTML = rows.map((booking) => {
     const documents = booking.tax_documents || [];
     const originalSaved = documents.some((document) => document.document_type === ORIGINAL_DOCUMENT_TYPE);
+    const paymentReceived = booking.payment_received === true;
     const settingsAction = canManageInvoices
       ? `<button class="btn btn-xs ${originalSaved ? 'btn-success' : 'btn-warning'}" data-settings-trip-id="${booking.id}">
           <i class="fa ${originalSaved ? 'fa-pencil' : 'fa-sliders'}"></i> ${originalSaved ? 'Edit Tax Settings' : 'Tax Settings'}
@@ -72,7 +73,7 @@ function renderBookings() {
       <td>${escapeHtml(booking.client_phone || '-')}</td>
       <td>${Number(booking.number_of_adults || 0) + Number(booking.number_of_kids || 0)}</td>
       <td>THB ${formatAmount(booking.final_amount || booking.total_amount)}</td>
-      <td><span class="badge-confirmed">Payment Received</span></td>
+      <td><span class="${paymentReceived ? 'badge-confirmed' : 'badge-pending'}">${paymentReceived ? 'Payment Received' : 'Confirmed - Awaiting Payment'}</span></td>
       <td><div class="settings-actions">${settingsAction}</div></td>
       <td><div class="document-actions">${actions}</div>${generated}</td>
     </tr>`;

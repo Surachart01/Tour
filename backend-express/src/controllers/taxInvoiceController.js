@@ -185,6 +185,13 @@ function buildServices(booking) {
       description: booking.special_packages.description || booking.special_packages.name || 'Special package',
       room_type: '', total, selected: true, adv: 0, parent_id: null, editable_total: false
     });
+    const packageRow = rows[rows.length - 1];
+    rows.forEach((row) => {
+      if (row.id !== packageRow.id && row.type !== 'assistance_fee') {
+        row.parent_id = packageRow.id;
+        row.editable_total = true;
+      }
+    });
   }
   return rows;
 }
@@ -222,7 +229,7 @@ function sanitizeServices(baseRows, submittedServices) {
       ...base,
       // A missing row is treated as unselected, so partial payloads cannot add services by accident.
       selected: Boolean(input && input.selected !== false),
-      // Booking prices are authoritative. Only tour accommodation allocations are manually editable.
+      // Booking prices are authoritative. Tour and Special Package detail allocations are editable.
       total: base.editable_total && input ? Math.max(0, number(input.total ?? base.total)) : base.total,
       adv,
       ...(hasExplicitTreatment ? { tax_treatment: taxTreatment } : {})
@@ -283,6 +290,16 @@ function validateTaxTreatments(rows) {
     return `Enter an ADV amount between 0.01 and the service total for: ${invalidSplit.slice(0, 3).map((row) => row.name || row.id).join(', ')}.`;
   }
   return null;
+}
+
+function validateAllocations(rows) {
+  const allocated = rows.reduce((result, row) => {
+    if (row.parent_id && row.selected) result[row.parent_id] = (result[row.parent_id] || 0) + Math.max(0, round(row.total));
+    return result;
+  }, {});
+  const exceeded = rows.find((row) => allocated[row.id] > Math.max(0, round(row.total)) + 0.01);
+  if (!exceeded) return null;
+  return `The allocated detail prices for ${exceeded.name || exceeded.id} cannot exceed ${round(exceeded.total).toFixed(2)}.`;
 }
 
 async function getDocumentRows(tripId) {
@@ -364,7 +381,13 @@ function assertType(documentType, res) {
 }
 
 function bookingAllowed(booking) {
-  return String(booking?.status || '').toLowerCase() === 'confirmed' && isPaymentReceived(booking);
+  // Confirmed bookings can be configured and previewed before payment.
+  // The payment state remains available to the UI for operational tracking.
+  return bookingConfirmed(booking);
+}
+
+function bookingConfirmed(booking) {
+  return String(booking?.status || '').toLowerCase() === 'confirmed';
 }
 
 export async function listEligibleBookings(req, res, next) {
@@ -379,10 +402,11 @@ export async function listEligibleBookings(req, res, next) {
       include: { agents: { include: agentWithBillingProfile } },
       orderBy: [{ booking_date: 'desc' }, { created_at: 'desc' }]
     });
-    const result = (await Promise.all(bookings.map(async (booking) => ({
+    const result = await Promise.all(bookings.map(async (booking) => ({
       ...attachProformaBilling(booking),
-      tax_documents: await getDocumentRows(booking.id)
-    })))).filter(bookingAllowed);
+      tax_documents: await getDocumentRows(booking.id),
+      payment_received: isPaymentReceived(booking)
+    })));
     return res.json({ bookings: result });
   } catch (error) { next(error); }
 }
@@ -397,7 +421,7 @@ export async function getTaxInvoiceBooking(req, res, next) {
     if (claims && claims.role !== 'admin' && claims.role !== 'superadmin' && Number(booking.agent_id) !== Number(claims.agent_id)) {
       return res.status(403).json({ message: 'You do not have access to this booking.' });
     }
-    if (!bookingAllowed(booking)) return res.status(400).json({ message: 'A tax invoice can be issued only after the confirmed booking has a recorded full payment date and amount.' });
+    if (!bookingAllowed(booking)) return res.status(400).json({ message: 'A tax invoice can be configured only after the booking is Confirmed.' });
     return res.json({ booking, services: buildServices(booking), documents: await getDocumentRows(tripId) });
   } catch (error) { next(error); }
 }
@@ -410,7 +434,7 @@ export async function saveTaxInvoiceDocument(req, res, next) {
     if (!assertType(documentType, res)) return;
     const booking = await loadBooking(tripId);
     if (!booking) return res.status(404).json({ message: 'Booking not found.' });
-    if (!bookingAllowed(booking)) return res.status(400).json({ message: 'A tax invoice can be issued only after the confirmed booking has a recorded full payment date and amount.' });
+    if (!bookingAllowed(booking)) return res.status(400).json({ message: 'A tax invoice can be configured only after the booking is Confirmed.' });
 
     const existingDocuments = await getDocumentRows(tripId);
     const byType = new Map(existingDocuments.map((document) => [document.document_type, document]));
@@ -422,7 +446,7 @@ export async function saveTaxInvoiceDocument(req, res, next) {
 
     if (documentType === ORIGINAL_DOCUMENT_TYPE) {
       resolvedInvoiceDate = normalizeInvoiceDate(invoiceDateInput);
-      if (!resolvedInvoiceDate) return res.status(400).json({ message: 'Invoice Date is required and must match the payment received date.' });
+      if (!resolvedInvoiceDate) return res.status(400).json({ message: 'Invoice Date is required.' });
       const paymentReceivedDate = normalizeInvoiceDate(booking.payment_date);
       if (paymentReceivedDate && resolvedInvoiceDate !== paymentReceivedDate) {
         return res.status(400).json({ message: 'Invoice Date must match the Payment Received Date recorded for this booking.' });
@@ -433,6 +457,8 @@ export async function saveTaxInvoiceDocument(req, res, next) {
         return res.status(400).json({ message: 'The request contains a service that is not available for this document.' });
       }
       visibleRows = sanitizeServices(allowedRows, submittedRows);
+      const allocationError = validateAllocations(visibleRows);
+      if (allocationError) return res.status(400).json({ message: allocationError });
       const treatmentError = validateTaxTreatments(visibleRows);
       if (treatmentError) return res.status(400).json({ message: treatmentError });
     } else {
@@ -570,4 +596,4 @@ export async function listTaxInvoicesByDateRange(req, res, next) { return listTa
 export async function generateTaxInvoicePDF(req, res, next) { return res.status(501).json({ message: 'Open the saved tax invoice and use Open PDF / Print.' }); }
 export async function generateTaxInvoicePDFWithProfile(req, res, next) { return generateTaxInvoicePDF(req, res, next); }
 
-export { buildServices, calculateRows, sanitizeServices, servicesForDocument, isPaymentReceived, validateTaxTreatments, VAT_RATE, PUBLIC_DOCUMENT_TYPES };
+export { buildServices, calculateRows, sanitizeServices, servicesForDocument, isPaymentReceived, validateTaxTreatments, validateAllocations, VAT_RATE, PUBLIC_DOCUMENT_TYPES, bookingConfirmed };
