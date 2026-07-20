@@ -104,6 +104,8 @@ test('tax invoice list exposes the three required downloadable documents', () =>
   assert.match(taxInvoiceEditorSource, /defaultTreatmentFor/);
   assert.match(taxInvoiceEditorSource, /data-treatment-option="vat"/);
   assert.match(taxInvoiceEditorSource, /data-treatment-option="adv"/);
+  assert.match(taxInvoiceEditorSource, /data-vat-base/);
+  assert.match(taxInvoiceEditorSource, /VAT Taxable Amount/);
   assert.match(taxInvoiceEditorSource, /treatmentFromFlags/);
   assert.match(taxInvoiceEditorSource, /vatSelected = treatment === 'vat' \|\| treatment === 'split'/);
   assert.match(taxInvoiceEditorSource, /advSelected = treatment === 'adv' \|\| treatment === 'split'/);

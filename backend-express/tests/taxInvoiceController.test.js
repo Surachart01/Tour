@@ -61,13 +61,15 @@ test('applies explicit VAT, ADV and split treatments to document totals', () => 
   const result = calculateRows([
     { id: 'vat', type: 'hotel', total: 1070, adv: 0, tax_treatment: 'vat', selected: true },
     { id: 'adv', type: 'transfer', total: 1000, adv: 0, tax_treatment: 'adv', selected: true },
-    { id: 'split', type: 'transfer', total: 2000, adv: 500, tax_treatment: 'split', selected: true }
+    { id: 'split', type: 'transfer', total: 2000, adv: 500, vat_base: 1401.87, tax_treatment: 'split', selected: true }
   ], 'original_tax_invoice');
 
   assert.equal(result.totals.document_total, 4070);
   assert.equal(result.totals.adv, 1500);
   assert.equal(result.totals.vat_taxable_amount, 2401.87);
   assert.equal(result.totals.vat, 168.13);
+  assert.equal(result.rows.find((row) => row.id === 'split').adv, 500);
+  assert.equal(result.rows.find((row) => row.id === 'split').vat_taxable_amount, 1401.87);
 
   const vatDocument = calculateRows([
     { id: 'vat', type: 'hotel', total: 1070, adv: 0, tax_treatment: 'vat', selected: true },
@@ -83,6 +85,12 @@ test('requires every selected original-invoice service to have a tax treatment',
   assert.equal(validateTaxTreatments([
     { id: 'hotel-1', name: 'Hotel', total: 1000, adv: 0, selected: true, tax_treatment: 'vat' }
   ]), null);
+  assert.equal(validateTaxTreatments([
+    { id: 'service-1', name: 'Service', total: 1070, adv: 500, vat_base: 532.71, selected: true, tax_treatment: 'split' }
+  ]), null);
+  assert.match(validateTaxTreatments([
+    { id: 'service-1', name: 'Service', total: 1070, adv: 500, vat_base: 600, selected: true, tax_treatment: 'split' }
+  ]), /gross total must not exceed/);
 });
 
 test('treats omitted submitted services as unselected', () => {

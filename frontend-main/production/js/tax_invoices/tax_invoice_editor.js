@@ -72,6 +72,11 @@ async function loadDocument() {
         selected: hasStoredRow ? storedRow.selected !== false : true,
         tax_treatment: inferredTreatment,
         adv: inferredTreatment === 'adv' ? number(storedRow?.total ?? row.total) : number(storedRow?.adv),
+        vat_base: inferredTreatment === 'vat'
+          ? round(Math.max(0, number(storedRow?.total ?? row.total) - number(storedRow?.adv)) / (1 + VAT_RATE))
+          : inferredTreatment === 'split'
+            ? number(storedRow?.vat_base ?? storedRow?.vat_taxable_amount) || round(Math.max(0, number(storedRow?.total ?? row.total) - number(storedRow?.adv)) / (1 + VAT_RATE))
+            : 0,
         total: number(storedRow?.total ?? row.total)
       };
     });
@@ -160,9 +165,10 @@ function renderRow(row) {
     : `<div class="treatment-checks" aria-label="Tax treatment">
         <label><input type="checkbox" data-treatment-option="vat" data-treatment-id="${row.id}" ${vatSelected ? 'checked' : ''} /> VAT 7%</label>
         <label><input type="checkbox" data-treatment-option="adv" data-treatment-id="${row.id}" ${advSelected ? 'checked' : ''} /> ADV (Non-VAT)</label>
-        ${treatment === 'split' ? '<small>Enter ADV amount; the remaining amount is VAT.</small>' : ''}
+        ${treatment === 'split' ? '<small>Enter ADV and VAT taxable amounts.</small>' : ''}
       </div>`;
   const advDisabled = dataLocked || !advSelected;
+  const vatBaseDisabled = dataLocked || treatment !== 'split';
   return `<tr class="${row.type === 'tour_hotel' ? 'tour-hotel' : ''}">
     <td class="select-cell"><input type="checkbox" data-select="${row.id}" ${row.selected ? 'checked' : ''} ${dataLocked ? 'disabled' : ''} /></td>
     <td>${formatDate(row.from_date || row.date)}</td>
@@ -170,9 +176,9 @@ function renderRow(row) {
     <td class="description">${escapeHtml(row.type === 'transfer' ? row.to || row.description : row.name)}${row.room_type ? `<br><small>[${escapeHtml(row.room_type)}]</small>` : ''}</td>
     <td class="money" title="${includedInPackage ? 'This service is included in the Special Package selling price.' : ''}">${amountDisplay}</td>
     <td>${treatmentControl}</td>
-    <td class="money"><input class="adv-input" data-adv="${row.id}" value="${number(documentType === ORIGINAL_DOCUMENT_TYPE ? row.adv : row.document_adv)}" aria-label="ADV amount" ${advDisabled ? 'disabled' : ''} /></td>
-    <td class="money">${formatAmount(row.vat_taxable_amount)}</td>
-    <td class="money">${formatAmount(row.vat)}</td>
+    <td class="money"><input class="adv-input" data-adv="${row.id}" value="${number(documentType === ORIGINAL_DOCUMENT_TYPE ? row.adv : row.document_adv)}" aria-label="ADV amount" title="Manual ADV amount" ${advDisabled ? 'disabled' : ''} /></td>
+    <td class="money">${vatBaseDisabled ? formatAmount(row.vat_taxable_amount) : `<input class="vat-base-input" data-vat-base="${row.id}" value="${number(row.vat_base)}" aria-label="VAT Taxable Amount" title="Manual VAT taxable amount; VAT 7% is calculated automatically" />`}</td>
+    <td class="money" title="VAT 7% is calculated automatically from the VAT Taxable Amount">${formatAmount(row.vat)}</td>
   </tr>`;
 }
 
@@ -199,6 +205,11 @@ function bindInputs() {
     }
     render();
   }));
+  document.querySelectorAll('[data-vat-base]').forEach((input) => input.addEventListener('change', () => {
+    const row = findRow(input.dataset.vatBase);
+    if (row) row.vat_base = Math.max(0, number(input.value));
+    render();
+  }));
   document.querySelectorAll('[data-treatment-option]').forEach((input) => input.addEventListener('change', () => {
     const row = findRow(input.dataset.treatmentId); if (!row) return;
     const option = normalizeTreatment(input.dataset.treatmentOption);
@@ -210,7 +221,12 @@ function bindInputs() {
     row.tax_treatment = treatmentFromFlags(vatIsSelected, advIsSelected);
     if (row.tax_treatment === 'vat') row.adv = 0;
     if (row.tax_treatment === 'adv') row.adv = Math.max(0, number(row.total));
-    if (row.tax_treatment === 'split' && row.adv >= number(row.total)) row.adv = 0;
+    if (row.tax_treatment === 'vat') row.vat_base = round(Math.max(0, number(row.total)) / (1 + VAT_RATE));
+    if (row.tax_treatment === 'adv') row.vat_base = 0;
+    if (row.tax_treatment === 'split') {
+      if (row.adv >= number(row.total)) row.adv = 0;
+      if (!number(row.vat_base) && number(row.total) > number(row.adv)) row.vat_base = round((number(row.total) - number(row.adv)) / (1 + VAT_RATE));
+    }
     render();
   }));
   document.querySelectorAll('[data-id]').forEach((input) => input.addEventListener('change', () => {
@@ -239,12 +255,17 @@ function calculate() {
     const total = Math.max(0, rawTotal - number(childTotals[row.id]));
     const treatment = normalizeTreatment(row.tax_treatment);
     const adv = treatment === 'adv' ? total : treatment === 'vat' ? 0 : Math.min(total, Math.max(0, number(row.adv)));
-    const taxableGross = round(total - adv);
-    const taxableNet = DOCUMENT_CONFIG[documentType].noVat ? 0 : round(taxableGross / (1 + VAT_RATE));
+    const taxableNet = DOCUMENT_CONFIG[documentType].noVat
+      ? round(total - adv)
+      : treatment === 'split'
+        ? Math.max(0, round(number(row.vat_base)))
+        : round(Math.max(0, total - adv) / (1 + VAT_RATE));
+    const taxableGross = treatment === 'split' ? round(taxableNet * (1 + VAT_RATE)) : round(total - adv);
     const vat = DOCUMENT_CONFIG[documentType].noVat ? 0 : round(taxableGross - taxableNet);
-    const documentTotal = DOCUMENT_CONFIG[documentType].noVat ? adv : documentType === ORIGINAL_DOCUMENT_TYPE ? total : taxableGross;
+    const allocatedGross = round(adv + taxableGross);
+    const documentTotal = DOCUMENT_CONFIG[documentType].noVat ? adv : documentType === ORIGINAL_DOCUMENT_TYPE ? (treatment === 'split' ? allocatedGross : total) : taxableGross;
     const documentAdv = documentType === 'tax_invoice' || documentType === 'tax_invoice_hotel' ? 0 : adv;
-    return { ...row, tax_treatment: treatment, raw_total: rawTotal, total, adv, document_adv: documentAdv, taxable_gross: taxableGross, taxable_net: taxableNet, vat_taxable_amount: DOCUMENT_CONFIG[documentType].noVat ? 0 : taxableNet, vat, document_total: documentTotal };
+    return { ...row, tax_treatment: treatment, raw_total: rawTotal, total, adv, vat_base: taxableNet, document_adv: documentAdv, taxable_gross: taxableGross, taxable_net: taxableNet, vat_taxable_amount: DOCUMENT_CONFIG[documentType].noVat ? 0 : taxableNet, vat, allocated_gross: allocatedGross, document_total: documentTotal };
   });
   const totals = rows.filter((row) => row.selected).reduce((sum, row) => ({ total: sum.total + row.total, document_total: sum.document_total + row.document_total, adv: sum.adv + row.adv, document_adv: sum.document_adv + row.document_adv, taxable_gross: sum.taxable_gross + row.taxable_gross, taxable_net: sum.taxable_net + row.taxable_net, vat_taxable_amount: sum.vat_taxable_amount + row.vat_taxable_amount, vat: sum.vat + row.vat }), { total: 0, document_total: 0, adv: 0, document_adv: 0, taxable_gross: 0, taxable_net: 0, vat_taxable_amount: 0, vat: 0 });
   return { rows, totals: Object.fromEntries(Object.entries(totals).map(([key, value]) => [key, round(value)])) };
@@ -322,7 +343,7 @@ function updateNotice() {
   notice.innerHTML = !canManageInvoices
     ? '<i class="fa fa-file-pdf-o"></i> This is the saved Original Tax Invoice. You can open or print it for your records.'
     : documentType === ORIGINAL_DOCUMENT_TYPE
-    ? `<i class="fa fa-info-circle"></i> Set each selected service with the checkboxes. VAT 7% and ADV (Non-VAT) may be selected together for one service. When both are selected, enter the ADV amount and the remaining amount is VAT. Transfers default to ADV (Non-VAT); all other services default to VAT 7%. Save Tax Settings to unlock the three document previews.${packageNotice}`
+    ? `<i class="fa fa-info-circle"></i> Set each selected service with the checkboxes. VAT 7% and ADV (Non-VAT) may be selected together for one service. When both are selected, enter both the ADV amount and the VAT Taxable Amount; VAT 7% is calculated automatically. Their gross total cannot exceed the service price. Transfers default to ADV (Non-VAT); all other services default to VAT 7%. Save Tax Settings to unlock the three document previews.${packageNotice}`
     : '<i class="fa fa-lock"></i> This document is copied from the Original Tax Invoice. Service details, selections, ADV and Invoice Date are locked to keep all tax documents consistent.';
 }
 function isIncludedPackageComponent(row) {
@@ -376,8 +397,8 @@ function validateTreatmentSelection() {
   const selected = calculation.rows.filter((row) => row.selected);
   const missing = selected.filter((row) => !normalizeTreatment(row.tax_treatment));
   if (missing.length) return `Please select VAT 7% or ADV (Non-VAT) for: ${missing.slice(0, 3).map((row) => row.name || row.id).join(', ')}${missing.length > 3 ? ' and more' : ''}.`;
-  const invalidSplit = selected.filter((row) => row.tax_treatment === 'split' && (row.total <= 0 || row.adv <= 0 || row.adv >= row.total));
-  if (invalidSplit.length) return `Enter an ADV amount between 0.01 and the service total for: ${invalidSplit.slice(0, 3).map((row) => row.name || row.id).join(', ')}.`;
+  const invalidSplit = selected.filter((row) => row.tax_treatment === 'split' && (row.total <= 0 || row.adv <= 0 || row.vat_base <= 0 || row.allocated_gross > row.total + 0.01));
+  if (invalidSplit.length) return `For VAT + ADV services, enter valid ADV and VAT Taxable Amount values. Their gross total must not exceed the service price: ${invalidSplit.slice(0, 3).map((row) => row.name || row.id).join(', ')}.`;
   return '';
 }
 function parseJson(value, fallback) { try { return typeof value === 'string' ? JSON.parse(value) : (value || fallback); } catch { return fallback; } }
