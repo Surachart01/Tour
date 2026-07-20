@@ -186,7 +186,7 @@ async function main() {
   // Upgrade the schema to new SaaS model
   console.log('🔄 Upgrading database schema to SaaS model using Prisma db push...');
   try {
-    execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+    execSync('npx prisma db push --skip-generate', { stdio: 'inherit' });
     console.log('✅ Schema upgraded to new model successfully.');
   } catch (err) {
     console.error('❌ Failed to run prisma db push:', err.message);

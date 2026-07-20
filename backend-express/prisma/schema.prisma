@@ -432,24 +432,24 @@ model hotel_trip_items {
 }
 
 model hotels {
-  id               Int                @id @default(autoincrement())
-  uuid             String             @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name             String             @unique @db.VarChar(255)
-  city             String             @db.VarChar(100)
-  notes            String?
-  address          String?            @db.VarChar(255)
-  created_at       DateTime?          @default(now()) @db.Timestamp(6)
-  updated_at       DateTime?          @default(now()) @db.Timestamp(6)
-  deleted_at       DateTime?          @db.Timestamp(6)
-  user_id          Int?
-  country          String?            @default("Thailand") @db.VarChar(100)
-  display_order    Int?               @default(0) @map("display_order")
-  hotel_contacts   hotel_contacts[]
-  hotel_fees       hotel_fees[]
-  hotel_promotions hotel_promotions[]
-  hotel_trip_items hotel_trip_items[]
-  room_types       room_types[]
-  stop_sales       stop_sales[]
+  id                    Int                     @id @default(autoincrement())
+  uuid                  String                  @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name                  String                  @unique @db.VarChar(255)
+  city                  String                  @db.VarChar(100)
+  notes                 String?
+  address               String?                 @db.VarChar(255)
+  created_at            DateTime?               @default(now()) @db.Timestamp(6)
+  updated_at            DateTime?               @default(now()) @db.Timestamp(6)
+  deleted_at            DateTime?               @db.Timestamp(6)
+  user_id               Int?
+  country               String?                 @default("Thailand") @db.VarChar(100)
+  display_order         Int?                    @default(0) @map("display_order")
+  hotel_contacts        hotel_contacts[]
+  hotel_fees            hotel_fees[]
+  hotel_promotions      hotel_promotions[]
+  hotel_trip_items      hotel_trip_items[]
+  room_types            room_types[]
+  stop_sales            stop_sales[]
   tour_trip_item_hotels tour_trip_item_hotels[]
 }
 
@@ -554,18 +554,18 @@ model room_types {
 }
 
 model stop_sales {
-  id           Int        @id @default(autoincrement())
-  hotel_id     Int
-  room_type_id Int
-  start_date   DateTime   @db.Date
-  end_date     DateTime   @db.Date
+  id             Int        @id @default(autoincrement())
+  hotel_id       Int
+  room_type_id   Int
+  start_date     DateTime   @db.Date
+  end_date       DateTime   @db.Date
   stopped        Boolean    @default(true)
   attachment_url String?    @db.VarChar(500)
   created_at     DateTime?  @default(now()) @db.Timestamptz(6)
   updated_at     DateTime?  @default(now()) @db.Timestamptz(6)
   deleted_at     DateTime?  @db.Timestamptz(6)
-  hotels       hotels     @relation(fields: [hotel_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  room_types   room_types @relation(fields: [room_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  hotels         hotels     @relation(fields: [hotel_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  room_types     room_types @relation(fields: [room_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([hotel_id, room_type_id, start_date, end_date])
 }
@@ -626,38 +626,38 @@ model tour_pricing {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model tour_trip_items {
-  id               Int         @id @default(autoincrement())
-  trip_item_id     Int?
-  tour_id          Int?
-  supplier_id      Int?
-  tot              String      @db.VarChar(10)
-  from_location    String?     @db.VarChar(255)
-  to_location      String?     @db.VarChar(255)
-  number_of_adults Int
-  number_of_kids   Int?
-  from_date        DateTime    @db.Timestamp(6)
-  to_date          DateTime    @db.Timestamp(6)
-  flight_in        DateTime?   @db.Timestamp(6)
-  flight_number    String?     @db.VarChar(50)
-  flight_out       DateTime?   @db.Timestamp(6)
-  guide_name       String?     @db.VarChar(100)
-  guide_contact    String?     @db.VarChar(20)
-  payment_car      String?     @db.VarChar(50)
-  payment_service  String?     @db.VarChar(50)
-  approved         Boolean?    @default(false)
-  declined         Boolean?    @default(false)
-  email_sent       Boolean?    @default(false)
-  price            Decimal?    @db.Decimal(10, 2)
-  currency_id      Int?
-  remarks          String?
-  created_at       DateTime?   @default(now()) @db.Timestamp(6)
-  updated_at       DateTime?   @default(now()) @db.Timestamp(6)
-  transfer_in      String?     @db.VarChar(500)
-  transfer_out     String?     @db.VarChar(500)
-  currencies       currencies? @relation(fields: [currency_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  suppliers        suppliers?  @relation(fields: [supplier_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  tours            tours?      @relation(fields: [tour_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  trips            trips?      @relation(fields: [trip_item_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                    Int                     @id @default(autoincrement())
+  trip_item_id          Int?
+  tour_id               Int?
+  supplier_id           Int?
+  tot                   String                  @db.VarChar(10)
+  from_location         String?                 @db.VarChar(255)
+  to_location           String?                 @db.VarChar(255)
+  number_of_adults      Int
+  number_of_kids        Int?
+  from_date             DateTime                @db.Timestamp(6)
+  to_date               DateTime                @db.Timestamp(6)
+  flight_in             DateTime?               @db.Timestamp(6)
+  flight_number         String?                 @db.VarChar(50)
+  flight_out            DateTime?               @db.Timestamp(6)
+  guide_name            String?                 @db.VarChar(100)
+  guide_contact         String?                 @db.VarChar(20)
+  payment_car           String?                 @db.VarChar(50)
+  payment_service       String?                 @db.VarChar(50)
+  approved              Boolean?                @default(false)
+  declined              Boolean?                @default(false)
+  email_sent            Boolean?                @default(false)
+  price                 Decimal?                @db.Decimal(10, 2)
+  currency_id           Int?
+  remarks               String?
+  created_at            DateTime?               @default(now()) @db.Timestamp(6)
+  updated_at            DateTime?               @default(now()) @db.Timestamp(6)
+  transfer_in           String?                 @db.VarChar(500)
+  transfer_out          String?                 @db.VarChar(500)
+  currencies            currencies?             @relation(fields: [currency_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  suppliers             suppliers?              @relation(fields: [supplier_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tours                 tours?                  @relation(fields: [tour_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  trips                 trips?                  @relation(fields: [trip_item_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   tour_trip_item_hotels tour_trip_item_hotels[]
 }
 
@@ -773,53 +773,53 @@ model travel_checklists {
 }
 
 model trips {
-  id                               Int                    @id @default(autoincrement())
-  uuid                             String?                @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                               Int                     @id @default(autoincrement())
+  uuid                             String?                 @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   agent_id                         Int?
-  client_name                      String                 @db.VarChar(100)
-  client_phone                     String                 @db.VarChar(20)
+  client_name                      String                  @db.VarChar(100)
+  client_phone                     String                  @db.VarChar(20)
   number_of_adults                 Int
   number_of_kids                   Int
-  booking_reference                String?                @db.VarChar(100)
-  file_reference                   String?                @db.VarChar(100)
-  invoice_number                   String?                @db.VarChar(100)
-  booking_date                     DateTime?              @db.Date
+  booking_reference                String?                 @db.VarChar(100)
+  file_reference                   String?                 @db.VarChar(100)
+  invoice_number                   String?                 @db.VarChar(100)
+  booking_date                     DateTime?               @db.Date
   remarks                          String?
-  total_amount                     Decimal?               @db.Decimal(20, 2)
-  discount_amount                  Decimal?               @db.Decimal(10, 2)
-  final_amount                     Decimal?               @db.Decimal(20, 2)
-  approved                         Boolean?               @default(false)
-  declined                         Boolean?               @default(false)
-  created_at                       DateTime?              @default(now()) @db.Timestamp(6)
-  updated_at                       DateTime?              @default(now()) @db.Timestamp(6)
-  trip_start_date                  DateTime?              @db.Date
-  client_email                     String?                @db.VarChar(100)
+  total_amount                     Decimal?                @db.Decimal(20, 2)
+  discount_amount                  Decimal?                @db.Decimal(10, 2)
+  final_amount                     Decimal?                @db.Decimal(20, 2)
+  approved                         Boolean?                @default(false)
+  declined                         Boolean?                @default(false)
+  created_at                       DateTime?               @default(now()) @db.Timestamp(6)
+  updated_at                       DateTime?               @default(now()) @db.Timestamp(6)
+  trip_start_date                  DateTime?               @db.Date
+  client_email                     String?                 @db.VarChar(100)
   user_id                          Int?
-  is_booking                       Boolean?               @default(false)
-  amount_paid                      Decimal?               @default(0) @db.Decimal(20, 2)
-  penalty_cost                     Decimal?               @default(0) @db.Decimal(20, 2)
-  status                           String?                @default("Pending") @db.VarChar(50)
-  affiliate_commission_amount      Decimal?               @default(0) @db.Decimal(10, 2)
-  affiliate_commission_rate        Decimal?               @default(0) @db.Decimal(10, 2)
-  affiliate_commission_status      String?                @default("none") @db.VarChar(20)
-  affiliate_coupon_code            String?                @db.VarChar(50)
-  affiliate_discount_applied       Decimal?               @default(0) @db.Decimal(10, 2)
+  is_booking                       Boolean?                @default(false)
+  amount_paid                      Decimal?                @default(0) @db.Decimal(20, 2)
+  penalty_cost                     Decimal?                @default(0) @db.Decimal(20, 2)
+  status                           String?                 @default("Pending") @db.VarChar(50)
+  affiliate_commission_amount      Decimal?                @default(0) @db.Decimal(10, 2)
+  affiliate_commission_rate        Decimal?                @default(0) @db.Decimal(10, 2)
+  affiliate_commission_status      String?                 @default("none") @db.VarChar(20)
+  affiliate_coupon_code            String?                 @db.VarChar(50)
+  affiliate_discount_applied       Decimal?                @default(0) @db.Decimal(10, 2)
   affiliate_partner_id             Int?
-  assistance_fee_amount            Decimal?               @default(1000) @db.Decimal(10, 2)
-  balance                          Decimal?               @default(0) @db.Decimal(20, 2)
-  cancellation_deadline            DateTime?              @db.Timestamp(6)
-  include_assistance_fee           Boolean?               @default(true)
-  include_description_in_itinerary Boolean?               @default(false)
-  payment_date                     DateTime?              @db.Timestamp(6)
-  payment_deadline                 DateTime?              @db.Timestamp(6)
-  payment_reference                String?                @db.VarChar(255)
-  received_amount                  Decimal?               @default(0) @db.Decimal(20, 2)
-  referral_source                  String?                @db.VarChar(100)
-  utm_campaign                     String?                @db.VarChar(100)
-  utm_content                      String?                @db.VarChar(100)
-  utm_medium                       String?                @db.VarChar(100)
-  utm_source                       String?                @db.VarChar(100)
-  utm_term                         String?                @db.VarChar(100)
+  assistance_fee_amount            Decimal?                @default(1000) @db.Decimal(10, 2)
+  balance                          Decimal?                @default(0) @db.Decimal(20, 2)
+  cancellation_deadline            DateTime?               @db.Timestamp(6)
+  include_assistance_fee           Boolean?                @default(true)
+  include_description_in_itinerary Boolean?                @default(false)
+  payment_date                     DateTime?               @db.Timestamp(6)
+  payment_deadline                 DateTime?               @db.Timestamp(6)
+  payment_reference                String?                 @db.VarChar(255)
+  received_amount                  Decimal?                @default(0) @db.Decimal(20, 2)
+  referral_source                  String?                 @db.VarChar(100)
+  utm_campaign                     String?                 @db.VarChar(100)
+  utm_content                      String?                 @db.VarChar(100)
+  utm_medium                       String?                 @db.VarChar(100)
+  utm_source                       String?                 @db.VarChar(100)
+  utm_term                         String?                 @db.VarChar(100)
   excursion_trip_items             excursion_trip_items[]
   flight_trip_items                flight_trip_items[]
   hotel_trip_items                 hotel_trip_items[]
@@ -827,13 +827,14 @@ model trips {
   other_trip_items                 other_trip_items[]
   tour_trip_items                  tour_trip_items[]
   transfer_trip_items              transfer_trip_items[]
+  tax_invoice_documents            tax_invoice_documents[]
   special_package_id               Int?
-  special_pkg_single_rooms         Int?                   @default(0)
-  special_pkg_double_rooms         Int?                   @default(0)
-  special_pkg_triple_rooms         Int?                   @default(0)
-  special_packages                 special_packages?      @relation(fields: [special_package_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  agents                           Agent?                 @relation(fields: [agent_id], references: [id], onUpdate: NoAction)
-  email_sent                       Boolean?               @default(false)
+  special_pkg_single_rooms         Int?                    @default(0)
+  special_pkg_double_rooms         Int?                    @default(0)
+  special_pkg_triple_rooms         Int?                    @default(0)
+  special_packages                 special_packages?       @relation(fields: [special_package_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  agents                           Agent?                  @relation(fields: [agent_id], references: [id], onUpdate: NoAction)
+  email_sent                       Boolean?                @default(false)
 }
 
 model CityInfo {
@@ -846,6 +847,24 @@ model CityInfo {
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("city_info")
+}
+
+model tax_invoice_documents {
+  id                Int       @id @default(autoincrement())
+  trip_id           Int
+  document_type     String    @db.VarChar(50)
+  invoice_number    String?   @db.VarChar(100)
+  invoice_date      DateTime? @db.Date
+  selected_services Json      @default("[]")
+  adjustments       Json      @default("{}")
+  snapshot          Json      @default("{}")
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @default(now()) @db.Timestamptz(6)
+
+  trips trips @relation(fields: [trip_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([trip_id, document_type])
+  @@index([trip_id], map: "tax_invoice_documents_trip_id_idx")
 }
 
 model tour_days {
@@ -880,24 +899,24 @@ model tour_details {
 }
 
 model tour_trip_item_hotels {
-  id                Int              @id @default(autoincrement())
+  id                Int       @id @default(autoincrement())
   tour_trip_item_id Int
   day               Int
   hotel_id          Int?
-  hotel_name        String           @db.VarChar(200)
-  room_type         String?          @db.VarChar(100)
-  city              String?          @db.VarChar(100)
-  replacement_note  String?          @db.VarChar(500)
-  created_at        DateTime?        @default(now()) @db.Timestamp(6)
-  updated_at        DateTime?        @default(now()) @db.Timestamp(6)
+  hotel_name        String    @db.VarChar(200)
+  room_type         String?   @db.VarChar(100)
+  city              String?   @db.VarChar(100)
+  replacement_note  String?   @db.VarChar(500)
+  created_at        DateTime? @default(now()) @db.Timestamp(6)
+  updated_at        DateTime? @default(now()) @db.Timestamp(6)
 
-  tour_trip_items   tour_trip_items  @relation(fields: [tour_trip_item_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  hotels            hotels?          @relation(fields: [hotel_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tour_trip_items tour_trip_items @relation(fields: [tour_trip_item_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  hotels          hotels?         @relation(fields: [hotel_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model service_documents {
   id           Int       @id @default(autoincrement())
-  service_type String    @db.VarChar(20)   // 'tour' or 'excursion'
+  service_type String    @db.VarChar(20) // 'tour' or 'excursion'
   service_id   Int
   file_name    String    @db.VarChar(255)
   file_path    String    @db.VarChar(500)
@@ -909,71 +928,71 @@ model service_documents {
 }
 
 model special_packages {
-  id              Int                     @id @default(autoincrement())
-  name            String                  @db.VarChar(255)
-  code            String?                 @db.VarChar(50)
+  id              Int       @id @default(autoincrement())
+  name            String    @db.VarChar(255)
+  code            String?   @db.VarChar(50)
   description     String?
-  duration        Int                     @default(1)
-  city            String?                 @db.VarChar(100)
-  category        String?                 @db.VarChar(50)
-  price_per_adult Decimal?                @db.Decimal(10, 2)
-  price_dbl       Decimal?                @db.Decimal(10, 2)
-  price_per_child Decimal?                @db.Decimal(10, 2)
+  duration        Int       @default(1)
+  city            String?   @db.VarChar(100)
+  category        String?   @db.VarChar(50)
+  price_per_adult Decimal?  @db.Decimal(10, 2)
+  price_dbl       Decimal?  @db.Decimal(10, 2)
+  price_per_child Decimal?  @db.Decimal(10, 2)
   currency_id     Int?
-  max_pax         Int?                    @default(20)
-  min_pax         Int?                    @default(1)
-  valid_from      DateTime?               @db.Date
-  valid_to        DateTime?               @db.Date
-  is_active       Boolean                 @default(true)
-  cover_image     String?                 @db.VarChar(500)
+  max_pax         Int?      @default(20)
+  min_pax         Int?      @default(1)
+  valid_from      DateTime? @db.Date
+  valid_to        DateTime? @db.Date
+  is_active       Boolean   @default(true)
+  cover_image     String?   @db.VarChar(500)
   highlights      String?
   inclusions      String?
   exclusions      String?
   terms           String?
-   display_order   Int?                    @default(0) @map("display_order")
+  display_order   Int?      @default(0) @map("display_order")
   created_by      Int?
-  created_at      DateTime?               @default(now()) @db.Timestamp(6)
-  updated_at      DateTime?               @default(now()) @db.Timestamp(6)
+  created_at      DateTime? @default(now()) @db.Timestamp(6)
+  updated_at      DateTime? @default(now()) @db.Timestamp(6)
 
-  items           special_package_items[]
-  currencies      currencies?             @relation(fields: [currency_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  trips           trips[]
-  stop_sales      special_package_stop_sales[]
+  items      special_package_items[]
+  currencies currencies?                  @relation(fields: [currency_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  trips      trips[]
+  stop_sales special_package_stop_sales[]
 }
 
 model special_package_items {
-  id                 Int              @id @default(autoincrement())
-  package_id         Int
-  item_type          String           @db.VarChar(20)
-  day_number         Int?             @default(1)
-  sort_order         Int?             @default(0)
-  hotel_id           Int?
-  hotel_name         String?          @db.VarChar(255)
-  room_type          String?          @db.VarChar(100)
-  nights             Int?
-  city               String?          @db.VarChar(100)
-  transfer_id        Int?
-  transfer_type      String?          @db.VarChar(50)
-  from_location      String?          @db.VarChar(255)
-  to_location        String?          @db.VarChar(255)
-  pickup_time        String?          @db.VarChar(50)
-  excursion_id       Int?
-  excursion_name     String?          @db.VarChar(255)
-  tour_id            Int?
-  tour_name          String?          @db.VarChar(255)
-  flight_number      String?          @db.VarChar(50)
-  flight_airline     String?          @db.VarChar(100)
-  flight_route       String?          @db.VarChar(100)
-  departure_time     String?          @db.VarChar(50)
-  arrival_time       String?          @db.VarChar(50)
-  other_description  String?          @db.VarChar(500)
-  description        String?          @db.VarChar(500)
-  price              Decimal?         @db.Decimal(10, 2)
-  remarks            String?
-  created_at         DateTime?        @default(now()) @db.Timestamp(6)
-  updated_at         DateTime?        @default(now()) @db.Timestamp(6)
+  id                Int       @id @default(autoincrement())
+  package_id        Int
+  item_type         String    @db.VarChar(20)
+  day_number        Int?      @default(1)
+  sort_order        Int?      @default(0)
+  hotel_id          Int?
+  hotel_name        String?   @db.VarChar(255)
+  room_type         String?   @db.VarChar(100)
+  nights            Int?
+  city              String?   @db.VarChar(100)
+  transfer_id       Int?
+  transfer_type     String?   @db.VarChar(50)
+  from_location     String?   @db.VarChar(255)
+  to_location       String?   @db.VarChar(255)
+  pickup_time       String?   @db.VarChar(50)
+  excursion_id      Int?
+  excursion_name    String?   @db.VarChar(255)
+  tour_id           Int?
+  tour_name         String?   @db.VarChar(255)
+  flight_number     String?   @db.VarChar(50)
+  flight_airline    String?   @db.VarChar(100)
+  flight_route      String?   @db.VarChar(100)
+  departure_time    String?   @db.VarChar(50)
+  arrival_time      String?   @db.VarChar(50)
+  other_description String?   @db.VarChar(500)
+  description       String?   @db.VarChar(500)
+  price             Decimal?  @db.Decimal(10, 2)
+  remarks           String?
+  created_at        DateTime? @default(now()) @db.Timestamp(6)
+  updated_at        DateTime? @default(now()) @db.Timestamp(6)
 
-  package            special_packages @relation(fields: [package_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  package special_packages @relation(fields: [package_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model special_package_stop_sales {
