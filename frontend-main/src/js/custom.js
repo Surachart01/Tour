@@ -55,7 +55,7 @@ function init_sidebar() {
               <a href="trip.html"><i class="fa fa-book"></i> Quotation</a>
             </li>
             <li>
-              <a href="payment.html"><i class="fa fa-pencil-square-o"></i> Payment</a>
+              <a href="payment.html"><i class="fa fa-pencil-square-o"></i> Statement</a>
             </li>
             <li>
               <a href="invoice_management.html"><i class="fa fa-file-text-o"></i> Proforma Invoice</a>

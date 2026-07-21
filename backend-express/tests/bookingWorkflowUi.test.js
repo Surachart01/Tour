@@ -12,6 +12,9 @@ const bookingPage = readFileSync(resolve(rootDirectory, 'frontend-main/productio
 const quotationListPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/trip.html'), 'utf8');
 const bookingListPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/booking.html'), 'utf8');
 const statementPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/payment.html'), 'utf8');
+const builtSidebarSource = readFileSync(resolve(rootDirectory, 'frontend-main/build/js/custom.js'), 'utf8');
+const minifiedSidebarSource = readFileSync(resolve(rootDirectory, 'frontend-main/build/js/custom.min.js'), 'utf8');
+const sidebarSource = readFileSync(resolve(rootDirectory, 'frontend-main/src/js/custom.js'), 'utf8');
 const proformaPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/invoice_management.html'), 'utf8');
 const proformaSource = readFileSync(resolve(rootDirectory, 'frontend-main/production/js/invoice_management/invoice_management.js'), 'utf8');
 const taxInvoiceListPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/tax_invoices.html'), 'utf8');
@@ -43,6 +46,10 @@ test('statement page keeps the Statement label after navigation', () => {
   assert.match(statementPage, /href="payment\.html"[\s\S]{0,120}>[\s\S]{0,80}Statement/);
   assert.doesNotMatch(statementPage, /href="payment\.html"[\s\S]{0,120}>[\s\S]{0,80}\bPayments?\b/);
   assert.doesNotMatch(statementPage, /<h3>Payments<\/h3>/);
+  for (const source of [builtSidebarSource, minifiedSidebarSource, sidebarSource]) {
+    assert.match(source, /href="payment\.html"><i class="fa fa-pencil-square-o"><\/i> Statement<\/a>/);
+    assert.doesNotMatch(source, /href="payment\.html"><i class="fa fa-pencil-square-o"><\/i> Payments?<\/a>/);
+  }
 });
 
 test('statement page provides monthly agent selection, print, and default email actions', () => {
