@@ -16,7 +16,7 @@ const PUBLIC_DOCUMENT_TYPES = [
 const DOCUMENT_SERVICE_TYPES = {
   original_tax_invoice: ['transfer', 'excursion', 'tour', 'tour_hotel', 'hotel', 'other', 'special_package', 'assistance_fee'],
   tax_invoice: ['transfer', 'excursion', 'tour', 'tour_hotel', 'hotel', 'other', 'special_package', 'assistance_fee'],
-  original_receipt_transportation: ['transfer'],
+  original_receipt_transportation: ['transfer', 'excursion', 'tour'],
   tax_invoice_hotel: ['hotel', 'tour_hotel']
 };
 const ORIGINAL_DOCUMENT_TYPE = 'original_tax_invoice';
@@ -94,6 +94,11 @@ function serviceRow(type, item, extra = {}) {
     to: item.to_location || '',
     description: item.transfer_description || item.excursions?.name || item.tours?.name || item.hotel_name || '',
     room_type: item.room_type || '',
+    pax: number(item.number_of_adults) + number(item.number_of_kids),
+    nights: Math.max(0, number(item.nights)),
+    single_rooms: Math.max(0, number(item.single_rooms ?? item.single_room)),
+    double_rooms: Math.max(0, number(item.double_rooms ?? item.double_room)),
+    extra_beds: Math.max(0, number(item.extra_adult_bed_count) + number(item.extra_child_bed_count)),
     total: round(extra.total ?? item.total_price ?? item.price),
     selected: true,
     adv: 0,
@@ -132,6 +137,11 @@ function buildServices(booking) {
       name: hotel.hotel_name || 'Tour accommodation',
       from: '', to: '', description: hotel.hotel_name || 'Tour accommodation',
       room_type: hotel.room_type || '',
+      pax: number(item.number_of_adults) + number(item.number_of_kids),
+      nights: 1,
+      single_rooms: 0,
+      double_rooms: 0,
+      extra_beds: 0,
       total: 0,
       selected: true,
       adv: 0,
@@ -160,6 +170,11 @@ function buildServices(booking) {
       to: '',
       description: 'Assistance Fee',
       room_type: '',
+      pax: number(booking.number_of_adults) + number(booking.number_of_kids),
+      nights: 0,
+      single_rooms: 0,
+      double_rooms: 0,
+      extra_beds: 0,
       total: assistanceFee,
       selected: true,
       adv: 0,
@@ -181,7 +196,13 @@ function buildServices(booking) {
       name: booking.special_packages.name || 'Special package',
       from: '', to: '',
       description: booking.special_packages.description || booking.special_packages.name || 'Special package',
-      room_type: '', total, selected: true, adv: 0, parent_id: null, editable_total: false
+      room_type: '',
+      pax: number(booking.number_of_adults) + number(booking.number_of_kids),
+      nights: 0,
+      single_rooms: Math.max(0, number(booking.special_pkg_single_rooms)),
+      double_rooms: Math.max(0, number(booking.special_pkg_double_rooms)),
+      extra_beds: 0,
+      total, selected: true, adv: 0, parent_id: null, editable_total: false
     });
     const packageRow = rows[rows.length - 1];
     rows.forEach((row) => {

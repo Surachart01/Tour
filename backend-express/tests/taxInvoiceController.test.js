@@ -195,13 +195,32 @@ test('allows Special Package detail allocations without double counting the pack
   assert.match(validateAllocations(exceededRows), /cannot exceed 14000\.00/);
 });
 
-test('limits a transportation receipt to transfers only', () => {
+test('includes ADV-capable transfers, excursions and tours in the transportation receipt', () => {
   const booking = {
     transfer_trip_items: [{ id: 1, from_date: '2026-11-20', to_date: '2026-11-20', price: 2500 }],
+    excursion_trip_items: [{ id: 3, from_date: '2026-11-21', to_date: '2026-11-21', price: 1800 }],
+    tour_trip_items: [{ id: 4, from_date: '2026-11-22', to_date: '2026-11-24', price: 9000, number_of_adults: 2, number_of_kids: 0, tour_trip_item_hotels: [] }],
     hotel_trip_items: [{ id: 2, from_date: '2026-11-20', to_date: '2026-11-21', city: 'Bangkok', hotel_name: 'Hotel', nights: 1, total_price: 8750 }]
   };
 
-  assert.deepEqual(servicesForDocument(booking, 'original_receipt_transportation').map((service) => service.type), ['transfer']);
+  assert.deepEqual(servicesForDocument(booking, 'original_receipt_transportation').map((service) => service.type), ['transfer', 'excursion', 'tour']);
+});
+
+test('includes ADV from transfers, excursions and tours in the transportation receipt total', () => {
+  const result = calculateRows([
+    { id: 'transfer-1', type: 'transfer', total: 2500, adv: 500, adv_enabled: true, selected: true },
+    { id: 'excursion-1', type: 'excursion', total: 3000, adv: 750, adv_enabled: true, selected: true },
+    { id: 'tour-1', type: 'tour', total: 9000, adv: 1250, adv_enabled: true, selected: true }
+  ], 'original_receipt_transportation');
+
+  assert.deepEqual(result.rows.map((row) => [row.type, row.document_adv]), [
+    ['transfer', 500],
+    ['excursion', 750],
+    ['tour', 1250]
+  ]);
+  assert.equal(result.totals.document_adv, 2500);
+  assert.equal(result.totals.document_total, 2500);
+  assert.equal(result.totals.vat, 0);
 });
 
 test('uses each tour accommodation day to calculate its own stay dates', () => {

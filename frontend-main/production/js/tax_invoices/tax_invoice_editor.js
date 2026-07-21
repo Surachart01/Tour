@@ -8,20 +8,27 @@ const VAT_RATE = 0.07;
 const DOCUMENT_CONFIG = {
   original_tax_invoice: { title: 'ORIGINAL TAX INVOICE', allowed: ['transfer', 'excursion', 'tour', 'tour_hotel', 'hotel', 'other', 'special_package', 'assistance_fee'] },
   tax_invoice: { title: 'TAX INVOICE', allowed: ['transfer', 'excursion', 'tour', 'tour_hotel', 'hotel', 'other', 'special_package', 'assistance_fee'] },
-  original_receipt_transportation: { title: 'ORIGINAL RECEIPT TRANSPORTATION', allowed: ['transfer'], noVat: true },
+  original_receipt_transportation: { title: 'ORIGINAL RECEIPT TRANSPORTATION', allowed: ['transfer', 'excursion', 'tour'], noVat: true },
   tax_invoice_hotel: { title: 'TAX INVOICE HOTEL', allowed: ['hotel', 'tour_hotel'] }
 };
 const COMPANY = {
   name: 'Verathailandia Co., Ltd.',
   thaiName: 'บริษัท เวร่าไทยลานเดีย จำกัด',
-  address: '160/424-425, ITF Silom Palace, 20th Floor, Silom Road, Suriya Wong, Bangrak, Bangkok 10500 - Thailand',
-  taxId: '0105547045569', tat: '14/03484',
-  bank: 'SIAM COMMERCIAL BANK', bankAddress: '4th Fl. Silom Complex, 191 Silom Road, Bang Rak City, 10500, Bangkok Thailand', account: '419-200606-3', swift: 'SICOTHBK'
+  thaiAddressLine1: '160/424-425 อาคารไอทีเอฟ สีลมพาเลส ชั้น 20',
+  englishAddressLine1: '160/424-425, ITF Silom Palace, 20th Floor',
+  thaiAddressLine2: 'ถนน สีลม แขวงสุริยวงศ์ เขต บางรัก',
+  englishAddressLine2: 'Silom Road, Suriya Wong, Bangrak',
+  thaiAddressLine3: 'กรุงเทพฯ 10500 ประเทศไทย',
+  englishAddressLine3: 'Bangkok 10500 - Thailand',
+  telephone: '+66 2126 6914',
+  email: 'info@verathailandia.com',
+  taxId: '0105547045569', tat: '14/03484'
 };
 let booking = null;
 let services = [];
 let savedDocument = null;
 let masterDocument = null;
+let documentsByType = new Map();
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!tripId || !DOCUMENT_CONFIG[documentType]) {
@@ -44,6 +51,7 @@ async function loadDocument() {
     const data = await response.json();
     booking = data.booking;
     const documents = data.documents || [];
+    documentsByType = new Map(documents.map((document) => [document.document_type, document]));
     savedDocument = documents.find((document) => document.document_type === documentType) || null;
     masterDocument = documents.find((document) => document.document_type === ORIGINAL_DOCUMENT_TYPE) || null;
     if (documentType !== ORIGINAL_DOCUMENT_TYPE && !masterDocument) {
@@ -53,7 +61,8 @@ async function loadDocument() {
       document.getElementById('printButton').disabled = true;
       return;
     }
-    const stored = savedDocument ? parseJson(savedDocument.selected_services, []) : [];
+    const sourceDocument = documentType === ORIGINAL_DOCUMENT_TYPE ? savedDocument : (masterDocument || savedDocument);
+    const stored = sourceDocument ? parseJson(sourceDocument.selected_services, []) : [];
     const byId = new Map(stored.map((row) => [row.id, row]));
     services = (data.services || []).filter((row) => DOCUMENT_CONFIG[documentType].allowed.includes(row.type)).map((row) => {
       const storedRow = byId.get(row.id);
@@ -107,19 +116,16 @@ function render() {
   document.getElementById('invoicePaper').innerHTML = `
     <section class="company-header">
       <img src="images/Verathailand_logo.png" alt="VeraThailandia" />
-      <div class="company-info"><strong>${COMPANY.thaiName} | ${COMPANY.name}</strong><br><span class="company-address">${COMPANY.address}</span><br>Tax ID ${COMPANY.taxId}<br>TAT License number ${COMPANY.tat}</div>
+      <div class="company-info">${companyDetailsHtml()}</div>
     </section>
     <div class="title-band">${config.title}</div>
     <section class="party-grid">
       <div class="party"><div class="section-title">BILLED TO</div><div class="party-content"><strong>Agent Name:</strong> ${escapeHtml(billedName)}<br><strong>Address:</strong> ${escapeHtml(billing.address || '-')}<br><strong>City/Country:</strong> ${escapeHtml(billedLocation)}<br><strong>Tax ID:</strong> ${escapeHtml(billing.tax_id || '-')}</div></div>
-      <div class="party"><div class="section-title">PAYMENT / BANK ACCOUNT</div><div class="party-content"><strong>${COMPANY.name.toUpperCase()}</strong><br><strong>Bank Name:</strong> ${COMPANY.bank}<br><span class="bank-address"><strong>Address:</strong> ${COMPANY.bankAddress}</span><br><strong>Account Number:</strong> ${COMPANY.account} | <strong>Swift Code:</strong> ${COMPANY.swift}</div></div>
     </section>
     <section class="passenger-section">
       <div class="passenger-title">PASSENGER INFORMATION</div>
       <table class="passenger-table"><tbody>
-        <tr><td class="passenger-label">Agent Name</td><td>${escapeHtml(billedName)}</td><td class="passenger-label">Invoice Nr.</td><td>${escapeHtml(booking.invoice_number || '-')}</td></tr>
-        <tr><td class="passenger-label">Address</td><td colspan="3">${escapeHtml([billing.address, billedLocation].filter((value) => value && value !== '-').join(', ') || '-')}</td></tr>
-        <tr><td class="passenger-label">Client Name(s)</td><td colspan="3">${escapeHtml(booking.client_name || '-')}</td></tr>
+        <tr><td class="passenger-label">Client Name(s)</td><td>${escapeHtml(booking.client_name || '-')}</td><td class="passenger-label">Invoice Nr.</td><td>${escapeHtml(booking.invoice_number || '-')}</td></tr>
         <tr><td class="passenger-label">Nr. of Clients</td><td>${number(booking.number_of_adults) + number(booking.number_of_kids)}</td><td class="passenger-label">File Nr.</td><td>${escapeHtml(booking.file_reference || booking.booking_reference || '-')}</td></tr>
         <tr><td class="passenger-label">Date</td><td><input id="invoiceDate" type="date" class="invoice-number-input" value="${invoiceDate}" ${isOriginal ? '' : 'readonly'} /></td><td class="passenger-label">Tax Invoice Nr.</td><td>${escapeHtml(taxInvoiceNumber)}</td></tr>
       </tbody></table>
@@ -135,7 +141,10 @@ function render() {
 function renderSections(rows) {
   const order = ['transfer', 'excursion', 'tour', 'hotel', 'other', 'special_package', 'assistance_fee'];
   const title = { transfer: 'TRANSFERS', excursion: 'EXCURSIONS', tour: 'TOURS', hotel: 'HOTEL', other: 'OTHER SERVICES', special_package: 'SPECIAL PACKAGE', assistance_fee: 'ASSISTANCE FEE' };
-  const grouped = order.map((type) => [type, rows.filter((row) => row.type === type || (type === 'tour' && row.type === 'tour_hotel'))]).filter(([, values]) => values.length);
+  const visibleRows = documentType === 'original_receipt_transportation'
+    ? rows.filter((row) => row.selected && number(row.document_adv ?? row.adv) > 0)
+    : rows;
+  const grouped = order.map((type) => [type, visibleRows.filter((row) => row.type === type || (type === 'tour' && row.type === 'tour_hotel'))]).filter(([, values]) => values.length);
   if (!grouped.length) return '<div class="document-empty">There are no eligible services for this document.</div>';
   return `<section class="services-wrap"><h2 class="services-heading">Descriptions of Service</h2>${grouped.map(([type, items]) => `
     <section class="service-section"><h3 class="service-section-title">${title[type]}</h3>
@@ -306,15 +315,159 @@ function openPrintView() {
   const printWindow = window.open('', '_blank');
   if (!printWindow) { window.alert('Please allow pop-ups to open the printable document.'); return; }
   const title = DOCUMENT_CONFIG[documentType].title;
-  const paper = document.getElementById('invoicePaper').cloneNode(true);
-  paper.querySelectorAll('input, select').forEach((input) => {
-    const span = document.createElement('span');
-    span.textContent = input.type === 'checkbox' ? (input.checked ? 'X' : '') : input.tagName === 'SELECT' ? input.options[input.selectedIndex]?.text || '' : input.value;
-    span.style.cssText = input.type === 'checkbox' ? 'font-weight:bold' : 'display:block;text-align:right';
-    input.replaceWith(span);
-  });
-  printWindow.document.write(`<!doctype html><html><head><title>${title}</title><style>${document.querySelector('style').textContent}</style></head><body>${paper.outerHTML}</body></html>`);
+  printWindow.document.write(buildPrintableDocument(title));
   printWindow.document.close();
+}
+
+function buildPrintableDocument(title) {
+  const calculation = calculate();
+  const billing = booking.proforma_billing || {};
+  const agentName = billing.agent_name || booking.agents?.name || '-';
+  const address = billing.address || '-';
+  const country = billing.country || '-';
+  const invoiceDate = document.getElementById('invoiceDate')?.value
+    || toInputDate(savedDocument?.invoice_date || masterDocument?.invoice_date || booking.payment_date);
+  const invoiceNumber = documentNumber(documentType === 'original_receipt_transportation' ? 'tax_invoice' : documentType);
+  const receiptNumber = documentNumber('original_receipt_transportation');
+  const fileNumber = booking.file_reference || booking.booking_reference || '-';
+  const clientCount = number(booking.number_of_adults) + number(booking.number_of_kids);
+  const logoUrl = new URL('images/Verathailand_logo.png', window.location.href).href;
+  const rows = printableRows(calculation.rows);
+  const totals = printableTotals(calculation.totals);
+
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>${printDocumentStyles()}</style></head><body>
+    <button class="print-control" type="button" onclick="window.print()">Print / Save PDF</button>
+    <main class="tax-document">
+      <section class="print-company-header">
+        <div class="print-logo"><img src="${escapeAttribute(logoUrl)}" alt="VeraThailandia"></div>
+        <div class="print-company-info">${companyDetailsHtml()}</div>
+      </section>
+      <h1 class="print-title">${escapeHtml(title)}</h1>
+      <table class="agent-details"><tbody>
+        <tr><th>AGENT'S NAME:</th><td>${escapeHtml(agentName)}</td></tr>
+        <tr><th>ADDRESS:</th><td>${escapeHtml(address)}</td></tr>
+        <tr><th>COUNTRY:</th><td>${escapeHtml(country)}</td></tr>
+        <tr><th>DATE:</th><td>${formatShortDate(invoiceDate)}</td></tr>
+        <tr><th>FILE N°:</th><td>${escapeHtml(fileNumber)}</td></tr>
+        <tr><th>INVOICE N°:</th><td>${escapeHtml(invoiceNumber)}</td></tr>
+        <tr><th>RECEIPT N°:</th><td>${escapeHtml(receiptNumber)}</td></tr>
+      </tbody></table>
+      <div class="rooming-title">ROOMING LIST DETAILS:</div>
+      <table class="rooming-details"><tbody>
+        <tr><th>Client Name(s):</th><td>${escapeHtml(booking.client_name || '-')}</td></tr>
+        <tr><th>N° of Client(s):</th><td>${clientCount}</td></tr>
+      </tbody></table>
+      <table class="service-print-table">
+        <thead><tr><th>DESCRIPTION OF SERVICES:</th><th>NET PRICE</th><th>TOTAL</th>${documentType === 'tax_invoice' ? '<th>VAT</th>' : ''}</tr></thead>
+        <tbody>${rows.length ? rows.map(renderPrintableService).join('') : `<tr><td colspan="${documentType === 'tax_invoice' ? 4 : 3}" class="no-services">No services are available for this document.</td></tr>`}</tbody>
+        <tfoot>${renderPrintableTotals(totals)}</tfoot>
+      </table>
+      <div class="print-note">Note:</div>
+      <div class="print-signatures"><span>Controller__________________</span><span>Cashier / Bill Collector___________________</span></div>
+    </main>
+  </body></html>`;
+}
+
+function printableRows(rows) {
+  return rows.filter((row) => {
+    if (!row.selected) return false;
+    if (documentType === 'original_receipt_transportation') return row.adv > 0;
+    if (documentType === 'tax_invoice' || documentType === 'tax_invoice_hotel') return row.taxable_gross > 0;
+    return row.taxable_gross > 0 || row.adv > 0;
+  });
+}
+
+function printableTotals(totals) {
+  if (documentType === 'original_receipt_transportation') {
+    return { vatBase: 0, vat: 0, adv: totals.adv, total: totals.adv };
+  }
+  if (documentType === 'tax_invoice' || documentType === 'tax_invoice_hotel') {
+    return { vatBase: totals.vat_taxable_amount, vat: totals.vat, adv: 0, total: totals.taxable_gross };
+  }
+  return { vatBase: totals.vat_taxable_amount, vat: totals.vat, adv: totals.adv, total: totals.document_total };
+}
+
+function renderPrintableService(row) {
+  const cells = [];
+  const quantity = serviceQuantity(row);
+  const taxableTotal = round(row.taxable_gross);
+  const unitPrice = quantity > 0 ? round(taxableTotal / quantity) : taxableTotal;
+  const vatColumn = documentType === 'tax_invoice' ? '<td class="vat-rate">7%</td>' : '';
+  if (documentType !== 'original_receipt_transportation' && taxableTotal > 0) {
+    cells.push(`<tr class="service-main-row"><td>${serviceDescription(row)}</td><td class="number">${formatAmount(unitPrice)}</td><td class="number total-value">${formatAmount(taxableTotal)}</td>${vatColumn}</tr>`);
+  }
+  if ((documentType === ORIGINAL_DOCUMENT_TYPE || documentType === 'original_receipt_transportation') && row.adv > 0) {
+    cells.push(`<tr class="service-adv-row"><td>${advDescription(row)}</td><td></td><td class="number adv-value">${formatAmount(row.adv)}</td></tr>`);
+  }
+  return cells.join('');
+}
+
+function serviceDescription(row) {
+  const label = {
+    transfer: 'Transfer:', excursion: 'Excursion:', tour: 'Tour Package:', tour_hotel: 'Hotel:',
+    hotel: 'Hotel:', other: 'Other Service:', special_package: 'Special Package:', assistance_fee: 'Extra Fee:'
+  }[row.type] || 'Service:';
+  const pax = servicePax(row);
+  const dateLabel = row.type === 'hotel' || row.type === 'tour_hotel' || row.type === 'tour' || row.type === 'special_package' ? 'Period:' : 'Date:';
+  const period = row.to_date && formatShortDate(row.to_date) !== formatShortDate(row.from_date || row.date)
+    ? `${formatShortDate(row.from_date || row.date)} to ${formatShortDate(row.to_date)}`
+    : formatShortDate(row.from_date || row.date);
+  const route = row.type === 'transfer' ? [row.from, row.to].filter(Boolean).join(' - ') : '';
+  const roomLine = row.room_type ? `<div><span>Type of Room:</span><strong>${escapeHtml(row.room_type)}</strong></div>` : '';
+  const paxLine = pax > 0 ? `<span class="service-pax">Pax: ${pax}</span>` : '';
+  return `<div class="service-description"><div><span>${label}</span><strong>${escapeHtml(row.name || route || row.description || '-')}</strong></div>
+    ${route ? `<div><span>Route:</span>${escapeHtml(route)}</div>` : ''}
+    ${roomLine}<div><span>${dateLabel}</span>${period}${paxLine}</div>
+    ${row.nights ? `<div><span></span>${number(row.nights)} night(s)</div>` : ''}</div>`;
+}
+
+function advDescription(row) {
+  const route = row.type === 'transfer'
+    ? [row.from, row.to].filter(Boolean).join(' - ')
+    : row.type === 'excursion' ? `Hotel - ${row.name || 'Excursion'} - Hotel`
+      : `${formatShortDate(row.from_date || row.date)} to ${formatShortDate(row.to_date)} / ${row.name || 'Tour'}`;
+  return `<div class="service-description"><div><span>Car Fee:</span>${escapeHtml(route || row.name || '-')}</div></div>`;
+}
+
+function renderPrintableTotals(totals) {
+  const columnCount = documentType === 'tax_invoice' ? 4 : 3;
+  return `<tr><td class="totals-spacer"></td><th>VAT Taxable Amount</th><td class="number">${formatAmount(totals.vatBase)}</td>${documentType === 'tax_invoice' ? '<td>THB</td>' : ''}</tr>
+    <tr><td class="totals-spacer"></td><th>VAT 7 %</th><td class="number">${formatAmount(totals.vat)}</td>${documentType === 'tax_invoice' ? '<td>THB</td>' : ''}</tr>
+    <tr><td class="totals-spacer"></td><th>ADV (NON Vatable)</th><td class="number">${formatAmount(totals.adv)}</td>${documentType === 'tax_invoice' ? '<td>THB</td>' : ''}</tr>
+    <tr><td class="totals-spacer"></td><th>Total Amount</th><td class="number total-amount">${formatAmount(totals.total)}</td>${documentType === 'tax_invoice' ? '<td>THB</td>' : ''}</tr>
+    <tr class="column-count-sentinel"><td colspan="${columnCount}"></td></tr>`;
+}
+
+function servicePax(row) {
+  return Math.max(0, number(row.pax)) || number(booking.number_of_adults) + number(booking.number_of_kids);
+}
+
+function serviceQuantity(row) {
+  if (row.type === 'hotel' || row.type === 'tour_hotel') return Math.max(1, number(row.nights));
+  if (row.type === 'assistance_fee' || row.type === 'other') return 1;
+  return Math.max(1, servicePax(row));
+}
+
+function documentNumber(type) {
+  const document = documentsByType.get(type);
+  if (document?.invoice_number) return document.invoice_number;
+  const prefix = { original_tax_invoice: 'OTI', tax_invoice: 'TI', original_receipt_transportation: 'ORT', tax_invoice_hotel: 'TIH' }[type] || 'TI';
+  const year = new Date().getFullYear();
+  return `${prefix}-${year}-${String(tripId).padStart(5, '0')}`;
+}
+
+function companyDetailsHtml() {
+  return `<div class="company-detail-line company-detail-name">${escapeHtml(COMPANY.thaiName)} | ${escapeHtml(COMPANY.name)}</div>
+    <div class="company-detail-line">${escapeHtml(COMPANY.thaiAddressLine1)} | ${escapeHtml(COMPANY.englishAddressLine1)}</div>
+    <div class="company-detail-line">${escapeHtml(COMPANY.thaiAddressLine2)} | ${escapeHtml(COMPANY.englishAddressLine2)}</div>
+    <div class="company-detail-line">${escapeHtml(COMPANY.thaiAddressLine3)} | ${escapeHtml(COMPANY.englishAddressLine3)}</div>
+    <div class="company-detail-line">Tel ${escapeHtml(COMPANY.telephone)} | Email: ${escapeHtml(COMPANY.email)}</div>
+    <div class="company-detail-line">ทะเบียนเลขที่ | Tax ID ${escapeHtml(COMPANY.taxId)}</div>
+    <div class="company-detail-line">ใบอนุญาตประกอบธุรกิจนำเที่ยวเลขที่ | TAT License number ${escapeHtml(COMPANY.tat)}</div>`;
+}
+
+function printDocumentStyles() {
+  return `@page{size:A4 portrait;margin:0}*{box-sizing:border-box}body{margin:0;background:#eceff3;color:#000;font-family:Tahoma,Arial,sans-serif;font-size:9px}.print-control{position:fixed;right:18px;top:18px;z-index:5;border:0;border-radius:5px;padding:10px 16px;background:#1688d4;color:#fff;font:700 13px Tahoma,Arial,sans-serif;cursor:pointer;box-shadow:0 2px 8px #0003}.tax-document{width:210mm;min-height:297mm;margin:15px auto;padding:4mm 7mm 6mm;background:#fff;box-shadow:0 2px 16px #0003}.print-company-header{display:grid;grid-template-columns:64mm 1fr;min-height:34mm;border:1px solid #111}.print-logo{display:flex;align-items:center;justify-content:center;border-right:1px solid #111}.print-logo img{max-width:58mm;max-height:31mm;object-fit:contain}.print-company-info{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:2mm 3mm;text-align:left;line-height:1.2;font-size:8px}.company-detail-line{white-space:nowrap}.company-detail-name{font-size:9px;font-weight:700}.print-title,.rooming-title{margin:0;background:#ffc000;border:1px solid #111;border-top:0;text-align:center;font-family:Georgia,'Times New Roman',serif;font-weight:700}.print-title{padding:1.5mm 1mm;font-size:20px}.agent-details,.rooming-details,.service-print-table{width:100%;border-collapse:collapse}.agent-details{margin:0 0 0}.agent-details th,.agent-details td{height:4.2mm;padding:.3mm .5mm;border:0;text-align:left;vertical-align:middle}.agent-details th{width:36mm;border-right:1px solid #111;font-weight:700}.agent-details tr:last-child th,.agent-details tr:last-child td{border-bottom:1px solid #111}.rooming-title{padding:.6mm;font-size:10px}.rooming-details{margin:.8mm 0}.rooming-details th,.rooming-details td{height:4.3mm;padding:.5mm;border-bottom:1px solid #111;text-align:left}.rooming-details th{width:25mm}.service-print-table{table-layout:fixed}.service-print-table thead th{padding:.8mm .5mm;background:#ffc000;border-top:1px solid #111;border-bottom:1px solid #111;text-align:left}.service-print-table thead th:first-child{width:auto}.service-print-table thead th:nth-last-child(1),.service-print-table thead th:nth-last-child(2){width:31mm;text-align:right}.service-print-table thead th:nth-last-child(3):not(:first-child){width:31mm;text-align:right}.service-print-table thead th:last-child:not(:nth-child(3)){width:13mm;text-align:center}.service-print-table tbody td{padding:.8mm .5mm;border-left:1px solid #111;border-right:1px solid #111;vertical-align:top}.service-print-table tbody tr:last-child td{border-bottom:1px solid #111}.service-description{line-height:1.35}.service-description>div{display:grid;grid-template-columns:25mm 1fr;gap:1mm;min-height:3.5mm}.service-description strong{font-weight:700}.service-pax{float:right;margin-right:5mm}.number{text-align:right;white-space:nowrap}.total-value{font-weight:700}.adv-value{color:#ed1c24;font-weight:700}.vat-rate{text-align:center}.no-services{padding:6mm!important;text-align:center}.service-print-table tfoot th,.service-print-table tfoot td{height:4.5mm;padding:.5mm;border:1px solid #111}.service-print-table tfoot .totals-spacer{border:0}.service-print-table tfoot th{text-align:center;font-weight:400}.service-print-table tfoot .total-amount,.service-print-table tfoot tr:last-of-type th{font-weight:700}.column-count-sentinel{display:none}.print-note{margin-top:-17mm;min-height:16mm;padding:.5mm;border-top:1px solid #111}.print-signatures{display:flex;gap:20mm;margin:12mm 0 0;font-family:Georgia,'Times New Roman',serif;font-size:9px}@media print{body{background:#fff}.print-control{display:none}.tax-document{margin:0;padding:4mm 7mm 6mm;box-shadow:none}.service-main-row,.service-adv-row{break-inside:avoid;page-break-inside:avoid}}`;
 }
 
 function findRow(id) { return services.find((row) => row.id === id); }
@@ -382,6 +535,7 @@ function number(value) { const parsed = Number(value); return Number.isFinite(pa
 function round(value) { return Math.round((number(value) + Number.EPSILON) * 100) / 100; }
 function formatAmount(value) { return number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function formatDate(value) { if (!value) return '-'; const date = new Date(value); return Number.isNaN(date.getTime()) ? '-' : date.toLocaleDateString('en-GB').replaceAll('/', '-'); }
+function formatShortDate(value) { if (!value) return '-'; const date = new Date(value); return Number.isNaN(date.getTime()) ? '-' : date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' }); }
 function toInputDate(value) { if (!value) return ''; const date = new Date(value); return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10); }
 function defaultInvoiceNumber() {
   const prefix = {

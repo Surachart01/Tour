@@ -11,6 +11,7 @@ const quotationPage = readFileSync(resolve(rootDirectory, 'frontend-main/product
 const bookingPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/edit_booking.html'), 'utf8');
 const quotationListPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/trip.html'), 'utf8');
 const bookingListPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/booking.html'), 'utf8');
+const statementPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/payment.html'), 'utf8');
 const taxInvoiceListPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/tax_invoices.html'), 'utf8');
 const taxInvoiceEditorPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/tax_invoice_editor.html'), 'utf8');
 const taxInvoiceEditorSource = readFileSync(resolve(rootDirectory, 'frontend-main/production/js/tax_invoices/tax_invoice_editor.js'), 'utf8');
@@ -28,6 +29,13 @@ test('workflow status routes are restricted to their intended roles', () => {
   assert.match(routeSource, /router\.post\('\/bookings\/:id\/confirm', authorize\('admin'\), confirmBooking\)/);
   assert.match(routeSource, /router\.post\('\/bookings\/:id\/approveItem\/:itemType\/:itemID', authorize\('admin'\), approveItem\)/);
   assert.match(routeSource, /router\.post\('\/bookings\/:id\/declineItem\/:itemType\/:itemID', authorize\('admin'\), declineItem\)/);
+});
+
+test('statement page keeps the Statement label after navigation', () => {
+  assert.match(statementPage, /<title>Statement<\/title>/);
+  assert.match(statementPage, /<h3>Statement<\/h3>/);
+  assert.match(statementPage, /<h2>Statement Records<\/h2>/);
+  assert.doesNotMatch(statementPage, /<h3>Payments<\/h3>/);
 });
 
 test('quotation conversion is wired to the finalization endpoint', () => {
@@ -89,8 +97,25 @@ test('tax invoice editor uses the Proforma document structure and correct docume
   assert.match(taxInvoiceEditorSource, /tax_invoice_hotel: 'TIH'/);
   assert.match(taxInvoiceEditorSource, /VAT 7%/);
   assert.match(taxInvoiceEditorSource, /ADV \(Non-VAT\)/);
+  assert.match(taxInvoiceEditorSource, /ORIGINAL RECEIPT TRANSPORTATION/);
+  assert.match(taxInvoiceEditorSource, /บริษัท เวร่าไทยลานเดีย จำกัด/);
+  assert.match(taxInvoiceEditorSource, /อาคารไอทีเอฟ สีลมพาเลส ชั้น 20/);
+  assert.match(taxInvoiceEditorSource, /ทะเบียนเลขที่ \| Tax ID/);
+  assert.match(taxInvoiceEditorSource, /ใบอนุญาตประกอบธุรกิจนำเที่ยวเลขที่ \| TAT License number/);
+  assert.match(taxInvoiceEditorSource, /original_receipt_transportation: \{ title: 'ORIGINAL RECEIPT TRANSPORTATION', allowed: \['transfer', 'excursion', 'tour'\]/);
+  assert.match(taxInvoiceEditorSource, /documentType === 'original_receipt_transportation'[\s\S]*document_adv \?\? row\.adv/);
+  assert.match(taxInvoiceEditorSource, /ROOMING LIST DETAILS:/);
+  assert.match(taxInvoiceEditorSource, /DESCRIPTION OF SERVICES:/);
+  assert.match(taxInvoiceEditorSource, /buildPrintableDocument/);
+  assert.match(taxInvoiceEditorSource, /printDocumentStyles/);
   assert.match(taxInvoiceEditorSource, /VAT 7% \(Automatic\)/);
   assert.match(taxInvoiceEditorSource, /validateTreatmentSelection/);
+  assert.match(taxInvoiceEditorSource, /BILLED TO/);
+  assert.doesNotMatch(taxInvoiceEditorSource, /PAYMENT \/ BANK ACCOUNT/);
+  assert.doesNotMatch(taxInvoiceEditorSource, /COMPANY\.bank/);
+  assert.match(taxInvoiceEditorSource, /Client Name\(s\)<\/td><td>\$\{escapeHtml\(booking\.client_name \|\| '-'\)\}<\/td><td class="passenger-label">Invoice Nr\./);
+  assert.doesNotMatch(taxInvoiceEditorSource, /<tr><td class="passenger-label">Agent Name/);
+  assert.doesNotMatch(taxInvoiceEditorSource, /<tr><td class="passenger-label">Address/);
   assert.match(taxInvoiceEditorPage, /Open PDF \/ Print/);
 });
 
