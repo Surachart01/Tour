@@ -60,6 +60,16 @@ test('statement page provides monthly agent selection, print, and default email 
   assert.match(statementPage, /id="emailStatementBtn"/);
   assert.match(statementPage, /id="emailStatementModal"/);
   assert.match(statementPage, /function buildStatementContent\(payments\)/);
+  assert.match(statementPage, /function openStatementPrint\(payments\)/);
+  assert.match(statementPage, /function openStatementEmail\(payments\)/);
+  assert.match(statementPage, /function statementPaymentsForAgent\(payment\)/);
+  assert.match(statementPage, /<th style="min-width: 140px">Actions<\/th>/);
+  assert.match(statementPage, /Update payment amount, received date, and reference/);
+  assert.match(statementPage, /id="editPaymentDate"/);
+  assert.match(statementPage, /Payment Received Date is required when an amount has been received/);
+  assert.match(statementPage, /\/api\/v1\/bookings\/\$\{paymentId\}\/payment/);
+  assert.match(statementPage, /Email this agent's matching statement/);
+  assert.match(statementPage, /const payments = activeStatementPayments/);
   assert.match(statementPage, /payment\.payment_deadline \|\| payment\.booking_date/);
   assert.match(statementPage, /\/api\/v1\/email\/send/);
   assert.match(statementPage, /Statement of Account - \$\{period\} - VeraThailandia/);
@@ -69,6 +79,8 @@ test('statement page provides monthly agent selection, print, and default email 
 });
 
 test('confirmed booking payment records expose the agent and invoice details needed by statements', () => {
+  assert.match(tripControllerSource, /const where = \{ status: 'Confirmed' \}/);
+  assert.doesNotMatch(tripControllerSource, /const where = \{ approved: true, status: 'Confirmed' \}/);
   assert.match(tripControllerSource, /agent_email: trip\.agents\?\.email \|\| ''/);
   assert.match(tripControllerSource, /agent_address: trip\.agents\?\.address \|\| ''/);
   assert.match(tripControllerSource, /file_number: trip\.file_reference \|\| trip\.booking_reference \|\| ''/);

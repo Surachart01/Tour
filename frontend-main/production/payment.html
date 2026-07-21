@@ -129,6 +129,9 @@
       .statement-actions .btn { min-height: 40px; margin: 0; }
       .statement-selection-note { margin: 8px 0 0; color: #627d98; font-size: 12px; }
       .statement-checkbox { width: 18px; height: 18px; cursor: pointer; }
+      .statement-row-actions { display: flex; align-items: center; justify-content: center; gap: 6px; min-width: 126px; white-space: nowrap; }
+      .statement-row-actions .btn { width: 36px; height: 34px; margin: 0; padding: 6px; border: 0; border-radius: 4px; }
+      .statement-row-actions .btn i { margin: 0; }
       .statement-email-preview { max-height: 260px; overflow: auto; padding: 14px; border: 1px solid #d9e2ec; background: #f8fafc; }
       .statement-email-preview .company-header, .statement-email-preview .statement-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 10px; border: 1px solid #b8c5d1; background: #fff; }
       .statement-email-preview .statement-meta { border-top: 0; }
@@ -454,9 +457,7 @@
                               <th>Pmt Date</th>
                               <th>Payment Reference</th>
                               <th>Penalty</th>
-                              <th id="adminUpdateHeader" style="display: none">
-                                Update
-                              </th>
+                              <th style="min-width: 140px">Actions</th>
                             </tr>
                           </thead>
                           <tbody id="paymentTableBody">
@@ -683,14 +684,6 @@
           }
         }
 
-        // Show admin Update header if user is admin
-        if (role === "admin" || role === "superadmin") {
-          const adminHeader = document.getElementById("adminUpdateHeader");
-          if (adminHeader) {
-            adminHeader.style.display = "table-cell";
-          }
-        }
-
         let tableBody = document.querySelector("#paymentTableBody");
         let searchBox = document.getElementById("searchBox");
         let rowsSelect = document.getElementById("rowsSelect");
@@ -705,6 +698,7 @@
 
         let allPayments = [];
         let filteredPayments = [];
+        let activeStatementPayments = [];
         const selectedBookingIds = new Set();
         let currentPage = 1;
         let rowsPerPage = 25;
@@ -723,10 +717,9 @@
           pageLoadingOverlay.hidden = true;
         }
 
-        // Initialize the monthly statement period.
+        // Show all confirmed bookings initially. The due month is an optional filter.
         function initializePage() {
-          const today = new Date();
-          statementMonth.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+          statementMonth.value = "";
         }
 
         statementAgent.addEventListener("change", applyStatementFilters);
@@ -899,7 +892,7 @@
         }
 
         function formatStatementMonth(value) {
-          if (!/^\d{4}-\d{2}$/.test(value || "")) return "All Months";
+          if (!/^\d{4}-\d{2}$/.test(value || "")) return "All Due Months";
           const [year, month] = value.split("-").map(Number);
           return new Date(year, month - 1, 1).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
         }
@@ -1168,18 +1161,47 @@
               updateStatementActions();
             });
 
-            // Add an extra Update button for admin users
+            const updateTd = document.createElement("td");
+            const actionGroup = document.createElement("div");
+            actionGroup.className = "statement-row-actions";
+
             if (role === "admin" || role === "superadmin") {
-              let updateTd = document.createElement("td");
               let updateBtn = document.createElement("button");
+              updateBtn.type = "button";
               updateBtn.className = "btn btn-primary btn-sm";
-              updateBtn.innerHTML = "✏️";
+              updateBtn.title = "Update payment amount, received date, and reference";
+              updateBtn.setAttribute("aria-label", "Update payment");
+              updateBtn.innerHTML = '<i class="fa fa-pencil"></i>';
               updateBtn.onclick = function () {
                 openEditModal(payment);
               };
-              updateTd.appendChild(updateBtn);
-              row.appendChild(updateTd);
+              actionGroup.appendChild(updateBtn);
             }
+
+            const printBtn = document.createElement("button");
+            printBtn.type = "button";
+            printBtn.className = "btn btn-info btn-sm";
+            printBtn.title = "Print this agent's matching statement";
+            printBtn.setAttribute("aria-label", "Print statement");
+            printBtn.innerHTML = '<i class="fa fa-print"></i>';
+            printBtn.onclick = function () {
+              openStatementPrint(statementPaymentsForAgent(payment));
+            };
+            actionGroup.appendChild(printBtn);
+
+            const emailBtn = document.createElement("button");
+            emailBtn.type = "button";
+            emailBtn.className = "btn btn-success btn-sm";
+            emailBtn.title = "Email this agent's matching statement";
+            emailBtn.setAttribute("aria-label", "Email statement to agent");
+            emailBtn.innerHTML = '<i class="fa fa-envelope"></i>';
+            emailBtn.onclick = function () {
+              openStatementEmail(statementPaymentsForAgent(payment));
+            };
+            actionGroup.appendChild(emailBtn);
+
+            updateTd.appendChild(actionGroup);
+            row.appendChild(updateTd);
 
             tableBody.appendChild(row);
           }
@@ -1219,8 +1241,12 @@
           updateStatementActions();
         });
 
-        printStatementBtn.addEventListener("click", function () {
-          const payments = selectedStatementPayments();
+        function statementPaymentsForAgent(payment) {
+          const matching = filteredPayments.filter((candidate) => agentKey(candidate) === agentKey(payment));
+          return matching.length ? matching : [payment];
+        }
+
+        function openStatementPrint(payments) {
           if (!payments.length || new Set(payments.map(agentKey)).size !== 1) {
             alert("Please select confirmed bookings for one agent.");
             return;
@@ -1235,14 +1261,14 @@
           printWindow.document.close();
           printWindow.focus();
           setTimeout(() => printWindow.print(), 250);
-        });
+        }
 
-        emailStatementBtn.addEventListener("click", function () {
-          const payments = selectedStatementPayments();
+        function openStatementEmail(payments) {
           if (!payments.length || new Set(payments.map(agentKey)).size !== 1) {
             alert("Please select confirmed bookings for one agent.");
             return;
           }
+          activeStatementPayments = payments.slice();
           const agent = payments[0];
           const period = formatStatementMonth(statementMonth.value);
           document.getElementById("statementEmailTo").value = agent.agent_email || "";
@@ -1250,10 +1276,18 @@
           document.getElementById("statementEmailMessage").value = `Dear ${agent.agent_name || "Agent"},\n\nPlease find your Statement of Account for ${period}. It includes all selected confirmed bookings, related proforma invoices, payments received, and outstanding balances.\n\nPlease review the statement and let us know if any information does not match your records.\n\nKind regards,\nVeraThailandia Co., Ltd.`;
           document.getElementById("statementEmailPreview").innerHTML = buildStatementContent(payments);
           $("#emailStatementModal").modal("show");
+        }
+
+        printStatementBtn.addEventListener("click", function () {
+          openStatementPrint(selectedStatementPayments());
+        });
+
+        emailStatementBtn.addEventListener("click", function () {
+          openStatementEmail(selectedStatementPayments());
         });
 
         document.getElementById("sendStatementEmailBtn").addEventListener("click", async function () {
-          const payments = selectedStatementPayments();
+          const payments = activeStatementPayments;
           const to = document.getElementById("statementEmailTo").value.trim();
           const subject = document.getElementById("statementEmailSubject").value.trim();
           const message = document.getElementById("statementEmailMessage").value.trim();
@@ -1306,7 +1340,7 @@
           document.getElementById("editPaymentId").value = payment.id;
           document.getElementById("editAgentName").value = payment.agent_name;
           document.getElementById("editBookingReference").value =
-            payment.booking_reference;
+            payment.file_number || payment.booking_reference || "";
           document.getElementById("editFinalCost").value = payment.final_cost;
           document.getElementById("editPenaltyCost").value =
             payment.penalty_cost;
@@ -1418,14 +1452,22 @@
                 }
               );
 
-              if (!response.ok)
-                throw new Error(`HTTP error! Status: ${response.status}`);
+              if (!response.ok) {
+                const errorBody = await response.text();
+                let errorMessage = errorBody;
+                try {
+                  const parsedError = JSON.parse(errorBody);
+                  errorMessage = parsedError.message || errorBody;
+                } catch (_) {}
+                throw new Error(errorMessage || `HTTP error! Status: ${response.status}`);
+              }
 
               $("#editPaymentModal").modal("hide");
               await fetchPayments();
+              alert("Payment information updated successfully.");
             } catch (error) {
               console.error("Error updating payment:", error);
-              alert("Failed to update payment.");
+              alert(`Failed to update payment: ${error.message}`);
             } finally {
               saveButton.disabled = false;
               saveButton.innerHTML = saveButtonLabel;

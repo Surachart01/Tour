@@ -1883,7 +1883,7 @@ export async function updatePaymentInfo(req, res, next) {
 export async function listPaymentInfoFromBookings(req, res, next) {
   try {
     const claims = req.user;
-    const where = { approved: true, status: 'Confirmed' };
+    const where = { status: 'Confirmed' };
     if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       where.agent_id = claims.agent_id || 0;
     }
@@ -1907,7 +1907,7 @@ export async function listPaymentInfoByDateRange(req, res, next) {
     const from_date = req.query.from_date || req.query.start_date;
     const to_date = req.query.to_date || req.query.end_date;
     const claims = req.user;
-    const where = { approved: true, status: 'Confirmed' };
+    const where = { status: 'Confirmed' };
     if (from_date && to_date) {
       where.created_at = { gte: new Date(from_date), lte: new Date(to_date) };
     }
