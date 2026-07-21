@@ -388,8 +388,8 @@ function buildSnapshot(booking, calculated, invoiceDate) {
   };
 }
 
-async function upsertDocument({ tripId, documentType, invoiceNumber, invoiceDate, services, adjustments, snapshot }) {
-  const rows = await prisma.$queryRawUnsafe(`
+async function upsertDocument({ tripId, documentType, invoiceNumber, invoiceDate, services, adjustments, snapshot }, db = prisma) {
+  const rows = await db.$queryRawUnsafe(`
     INSERT INTO tax_invoice_documents
       (trip_id, document_type, invoice_number, invoice_date, selected_services, adjustments, snapshot, updated_at)
     VALUES ($1, $2, $3, $4::date, $5::jsonb, $6::jsonb, $7::jsonb, now())
@@ -506,30 +506,42 @@ export async function saveTaxInvoiceDocument(req, res, next) {
     }
 
     const calculated = calculateRows(visibleRows, documentType);
-    const resolvedInvoiceNumber = String(byType.get(documentType)?.invoice_number || buildInvoiceNumber(booking, documentType)).trim();
-    const document = await upsertDocument({
-      tripId, documentType, invoiceNumber: resolvedInvoiceNumber, invoiceDate: resolvedInvoiceDate,
-      services: visibleRows, adjustments: effectiveAdjustments,
+    const preparedDocuments = [{
+      tripId,
+      documentType,
+      invoiceNumber: String(byType.get(documentType)?.invoice_number || buildInvoiceNumber(booking, documentType)).trim(),
+      invoiceDate: resolvedInvoiceDate,
+      services: visibleRows,
+      adjustments: effectiveAdjustments,
       snapshot: buildSnapshot(booking, calculated, resolvedInvoiceDate)
-    });
+    }];
 
-    const synchronized = [];
     if (documentType === ORIGINAL_DOCUMENT_TYPE) {
       for (const secondaryType of PUBLIC_DOCUMENT_TYPES.filter((type) => type !== ORIGINAL_DOCUMENT_TYPE)) {
         const copiedRows = sanitizeServices(servicesForDocument(booking, secondaryType), visibleRows);
         const copiedCalculation = calculateRows(copiedRows, secondaryType);
-        const copiedDocument = await upsertDocument({
+        preparedDocuments.push({
           tripId,
           documentType: secondaryType,
           invoiceNumber: String(byType.get(secondaryType)?.invoice_number || buildInvoiceNumber(booking, secondaryType)).trim(),
           invoiceDate: resolvedInvoiceDate,
           services: copiedRows,
-          adjustments,
+          adjustments: effectiveAdjustments,
           snapshot: buildSnapshot(booking, copiedCalculation, resolvedInvoiceDate)
         });
-        synchronized.push(copiedDocument);
       }
     }
+
+    // Original and derived documents must move together. A failed secondary
+    // write rolls back the Original instead of leaving a partial document set.
+    const savedDocuments = await prisma.$transaction(async (transaction) => {
+      const results = [];
+      for (const prepared of preparedDocuments) {
+        results.push(await upsertDocument(prepared, transaction));
+      }
+      return results;
+    });
+    const [document, ...synchronized] = savedDocuments;
     return res.json({ document, synchronized, calculated, booking });
   } catch (error) { next(error); }
 }

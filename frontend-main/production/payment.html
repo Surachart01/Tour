@@ -122,6 +122,21 @@
       .payment-summary-table td, .payment-summary-table th { padding: 9px 10px; vertical-align: middle; }
       .payment-summary-table .money { text-align: right; white-space: nowrap; }
       .payment-summary-table .deadline { color: #a13b2d; font-weight: 700; white-space: nowrap; }
+      .statement-toolbar { padding: 16px; border: 1px solid #d9e2ec; background: #fff; box-shadow: 0 3px 10px rgba(15, 30, 48, .06); }
+      .statement-toolbar label { display: block; margin-bottom: 6px; color: #486581; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+      .statement-toolbar .form-control { height: 40px; }
+      .statement-actions { display: flex; align-items: flex-end; gap: 8px; min-height: 64px; }
+      .statement-actions .btn { min-height: 40px; margin: 0; }
+      .statement-selection-note { margin: 8px 0 0; color: #627d98; font-size: 12px; }
+      .statement-checkbox { width: 18px; height: 18px; cursor: pointer; }
+      .statement-email-preview { max-height: 260px; overflow: auto; padding: 14px; border: 1px solid #d9e2ec; background: #f8fafc; }
+      .statement-email-preview .company-header, .statement-email-preview .statement-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 10px; border: 1px solid #b8c5d1; background: #fff; }
+      .statement-email-preview .statement-meta { border-top: 0; }
+      .statement-email-preview .document-title { text-align: right; font-size: 18px; font-weight: 800; }
+      .statement-email-preview .statement-table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 10px; background: #fff; }
+      .statement-email-preview .statement-table th, .statement-email-preview .statement-table td { padding: 5px; border: 1px solid #b8c5d1; }
+      .statement-email-preview .statement-table thead th { color: #fff; background: #243b53; }
+      .statement-email-preview .money { text-align: right; }
       @media (max-width: 900px) { .payment-summary-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
       @media (max-width: 520px) { .payment-summary-cards { grid-template-columns: 1fr; } }
       /* Removed constraining CSS for sidebar-menu to allow proper submenu expansion */
@@ -337,53 +352,47 @@
 
           <div class="clearfix"></div>
 
-          <!-- Search Box and Date Range Filters -->
-          <div class="row" style="margin-bottom: 20px">
-            <div class="col-md-4">
+          <!-- Statement filters and actions -->
+          <div class="row statement-toolbar" style="margin-bottom: 20px">
+            <div class="col-md-3 col-sm-6">
+              <label for="searchBox">Search</label>
               <input
                 type="text"
                 id="searchBox"
                 class="form-control"
-                placeholder="Search by Trip ID, Agent, File Number, or Payment Ref..."
+                placeholder="File, invoice, client, or reference"
               />
             </div>
-            <div class="col-md-2">
-              <input
-                type="date"
-                id="fromDate"
-                class="form-control"
-                title="Start Date"
-              />
+            <div class="col-md-3 col-sm-6">
+              <label for="statementAgent">Agent</label>
+              <select id="statementAgent" class="form-control">
+                <option value="">Select Agent</option>
+              </select>
             </div>
-            <div class="col-md-2">
-              <input
-                type="date"
-                id="toDate"
-                class="form-control"
-                title="End Date"
-              />
+            <div class="col-md-2 col-sm-6">
+              <label for="statementMonth">Due Month</label>
+              <input type="month" id="statementMonth" class="form-control" />
             </div>
-            <div class="col-md-2">
+            <div class="col-md-4 col-sm-6 statement-actions">
               <button
-                id="filterByDateBtn"
-                class="btn btn-primary btn-block"
-                title="Filter by date range"
+                id="printStatementBtn"
+                class="btn btn-info"
+                title="Preview and print the selected monthly statement"
+                disabled
               >
-                <i class="fa fa-calendar"></i> Filter
+                <i class="fa fa-print"></i> Print Statement
+              </button>
+              <button
+                id="emailStatementBtn"
+                class="btn btn-success"
+                title="Email the selected monthly statement to the agent"
+                disabled
+              >
+                <i class="fa fa-envelope"></i> Email Agent
               </button>
             </div>
-            <div class="col-md-2 text-right">
-              <label for="rowsSelect">Show: </label>
-              <select
-                id="rowsSelect"
-                class="form-control"
-                style="width: 70px; display: inline-block"
-              >
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="All">All</option>
-              </select>
+            <div class="col-md-12">
+              <p id="statementSelectionNote" class="statement-selection-note">Select an agent and due month. All matching confirmed bookings will be included by default.</p>
             </div>
           </div>
 
@@ -428,9 +437,12 @@
                         >
                           <thead>
                             <tr>
+                              <th style="width: 42px"><input type="checkbox" id="selectAllStatements" class="statement-checkbox" title="Select all matching bookings" /></th>
                               <th>Trip ID</th>
                               <th>Agent</th>
                               <th>File Number</th>
+                              <th>Invoice Number</th>
+                              <th>Client</th>
                               <th>Status</th>
                               <!-- <th>Total Cost</th>
                               <th>Discount</th> -->
@@ -455,6 +467,15 @@
                     </div>
                   </div>
                   <div class="d-flex justify-content-end">
+                    <div style="margin-right: auto">
+                      <label for="rowsSelect" class="sr-only">Rows per page</label>
+                      <select id="rowsSelect" class="form-control input-sm" style="width: 82px">
+                        <option value="25">25 rows</option>
+                        <option value="50">50 rows</option>
+                        <option value="100">100 rows</option>
+                        <option value="All">All rows</option>
+                      </select>
+                    </div>
                     <div class="pagination">
                       <button
                         id="prevPage"
@@ -592,6 +613,40 @@
           </div>
         </div>
 
+        <!-- Email Statement Modal -->
+        <div class="modal fade" id="emailStatementModal" tabindex="-1" role="dialog" aria-labelledby="emailStatementModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="emailStatementModalLabel"><i class="fa fa-envelope"></i> Email Monthly Statement</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              </div>
+              <div class="modal-body">
+                <div class="form-group">
+                  <label for="statementEmailTo">To</label>
+                  <input type="email" class="form-control" id="statementEmailTo" required />
+                </div>
+                <div class="form-group">
+                  <label for="statementEmailSubject">Subject</label>
+                  <input type="text" class="form-control" id="statementEmailSubject" required />
+                </div>
+                <div class="form-group">
+                  <label for="statementEmailMessage">Message</label>
+                  <textarea class="form-control" id="statementEmailMessage" rows="6"></textarea>
+                </div>
+                <div class="form-group">
+                  <label>Statement Preview</label>
+                  <div id="statementEmailPreview" class="statement-email-preview"></div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="sendStatementEmailBtn"><i class="fa fa-paper-plane"></i> Send Email</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Footer -->
         <footer></footer>
         <!-- /Footer -->
@@ -604,6 +659,7 @@
     <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom Theme Scripts -->
     <script src="../build/js/custom.min.js"></script>
+    <script src="js/common/sidebar-control.js?v=20260721-1"></script>
     <script src="js/config.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", function () {
@@ -640,9 +696,16 @@
         let rowsSelect = document.getElementById("rowsSelect");
         let prevPageButton = document.getElementById("prevPage");
         let nextPageButton = document.getElementById("nextPage");
+        const statementAgent = document.getElementById("statementAgent");
+        const statementMonth = document.getElementById("statementMonth");
+        const printStatementBtn = document.getElementById("printStatementBtn");
+        const emailStatementBtn = document.getElementById("emailStatementBtn");
+        const selectAllStatements = document.getElementById("selectAllStatements");
+        const statementSelectionNote = document.getElementById("statementSelectionNote");
 
         let allPayments = [];
         let filteredPayments = [];
+        const selectedBookingIds = new Set();
         let currentPage = 1;
         let rowsPerPage = 25;
         let totalPages = 1;
@@ -660,46 +723,20 @@
           pageLoadingOverlay.hidden = true;
         }
 
-        // Initialize page with current month dates
+        // Initialize the monthly statement period.
         function initializePage() {
           const today = new Date();
-          const endDate = today.toISOString().split("T")[0];
-          const startDate = new Date(today.getFullYear(), today.getMonth(), 1)
-            .toISOString()
-            .split("T")[0];
-
-          document.getElementById("fromDate").value = startDate;
-          document.getElementById("toDate").value = endDate;
+          statementMonth.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
         }
 
-        // Add event listener for filter button
-        document
-          .getElementById("filterByDateBtn")
-          .addEventListener("click", filterByDateRange);
-
-        // Filter by date range
-        function filterByDateRange() {
-          const fromDate = document.getElementById("fromDate").value;
-          const toDate = document.getElementById("toDate").value;
-
-          // If both dates are not selected, fall back to all data
-          if (!fromDate || !toDate) {
-            showInfoMessage("No date range selected. Loading all payments...");
-            setTimeout(() => {
-              fetchPayments(true); // Load all data
-            }, 1000);
-            return;
-          }
-
-          // If dates are selected, use date range filtering
-          fetchPayments(false); // false means use date range filtering
-        }
+        statementAgent.addEventListener("change", applyStatementFilters);
+        statementMonth.addEventListener("change", applyStatementFilters);
 
         // Show loading state
         function showLoadingState() {
           tableBody.innerHTML = `
             <tr>
-              <td colspan="13" class="text-center">
+              <td colspan="16" class="text-center">
                 <i class="fa fa-spinner fa-spin fa-2x"></i>
                 <p>Loading payments...</p>
               </td>
@@ -726,72 +763,11 @@
         // Update filter status display
         function updateFilterStatus(count) {
           const statusDiv = document.getElementById("filterStatus");
-
-          if (currentFilterMode === "all") {
-            // For all data, show current month information
-            const today = new Date();
-            const monthNames = [
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December",
-            ];
-            const currentMonth = monthNames[today.getMonth()];
-            const currentYear = today.getFullYear();
-
-            statusDiv.innerHTML = `<i class="fa fa-info-circle"></i> Showing all ${count} payments from current and previous month (Current month: ${currentMonth} ${currentYear})`;
-            statusDiv.className = "alert alert-info";
-            statusDiv.style.display = "block";
-          } else if (
-            currentFilterMode === "date_range" &&
-            currentDateRange.start &&
-            currentDateRange.end
-          ) {
-            // Check if the date range spans a single month
-            const startDate = new Date(currentDateRange.start);
-            const endDate = new Date(currentDateRange.end);
-            const monthNames = [
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December",
-            ];
-
-            if (
-              startDate.getMonth() === endDate.getMonth() &&
-              startDate.getFullYear() === endDate.getFullYear()
-            ) {
-              // Same month
-              const monthName = monthNames[startDate.getMonth()];
-              const year = startDate.getFullYear();
-              statusDiv.innerHTML = `<i class="fa fa-calendar"></i> Showing ${count} payments for ${monthName} ${year}`;
-            } else {
-              // Different months
-              statusDiv.innerHTML = `<i class="fa fa-calendar"></i> Showing ${count} payments from ${formatDateForDisplay(
-                currentDateRange.start
-              )} to ${formatDateForDisplay(currentDateRange.end)}`;
-            }
-            statusDiv.className = "alert alert-info";
-            statusDiv.style.display = "block";
-          } else {
-            statusDiv.style.display = "none";
-          }
+          const monthLabel = formatStatementMonth(statementMonth.value);
+          const agentLabel = statementAgent.options[statementAgent.selectedIndex]?.text || "All Agents";
+          statusDiv.innerHTML = `<i class="fa fa-calendar"></i> ${count} confirmed booking${count === 1 ? "" : "s"} for <strong>${escapeHtml(agentLabel)}</strong> in <strong>${escapeHtml(monthLabel)}</strong>`;
+          statusDiv.className = "alert alert-info";
+          statusDiv.style.display = "block";
         }
 
         // Format date for display
@@ -800,7 +776,7 @@
           return date.toLocaleDateString("en-GB").replace(/\//g, "-");
         }
 
-        async function fetchPayments(useAllData = true) {
+        async function fetchPayments() {
           showLoadingState();
 
           // Debug: Check if token exists
@@ -813,26 +789,8 @@
             return;
           }
 
-          let url;
-
-          if (useAllData) {
-            // Use the default endpoint for all payments
-            url = `${Endpoint}/api/v1/bookings/all/payments`;
-            currentFilterMode = "all";
-          } else {
-            // Use date range endpoint
-            const fromDate = document.getElementById("fromDate").value;
-            const toDate = document.getElementById("toDate").value;
-
-            if (!fromDate || !toDate) {
-              showErrorMessage("Please select both start and end dates");
-              return;
-            }
-
-            url = `${Endpoint}/api/v1/bookings/payments/date-range?start_date=${fromDate}&end_date=${toDate}`;
-            currentFilterMode = "date_range";
-            currentDateRange = { start: fromDate, end: toDate };
-          }
+          const url = `${Endpoint}/api/v1/bookings/all/payments`;
+          currentFilterMode = "statement";
 
           showPageLoading("Loading confirmed payments...");
           console.log("Loading payments from:", url);
@@ -887,14 +845,8 @@
             }
 
             allPayments = paymentsArray;
-            filteredPayments = [...allPayments];
-
-            updateFilterStatus(allPayments.length);
-            renderPaymentSummary(filteredPayments);
-            totalPages = Math.ceil(filteredPayments.length / rowsPerPage);
-            currentPage = 1;
-            renderPayments();
-            updatePaginationButtons();
+            populateAgentFilter();
+            applyStatementFilters();
           } catch (error) {
             console.error("Error fetching payments:", error);
             showErrorMessage(`Error loading payments: ${error.message}`);
@@ -934,6 +886,155 @@
           return String(value ?? "").replace(/[&<>\"']/g, (character) => ({
             "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
           }[character]));
+        }
+
+        function statementDateValue(payment) {
+          return payment.payment_deadline || payment.booking_date || payment.created_at || payment.start_date || "";
+        }
+
+        function statementMonthValue(payment) {
+          const value = statementDateValue(payment);
+          const match = String(value).match(/^(\d{4})-(\d{2})/);
+          return match ? `${match[1]}-${match[2]}` : "";
+        }
+
+        function formatStatementMonth(value) {
+          if (!/^\d{4}-\d{2}$/.test(value || "")) return "All Months";
+          const [year, month] = value.split("-").map(Number);
+          return new Date(year, month - 1, 1).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+        }
+
+        function agentKey(payment) {
+          return payment.agent_id ? `id:${payment.agent_id}` : `name:${String(payment.agent_name || "").trim().toLowerCase()}`;
+        }
+
+        function populateAgentFilter() {
+          const previousValue = statementAgent.value;
+          const agents = new Map();
+          allPayments.forEach((payment) => {
+            const key = agentKey(payment);
+            if (!agents.has(key)) agents.set(key, payment);
+          });
+
+          statementAgent.innerHTML = '<option value="">All Agents</option>' + [...agents.entries()]
+            .sort(([, a], [, b]) => String(a.agent_name || "").localeCompare(String(b.agent_name || "")))
+            .map(([key, payment]) => `<option value="${escapeHtml(key)}">${escapeHtml(payment.agent_name || "Unknown Agent")}</option>`)
+            .join("");
+
+          if (previousValue && agents.has(previousValue)) statementAgent.value = previousValue;
+          if ((role === "agent" || agents.size === 1) && agents.size) {
+            statementAgent.value = agents.keys().next().value;
+            statementAgent.disabled = role === "agent";
+          }
+        }
+
+        function selectedStatementPayments() {
+          return filteredPayments.filter((payment) => selectedBookingIds.has(Number(payment.id)));
+        }
+
+        function updateStatementActions() {
+          const selected = selectedStatementPayments();
+          const uniqueAgents = new Set(selected.map(agentKey));
+          const validSelection = selected.length > 0 && uniqueAgents.size === 1;
+          printStatementBtn.disabled = !validSelection;
+          emailStatementBtn.disabled = !validSelection;
+          selectAllStatements.checked = filteredPayments.length > 0 && selected.length === filteredPayments.length;
+          selectAllStatements.indeterminate = selected.length > 0 && selected.length < filteredPayments.length;
+          statementSelectionNote.textContent = validSelection
+            ? `${selected.length} confirmed booking${selected.length === 1 ? "" : "s"} selected for ${selected[0].agent_name || "the agent"}.`
+            : selected.length > 0
+              ? "Please select bookings for one agent only."
+              : "Select an agent and due month. All matching confirmed bookings will be included by default.";
+        }
+
+        function applyStatementFilters() {
+          const searchTerm = searchBox.value.trim().toLowerCase();
+          const selectedAgent = statementAgent.value;
+          const selectedMonth = statementMonth.value;
+          filteredPayments = allPayments.filter((payment) => {
+            const searchable = [
+              payment.id,
+              payment.agent_name,
+              payment.file_number,
+              payment.booking_reference,
+              payment.proforma_invoice_number,
+              payment.client_name,
+              payment.payment_reference,
+            ].join(" ").toLowerCase();
+            return (!selectedAgent || agentKey(payment) === selectedAgent) &&
+              (!selectedMonth || statementMonthValue(payment) === selectedMonth) &&
+              (!searchTerm || searchable.includes(searchTerm));
+          });
+
+          selectedBookingIds.clear();
+          filteredPayments.forEach((payment) => selectedBookingIds.add(Number(payment.id)));
+          currentPage = 1;
+          const effectiveRows = rowsPerPage || 25;
+          totalPages = Math.max(1, Math.ceil(filteredPayments.length / effectiveRows));
+          updateFilterStatus(filteredPayments.length);
+          renderPaymentSummary(filteredPayments);
+          renderPayments();
+          updatePaginationButtons();
+          updateStatementActions();
+        }
+
+        function statementTotals(payments) {
+          return payments.reduce((totals, payment) => {
+            totals.total += Number(payment.final_cost || 0) + Number(payment.penalty_cost || 0);
+            totals.received += Number(payment.received_amount || 0);
+            totals.outstanding += Number(payment.balance || 0);
+            return totals;
+          }, { total: 0, received: 0, outstanding: 0 });
+        }
+
+        function statementTableRows(payments) {
+          return payments
+            .slice()
+            .sort((a, b) => String(statementDateValue(a)).localeCompare(String(statementDateValue(b))))
+            .map((payment, index) => `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${payment.booking_date ? formatToDDMMYYYY(String(payment.booking_date).split("T")[0]) : "-"}</td>
+                <td>${escapeHtml(payment.proforma_invoice_number || "-")}<br><small>${escapeHtml(payment.file_number || "-")}</small></td>
+                <td>${escapeHtml(payment.client_name || "-")}</td>
+                <td>${payment.start_date ? formatToDDMMYYYY(String(payment.start_date).split("T")[0]) : "-"}</td>
+                <td>${payment.payment_deadline ? formatToDDMMYYYY(String(payment.payment_deadline).split("T")[0]) : "-"}</td>
+                <td class="money">${formatMoney(Number(payment.final_cost || 0) + Number(payment.penalty_cost || 0))}</td>
+                <td class="money">${formatMoney(payment.received_amount)}</td>
+                <td class="money outstanding">${formatMoney(payment.balance)}</td>
+                <td>${payment.payment_date ? formatToDDMMYYYY(String(payment.payment_date).split("T")[0]) : "-"}</td>
+                <td>${escapeHtml(payment.payment_reference || "-")}</td>
+              </tr>`)
+            .join("");
+        }
+
+        function buildStatementContent(payments) {
+          const agent = payments[0] || {};
+          const totals = statementTotals(payments);
+          const period = formatStatementMonth(statementMonth.value);
+          return `
+            <div class="statement-document">
+              <div class="company-header">
+                <div><strong>VeraThailandia Co., Ltd.</strong><br>160/424-425, ITF Silom Palace, 20th Floor<br>Silom Road, Suriya Wong, Bangrak, Bangkok 10500, Thailand</div>
+                <div class="document-title">STATEMENT OF ACCOUNT</div>
+              </div>
+              <div class="statement-meta">
+                <div><strong>Agent:</strong> ${escapeHtml(agent.agent_name || "-")}<br><strong>Email:</strong> ${escapeHtml(agent.agent_email || "-")}<br><strong>Address:</strong> ${escapeHtml(agent.agent_address || "-")}</div>
+                <div><strong>Statement Period:</strong> ${escapeHtml(period)}<br><strong>Currency:</strong> THB<br><strong>Issued:</strong> ${new Date().toLocaleDateString("en-GB")}</div>
+              </div>
+              <table class="statement-table">
+                <thead><tr><th>No.</th><th>Booking Date</th><th>Proforma / File</th><th>Client</th><th>Service Start</th><th>Payment Deadline</th><th>Total Amount</th><th>Received</th><th>Outstanding</th><th>Payment Date</th><th>Reference</th></tr></thead>
+                <tbody>${statementTableRows(payments)}</tbody>
+                <tfoot>
+                  <tr><th colspan="6">TOTAL (THB)</th><th class="money">${formatMoney(totals.total)}</th><th class="money">${formatMoney(totals.received)}</th><th class="money">${formatMoney(totals.outstanding)}</th><th colspan="2"></th></tr>
+                </tfoot>
+              </table>
+              <p class="statement-note">Please review this statement and advise us if any booking, invoice, payment, or balance does not match your records.</p>
+            </div>`;
+        }
+
+        function statementStyles() {
+          return `body{font-family:Tahoma,Arial,sans-serif;color:#172b4d;margin:24px}.statement-document{max-width:1200px;margin:auto}.company-header{border:1px solid #243b53;padding:16px;display:flex;justify-content:space-between;gap:24px}.document-title{font-size:24px;font-weight:800;color:#243b53;align-self:center}.statement-meta{display:grid;grid-template-columns:1fr 1fr;gap:20px;border:1px solid #243b53;border-top:0;padding:12px;line-height:1.5}.statement-table{width:100%;border-collapse:collapse;margin-top:18px;font-size:11px}.statement-table th,.statement-table td{border:1px solid #7b8794;padding:7px;vertical-align:middle}.statement-table thead th{background:#243b53;color:#fff}.statement-table tfoot th{background:#eaf2f8}.money{text-align:right;white-space:nowrap}.outstanding{font-weight:700;color:#b42318}.statement-note{margin-top:18px;font-size:11px;color:#486581}@media print{body{margin:8mm}@page{size:A4 landscape;margin:8mm}}`;
         }
 
         function renderPaymentSummary(payments) {
@@ -1039,13 +1140,16 @@
             }
 
             row.innerHTML = `
+                <td><input type="checkbox" class="statement-checkbox statement-row-checkbox" data-booking-id="${Number(payment.id)}" ${selectedBookingIds.has(Number(payment.id)) ? "checked" : ""} aria-label="Select booking ${escapeHtml(payment.file_number || payment.id)}" /></td>
                 <td><a href="edit_booking.html?id=${
                   payment.id
                 }" style="color: #007bff; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${
               payment.id
             }</a></td>
-                <td>${payment.agent_name}</td>
-                <td>${payment.booking_reference}</td>
+                <td>${escapeHtml(payment.agent_name)}</td>
+                <td>${escapeHtml(payment.file_number || payment.booking_reference || "-")}</td>
+                <td>${escapeHtml(payment.proforma_invoice_number || "-")}</td>
+                <td>${escapeHtml(payment.client_name || "-")}</td>
                 <td><span class="payment-status ${statusClass}" title="Tax invoices require Confirmed status">${statusLabel}</span></td>
                 <td>${payment.start_date ? formatToDDMMYYYY(String(payment.start_date).split("T")[0]) : "-"}</td>
                 <td class="${payment.payment_deadline ? "" : "text-muted"}">${payment.payment_deadline ? formatToDDMMYYYY(String(payment.payment_deadline).split("T")[0]) : "-"}</td>
@@ -1053,9 +1157,16 @@
                 <td>${formatMoney(payment.received_amount)}</td>
                 <td>${formatMoney(payment.balance)}</td>
                 <td>${formattedDate}</td>
-                <td>${payment.payment_reference}</td>
-                <td>${payment.penalty_cost.toFixed(2)}</td>
+                <td>${escapeHtml(payment.payment_reference || "-")}</td>
+                <td>${formatMoney(payment.penalty_cost)}</td>
             `;
+
+            row.querySelector(".statement-row-checkbox").addEventListener("change", function () {
+              const bookingId = Number(this.dataset.bookingId);
+              if (this.checked) selectedBookingIds.add(bookingId);
+              else selectedBookingIds.delete(bookingId);
+              updateStatementActions();
+            });
 
             // Add an extra Update button for admin users
             if (role === "admin" || role === "superadmin") {
@@ -1072,6 +1183,7 @@
 
             tableBody.appendChild(row);
           }
+          updateStatementActions();
         }
 
         function updatePaginationButtons() {
@@ -1081,29 +1193,7 @@
         }
 
         function filterPayments() {
-          let searchTerm = searchBox.value.trim().toLowerCase();
-
-          // Apply search filter on already loaded data (client-side search)
-          filteredPayments = allPayments.filter((payment) => {
-            // Apply search filter on agent name, booking reference, payment reference, and trip ID.
-            const matchesSearch =
-              (payment.agent_name &&
-                payment.agent_name.toLowerCase().includes(searchTerm)) ||
-              (payment.booking_reference &&
-                payment.booking_reference.toLowerCase().includes(searchTerm)) ||
-              (payment.payment_reference &&
-                payment.payment_reference.toLowerCase().includes(searchTerm)) ||
-              (payment.id &&
-                payment.id.toString().toLowerCase().includes(searchTerm));
-
-            return matchesSearch;
-          });
-
-          currentPage = 1;
-          totalPages = Math.ceil(filteredPayments.length / rowsPerPage);
-          renderPaymentSummary(filteredPayments);
-          renderPayments();
-          updatePaginationButtons();
+          applyStatementFilters();
         }
 
         // Attach event listener for search input (client-side search)
@@ -1112,12 +1202,88 @@
         rowsSelect.addEventListener("change", function () {
           rowsPerPage =
             this.value === "All"
-              ? filteredPayments.length
+              ? Math.max(1, filteredPayments.length)
               : parseInt(this.value, 10);
           currentPage = 1;
-          totalPages = Math.ceil(filteredPayments.length / rowsPerPage);
+          totalPages = Math.max(1, Math.ceil(filteredPayments.length / rowsPerPage));
           renderPayments();
           updatePaginationButtons();
+        });
+
+        selectAllStatements.addEventListener("change", function () {
+          filteredPayments.forEach((payment) => {
+            if (this.checked) selectedBookingIds.add(Number(payment.id));
+            else selectedBookingIds.delete(Number(payment.id));
+          });
+          renderPayments();
+          updateStatementActions();
+        });
+
+        printStatementBtn.addEventListener("click", function () {
+          const payments = selectedStatementPayments();
+          if (!payments.length || new Set(payments.map(agentKey)).size !== 1) {
+            alert("Please select confirmed bookings for one agent.");
+            return;
+          }
+          const printWindow = window.open("", "_blank");
+          if (!printWindow) {
+            alert("The print preview was blocked. Please allow pop-ups and try again.");
+            return;
+          }
+          printWindow.document.open();
+          printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Statement - ${escapeHtml(payments[0].agent_name || "Agent")} - ${escapeHtml(formatStatementMonth(statementMonth.value))}</title><style>${statementStyles()}</style></head><body>${buildStatementContent(payments)}</body></html>`);
+          printWindow.document.close();
+          printWindow.focus();
+          setTimeout(() => printWindow.print(), 250);
+        });
+
+        emailStatementBtn.addEventListener("click", function () {
+          const payments = selectedStatementPayments();
+          if (!payments.length || new Set(payments.map(agentKey)).size !== 1) {
+            alert("Please select confirmed bookings for one agent.");
+            return;
+          }
+          const agent = payments[0];
+          const period = formatStatementMonth(statementMonth.value);
+          document.getElementById("statementEmailTo").value = agent.agent_email || "";
+          document.getElementById("statementEmailSubject").value = `Statement of Account - ${period} - VeraThailandia`;
+          document.getElementById("statementEmailMessage").value = `Dear ${agent.agent_name || "Agent"},\n\nPlease find your Statement of Account for ${period}. It includes all selected confirmed bookings, related proforma invoices, payments received, and outstanding balances.\n\nPlease review the statement and let us know if any information does not match your records.\n\nKind regards,\nVeraThailandia Co., Ltd.`;
+          document.getElementById("statementEmailPreview").innerHTML = buildStatementContent(payments);
+          $("#emailStatementModal").modal("show");
+        });
+
+        document.getElementById("sendStatementEmailBtn").addEventListener("click", async function () {
+          const payments = selectedStatementPayments();
+          const to = document.getElementById("statementEmailTo").value.trim();
+          const subject = document.getElementById("statementEmailSubject").value.trim();
+          const message = document.getElementById("statementEmailMessage").value.trim();
+          if (!payments.length || !to || !subject) {
+            alert("Recipient email and subject are required.");
+            return;
+          }
+
+          const button = this;
+          const originalLabel = button.innerHTML;
+          button.disabled = true;
+          button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending...';
+          try {
+            const htmlMessage = `<div style="font-family:Tahoma,Arial,sans-serif;white-space:pre-line;margin-bottom:20px">${escapeHtml(message)}</div><style>${statementStyles()}</style>${buildStatementContent(payments)}`;
+            const response = await fetch(`${Endpoint}/api/v1/email/send`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ to, subject, body: message, html: htmlMessage }),
+            });
+            if (!response.ok) throw new Error((await response.text()) || "Failed to send statement email");
+            const result = await response.json();
+            $("#emailStatementModal").modal("hide");
+            alert(result.message || "Statement email sent successfully.");
+          } catch (error) {
+            console.error("Error sending statement email:", error);
+            alert(`Failed to send statement email: ${error.message}`);
+          } finally {
+            button.disabled = false;
+            button.innerHTML = originalLabel;
+          }
         });
 
         prevPageButton.addEventListener("click", function () {
@@ -1256,7 +1422,7 @@
                 throw new Error(`HTTP error! Status: ${response.status}`);
 
               $("#editPaymentModal").modal("hide");
-              await fetchPayments(currentFilterMode === "all"); // Reload with current filter mode
+              await fetchPayments();
             } catch (error) {
               console.error("Error updating payment:", error);
               alert("Failed to update payment.");

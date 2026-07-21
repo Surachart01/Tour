@@ -1,4 +1,4 @@
-let paidBookings = [];
+let confirmedBookings = [];
 const ORIGINAL_DOCUMENT_TYPE = 'original_tax_invoice';
 const canManageInvoices = ['admin', 'superadmin'].includes(String(localStorage.getItem('role') || '').toLowerCase());
 
@@ -20,6 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadBookings() {
   const body = document.getElementById('taxInvoiceTableBody');
+  const refreshButton = document.getElementById('refreshButton');
+  refreshButton.disabled = true;
+  refreshButton.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Loading...';
   body.innerHTML = '<tr><td colspan="10" class="text-center" style="padding:40px"><i class="fa fa-spinner fa-spin"></i> Loading confirmed bookings...</td></tr>';
   try {
     const response = await fetch(`${Endpoint}/api/v1/tax-invoice/eligible-bookings`, {
@@ -27,17 +30,20 @@ async function loadBookings() {
     });
     if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Failed to load confirmed bookings.');
     const data = await response.json();
-    paidBookings = data.bookings || [];
+    confirmedBookings = data.bookings || [];
     renderBookings();
   } catch (error) {
     body.innerHTML = `<tr><td colspan="10" class="text-center text-danger" style="padding:40px"><i class="fa fa-exclamation-triangle"></i> ${escapeHtml(error.message)}</td></tr>`;
+  } finally {
+    refreshButton.disabled = false;
+    refreshButton.innerHTML = '<i class="fa fa-refresh"></i> Refresh';
   }
 }
 
 function renderBookings() {
   const body = document.getElementById('taxInvoiceTableBody');
   const term = document.getElementById('searchBox').value.trim().toLowerCase();
-  const rows = paidBookings.filter((booking) => [
+  const rows = confirmedBookings.filter((booking) => [
     booking.file_reference, booking.booking_reference, booking.client_name,
     booking.agents?.name, booking.invoice_number
   ].some((value) => String(value || '').toLowerCase().includes(term)));

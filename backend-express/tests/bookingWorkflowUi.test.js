@@ -12,9 +12,13 @@ const bookingPage = readFileSync(resolve(rootDirectory, 'frontend-main/productio
 const quotationListPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/trip.html'), 'utf8');
 const bookingListPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/booking.html'), 'utf8');
 const statementPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/payment.html'), 'utf8');
+const proformaPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/invoice_management.html'), 'utf8');
+const proformaSource = readFileSync(resolve(rootDirectory, 'frontend-main/production/js/invoice_management/invoice_management.js'), 'utf8');
 const taxInvoiceListPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/tax_invoices.html'), 'utf8');
 const taxInvoiceEditorPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/tax_invoice_editor.html'), 'utf8');
 const taxInvoiceEditorSource = readFileSync(resolve(rootDirectory, 'frontend-main/production/js/tax_invoices/tax_invoice_editor.js'), 'utf8');
+const taxInvoiceControllerSource = readFileSync(resolve(rootDirectory, 'backend-express/src/controllers/taxInvoiceController.js'), 'utf8');
+const tripControllerSource = readFileSync(resolve(rootDirectory, 'backend-express/src/controllers/tripController.js'), 'utf8');
 const rolePermissionsSource = readFileSync(resolve(rootDirectory, 'frontend-main/production/js/common/role-permissions.js'), 'utf8');
 
 function getFunctionSource(source, name) {
@@ -35,7 +39,34 @@ test('statement page keeps the Statement label after navigation', () => {
   assert.match(statementPage, /<title>Statement<\/title>/);
   assert.match(statementPage, /<h3>Statement<\/h3>/);
   assert.match(statementPage, /<h2>Statement Records<\/h2>/);
+  assert.match(statementPage, /js\/common\/sidebar-control\.js\?v=/);
+  assert.match(statementPage, /href="payment\.html"[\s\S]{0,120}>[\s\S]{0,80}Statement/);
+  assert.doesNotMatch(statementPage, /href="payment\.html"[\s\S]{0,120}>[\s\S]{0,80}\bPayments?\b/);
   assert.doesNotMatch(statementPage, /<h3>Payments<\/h3>/);
+});
+
+test('statement page provides monthly agent selection, print, and default email actions', () => {
+  assert.match(statementPage, /id="statementAgent"/);
+  assert.match(statementPage, /id="statementMonth"/);
+  assert.match(statementPage, /id="selectAllStatements"/);
+  assert.match(statementPage, /id="printStatementBtn"/);
+  assert.match(statementPage, /id="emailStatementBtn"/);
+  assert.match(statementPage, /id="emailStatementModal"/);
+  assert.match(statementPage, /function buildStatementContent\(payments\)/);
+  assert.match(statementPage, /payment\.payment_deadline \|\| payment\.booking_date/);
+  assert.match(statementPage, /\/api\/v1\/email\/send/);
+  assert.match(statementPage, /Statement of Account - \$\{period\} - VeraThailandia/);
+  assert.match(statementPage, /Proforma \/ File/);
+  assert.match(statementPage, /Payment Deadline/);
+  assert.match(statementPage, /Outstanding/);
+});
+
+test('confirmed booking payment records expose the agent and invoice details needed by statements', () => {
+  assert.match(tripControllerSource, /agent_email: trip\.agents\?\.email \|\| ''/);
+  assert.match(tripControllerSource, /agent_address: trip\.agents\?\.address \|\| ''/);
+  assert.match(tripControllerSource, /file_number: trip\.file_reference \|\| trip\.booking_reference \|\| ''/);
+  assert.match(tripControllerSource, /proforma_invoice_number: trip\.invoice_number \|\| ''/);
+  assert.match(tripControllerSource, /agents: \{ select: \{ id: true, name: true, email: true, address: true, telephone: true \} \}/);
 });
 
 test('quotation conversion is wired to the finalization endpoint', () => {
@@ -57,17 +88,42 @@ test('booking confirmation controls call the correct endpoints without a page re
   assert.doesNotMatch(confirm, /window\.location\.reload\(\)/);
 });
 
-test('confirmed bookings use the dedicated admin Proforma endpoint', () => {
+test('confirmed bookings open the single Proforma preview implementation', () => {
   assert.match(routeSource, /router\.get\('\/bookings\/:id\/proforma-pdf', authorize\('admin'\), generateProformaInvoicePDF\)/);
   assert.match(quotationListPage, /\(role === 'admin' \|\| role === 'superadmin'\) && trip\.status === 'Confirmed'/);
   assert.match(quotationListPage, /class="btn-action btn-action-save proforma-btn"/);
   assert.doesNotMatch(quotationListPage, /class="btn-action btn-action-save print-btn proforma-btn"/);
-  assert.match(quotationListPage, /\/api\/v1\/bookings\/\$\{tripId\}\/proforma-pdf/);
+  assert.match(quotationListPage, /invoice_management\.html\?preview=\$\{encodeURIComponent\(tripId\)\}/);
+  assert.doesNotMatch(quotationListPage, /\/api\/v1\/bookings\/\$\{tripId\}\/proforma-pdf/);
   assert.match(bookingListPage, /trip\.status === "Confirmed"/);
   assert.match(bookingListPage, /class="btn table-action-btn proforma-btn"/);
-  assert.match(bookingListPage, /\/api\/v1\/bookings\/\$\{tripId\}\/proforma-pdf/);
+  assert.match(bookingListPage, /invoice_management\.html\?preview=\$\{encodeURIComponent\(tripId\)\}/);
+  assert.doesNotMatch(bookingListPage, /\/api\/v1\/bookings\/\$\{tripId\}\/proforma-pdf/);
   assert.doesNotMatch(bookingListPage, /class="btn table-action-btn invoice-btn"/);
   assert.doesNotMatch(bookingListPage, /summary-btn notify-agent-btn/);
+});
+
+test('Proforma page is booking-driven and contains no legacy manual invoice form', () => {
+  assert.match(proformaPage, /<title>Proforma Invoices<\/title>/);
+  assert.match(proformaPage, /> Proforma Invoice/);
+  assert.match(proformaPage, /id="refreshInvoicesBtn"/);
+  assert.match(proformaPage, /js\/common\/sidebar-control\.js/);
+  assert.doesNotMatch(proformaPage, /id="invoiceModal"/);
+  assert.doesNotMatch(proformaPage, /Add New Invoice/);
+  assert.doesNotMatch(proformaPage, /GST Amount/);
+  assert.doesNotMatch(proformaSource, /saveInvoiceOnly|generatePdfOnly|localStorage\.setItem\('invoices'/);
+  assert.match(proformaSource, /String\(booking\.status \|\| ""\)\.toLowerCase\(\) === "confirmed"/);
+  assert.match(proformaSource, /renderDirectProformaPreview/);
+  assert.match(proformaSource, /new URLSearchParams\(window\.location\.search\)\.get\('preview'\)/);
+  assert.doesNotMatch(proformaSource, /onclick="generateInvoicePDF/);
+  assert.match(proformaSource, /Tel \+66 2126 6914 \| Email: info@verathailandia\.com/);
+  assert.match(proformaSource, /<span>Total:<\/span>/);
+  assert.match(proformaPage, /id="invoicePagination"/);
+  assert.match(proformaPage, /id="previousPageBtn"/);
+  assert.match(proformaPage, /id="nextPageBtn"/);
+  assert.match(proformaSource, /Start date must be on or before the end date/);
+  assert.match(proformaSource, /bookingDate >= currentDateRange\.start && bookingDate <= currentDateRange\.end/);
+  assert.match(proformaSource, /indicator\.textContent = `Page \$\{currentPage\} of \$\{totalPages\}`/);
 });
 
 test('tax invoice pages retain the application shell and protect direct editor access', () => {
@@ -117,6 +173,11 @@ test('tax invoice editor uses the Proforma document structure and correct docume
   assert.doesNotMatch(taxInvoiceEditorSource, /<tr><td class="passenger-label">Agent Name/);
   assert.doesNotMatch(taxInvoiceEditorSource, /<tr><td class="passenger-label">Address/);
   assert.match(taxInvoiceEditorPage, /Open PDF \/ Print/);
+  assert.match(taxInvoiceEditorSource, /documentType !== ORIGINAL_DOCUMENT_TYPE[\s\S]*saveButton'\)\.style\.display = 'none'/);
+  assert.match(taxInvoiceEditorSource, /row\.type === 'transfer' \? 'Car Fee:' : 'ADV \(Non-VAT\):'/);
+  assert.match(taxInvoiceEditorSource, /class="print-billed-title">BILLED TO/);
+  assert.match(taxInvoiceEditorSource, /bookingInvoiceNumber = booking\.invoice_number \|\| '-'/);
+  assert.match(taxInvoiceEditorSource, /taxDocumentLabel = documentType === 'original_receipt_transportation' \? 'RECEIPT N°:' : 'TAX INVOICE N°:'/);
 });
 
 test('tax invoice list exposes the three required downloadable documents', () => {
@@ -137,4 +198,6 @@ test('tax invoice list exposes the three required downloadable documents', () =>
   assert.match(taxInvoiceEditorSource, /usesRemainingAmountVat/);
   assert.match(taxInvoiceEditorSource, /ADV is deducted first; VAT 7% is calculated from the remaining amount/);
   assert.doesNotMatch(taxInvoiceListSource, /type: 'tax_invoice_hotel'/);
+  assert.match(taxInvoiceControllerSource, /return bookingConfirmed\(booking\)/);
+  assert.match(taxInvoiceControllerSource, /prisma\.\$transaction\(async \(transaction\)/);
 });

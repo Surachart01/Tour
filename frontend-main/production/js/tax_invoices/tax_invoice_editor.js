@@ -29,6 +29,7 @@ let services = [];
 let savedDocument = null;
 let masterDocument = null;
 let documentsByType = new Map();
+let draftInvoiceDate = '';
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!tripId || !DOCUMENT_CONFIG[documentType]) {
@@ -37,7 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   document.getElementById('saveButton').addEventListener('click', saveDocument);
   document.getElementById('printButton').addEventListener('click', openPrintView);
-  if (!canManageInvoices) document.getElementById('saveButton').style.display = 'none';
+  if (!canManageInvoices || documentType !== ORIGINAL_DOCUMENT_TYPE) {
+    document.getElementById('saveButton').style.display = 'none';
+  }
   if (isSettingsMode && documentType === ORIGINAL_DOCUMENT_TYPE) {
     document.getElementById('saveButton').innerHTML = '<i class="fa fa-check"></i> Save Tax Settings';
   }
@@ -54,6 +57,7 @@ async function loadDocument() {
     documentsByType = new Map(documents.map((document) => [document.document_type, document]));
     savedDocument = documents.find((document) => document.document_type === documentType) || null;
     masterDocument = documents.find((document) => document.document_type === ORIGINAL_DOCUMENT_TYPE) || null;
+    draftInvoiceDate = toInputDate(savedDocument?.invoice_date || masterDocument?.invoice_date || booking.payment_date);
     if (documentType !== ORIGINAL_DOCUMENT_TYPE && !masterDocument) {
       document.getElementById('invoiceNotice').innerHTML = '<i class="fa fa-lock"></i> Save the Original Tax Invoice first. Its invoice date and selected services will be copied automatically to the other tax documents.';
       document.getElementById('invoicePaper').innerHTML = '<div class="loading"><i class="fa fa-lock"></i><br>Save the Original Tax Invoice first, then return here to open this document.</div>';
@@ -108,9 +112,10 @@ function render() {
   const calculation = calculate();
   const billing = booking.proforma_billing || {};
   const taxInvoiceNumber = savedDocument?.invoice_number || defaultInvoiceNumber();
+  const documentNumberLabel = documentType === 'original_receipt_transportation' ? 'Receipt Nr.' : 'Tax Invoice Nr.';
   // Pre-fill the editable invoice date from the recorded payment date.
   // The user can still change it, but the default now matches the required date.
-  const invoiceDate = escapeAttribute(toInputDate(savedDocument?.invoice_date || masterDocument?.invoice_date || booking.payment_date));
+  const invoiceDate = escapeAttribute(draftInvoiceDate);
   const billedName = billing.agent_name || booking.agents?.name || '-';
   const billedLocation = [billing.postal_code, billing.city, billing.country].filter(Boolean).join(' - ') || '-';
   document.getElementById('invoicePaper').innerHTML = `
@@ -127,7 +132,7 @@ function render() {
       <table class="passenger-table"><tbody>
         <tr><td class="passenger-label">Client Name(s)</td><td>${escapeHtml(booking.client_name || '-')}</td><td class="passenger-label">Invoice Nr.</td><td>${escapeHtml(booking.invoice_number || '-')}</td></tr>
         <tr><td class="passenger-label">Nr. of Clients</td><td>${number(booking.number_of_adults) + number(booking.number_of_kids)}</td><td class="passenger-label">File Nr.</td><td>${escapeHtml(booking.file_reference || booking.booking_reference || '-')}</td></tr>
-        <tr><td class="passenger-label">Date</td><td><input id="invoiceDate" type="date" class="invoice-number-input" value="${invoiceDate}" ${isOriginal ? '' : 'readonly'} /></td><td class="passenger-label">Tax Invoice Nr.</td><td>${escapeHtml(taxInvoiceNumber)}</td></tr>
+        <tr><td class="passenger-label">Date</td><td><input id="invoiceDate" type="date" class="invoice-number-input" value="${invoiceDate}" ${isOriginal ? '' : 'readonly'} /></td><td class="passenger-label">${documentNumberLabel}</td><td>${escapeHtml(taxInvoiceNumber)}</td></tr>
       </tbody></table>
     </section>
     ${renderSections(calculation.rows)}
@@ -204,6 +209,9 @@ function renderTotals(totals) {
 
 function bindInputs() {
   if (documentType !== ORIGINAL_DOCUMENT_TYPE || !canManageInvoices) return;
+  document.getElementById('invoiceDate')?.addEventListener('change', (event) => {
+    draftInvoiceDate = event.target.value;
+  });
   document.querySelectorAll('[data-select]').forEach((input) => input.addEventListener('change', () => {
     const row = findRow(input.dataset.select); if (row) row.selected = input.checked; render();
   }));
@@ -292,7 +300,10 @@ async function saveDocument() {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.message || 'Failed to save tax invoice.');
     savedDocument = data.document;
-    if (documentType === ORIGINAL_DOCUMENT_TYPE) masterDocument = data.document;
+    if (documentType === ORIGINAL_DOCUMENT_TYPE) {
+      masterDocument = data.document;
+      draftInvoiceDate = toInputDate(data.document.invoice_date);
+    }
     if (documentType === ORIGINAL_DOCUMENT_TYPE) document.getElementById('printButton').disabled = false;
     updateNotice();
     window.alert(data.synchronized?.length
@@ -327,8 +338,9 @@ function buildPrintableDocument(title) {
   const country = billing.country || '-';
   const invoiceDate = document.getElementById('invoiceDate')?.value
     || toInputDate(savedDocument?.invoice_date || masterDocument?.invoice_date || booking.payment_date);
-  const invoiceNumber = documentNumber(documentType === 'original_receipt_transportation' ? 'tax_invoice' : documentType);
-  const receiptNumber = documentNumber('original_receipt_transportation');
+  const bookingInvoiceNumber = booking.invoice_number || '-';
+  const taxDocumentNumber = documentNumber(documentType);
+  const taxDocumentLabel = documentType === 'original_receipt_transportation' ? 'RECEIPT N°:' : 'TAX INVOICE N°:';
   const fileNumber = booking.file_reference || booking.booking_reference || '-';
   const clientCount = number(booking.number_of_adults) + number(booking.number_of_kids);
   const logoUrl = new URL('images/Verathailand_logo.png', window.location.href).href;
@@ -343,14 +355,15 @@ function buildPrintableDocument(title) {
         <div class="print-company-info">${companyDetailsHtml()}</div>
       </section>
       <h1 class="print-title">${escapeHtml(title)}</h1>
+      <div class="print-billed-title">BILLED TO</div>
       <table class="agent-details"><tbody>
         <tr><th>AGENT'S NAME:</th><td>${escapeHtml(agentName)}</td></tr>
         <tr><th>ADDRESS:</th><td>${escapeHtml(address)}</td></tr>
         <tr><th>COUNTRY:</th><td>${escapeHtml(country)}</td></tr>
         <tr><th>DATE:</th><td>${formatShortDate(invoiceDate)}</td></tr>
         <tr><th>FILE N°:</th><td>${escapeHtml(fileNumber)}</td></tr>
-        <tr><th>INVOICE N°:</th><td>${escapeHtml(invoiceNumber)}</td></tr>
-        <tr><th>RECEIPT N°:</th><td>${escapeHtml(receiptNumber)}</td></tr>
+        <tr><th>INVOICE N°:</th><td>${escapeHtml(bookingInvoiceNumber)}</td></tr>
+        <tr><th>${taxDocumentLabel}</th><td>${escapeHtml(taxDocumentNumber)}</td></tr>
       </tbody></table>
       <div class="rooming-title">ROOMING LIST DETAILS:</div>
       <table class="rooming-details"><tbody>
@@ -426,7 +439,8 @@ function advDescription(row) {
     ? [row.from, row.to].filter(Boolean).join(' - ')
     : row.type === 'excursion' ? `Hotel - ${row.name || 'Excursion'} - Hotel`
       : `${formatShortDate(row.from_date || row.date)} to ${formatShortDate(row.to_date)} / ${row.name || 'Tour'}`;
-  return `<div class="service-description"><div><span>Car Fee:</span>${escapeHtml(route || row.name || '-')}</div></div>`;
+  const label = row.type === 'transfer' ? 'Car Fee:' : 'ADV (Non-VAT):';
+  return `<div class="service-description"><div><span>${label}</span>${escapeHtml(route || row.name || '-')}</div></div>`;
 }
 
 function renderPrintableTotals(totals) {
@@ -467,7 +481,7 @@ function companyDetailsHtml() {
 }
 
 function printDocumentStyles() {
-  return `@page{size:A4 portrait;margin:0}*{box-sizing:border-box}body{margin:0;background:#eceff3;color:#000;font-family:Tahoma,Arial,sans-serif;font-size:9px}.print-control{position:fixed;right:18px;top:18px;z-index:5;border:0;border-radius:5px;padding:10px 16px;background:#1688d4;color:#fff;font:700 13px Tahoma,Arial,sans-serif;cursor:pointer;box-shadow:0 2px 8px #0003}.tax-document{width:210mm;min-height:297mm;margin:15px auto;padding:4mm 7mm 6mm;background:#fff;box-shadow:0 2px 16px #0003}.print-company-header{display:grid;grid-template-columns:64mm 1fr;min-height:34mm;border:1px solid #111}.print-logo{display:flex;align-items:center;justify-content:center;border-right:1px solid #111}.print-logo img{max-width:58mm;max-height:31mm;object-fit:contain}.print-company-info{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:2mm 3mm;text-align:left;line-height:1.2;font-size:8px}.company-detail-line{white-space:nowrap}.company-detail-name{font-size:9px;font-weight:700}.print-title,.rooming-title{margin:0;background:#ffc000;border:1px solid #111;border-top:0;text-align:center;font-family:Georgia,'Times New Roman',serif;font-weight:700}.print-title{padding:1.5mm 1mm;font-size:20px}.agent-details,.rooming-details,.service-print-table{width:100%;border-collapse:collapse}.agent-details{margin:0 0 0}.agent-details th,.agent-details td{height:4.2mm;padding:.3mm .5mm;border:0;text-align:left;vertical-align:middle}.agent-details th{width:36mm;border-right:1px solid #111;font-weight:700}.agent-details tr:last-child th,.agent-details tr:last-child td{border-bottom:1px solid #111}.rooming-title{padding:.6mm;font-size:10px}.rooming-details{margin:.8mm 0}.rooming-details th,.rooming-details td{height:4.3mm;padding:.5mm;border-bottom:1px solid #111;text-align:left}.rooming-details th{width:25mm}.service-print-table{table-layout:fixed}.service-print-table thead th{padding:.8mm .5mm;background:#ffc000;border-top:1px solid #111;border-bottom:1px solid #111;text-align:left}.service-print-table thead th:first-child{width:auto}.service-print-table thead th:nth-last-child(1),.service-print-table thead th:nth-last-child(2){width:31mm;text-align:right}.service-print-table thead th:nth-last-child(3):not(:first-child){width:31mm;text-align:right}.service-print-table thead th:last-child:not(:nth-child(3)){width:13mm;text-align:center}.service-print-table tbody td{padding:.8mm .5mm;border-left:1px solid #111;border-right:1px solid #111;vertical-align:top}.service-print-table tbody tr:last-child td{border-bottom:1px solid #111}.service-description{line-height:1.35}.service-description>div{display:grid;grid-template-columns:25mm 1fr;gap:1mm;min-height:3.5mm}.service-description strong{font-weight:700}.service-pax{float:right;margin-right:5mm}.number{text-align:right;white-space:nowrap}.total-value{font-weight:700}.adv-value{color:#ed1c24;font-weight:700}.vat-rate{text-align:center}.no-services{padding:6mm!important;text-align:center}.service-print-table tfoot th,.service-print-table tfoot td{height:4.5mm;padding:.5mm;border:1px solid #111}.service-print-table tfoot .totals-spacer{border:0}.service-print-table tfoot th{text-align:center;font-weight:400}.service-print-table tfoot .total-amount,.service-print-table tfoot tr:last-of-type th{font-weight:700}.column-count-sentinel{display:none}.print-note{margin-top:-17mm;min-height:16mm;padding:.5mm;border-top:1px solid #111}.print-signatures{display:flex;gap:20mm;margin:12mm 0 0;font-family:Georgia,'Times New Roman',serif;font-size:9px}@media print{body{background:#fff}.print-control{display:none}.tax-document{margin:0;padding:4mm 7mm 6mm;box-shadow:none}.service-main-row,.service-adv-row{break-inside:avoid;page-break-inside:avoid}}`;
+  return `@page{size:A4 portrait;margin:0}*{box-sizing:border-box}body{margin:0;background:#eceff3;color:#000;font-family:Tahoma,Arial,sans-serif;font-size:9px}.print-control{position:fixed;right:18px;top:18px;z-index:5;border:0;border-radius:5px;padding:10px 16px;background:#1688d4;color:#fff;font:700 13px Tahoma,Arial,sans-serif;cursor:pointer;box-shadow:0 2px 8px #0003}.tax-document{width:210mm;min-height:297mm;margin:15px auto;padding:4mm 7mm 6mm;background:#fff;box-shadow:0 2px 16px #0003}.print-company-header{display:grid;grid-template-columns:64mm 1fr;min-height:34mm;border:1px solid #111}.print-logo{display:flex;align-items:center;justify-content:center;border-right:1px solid #111}.print-logo img{max-width:58mm;max-height:31mm;object-fit:contain}.print-company-info{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:2mm 3mm;text-align:left;line-height:1.2;font-size:8px}.company-detail-line{white-space:nowrap}.company-detail-name{font-size:9px;font-weight:700}.print-title,.rooming-title{margin:0;background:#ffc000;border:1px solid #111;border-top:0;text-align:center;font-family:Georgia,'Times New Roman',serif;font-weight:700}.print-title{padding:1.5mm 1mm;font-size:20px}.print-billed-title{padding:.8mm;background:#000;color:#fff;border:1px solid #111;border-top:0;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:11px;font-weight:700}.agent-details,.rooming-details,.service-print-table{width:100%;border-collapse:collapse}.agent-details{margin:0}.agent-details th,.agent-details td{height:4.2mm;padding:.3mm .8mm;border:1px solid #111;border-top:0;text-align:left;vertical-align:middle}.agent-details th{width:36mm;font-weight:700}.rooming-title{padding:.6mm;font-size:10px}.rooming-details{margin:.8mm 0}.rooming-details th,.rooming-details td{height:4.3mm;padding:.5mm;border-bottom:1px solid #111;text-align:left}.rooming-details th{width:25mm}.service-print-table{table-layout:fixed}.service-print-table thead th{padding:.8mm .5mm;background:#ffc000;border-top:1px solid #111;border-bottom:1px solid #111;text-align:left}.service-print-table thead th:first-child{width:auto}.service-print-table thead th:nth-last-child(1),.service-print-table thead th:nth-last-child(2){width:31mm;text-align:right}.service-print-table thead th:nth-last-child(3):not(:first-child){width:31mm;text-align:right}.service-print-table thead th:last-child:not(:nth-child(3)){width:13mm;text-align:center}.service-print-table tbody td{padding:.8mm .5mm;border-left:1px solid #111;border-right:1px solid #111;vertical-align:top}.service-print-table tbody tr:last-child td{border-bottom:1px solid #111}.service-description{line-height:1.35}.service-description>div{display:grid;grid-template-columns:25mm 1fr;gap:1mm;min-height:3.5mm}.service-description strong{font-weight:700}.service-pax{float:right;margin-right:5mm}.number{text-align:right;white-space:nowrap}.total-value{font-weight:700}.adv-value{color:#ed1c24;font-weight:700}.vat-rate{text-align:center}.no-services{padding:6mm!important;text-align:center}.service-print-table tfoot th,.service-print-table tfoot td{height:4.5mm;padding:.5mm;border:1px solid #111}.service-print-table tfoot .totals-spacer{border:0}.service-print-table tfoot th{text-align:center;font-weight:400}.service-print-table tfoot .total-amount,.service-print-table tfoot tr:last-of-type th{font-weight:700}.column-count-sentinel{display:none}.print-note{margin-top:-17mm;min-height:16mm;padding:.5mm;border-top:1px solid #111}.print-signatures{display:flex;gap:20mm;margin:12mm 0 0;font-family:Georgia,'Times New Roman',serif;font-size:9px}@media print{body{background:#fff}.print-control{display:none}.tax-document{margin:0;padding:4mm 7mm 6mm;box-shadow:none}.service-main-row,.service-adv-row{break-inside:avoid;page-break-inside:avoid}}`;
 }
 
 function findRow(id) { return services.find((row) => row.id === id); }

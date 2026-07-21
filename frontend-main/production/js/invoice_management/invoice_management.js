@@ -1,8 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-  // Initialize the page
   initializePage();
-  
-  // Set up authentication
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
   const username = localStorage.getItem("username") || "Guest";
@@ -13,7 +10,6 @@ document.addEventListener("DOMContentLoaded", function () {
     return;
   }
 
-  // Set profile info
   document.getElementById("profileName").innerText = username;
   document.getElementById("navProfileName").innerText = username;
 
@@ -25,317 +21,71 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // Add event listeners
   setupEventListeners();
-  
-  // Load existing invoices
   loadInvoices();
 });
 
-// Global variables
 let invoices = [];
 let filteredInvoices = [];
-let editingInvoiceId = null;
 let currentPage = 1;
 let rowsPerPage = 25;
+let showAllRows = false;
 let totalPages = 1;
-let currentFilterMode = 'all'; // 'all' or 'date_range'
+let currentFilterMode = 'all';
 let currentDateRange = { start: null, end: null };
 
-// Initialize page
 function initializePage() {
   const today = new Date();
   const endDate = today.toISOString().split('T')[0];
   const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
   document.getElementById("fromDate").value = startDate;
   document.getElementById("toDate").value = endDate;
-  document.getElementById("paymentDate").value = endDate;
 }
 
-// Setup event listeners
 function setupEventListeners() {
-  // Add new invoice button at bottom
-  const addInvoiceBtnBottom = document.getElementById("addInvoiceBtnBottom");
-  if (addInvoiceBtnBottom) {
-    addInvoiceBtnBottom.addEventListener("click", function() {
-      openInvoiceModal();
-    });
-  }
-  
-  // Save invoice button
-  document.getElementById("saveInvoiceBtn").addEventListener("click", function() {
-    saveInvoiceOnly();
-  });
-  
-  // Generate PDF button
-  document.getElementById("generatePdfBtn").addEventListener("click", function() {
-    generatePdfOnly();
-  });
-  
-  // Auto-generate booking ID when type changes
-  document.getElementById("bookingType").addEventListener("change", function() {
-    if (this.value && !document.getElementById("bookingId").value) {
-      generateBookingId(this.value);
-    }
-  });
-  
-  // Form validation
-  const requiredFields = document.querySelectorAll("#invoiceForm input[required], #invoiceForm select[required], #invoiceForm textarea[required]");
-  requiredFields.forEach(field => {
-    field.addEventListener("blur", validateField);
-    field.addEventListener("input", clearFieldError);
-  });
-  
-  // Search box
   document.getElementById("searchBox").addEventListener("keyup", filterTable);
-  
-  // Filter by date button
   document.getElementById("filterByDateBtn").addEventListener("click", filterByDateRange);
-  
-  // Rows per page
+  document.getElementById("refreshInvoicesBtn").addEventListener("click", loadInvoices);
+  document.getElementById("invoiceTableBody").addEventListener("click", (event) => {
+    const viewButton = event.target.closest("[data-view-trip]");
+    if (viewButton) {
+      window.location.href = `edit_booking.html?id=${encodeURIComponent(viewButton.dataset.viewTrip)}`;
+      return;
+    }
+    const previewButton = event.target.closest("[data-preview-trip]");
+    if (previewButton) {
+      const invoice = invoices.find((item) => String(item.tripId) === String(previewButton.dataset.previewTrip));
+      if (invoice) generateInvoicePDF(invoice);
+    }
+  });
   document.getElementById("rowsSelect").addEventListener("change", function () {
-    rowsPerPage = this.value === "All" ? filteredInvoices.length : parseInt(this.value);
+    showAllRows = this.value === "All";
+    if (!showAllRows) rowsPerPage = parseInt(this.value, 10) || 25;
     currentPage = 1;
-    totalPages = Math.ceil(filteredInvoices.length / rowsPerPage);
+    recalculatePagination();
     renderInvoiceTable();
     updatePaginationButtons();
   });
-}
-
-// Generate booking ID
-function generateBookingId(type) {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  
-  let prefix = 'VT-BK';
-  switch(type) {
-    case 'Enterprise': prefix = 'VT-ENT'; break;
-    case 'User': prefix = 'VT-USR'; break;
-    default: prefix = 'VT-BK'; break;
-  }
-  
-  const bookingId = `${prefix}-${year}${month}${day}-${random}`;
-  document.getElementById("bookingId").value = bookingId;
-}
-
-// Open invoice modal
-function openInvoiceModal(invoice = null) {
-  editingInvoiceId = invoice ? invoice.id : null;
-  
-  if (invoice) {
-    // Edit mode
-    document.getElementById("invoiceModalTitle").textContent = "Edit Invoice";
-    document.getElementById("invoiceId").value = invoice.id;
-    document.getElementById("bookingId").value = invoice.bookingId;
-    document.getElementById("bookingType").value = invoice.bookingType;
-    document.getElementById("paymentDate").value = invoice.paymentDate;
-    document.getElementById("customerName").value = invoice.customerName;
-    document.getElementById("customerEmail").value = invoice.customerEmail;
-    document.getElementById("customerContact").value = invoice.customerContact;
-    document.getElementById("customerGst").value = invoice.customerGst || '';
-    document.getElementById("billingAddress").value = invoice.billingAddress;
-    document.getElementById("totalFee").value = invoice.totalFee;
-    document.getElementById("gstAmount").value = invoice.gstAmount;
-  } else {
-    // Add mode
-    document.getElementById("invoiceModalTitle").textContent = "Add New Invoice";
-    document.getElementById("invoiceForm").reset();
-    document.getElementById("invoiceId").value = '';
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById("paymentDate").value = today;
-  }
-  
-  $('#invoiceModal').modal('show');
-}
-
-// Validate field
-function validateField(event) {
-  const field = event.target;
-  const value = field.value.trim();
-  
-  // Remove existing error styling
-  field.classList.remove('is-invalid');
-  const existingError = field.parentNode.querySelector('.invalid-feedback');
-  if (existingError) {
-    existingError.remove();
-  }
-  
-  // Check if required field is empty
-  if (field.hasAttribute('required') && !value) {
-    showFieldError(field, 'This field is required');
-    return false;
-  }
-  
-  // Email validation
-  if (field.type === 'email' && value) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(value)) {
-      showFieldError(field, 'Please enter a valid email address');
-      return false;
-    }
-  }
-  
-  // Phone validation
-  if (field.type === 'tel' && value) {
-    const phoneRegex = /^[\+]?[0-9\s\-\(\)]{10,}$/;
-    if (!phoneRegex.test(value)) {
-      showFieldError(field, 'Please enter a valid phone number');
-      return false;
-    }
-  }
-  
-  return true;
-}
-
-// Show field error
-function showFieldError(field, message) {
-  field.classList.add('is-invalid');
-  const errorDiv = document.createElement('div');
-  errorDiv.className = 'invalid-feedback';
-  errorDiv.textContent = message;
-  field.parentNode.appendChild(errorDiv);
-}
-
-// Clear field error
-function clearFieldError(event) {
-  const field = event.target;
-  field.classList.remove('is-invalid');
-  const existingError = field.parentNode.querySelector('.invalid-feedback');
-  if (existingError) {
-    existingError.remove();
-  }
-}
-
-// Validate form
-function validateForm() {
-  const requiredFields = document.querySelectorAll("#invoiceForm input[required], #invoiceForm select[required], #invoiceForm textarea[required]");
-  let isValid = true;
-  
-  requiredFields.forEach(field => {
-    if (!validateField({ target: field })) {
-      isValid = false;
-    }
-  });
-  
-  // Additional validation for amounts
-  const totalFee = parseFloat(document.getElementById("totalFee").value) || 0;
-  const gstAmount = parseFloat(document.getElementById("gstAmount").value) || 0;
-  
-  if (totalFee <= 0) {
-    showFieldError(document.getElementById("totalFee"), 'Total fee must be greater than 0');
-    isValid = false;
-  }
-  
-  if (gstAmount < 0) {
-    showFieldError(document.getElementById("gstAmount"), 'GST amount cannot be negative');
-    isValid = false;
-  }
-  
-  if (gstAmount > totalFee) {
-    showFieldError(document.getElementById("gstAmount"), 'GST amount cannot be greater than total fee');
-    isValid = false;
-  }
-  
-  return isValid;
-}
-
-// Save invoice only (without PDF generation)
-function saveInvoiceOnly() {
-  if (!validateForm()) {
-    return;
-  }
-  
-  const formData = {
-    id: editingInvoiceId || Date.now(), // Use timestamp as ID for new invoices
-    bookingId: document.getElementById("bookingId").value,
-    bookingType: document.getElementById("bookingType").value,
-    paymentDate: document.getElementById("paymentDate").value,
-    customerName: document.getElementById("customerName").value,
-    customerEmail: document.getElementById("customerEmail").value,
-    customerContact: document.getElementById("customerContact").value,
-    customerGst: document.getElementById("customerGst").value,
-    billingAddress: document.getElementById("billingAddress").value,
-    totalFee: parseFloat(document.getElementById("totalFee").value),
-    gstAmount: parseFloat(document.getElementById("gstAmount").value),
-    netAmount: parseFloat(document.getElementById("totalFee").value) - parseFloat(document.getElementById("gstAmount").value),
-    createdAt: new Date().toISOString()
-  };
-  
-  if (editingInvoiceId) {
-    // Update existing invoice
-    const index = invoices.findIndex(inv => inv.id === editingInvoiceId);
-    if (index !== -1) {
-      invoices[index] = formData;
-    }
-  } else {
-    // Add new invoice
-    invoices.push(formData);
-  }
-  
-  // Save to localStorage (in real app, this would be saved to backend)
-  localStorage.setItem('invoices', JSON.stringify(invoices));
-  
-  // Close modal
-  $('#invoiceModal').modal('hide');
-  
-  // Reapply current filter so new invoice appears if it matches
-  if (currentFilterMode === 'date_range') {
-    filterByDateRange();
-  } else if (document.getElementById('searchBox').value.trim() !== '') {
-    filterTable();
-  } else {
-    filteredInvoices = [...invoices];
-    totalPages = Math.ceil(filteredInvoices.length / rowsPerPage);
-    currentPage = 1;
+  document.getElementById("previousPageBtn").addEventListener("click", function () {
+    if (currentPage <= 1) return;
+    currentPage -= 1;
     renderInvoiceTable();
     updatePaginationButtons();
-    updateFilterStatus();
-  }
-  
-  // Show success message
-  showSuccessMessage(editingInvoiceId ? 'Invoice updated successfully!' : 'Invoice saved successfully!');
-}
-
-// Generate PDF only (for current form data)
-function generatePdfOnly() {
-  if (!validateForm()) {
-    return;
-  }
-  
-  const formData = {
-    id: editingInvoiceId || Date.now(),
-    bookingId: document.getElementById("bookingId").value,
-    bookingType: document.getElementById("bookingType").value,
-    paymentDate: document.getElementById("paymentDate").value,
-    customerName: document.getElementById("customerName").value,
-    customerEmail: document.getElementById("customerEmail").value,
-    customerContact: document.getElementById("customerContact").value,
-    customerGst: document.getElementById("customerGst").value,
-    billingAddress: document.getElementById("billingAddress").value,
-    totalFee: parseFloat(document.getElementById("totalFee").value),
-    gstAmount: parseFloat(document.getElementById("gstAmount").value),
-    netAmount: parseFloat(document.getElementById("totalFee").value) - parseFloat(document.getElementById("gstAmount").value),
-    createdAt: new Date().toISOString()
-  };
-  
-  // Generate PDF
-  generateInvoicePDF(formData);
-  
-  // Show success message
-  showSuccessMessage('PDF download started successfully!');
-}
-
-// Save invoice (legacy function - kept for compatibility)
-function saveInvoice() {
-  saveInvoiceOnly();
+  });
+  document.getElementById("nextPageBtn").addEventListener("click", function () {
+    if (currentPage >= totalPages) return;
+    currentPage += 1;
+    renderInvoiceTable();
+    updatePaginationButtons();
+  });
 }
 
 // Load confirmed bookings directly from the database.
 async function loadInvoices() {
   const tableBody = document.getElementById("invoiceTableBody");
+  const refreshButton = document.getElementById("refreshInvoicesBtn");
+  refreshButton.disabled = true;
+  refreshButton.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Loading...';
   tableBody.innerHTML = `
     <tr><td colspan="9" class="text-center" style="padding: 40px;">
       <i class="fa fa-spinner fa-spin"></i> Loading confirmed bookings...
@@ -359,7 +109,7 @@ async function loadInvoices() {
           bookingId: booking.booking_reference || booking.quotation_reference || String(booking.id),
           invoiceNumber: booking.invoice_number || "",
           bookingDate: booking.booking_date || booking.created_at,
-          paymentDate: booking.payment_date || booking.booking_date || booking.created_at,
+          paymentDate: booking.booking_date || booking.created_at,
           customerName: booking.client_name || "-",
           customerEmail: booking.client_email || "",
           customerContact: booking.client_phone || "-",
@@ -380,30 +130,33 @@ async function loadInvoices() {
         };
       });
 
-    filteredInvoices = [...invoices];
-    totalPages = Math.ceil(filteredInvoices.length / rowsPerPage);
+    applyInvoiceFilters();
+    recalculatePagination();
     currentPage = 1;
     renderInvoiceTable();
     updatePaginationButtons();
+    const directPreviewId = new URLSearchParams(window.location.search).get('preview');
+    if (directPreviewId) {
+      const directInvoice = invoices.find((item) => String(item.tripId) === String(directPreviewId));
+      if (!directInvoice) throw new Error('This booking is not Confirmed or is no longer available for a Proforma Invoice.');
+      await renderDirectProformaPreview(directInvoice);
+    }
   } catch (error) {
     console.error("Error loading proforma invoices:", error);
     tableBody.innerHTML = `
       <tr><td colspan="9" class="text-center text-danger" style="padding: 40px;">
         <i class="fa fa-exclamation-triangle"></i> ${error.message}
       </td></tr>`;
+  } finally {
+    refreshButton.disabled = false;
+    refreshButton.innerHTML = '<i class="fa fa-refresh"></i> Refresh';
   }
 }
 
 // Filter table by search box
 function filterTable() {
-  const searchText = document.getElementById("searchBox").value.toLowerCase();
-  filteredInvoices = invoices.filter(inv =>
-    String(inv.bookingId || "").toLowerCase().includes(searchText) ||
-    String(inv.customerName || "").toLowerCase().includes(searchText) ||
-    String(inv.customerEmail || "").toLowerCase().includes(searchText) ||
-    String(inv.agentName || "").toLowerCase().includes(searchText)
-  );
-  totalPages = Math.ceil(filteredInvoices.length / rowsPerPage);
+  applyInvoiceFilters();
+  recalculatePagination();
   currentPage = 1;
   renderInvoiceTable();
   updatePaginationButtons();
@@ -418,13 +171,14 @@ function filterByDateRange() {
     showFilterStatus('Please select both start and end dates', true);
     return;
   }
-  filteredInvoices = invoices.filter(inv => {
-    const payDate = inv.paymentDate || inv.createdAt;
-    return payDate >= fromDate && payDate <= toDate;
-  });
+  if (fromDate > toDate) {
+    showFilterStatus('Start date must be on or before the end date', true);
+    return;
+  }
   currentFilterMode = 'date_range';
   currentDateRange = { start: fromDate, end: toDate };
-  totalPages = Math.ceil(filteredInvoices.length / rowsPerPage);
+  applyInvoiceFilters();
+  recalculatePagination();
   currentPage = 1;
   renderInvoiceTable();
   updatePaginationButtons();
@@ -436,6 +190,7 @@ function updateFilterStatus() {
   const filterStatus = document.getElementById("filterStatus");
   if (currentFilterMode === 'date_range') {
     filterStatus.style.display = 'block';
+    filterStatus.className = 'alert alert-info';
     filterStatus.textContent = `Showing invoices from ${currentDateRange.start} to ${currentDateRange.end} (${filteredInvoices.length} found)`;
   } else {
     filterStatus.style.display = 'none';
@@ -449,9 +204,36 @@ function showFilterStatus(message, isError) {
   filterStatus.textContent = message;
 }
 
+function applyInvoiceFilters() {
+  const searchText = document.getElementById("searchBox").value.trim().toLowerCase();
+  filteredInvoices = invoices.filter((invoice) => {
+    const matchesSearch = [invoice.bookingId, invoice.customerName, invoice.customerEmail, invoice.agentName]
+      .some((value) => String(value || "").toLowerCase().includes(searchText));
+    if (!matchesSearch) return false;
+    if (currentFilterMode !== 'date_range') return true;
+    const bookingDate = String(invoice.bookingDate || invoice.paymentDate || invoice.createdAt || '').slice(0, 10);
+    return bookingDate >= currentDateRange.start && bookingDate <= currentDateRange.end;
+  });
+}
+
+function recalculatePagination() {
+  const pageSize = showAllRows ? Math.max(filteredInvoices.length, 1) : rowsPerPage;
+  totalPages = Math.max(1, Math.ceil(filteredInvoices.length / pageSize));
+  currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+}
+
 // Pagination controls
 function updatePaginationButtons() {
-  // You can add pagination buttons if needed, similar to tax_invoices.js
+  const pagination = document.getElementById('invoicePagination');
+  const previousButton = document.getElementById('previousPageBtn');
+  const nextButton = document.getElementById('nextPageBtn');
+  const indicator = document.getElementById('pageIndicator');
+  const shouldShow = !showAllRows && filteredInvoices.length > rowsPerPage;
+
+  pagination.style.display = shouldShow ? 'block' : 'none';
+  previousButton.disabled = currentPage <= 1;
+  nextButton.disabled = currentPage >= totalPages;
+  indicator.textContent = `Page ${currentPage} of ${totalPages}`;
 }
 
 // Render invoice table (with pagination)
@@ -464,56 +246,39 @@ function renderInvoiceTable() {
         <td colspan="9" class="text-center" style="padding: 40px;">
           <i class="fa fa-file-text-o fa-3x" style="color: #ddd; margin-bottom: 15px;"></i>
           <h4>No Confirmed Bookings Found</h4>
-          <p class="text-muted">A proforma invoice appears after every required service and the booking are confirmed.</p>
+          <p class="text-muted">A proforma invoice appears after all required services and the booking are confirmed.</p>
         </td>
       </tr>
     `;
     return;
   }
   // Pagination logic
-  const startIdx = (currentPage - 1) * rowsPerPage;
-  const endIdx = rowsPerPage === filteredInvoices.length ? filteredInvoices.length : startIdx + rowsPerPage;
+  const pageSize = showAllRows ? Math.max(filteredInvoices.length, 1) : rowsPerPage;
+  const startIdx = (currentPage - 1) * pageSize;
+  const endIdx = showAllRows ? filteredInvoices.length : startIdx + pageSize;
   const pageData = filteredInvoices.slice(startIdx, endIdx);
   pageData.forEach((invoice) => {
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td>${invoice.bookingId}</td>
-      <td>${formatDate(invoice.paymentDate)}</td>
-      <td>${invoice.customerName}</td>
-      <td>${invoice.agentName || "-"}</td>
-      <td>${invoice.customerContact}</td>
+      <td>${escapeInvoiceHtml(invoice.bookingId)}</td>
+      <td>${formatDate(invoice.bookingDate)}</td>
+      <td>${escapeInvoiceHtml(invoice.customerName)}</td>
+      <td>${escapeInvoiceHtml(invoice.agentName || "-")}</td>
+      <td>${escapeInvoiceHtml(invoice.customerContact)}</td>
       <td>${invoice.pax || 0}</td>
       <td>${formatCurrency(invoice.totalFee)}</td>
       <td><span class="badge badge-success">CONFIRMED</span></td>
       <td>
-        <button class="btn btn-sm btn-info btn-action" onclick="window.location.href='edit_booking.html?id=${invoice.tripId}'" title="View Booking">
+        <button class="btn btn-sm btn-info btn-action" data-view-trip="${escapeInvoiceHtml(invoice.tripId)}" title="View Booking" aria-label="View Booking">
           <i class="fa fa-eye"></i>
         </button>
-        <button class="btn btn-sm btn-success btn-action" onclick="generateInvoicePDF(${JSON.stringify(invoice).replace(/"/g, '&quot;')})" title="Generate PDF">
+        <button class="btn btn-sm btn-success btn-action" data-preview-trip="${escapeInvoiceHtml(invoice.tripId)}" title="Open Proforma Preview" aria-label="Open Proforma Preview">
           <i class="fa fa-file-pdf-o"></i>
         </button>
       </td>
     `;
     tableBody.appendChild(row);
   });
-}
-
-// Edit invoice
-function editInvoice(invoiceId) {
-  const invoice = invoices.find(inv => inv.id === invoiceId);
-  if (invoice) {
-    openInvoiceModal(invoice);
-  }
-}
-
-// Delete invoice
-function deleteInvoice(invoiceId) {
-  if (confirm("Are you sure you want to delete this invoice?")) {
-    invoices = invoices.filter(inv => inv.id !== invoiceId);
-    localStorage.setItem('invoices', JSON.stringify(invoices));
-    renderInvoiceTable();
-    showSuccessMessage('Invoice deleted successfully!');
-  }
 }
 
 function escapeInvoiceHtml(value) {
@@ -856,7 +621,7 @@ async function getDetailedInvoiceForPrint(invoice) {
     };
   } catch (error) {
     console.error("Unable to load full booking details for invoice:", error);
-    return invoice;
+    throw new Error('Unable to load the complete booking details. Please refresh and try again.');
   }
 }
 
@@ -910,7 +675,7 @@ function buildProformaPreviewHTML(invoice) {
           margin: 0;
           background: #2f2f2f;
           color: #111;
-          font-family: Arial, Helvetica, sans-serif;
+          font-family: Tahoma, Arial, Helvetica, sans-serif;
           font-size: 12px;
         }
         .toolbar {
@@ -1300,6 +1065,7 @@ function buildProformaPreviewHTML(invoice) {
               <div>160/424-425 อาคารไอทีเอฟ สีลมพาเลซ ชั้น 20 | 160/424-425, ITF Silom Palace, 20th Floor</div>
               <div>ถนน สีลม แขวงสุริยวงศ์ เขต บางรัก | Silom Road, Suriya Wong, Bangrak</div>
               <div>กรุงเทพฯ 10500 ประเทศไทย | Bangkok 10500 - Thailand</div>
+              <div>Tel +66 2126 6914 | Email: info@verathailandia.com</div>
               <div>ทะเบียนเลขที่ | Tax ID 0105547045569</div>
               <div>ใบอนุญาตประกอบธุรกิจนำเที่ยวเลขที่ | TAT License number 14/03484</div>
             </div>
@@ -1403,6 +1169,13 @@ function buildProformaPreviewHTML(invoice) {
     </body>
     </html>
   `;
+}
+
+async function renderDirectProformaPreview(invoice) {
+  const detailedInvoice = await getDetailedInvoiceForPrint(invoice);
+  document.open();
+  document.write(buildProformaPreviewHTML(detailedInvoice));
+  document.close();
 }
 
 // Generate PDF preview

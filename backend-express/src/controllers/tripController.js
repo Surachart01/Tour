@@ -51,7 +51,13 @@ function formatPaymentInfo(trip) {
   const amountDue = finalCost + penaltyCost;
   return {
     ...trip,
+    agent_id: trip.agent_id || trip.agents?.id || null,
     agent_name: trip.agents?.name || '-',
+    agent_email: trip.agents?.email || '',
+    agent_address: trip.agents?.address || '',
+    agent_telephone: trip.agents?.telephone || '',
+    file_number: trip.file_reference || trip.booking_reference || '',
+    proforma_invoice_number: trip.invoice_number || '',
     start_date: trip.trip_start_date || trip.created_at || null,
     final_cost: finalCost,
     penalty_cost: penaltyCost,
@@ -1807,8 +1813,8 @@ export async function getPaymentInfo(req, res, next) {
         id: true, client_name: true, total_amount: true, discount_amount: true,
         final_amount: true, penalty_cost: true, received_amount: true, balance: true,
         payment_date: true, payment_reference: true, trip_start_date: true, payment_deadline: true, booking_date: true,
-        booking_reference: true, file_reference: true, status: true,
-        agents: { select: { name: true } }
+        booking_reference: true, file_reference: true, invoice_number: true, agent_id: true, status: true,
+        agents: { select: { id: true, name: true, email: true, address: true, telephone: true } }
       }
     });
     if (!trip) return res.status(404).send('Booking not found');
@@ -1885,10 +1891,10 @@ export async function listPaymentInfoFromBookings(req, res, next) {
       where,
       select: {
         id: true, client_name: true, booking_reference: true,
-        file_reference: true, trip_start_date: true, total_amount: true, discount_amount: true,
+        file_reference: true, invoice_number: true, agent_id: true, trip_start_date: true, total_amount: true, discount_amount: true,
         final_amount: true, penalty_cost: true, received_amount: true, balance: true,
         payment_date: true, payment_reference: true, payment_deadline: true, booking_date: true, status: true,
-        agents: { select: { name: true } }, created_at: true
+        agents: { select: { id: true, name: true, email: true, address: true, telephone: true } }, created_at: true
       },
       orderBy: { created_at: 'desc' }
     });
@@ -1912,10 +1918,10 @@ export async function listPaymentInfoByDateRange(req, res, next) {
       where,
       select: {
         id: true, client_name: true, booking_reference: true,
-        file_reference: true, trip_start_date: true, total_amount: true, discount_amount: true,
+        file_reference: true, invoice_number: true, agent_id: true, trip_start_date: true, total_amount: true, discount_amount: true,
         final_amount: true, penalty_cost: true, received_amount: true, balance: true,
         payment_date: true, payment_reference: true, payment_deadline: true, booking_date: true, status: true,
-        agents: { select: { name: true } }, created_at: true
+        agents: { select: { id: true, name: true, email: true, address: true, telephone: true } }, created_at: true
       },
       orderBy: { created_at: 'desc' }
     });

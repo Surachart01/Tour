@@ -830,11 +830,11 @@
           const proformaBtn = event.target.closest(".proforma-btn");
           if (proformaBtn) {
             const tripId = proformaBtn.getAttribute("data-id");
-            fetch(`${Endpoint}/api/v1/bookings/${tripId}/proforma-pdf`, {
-              method: "GET", headers: { Authorization: `Bearer ${token}` }
-            }).then(r => r.ok ? r.blob() : r.text().then(t => { throw new Error(t); }))
-              .then(blob => window.open(window.URL.createObjectURL(blob), "_blank"))
-              .catch(e => alert("Error: " + e.message));
+            if (!tripId) {
+              alert("Invalid booking ID.");
+              return;
+            }
+            window.open(`invoice_management.html?preview=${encodeURIComponent(tripId)}`, "_blank");
             return;
           }
 

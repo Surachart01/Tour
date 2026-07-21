@@ -240,7 +240,7 @@ test('uses each tour accommodation day to calculate its own stay dates', () => {
   assert.equal(hotel.to_date.toISOString().slice(0, 10), '2026-11-29');
 });
 
-test('requires a full recorded payment before a tax invoice is eligible', () => {
+test('reports payment as received only when the full required amount and received date are recorded', () => {
   assert.equal(isPaymentReceived({ final_amount: 15000, received_amount: 15000, payment_date: '2026-07-18' }), true);
   assert.equal(isPaymentReceived({ final_amount: 15000, received_amount: 0, amount_paid: 15000, payment_date: '2026-07-18' }), true);
   assert.equal(isPaymentReceived({ final_amount: 15000, received_amount: 14999.99, payment_date: '2026-07-18' }), false);

@@ -1392,27 +1392,7 @@
               return;
             }
 
-            fetch(`${Endpoint}/api/v1/bookings/${tripId}/proforma-pdf`, {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/pdf",
-              },
-            })
-              .then((response) => {
-                if (!response.ok) {
-                  throw new Error("Failed to fetch Proforma Invoice PDF");
-                }
-                return response.blob();
-              })
-              .then((blob) => {
-                const blobUrl = window.URL.createObjectURL(blob);
-                window.open(blobUrl, "_blank");
-              })
-              .catch((error) => {
-                console.error("Error fetching Proforma Invoice PDF:", error);
-                alert("Failed to open Proforma Invoice.");
-              });
+            window.open(`invoice_management.html?preview=${encodeURIComponent(tripId)}`, "_blank");
             return;
           }
 

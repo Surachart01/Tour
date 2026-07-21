@@ -1,9 +1,21 @@
 (function () {
   function updateStatementLabel(root) {
-    const statementLink = root.querySelector('a[href="payment.html"]');
-    if (!statementLink) return;
-    const textNode = Array.from(statementLink.childNodes).find((node) => node.nodeType === Node.TEXT_NODE);
-    if (textNode && textNode.textContent.trim() !== 'Statement') textNode.textContent = ' Statement';
+    const statementLinks = Array.from(root.querySelectorAll('a[href]')).filter((link) => {
+      const href = String(link.getAttribute('href') || '').split(/[?#]/)[0];
+      return href.endsWith('/payment.html') || href === 'payment.html';
+    });
+
+    statementLinks.forEach((statementLink) => {
+      const textNode = Array.from(statementLink.childNodes).find(
+        (node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim()
+      );
+
+      if (textNode) {
+        textNode.textContent = ' Statement';
+      } else {
+        statementLink.appendChild(document.createTextNode(' Statement'));
+      }
+    });
   }
 
   function bindControlPanel(root) {
