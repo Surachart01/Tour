@@ -764,10 +764,12 @@
                       ><i class="fa fa-ticket"></i> Itinerary</a
                     >
                   </li>
-                  <li>
-                    <a href="analytics.html"
-                      ><i class="fa fa-bar-chart"></i> Analytics</a
-                    >
+                  <li id="analyticsMenu">
+                    <a><i class="fa fa-bar-chart"></i> Analytics <span class="fa fa-chevron-down"></span></a>
+                    <ul class="nav child_menu">
+                      <li><a href="analytics.html">Dashboard</a></li>
+                      <li><a href="room_nights.html">Room Nights</a></li>
+                    </ul>
                   </li>
                 </ul>
               </div>
@@ -3161,7 +3163,7 @@
     <!-- jQuery UI (required for custom.min.js progressbar functionality) -->
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <!-- Custom Theme Scripts -->
-    <script src="../build/js/custom.min.js"></script>
+    <script src="../build/js/custom.min.js?v=20260722"></script>
     <script src="js/config.js"></script>
     <script src="js/common/role-permissions.js"></script>
     <script src="js/profile.js"></script>

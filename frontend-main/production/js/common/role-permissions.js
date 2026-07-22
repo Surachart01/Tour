@@ -95,6 +95,7 @@ function applyModulePermissions() {
     "special_packages.html": "special_packages",
     "edit_special_package.html": "special_packages",
     "analytics.html": "analytics",
+    "room_nights.html": "analytics",
     "city_info.html": "city_info",
     "stop_sale.html": "stop_sale",
     "special_promo.html": "special_promo",
@@ -142,6 +143,11 @@ function applyModulePermissions() {
         controlPanelMenu.style.display = "none";
       }
     }
+  }
+
+  const analyticsMenu = document.getElementById("analyticsMenu");
+  if (analyticsMenu && permissions["analytics"] === false) {
+    analyticsMenu.style.display = "none";
   }
 
   // Handle special packages visibility based on permissions

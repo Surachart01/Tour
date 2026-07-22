@@ -71,6 +71,195 @@ function isBooking(trip) {
   return trip.is_booking === true || trip.approved === true || status === 'in progress' || status === 'inprogress' || status === 'confirmed';
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function dateOnlyUtc(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
+export function calculateRoomNightOverlap(fromDate, toDate, rangeStart, rangeEnd, earlyCheckIn = false) {
+  let stayStart = dateOnlyUtc(fromDate);
+  const stayEnd = dateOnlyUtc(toDate);
+  const periodStart = dateOnlyUtc(rangeStart);
+  const periodEnd = dateOnlyUtc(rangeEnd);
+  if ([stayStart, stayEnd, periodStart, periodEnd].some((value) => value === null)) return 0;
+  if (earlyCheckIn) stayStart -= DAY_MS;
+  const overlapStart = Math.max(stayStart, periodStart);
+  const overlapEnd = Math.min(stayEnd, periodEnd);
+  return Math.max(0, Math.round((overlapEnd - overlapStart) / DAY_MS));
+}
+
+function roomCountFromJson(value) {
+  if (!value) return 0;
+  try {
+    const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+    if (Array.isArray(parsed)) return parsed.length;
+    if (Array.isArray(parsed?.room_types)) return parsed.room_types.length;
+  } catch (_error) {
+    return 0;
+  }
+  return 0;
+}
+
+export function resolveBookedRoomCount(item) {
+  const savedRooms = Array.isArray(item?.hotel_room_type_items)
+    ? item.hotel_room_type_items.length
+    : 0;
+  if (savedRooms > 0) return savedRooms;
+
+  const jsonRooms = roomCountFromJson(item?.room_types_json);
+  if (jsonRooms > 0) return jsonRooms;
+
+  const trip = item?.trips || {};
+  const packageRooms = ['special_pkg_single_rooms', 'special_pkg_double_rooms', 'special_pkg_triple_rooms']
+    .reduce((sum, field) => sum + Math.max(0, Number.parseInt(trip[field], 10) || 0), 0);
+  if (packageRooms > 0 && (item?.tour_package || trip?.special_package_id)) return packageRooms;
+
+  // One hotel row represents one booked room in legacy records that predate room-level storage.
+  return 1;
+}
+
+function formatDateOnly(value) {
+  const timestamp = dateOnlyUtc(value);
+  if (timestamp === null) return null;
+  return new Date(timestamp).toISOString().slice(0, 10);
+}
+
+function roomNightTripIsVisible(req, trip) {
+  if (!isBooking(trip)) return false;
+  const agentId = getAgentId(req);
+  return !agentId || trip.agent_id === agentId;
+}
+
+export async function getRoomNights(req, res, next) {
+  try {
+    const range = getDateRange(req.query, 'month');
+    const hotelId = parseBoundedInt(req.query.hotel_id, 0, 0, Number.MAX_SAFE_INTEGER);
+    const itemWhere = {
+      // Include a stay starting on the next month's first day when Early Check-In
+      // reserves the previous night in the selected month.
+      from_date: { lte: range.endExclusive },
+      to_date: { gt: range.start }
+    };
+    if (hotelId > 0) itemWhere.hotel_id = hotelId;
+
+    const [items, hotelOptions] = await Promise.all([
+      prisma.hotel_trip_items.findMany({
+        where: itemWhere,
+        include: {
+          hotels: { select: { id: true, name: true, city: true } },
+          hotel_room_type_items: { select: { id: true } },
+          trips: {
+            select: {
+              id: true,
+              agent_id: true,
+              client_name: true,
+              booking_reference: true,
+              file_reference: true,
+              approved: true,
+              is_booking: true,
+              status: true,
+              special_package_id: true,
+              special_pkg_single_rooms: true,
+              special_pkg_double_rooms: true,
+              special_pkg_triple_rooms: true,
+              agents: { select: { name: true } }
+            }
+          }
+        },
+        orderBy: [{ hotel_name: 'asc' }, { from_date: 'asc' }]
+      }),
+      prisma.hotels.findMany({
+        where: { deleted_at: null },
+        select: { id: true, name: true, city: true },
+        orderBy: [{ name: 'asc' }]
+      })
+    ]);
+
+    const rows = [];
+    const hotelSummary = new Map();
+    for (const item of items) {
+      if (!item.trips || !roomNightTripIsVisible(req, item.trips)) continue;
+      const occupiedNights = calculateRoomNightOverlap(
+        item.from_date,
+        item.to_date,
+        range.start,
+        range.endExclusive,
+        item.early_check_in === true
+      );
+      if (occupiedNights <= 0) continue;
+
+      const rooms = resolveBookedRoomCount(item);
+      const roomNights = rooms * occupiedNights;
+      const resolvedHotelId = item.hotel_id || item.hotels?.id || null;
+      const hotelName = item.hotels?.name || item.hotel_name || 'Unknown Hotel';
+      const city = item.hotels?.city || item.city || '';
+      const row = {
+        id: item.id,
+        trip_id: item.trips.id,
+        hotel_id: resolvedHotelId,
+        hotel_name: hotelName,
+        city,
+        client_name: item.trips.client_name || '',
+        agent_name: item.trips.agents?.name || '',
+        file_number: item.trips.file_reference || item.trips.booking_reference || '',
+        check_in: formatDateOnly(item.from_date),
+        check_out: formatDateOnly(item.to_date),
+        room_type: item.room_type || '',
+        rooms,
+        occupied_nights: occupiedNights,
+        room_nights: roomNights,
+        early_check_in: item.early_check_in === true,
+        special_package: Boolean(item.tour_package || item.trips.special_package_id)
+      };
+      rows.push(row);
+
+      const key = resolvedHotelId ? `id:${resolvedHotelId}` : `name:${hotelName.toLowerCase()}`;
+      const current = hotelSummary.get(key) || {
+        hotel_id: resolvedHotelId,
+        hotel_name: hotelName,
+        city,
+        booking_items: 0,
+        rooms: 0,
+        room_nights: 0
+      };
+      current.booking_items += 1;
+      current.rooms += rooms;
+      current.room_nights += roomNights;
+      hotelSummary.set(key, current);
+    }
+
+    const summary = [...hotelSummary.values()].sort((a, b) => {
+      if (b.room_nights !== a.room_nights) return b.room_nights - a.room_nights;
+      return a.hotel_name.localeCompare(b.hotel_name);
+    });
+
+    return res.json({
+      period: {
+        year: range.year,
+        month: range.startMonth,
+        label: range.period,
+        start: formatDateOnly(range.start),
+        end_exclusive: formatDateOnly(range.endExclusive)
+      },
+      selected_hotel_id: hotelId || null,
+      totals: {
+        room_nights: rows.reduce((sum, row) => sum + row.room_nights, 0),
+        rooms: rows.reduce((sum, row) => sum + row.rooms, 0),
+        booking_items: rows.length,
+        hotels: summary.length
+      },
+      hotel_summary: summary,
+      rows,
+      hotels: hotelOptions
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 function buildMetrics(trips, range, agentName = null) {
   const bookings = trips.filter(isBooking);
   const totalQuotations = trips.length;

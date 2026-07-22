@@ -101,8 +101,12 @@ function init_sidebar() {
             <li>
               <a href="itinerary.html"><i class="fa fa-ticket"></i> Itinerary</a>
             </li>
-            <li>
-              <a href="analytics.html"><i class="fa fa-bar-chart"></i> Analytics</a>
+            <li id="analyticsMenu">
+              <a><i class="fa fa-bar-chart"></i> Analytics <span class="fa fa-chevron-down"></span></a>
+              <ul class="nav child_menu">
+                <li><a href="analytics.html">Dashboard</a></li>
+                <li><a href="room_nights.html">Room Nights</a></li>
+              </ul>
             </li>
             <li>
               <a href="special_promo.html"><i class="fa fa-bullhorn"></i> Special Promo</a>
@@ -135,7 +139,8 @@ function init_sidebar() {
         "suppliers.html": "suppliers",
         "users.html": "users",
         "special_packages.html": "special_packages",
-        "analytics.html": "analytics",
+      "analytics.html": "analytics",
+      "room_nights.html": "analytics",
         "city_info.html": "city_info",
         "stop_sale.html": "stop_sale",
         "tools.html": "tools",

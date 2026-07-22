@@ -190,11 +190,7 @@
                       ><i class="fa fa-ticket"></i> Itinerary</a
                     >
                   </li>
-                  <li>
-                    <a href="analytics.html"
-                      ><i class="fa fa-bar-chart"></i> Analytics</a
-                    >
-                  </li>
+                  <li id="analyticsMenu" class="active"><a><i class="fa fa-bar-chart"></i> Analytics <span class="fa fa-chevron-down"></span></a><ul class="nav child_menu" style="display: block"><li class="current-page"><a href="analytics.html">Dashboard</a></li><li><a href="room_nights.html">Room Nights</a></li></ul></li>
                 </ul>
               </div>
             </div>
@@ -281,6 +277,9 @@
             </div>
             <div class="title_right">
               <div class="form-group pull-right">
+                <a href="room_nights.html" class="btn btn-success">
+                  <i class="fa fa-bed"></i> Room Nights
+                </a>
                 <button type="button" class="btn btn-primary" id="refreshBtn">
                   <i class="fa fa-refresh"></i> Refresh Data
                 </button>
@@ -813,7 +812,7 @@
     <!-- Bootstrap -->
     <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom Theme Scripts -->
-    <script src="../build/js/custom.min.js"></script>
+    <script src="../build/js/custom.min.js?v=20260722"></script>
     <script src="js/config.js?v=20260716"></script>
 
     <script>
