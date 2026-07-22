@@ -493,8 +493,197 @@ export async function generateProformaInvoicePDF(req, res, next) {
   } catch (err) { next(err); }
 }
 
-export async function generateTripPDF(req, res, next) { return generateQuotationPDF(req, res, next); }
-export async function generateTripServicesPDF(req, res, next) { return generateQuotationPDF(req, res, next); }
+function itineraryDateKey(value) {
+  const date = toValidDate(value);
+  return date ? date.toISOString().slice(0, 10) : null;
+}
+
+function itineraryDate(value) {
+  const date = toValidDate(value);
+  if (!date) return '-';
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit', month: 'long', year: 'numeric', timeZone: 'UTC'
+  });
+}
+
+function itineraryShortDate(value) {
+  const date = toValidDate(value);
+  if (!date) return '-';
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC'
+  });
+}
+
+function itineraryTime(value) {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  const match = text.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (!match) return text;
+  const hours = Number(match[1]);
+  const suffix = hours >= 12 ? 'PM' : 'AM';
+  return `${String(hours % 12 || 12).padStart(2, '0')}:${match[2]} ${suffix}`;
+}
+
+export function buildItineraryDays(trip = {}) {
+  const days = new Map();
+  const add = (dateValue, service) => {
+    const key = itineraryDateKey(dateValue);
+    if (!key) return;
+    if (!days.has(key)) days.set(key, { key, date: dateValue, services: [] });
+    days.get(key).services.push(service);
+  };
+
+  (trip.flight_trip_items || []).forEach((item) => add(item.from_date, {
+    type: 'flight',
+    title: `Flight ${item.flight_number || ''}`.trim(),
+    description: item.route || `${item.in_or_out || 'Flight'}`,
+    timeLabel: [item.edt && `Departure ${itineraryTime(item.edt)}`, item.eat && `Arrival ${itineraryTime(item.eat)}`].filter(Boolean).join(' | '),
+    notes: item.remarks || ''
+  }));
+
+  (trip.transfer_trip_items || []).forEach((item) => add(item.from_date, {
+    type: 'transfer',
+    title: item.type_of_transfer || item.transfers?.transfer_type || 'Transfer',
+    description: item.transfer_description || item.transfers?.description || [item.from_location, item.to_location].filter(Boolean).join(' to '),
+    route: [item.from_location, item.to_location].filter(Boolean).join(' to '),
+    timeLabel: item.pickup_time ? `Pickup ${itineraryTime(item.pickup_time)}` : (item.flight_time ? `Time ${itineraryTime(item.flight_time)}` : ''),
+    notes: item.remarks || ''
+  }));
+
+  (trip.excursion_trip_items || []).forEach((item) => add(item.from_date, {
+    type: 'excursion',
+    title: item.excursions?.name || 'Excursion',
+    description: [item.city, item.hotel && `Meeting point: ${item.hotel}`].filter(Boolean).join(' | '),
+    timeLabel: item.pickup_time ? `Pickup ${itineraryTime(item.pickup_time)}` : '',
+    notes: item.remarks || ''
+  }));
+
+  (trip.tour_trip_items || []).forEach((item) => add(item.from_date, {
+    type: 'tour',
+    title: item.tours?.name || 'Tour',
+    description: item.tours?.route || [item.from_location, item.to_location].filter(Boolean).join(' to '),
+    timeLabel: item.flight_in ? `Start ${itineraryTime(item.flight_in)}` : '',
+    notes: item.remarks || '',
+    endDate: item.to_date
+  }));
+
+  (trip.hotel_trip_items || []).forEach((item) => {
+    add(item.from_date, {
+      type: 'hotel',
+      title: `Check-in: ${item.hotel_name || item.hotels?.name || 'Hotel'}`,
+      description: [item.city, item.room_type, item.nights && `${item.nights} night(s)`].filter(Boolean).join(' | '),
+      notes: item.notes || ''
+    });
+    if (itineraryDateKey(item.to_date) !== itineraryDateKey(item.from_date)) {
+      add(item.to_date, {
+        type: 'hotel',
+        title: `Check-out: ${item.hotel_name || item.hotels?.name || 'Hotel'}`,
+        description: item.city || '',
+        notes: ''
+      });
+    }
+  });
+
+  const order = { flight: 1, transfer: 2, tour: 3, excursion: 4, hotel: 5 };
+  return Array.from(days.values())
+    .sort((a, b) => a.key.localeCompare(b.key))
+    .map((day) => ({
+      ...day,
+      services: day.services.sort((a, b) => (order[a.type] || 99) - (order[b.type] || 99))
+    }));
+}
+
+function ensureItinerarySpace(doc, height = 90) {
+  if (doc.y + height <= doc.page.height - 52) return;
+  doc.addPage();
+  doc.y = 48;
+}
+
+function drawItineraryHeader(doc, trip) {
+  doc.fillColor('#18283a').font('Times-Bold').fontSize(10)
+    .text('VERATHAILANDIA CO., LTD.', { align: 'center', characterSpacing: 0.7 });
+  doc.moveDown(0.25);
+  doc.fillColor('#111111').font('Times-Bold').fontSize(19)
+    .text(String(trip.client_name || 'CLIENT ITINERARY').toUpperCase(), { align: 'center', underline: true });
+  doc.moveDown(0.25);
+  doc.font('Times-Roman').fontSize(9).fillColor('#555555')
+    .text(`File Number: ${trip.file_reference || trip.booking_reference || '-'}   |   Pax: ${(trip.number_of_adults || 0) + (trip.number_of_kids || 0)}   |   Trip Start: ${itineraryShortDate(trip.trip_start_date)}`, { align: 'center' });
+  doc.moveDown(1.2);
+}
+
+export async function generateTripPDF(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).send('Invalid itinerary ID');
+    const trip = await prisma.trips.findUnique({
+      where: { id },
+      include: {
+        agents: true,
+        hotel_trip_items: { include: { hotels: true }, orderBy: { from_date: 'asc' } },
+        excursion_trip_items: { include: { excursions: true }, orderBy: { from_date: 'asc' } },
+        tour_trip_items: { include: { tours: true }, orderBy: { from_date: 'asc' } },
+        transfer_trip_items: { include: { transfers: true }, orderBy: { from_date: 'asc' } },
+        flight_trip_items: { orderBy: { from_date: 'asc' } }
+      }
+    });
+    if (!trip) return res.status(404).send('Itinerary not found');
+
+    const doc = new PDFDocument({ size: 'LETTER', margins: { top: 46, bottom: 46, left: 42, right: 42 } });
+    const filename = `itinerary_${trip.file_reference || trip.booking_reference || id}.pdf`.replace(/[^a-zA-Z0-9_.-]/g, '_');
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    doc.pipe(res);
+
+    drawItineraryHeader(doc, trip);
+    const days = buildItineraryDays(trip);
+    if (!days.length) {
+      doc.font('Times-Italic').fontSize(11).fillColor('#555555')
+        .text('No itinerary services are available for this booking.', { align: 'center' });
+    }
+
+    days.forEach((day, index) => {
+      ensureItinerarySpace(doc, 80);
+      if (index > 0) doc.moveDown(0.45);
+      const titleY = doc.y;
+      doc.moveTo(42, titleY + 16).lineTo(570, titleY + 16).lineWidth(0.7).strokeColor('#18283a').stroke();
+      doc.fillColor('#18283a').font('Times-Bold').fontSize(12)
+        .text(itineraryDate(day.date), 42, titleY, { underline: true });
+      doc.y = titleY + 25;
+
+      day.services.forEach((service) => {
+        ensureItinerarySpace(doc, 62);
+        const serviceY = doc.y;
+        doc.fillColor('#111111').font('Times-Bold').fontSize(10)
+          .text(service.title || service.type, 56, serviceY, { width: 330 });
+        if (service.timeLabel) {
+          doc.fillColor('#b42318').font('Times-Bold').fontSize(10)
+            .text(service.timeLabel, 394, serviceY, { width: 164, align: 'right' });
+        }
+        doc.y = serviceY + 15;
+        const description = [service.route, service.description].filter((value, i, values) => value && values.indexOf(value) === i).join(' | ');
+        if (description) {
+          doc.fillColor('#333333').font('Times-Roman').fontSize(9)
+            .text(description, 70, doc.y, { width: 488, lineGap: 1 });
+        }
+        if (service.endDate) {
+          doc.fillColor('#555555').font('Times-Italic').fontSize(8.5)
+            .text(`Until ${itineraryShortDate(service.endDate)}`, 70, doc.y, { width: 488 });
+        }
+        if (service.notes) {
+          doc.fillColor('#555555').font('Times-Italic').fontSize(8.5)
+            .text(`Note: ${service.notes}`, 70, doc.y, { width: 488, lineGap: 1 });
+        }
+        doc.moveDown(0.55);
+      });
+    });
+
+    doc.end();
+  } catch (err) { next(err); }
+}
+
+export async function generateTripServicesPDF(req, res, next) {
+  return generateTripPDF(req, res, next);
+}
 
 export async function notifyAgentBookingConfirmed(req, res, next) {
   try {

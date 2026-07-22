@@ -1933,7 +1933,10 @@ export async function listPaymentInfoByDateRange(req, res, next) {
 export async function listItinerary(req, res, next) {
   try {
     const itinerary = await prisma.trips.findMany({
-      where: { approved: true },
+      where: {
+        is_booking: true,
+        status: { in: ['InProgress', 'Confirmed'] }
+      },
       include: {
         agents: true,
         hotel_trip_items: {
@@ -1962,6 +1965,96 @@ export async function listItinerary(req, res, next) {
       orderBy: { created_at: 'desc' }
     });
     return res.json(itinerary);
+  } catch (err) { next(err); }
+}
+
+const itineraryInclude = {
+  agents: true,
+  hotel_trip_items: {
+    orderBy: [{ display_order: 'asc' }, { from_date: 'asc' }],
+    include: { hotels: true, hotel_room_type_items: true }
+  },
+  excursion_trip_items: {
+    orderBy: { from_date: 'asc' },
+    include: { excursions: true }
+  },
+  tour_trip_items: {
+    orderBy: { from_date: 'asc' },
+    include: { tours: true, tour_trip_item_hotels: true }
+  },
+  transfer_trip_items: {
+    orderBy: { from_date: 'asc' },
+    include: { transfers: true }
+  },
+  flight_trip_items: { orderBy: { from_date: 'asc' } }
+};
+
+export async function getItinerary(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ message: 'Invalid itinerary ID.' });
+
+    const itinerary = await prisma.trips.findFirst({
+      where: { id, is_booking: true },
+      include: itineraryInclude
+    });
+    if (!itinerary) return res.status(404).json({ message: 'Itinerary not found.' });
+    return res.json(itinerary);
+  } catch (err) { next(err); }
+}
+
+function itineraryText(value, maxLength = 2000) {
+  if (value === null || value === undefined) return null;
+  const text = String(value).trim();
+  return text ? text.slice(0, maxLength) : null;
+}
+
+export async function updateItineraryDetails(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ message: 'Invalid itinerary ID.' });
+
+    const exists = await prisma.trips.findFirst({
+      where: { id, is_booking: true },
+      select: { id: true }
+    });
+    if (!exists) return res.status(404).json({ message: 'Itinerary not found.' });
+
+    const body = req.body || {};
+    const collections = [
+      ['transfers', 'transfer_trip_items', ['pickup_time', 'flight_time', 'remarks']],
+      ['excursions', 'excursion_trip_items', ['pickup_time', 'remarks']],
+      ['flights', 'flight_trip_items', ['edt', 'eat', 'remarks']],
+      ['tours', 'tour_trip_items', ['remarks']],
+      ['hotels', 'hotel_trip_items', ['notes']]
+    ];
+
+    await prisma.$transaction(async (tx) => {
+      for (const [payloadKey, modelName, fields] of collections) {
+        const items = Array.isArray(body[payloadKey]) ? body[payloadKey] : [];
+        for (const item of items) {
+          const itemId = parseInt(item?.id, 10);
+          if (isNaN(itemId)) continue;
+          const data = {};
+          fields.forEach((field) => {
+            if (Object.prototype.hasOwnProperty.call(item, field)) {
+              data[field] = itineraryText(item[field], field === 'remarks' || field === 'notes' ? 4000 : 255);
+            }
+          });
+          if (!Object.keys(data).length) continue;
+          await tx[modelName].updateMany({
+            where: { id: itemId, trip_item_id: id },
+            data: { ...data, updated_at: new Date() }
+          });
+        }
+      }
+    });
+
+    const itinerary = await prisma.trips.findUnique({
+      where: { id },
+      include: itineraryInclude
+    });
+    return res.json({ message: 'Itinerary saved successfully.', itinerary });
   } catch (err) { next(err); }
 }
 

@@ -6,7 +6,7 @@ import {
   listBookings, listBookingsByDateRange, getBooking, updateBooking, confirmBooking,
   approveItem, declineItem, getPaymentInfo, updatePaymentInfo,
   listPaymentInfoFromBookings, listPaymentInfoByDateRange,
-  listItinerary, updateInvoiceNumber
+  listItinerary, getItinerary, updateItineraryDetails, updateInvoiceNumber
 } from '../controllers/tripController.js';
 import { generateQuotationPDF, generateProformaInvoicePDF, generateReceiptPDF, generateTripPDF, generateTripServicesPDF, notifyAgentBookingConfirmed, notifySupplierOrHotel, sendQuotationEmail } from '../controllers/pdfController.js';
 
@@ -55,6 +55,8 @@ router.put('/bookings/:id/invoice-number', authorize('admin'), updateInvoiceNumb
 
 // Itinerary routes
 router.get('/itinerary', authorize('admin'), listItinerary);
+router.get('/itinerary/:id', authorize('admin', 'agent'), getItinerary);
+router.put('/itinerary/:id/details', authorize('admin'), updateItineraryDetails);
 router.get('/itinerary/:id/generate-pdf', authorize('admin', 'agent'), generateTripPDF);
 router.get('/itinerary/:id/generate-services-pdf', authorize('admin', 'agent'), generateTripServicesPDF);
 
