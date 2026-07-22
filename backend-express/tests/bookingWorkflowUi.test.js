@@ -197,6 +197,8 @@ test('tax invoice editor uses the Proforma document structure and correct docume
   assert.match(taxInvoiceEditorSource, /Apply 3% Withholding Tax to this service line/);
   assert.match(taxInvoiceEditorSource, /row\.wht_selected/);
   assert.match(taxInvoiceEditorSource, /3% of VAT Taxable Amount/);
+  assert.match(taxInvoiceEditorSource, /row\.wht_selected \? formatAmount\(row\.withholding_tax\) : ''/);
+  assert.doesNotMatch(taxInvoiceEditorSource, /row\.wht_selected \? formatAmount\(row\.withholding_tax\) : '-'/);
   assert.match(taxInvoiceEditorSource, /row\.type === 'transfer' \? 'Car Fee:' : 'ADV \(Non-VAT\):'/);
   assert.match(taxInvoiceEditorSource, /class="print-billed-title">BILLED TO/);
   assert.match(taxInvoiceEditorSource, /bookingInvoiceNumber = booking\.invoice_number \|\| '-'/);

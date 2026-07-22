@@ -223,7 +223,7 @@ function renderRow(row, showWht = false) {
     <td class="money">${advEligible ? `<input class="adv-input" data-adv="${row.id}" value="${number(documentType === ORIGINAL_DOCUMENT_TYPE ? row.adv : row.document_adv)}" aria-label="ADV amount" title="ADV amount deducted before VAT" ${advDisabled ? 'disabled' : ''} />` : formatAmount(0)}</td>
     <td class="money">${formatAmount(row.vat_taxable_amount)}</td>
     <td class="money" title="VAT 7% is calculated automatically from the VAT Taxable Amount">${formatAmount(row.vat)}</td>
-    ${showWht ? `<td class="money wht-column" title="3% of VAT Taxable Amount">${row.wht_selected ? formatAmount(row.withholding_tax) : '-'}</td>` : ''}
+    ${showWht ? `<td class="money wht-column" title="3% of VAT Taxable Amount">${row.wht_selected ? formatAmount(row.withholding_tax) : ''}</td>` : ''}
   </tr>`;
 }
 
@@ -504,7 +504,7 @@ function renderPrintableService(row, showSelectiveWht = false) {
   const unitPrice = quantity > 0 ? round(taxableTotal / quantity) : taxableTotal;
   const vatColumn = documentType === 'tax_invoice' ? '<td class="vat-rate">7%</td>' : '';
   const whtColumn = showSelectiveWht
-    ? `<td class="number wht-value-cell">${row.wht_selected ? formatAmount(row.withholding_tax) : '-'}</td>`
+    ? `<td class="number wht-value-cell">${row.wht_selected ? formatAmount(row.withholding_tax) : ''}</td>`
     : '';
   if (documentType !== 'original_receipt_transportation' && taxableTotal > 0) {
     cells.push(`<tr class="service-main-row"><td>${serviceDescription(row)}</td><td class="number">${formatAmount(unitPrice)}</td><td class="number total-value">${formatAmount(taxableTotal)}</td>${vatColumn}${whtColumn}</tr>`);
