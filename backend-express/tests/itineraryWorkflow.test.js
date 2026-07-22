@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildItineraryDays } from '../src/controllers/pdfController.js';
+import { buildItineraryDays, itineraryHotelName } from '../src/controllers/pdfController.js';
 
 const testDirectory = resolve(fileURLToPath(new URL('.', import.meta.url)));
 const projectRoot = resolve(testDirectory, '..', '..');
@@ -41,6 +41,17 @@ test('itinerary services are grouped chronologically and keep manual pickup time
   assert.match(days[0].services[0].timeLabel, /10:40 AM/);
   assert.match(days[1].services[0].timeLabel, /07:30 AM/);
   assert.match(days[2].services[0].title, /Check-out/);
+});
+
+test('itinerary hotel names prefer master data and collapse repeated package labels', () => {
+  assert.equal(
+    itineraryHotelName({ hotel_name: 'Old Name Special Package Special Package', hotels: { name: 'Master Hotel' } }),
+    'Master Hotel'
+  );
+  assert.equal(
+    itineraryHotelName({ hotel_name: 'Bizotel Bangkok Special Package Special Package Special Package' }),
+    'Bizotel Bangkok Special Package'
+  );
 });
 
 test('itinerary routes separate read, save, and PDF actions', () => {

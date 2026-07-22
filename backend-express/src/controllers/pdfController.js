@@ -524,6 +524,11 @@ function itineraryTime(value) {
   return `${String(hours % 12 || 12).padStart(2, '0')}:${match[2]} ${suffix}`;
 }
 
+export function itineraryHotelName(item = {}) {
+  const name = String(item.hotels?.name || item.hotel_name || 'Hotel').trim();
+  return name.replace(/(?:\s+Special Package){2,}/gi, ' Special Package');
+}
+
 export function buildItineraryDays(trip = {}) {
   const days = new Map();
   const add = (dateValue, service) => {
@@ -568,16 +573,17 @@ export function buildItineraryDays(trip = {}) {
   }));
 
   (trip.hotel_trip_items || []).forEach((item) => {
+    const hotelName = itineraryHotelName(item);
     add(item.from_date, {
       type: 'hotel',
-      title: `Check-in: ${item.hotel_name || item.hotels?.name || 'Hotel'}`,
+      title: `Check-in: ${hotelName}`,
       description: [item.city, item.room_type, item.nights && `${item.nights} night(s)`].filter(Boolean).join(' | '),
       notes: item.notes || ''
     });
     if (itineraryDateKey(item.to_date) !== itineraryDateKey(item.from_date)) {
       add(item.to_date, {
         type: 'hotel',
-        title: `Check-out: ${item.hotel_name || item.hotels?.name || 'Hotel'}`,
+        title: `Check-out: ${hotelName}`,
         description: item.city || '',
         notes: ''
       });
@@ -599,6 +605,44 @@ function ensureItinerarySpace(doc, height = 90) {
   doc.y = 48;
 }
 
+function itineraryServiceMetrics(doc, service) {
+  const title = service.title || service.type;
+  const titleWidth = service.timeLabel ? 330 : 502;
+  doc.font('Times-Bold').fontSize(10);
+  const titleHeight = doc.heightOfString(title, { width: titleWidth, lineGap: 1 });
+  const timeHeight = service.timeLabel
+    ? doc.heightOfString(service.timeLabel, { width: 164, align: 'right', lineGap: 1 })
+    : 0;
+  const headerHeight = Math.max(12, titleHeight, timeHeight);
+  const description = [service.route, service.description]
+    .filter((value, i, values) => value && values.indexOf(value) === i)
+    .join(' | ');
+
+  let contentHeight = 0;
+  if (description) {
+    doc.font('Times-Roman').fontSize(9);
+    contentHeight += doc.heightOfString(description, { width: 488, lineGap: 1 }) + 2;
+  }
+  if (service.endDate) {
+    doc.font('Times-Italic').fontSize(8.5);
+    contentHeight += doc.heightOfString(`Until ${itineraryShortDate(service.endDate)}`, { width: 488 }) + 2;
+  }
+  if (service.notes) {
+    doc.font('Times-Italic').fontSize(8.5);
+    contentHeight += doc.heightOfString(`Note: ${service.notes}`, { width: 488, lineGap: 1 }) + 2;
+  }
+
+  return {
+    title,
+    titleWidth,
+    titleHeight,
+    timeHeight,
+    headerHeight,
+    description,
+    totalHeight: headerHeight + (contentHeight ? contentHeight + 3 : 0) + 9
+  };
+}
+
 function drawItineraryHeader(doc, trip) {
   doc.fillColor('#18283a').font('Times-Bold').fontSize(10)
     .text('VERATHAILANDIA CO., LTD.', { align: 'center', characterSpacing: 0.7 });
@@ -609,6 +653,58 @@ function drawItineraryHeader(doc, trip) {
   doc.font('Times-Roman').fontSize(9).fillColor('#555555')
     .text(`File Number: ${trip.file_reference || trip.booking_reference || '-'}   |   Pax: ${(trip.number_of_adults || 0) + (trip.number_of_kids || 0)}   |   Trip Start: ${itineraryShortDate(trip.trip_start_date)}`, { align: 'center' });
   doc.moveDown(1.2);
+}
+
+export function writeItineraryPDF(doc, trip) {
+  drawItineraryHeader(doc, trip);
+  const days = buildItineraryDays(trip);
+  if (!days.length) {
+    doc.font('Times-Italic').fontSize(11).fillColor('#555555')
+      .text('No itinerary services are available for this booking.', { align: 'center' });
+  }
+
+  days.forEach((day, index) => {
+    ensureItinerarySpace(doc, 80);
+    if (index > 0) doc.moveDown(0.45);
+    const titleY = doc.y;
+    doc.moveTo(42, titleY + 16).lineTo(570, titleY + 16).lineWidth(0.7).strokeColor('#18283a').stroke();
+    doc.fillColor('#18283a').font('Times-Bold').fontSize(12)
+      .text(itineraryDate(day.date), 42, titleY, { underline: true });
+    doc.y = titleY + 25;
+
+    day.services.forEach((service) => {
+      const metrics = itineraryServiceMetrics(doc, service);
+      ensureItinerarySpace(doc, metrics.totalHeight);
+      const serviceY = doc.y;
+      doc.fillColor('#111111').font('Times-Bold').fontSize(10)
+        .text(metrics.title, 56, serviceY, { width: metrics.titleWidth, lineGap: 1 });
+      if (service.timeLabel) {
+        doc.fillColor('#b42318').font('Times-Bold').fontSize(10)
+          .text(service.timeLabel, 394, serviceY, { width: 164, align: 'right', lineGap: 1 });
+      }
+      let cursorY = serviceY + metrics.headerHeight + 3;
+      if (metrics.description) {
+        doc.fillColor('#333333').font('Times-Roman').fontSize(9)
+          .text(metrics.description, 70, cursorY, { width: 488, lineGap: 1 });
+        cursorY += doc.heightOfString(metrics.description, { width: 488, lineGap: 1 }) + 2;
+      }
+      if (service.endDate) {
+        const endText = `Until ${itineraryShortDate(service.endDate)}`;
+        doc.fillColor('#555555').font('Times-Italic').fontSize(8.5)
+          .text(endText, 70, cursorY, { width: 488 });
+        cursorY += doc.heightOfString(endText, { width: 488 }) + 2;
+      }
+      if (service.notes) {
+        const noteText = `Note: ${service.notes}`;
+        doc.fillColor('#555555').font('Times-Italic').fontSize(8.5)
+          .text(noteText, 70, cursorY, { width: 488, lineGap: 1 });
+        cursorY += doc.heightOfString(noteText, { width: 488, lineGap: 1 }) + 2;
+      }
+      doc.y = Math.max(cursorY, serviceY + metrics.headerHeight) + 7;
+    });
+  });
+
+  doc.end();
 }
 
 export async function generateTripPDF(req, res, next) {
@@ -633,51 +729,7 @@ export async function generateTripPDF(req, res, next) {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     doc.pipe(res);
-
-    drawItineraryHeader(doc, trip);
-    const days = buildItineraryDays(trip);
-    if (!days.length) {
-      doc.font('Times-Italic').fontSize(11).fillColor('#555555')
-        .text('No itinerary services are available for this booking.', { align: 'center' });
-    }
-
-    days.forEach((day, index) => {
-      ensureItinerarySpace(doc, 80);
-      if (index > 0) doc.moveDown(0.45);
-      const titleY = doc.y;
-      doc.moveTo(42, titleY + 16).lineTo(570, titleY + 16).lineWidth(0.7).strokeColor('#18283a').stroke();
-      doc.fillColor('#18283a').font('Times-Bold').fontSize(12)
-        .text(itineraryDate(day.date), 42, titleY, { underline: true });
-      doc.y = titleY + 25;
-
-      day.services.forEach((service) => {
-        ensureItinerarySpace(doc, 62);
-        const serviceY = doc.y;
-        doc.fillColor('#111111').font('Times-Bold').fontSize(10)
-          .text(service.title || service.type, 56, serviceY, { width: 330 });
-        if (service.timeLabel) {
-          doc.fillColor('#b42318').font('Times-Bold').fontSize(10)
-            .text(service.timeLabel, 394, serviceY, { width: 164, align: 'right' });
-        }
-        doc.y = serviceY + 15;
-        const description = [service.route, service.description].filter((value, i, values) => value && values.indexOf(value) === i).join(' | ');
-        if (description) {
-          doc.fillColor('#333333').font('Times-Roman').fontSize(9)
-            .text(description, 70, doc.y, { width: 488, lineGap: 1 });
-        }
-        if (service.endDate) {
-          doc.fillColor('#555555').font('Times-Italic').fontSize(8.5)
-            .text(`Until ${itineraryShortDate(service.endDate)}`, 70, doc.y, { width: 488 });
-        }
-        if (service.notes) {
-          doc.fillColor('#555555').font('Times-Italic').fontSize(8.5)
-            .text(`Note: ${service.notes}`, 70, doc.y, { width: 488, lineGap: 1 });
-        }
-        doc.moveDown(0.55);
-      });
-    });
-
-    doc.end();
+    writeItineraryPDF(doc, trip);
   } catch (err) { next(err); }
 }
 

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildServices, calculateRows, sanitizeServices, servicesForDocument, isPaymentReceived, validateTaxTreatments, validateAllocations } from '../src/controllers/taxInvoiceController.js';
+import { applyWithholdingSelections, buildServices, calculateRows, sanitizeServices, servicesForDocument, isPaymentReceived, validateTaxTreatments, validateAllocations, PUBLIC_DOCUMENT_TYPES, WHT_RATE } from '../src/controllers/taxInvoiceController.js';
 
 test('calculates VAT only from the selling price remaining after ADV', () => {
   const result = calculateRows([{
@@ -28,6 +28,91 @@ test('calculates the customer ADV example from a VAT-inclusive amount', () => {
   assert.equal(result.totals.adv, 500);
   assert.equal(result.totals.vat_taxable_amount, 467.29);
   assert.equal(result.totals.vat, 32.71);
+});
+
+test('calculates Local Operator WHT from the service value before VAT', () => {
+  for (const documentType of ['local_operator_original_tax_invoice', 'local_operator_copy_tax_invoice']) {
+    const result = calculateRows([{
+      id: 'hotel-1', type: 'hotel', total: 107000, adv: 0, selected: true
+    }], documentType);
+
+    assert.equal(result.totals.vat_taxable_amount, 100000);
+    assert.equal(result.totals.vat, 7000);
+    assert.equal(result.totals.invoice_total, 107000);
+    assert.equal(result.totals.withholding_tax_rate, 0.03);
+    assert.equal(result.totals.withholding_tax_base, 100000);
+    assert.equal(result.totals.withholding_tax, 3000);
+    assert.equal(result.totals.amount_payable, 104000);
+  }
+  assert.equal(WHT_RATE, 0.03);
+});
+
+test('excludes ADV and VAT from the Local Operator WHT base', () => {
+  const result = calculateRows([{
+    id: 'transfer-1', type: 'transfer', total: 107500, adv: 500, adv_enabled: true, selected: true
+  }], 'local_operator_original_tax_invoice');
+
+  assert.equal(result.totals.adv, 500);
+  assert.equal(result.totals.vat_taxable_amount, 100000);
+  assert.equal(result.totals.vat, 7000);
+  assert.equal(result.totals.invoice_total, 107500);
+  assert.equal(result.totals.withholding_tax, 3000);
+  assert.equal(result.totals.amount_payable, 104500);
+});
+
+test('calculates selective Tax Invoice WHT from the VAT taxable amount', () => {
+  const result = calculateRows([{
+    id: 'service-20000', type: 'hotel', total: 20000, selected: true, wht_selected: true
+  }], 'tax_invoice');
+
+  assert.equal(result.totals.vat_taxable_amount, 18691.59);
+  assert.equal(result.totals.vat, 1308.41);
+  assert.equal(result.totals.invoice_total, 20000);
+  assert.equal(result.totals.withholding_tax_base, 18691.59);
+  assert.equal(result.totals.withholding_tax, 560.75);
+  assert.equal(result.totals.amount_payable, 19439.25);
+  assert.equal(result.rows[0].withholding_tax, 560.75);
+});
+
+test('applies Tax Invoice WHT only to explicitly selected service lines', () => {
+  const result = calculateRows([
+    { id: 'selected', type: 'hotel', total: 10700, selected: true, wht_selected: true },
+    { id: 'not-selected', type: 'hotel', total: 21400, selected: true, wht_selected: false }
+  ], 'tax_invoice');
+
+  assert.equal(result.totals.document_total, 32100);
+  assert.equal(result.totals.withholding_tax_base, 10000);
+  assert.equal(result.totals.withholding_tax, 300);
+  assert.equal(result.totals.amount_payable, 31800);
+  assert.equal(result.rows.find((row) => row.id === 'selected').withholding_tax, 300);
+  assert.equal(result.rows.find((row) => row.id === 'not-selected').withholding_tax, 0);
+});
+
+test('keeps Tax Settings authoritative while applying saved WHT selections', () => {
+  const masterRows = [
+    { id: 'included', type: 'hotel', total: 10700, selected: true },
+    { id: 'excluded', type: 'hotel', total: 21400, selected: false }
+  ];
+  const rows = applyWithholdingSelections(masterRows, [
+    { id: 'included', total: 1, selected: false, wht_selected: true },
+    { id: 'excluded', total: 1, selected: true, wht_selected: true }
+  ]);
+
+  assert.equal(rows[0].total, 10700);
+  assert.equal(rows[0].selected, true);
+  assert.equal(rows[0].wht_selected, true);
+  assert.equal(rows[1].selected, false);
+  assert.equal(rows[1].wht_selected, false);
+});
+
+test('synchronizes both Local Operator documents from the Original Tax Invoice', () => {
+  assert.deepEqual(PUBLIC_DOCUMENT_TYPES, [
+    'original_tax_invoice',
+    'tax_invoice',
+    'original_receipt_transportation',
+    'local_operator_original_tax_invoice',
+    'local_operator_copy_tax_invoice'
+  ]);
 });
 
 test('keeps transportation receipt free of VAT', () => {

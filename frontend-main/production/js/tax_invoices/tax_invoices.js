@@ -5,7 +5,9 @@ const canManageInvoices = ['admin', 'superadmin'].includes(String(localStorage.g
 const DOCUMENTS = [
   { type: 'original_tax_invoice', label: 'Original Tax Invoice', icon: 'fa-globe', className: 'btn-info' },
   { type: 'tax_invoice', label: 'Tax Invoice', icon: 'fa-file-text-o', className: 'btn-primary' },
-  { type: 'original_receipt_transportation', label: 'Original Receipt Transportation', icon: 'fa-bus', className: 'btn-warning' }
+  { type: 'original_receipt_transportation', label: 'Original Receipt Transportation', icon: 'fa-bus', className: 'btn-warning' },
+  { type: 'local_operator_original_tax_invoice', label: 'Original Tax Invoice - Local Operator', icon: 'fa-building', className: 'btn-success' },
+  { type: 'local_operator_copy_tax_invoice', label: 'Copy Tax Invoice - Local Operator', icon: 'fa-copy', className: 'btn-default' }
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -66,7 +68,7 @@ function renderBookings() {
           <button class="btn btn-xs ${document.className}" data-trip-id="${booking.id}" data-document-type="${document.type}" title="Preview ${document.label}">
             <i class="fa ${document.icon}"></i> Preview ${document.label}
           </button>`).join('')
-      : `<span class="doc-state doc-state-locked"><i class="fa fa-lock"></i> Complete Tax Settings to unlock the 3 document previews.</span>`;
+      : `<span class="doc-state doc-state-locked"><i class="fa fa-lock"></i> Complete Tax Settings to unlock the 5 document previews.</span>`;
     const visibleDocuments = documents.filter((document) => DOCUMENTS.some((item) => item.type === document.document_type));
     const generated = visibleDocuments.length
       ? `<span class="doc-state"><i class="fa fa-check-circle"></i> Saved: ${visibleDocuments.map((document) => document.document_type.replaceAll('_', ' ')).join(', ')}</span>`

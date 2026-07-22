@@ -2,22 +2,32 @@ import prisma from '../config/db.js';
 import { attachProformaBilling } from './tripController.js';
 
 const VAT_RATE = 0.07;
+const WHT_RATE = 0.03;
+const LOCAL_OPERATOR_DOCUMENT_TYPES = new Set([
+  'local_operator_original_tax_invoice',
+  'local_operator_copy_tax_invoice'
+]);
 const DOCUMENT_TYPES = new Set([
   'original_tax_invoice',
   'tax_invoice',
   'original_receipt_transportation',
-  'tax_invoice_hotel'
+  'tax_invoice_hotel',
+  ...LOCAL_OPERATOR_DOCUMENT_TYPES
 ]);
 const PUBLIC_DOCUMENT_TYPES = [
   'original_tax_invoice',
   'tax_invoice',
-  'original_receipt_transportation'
+  'original_receipt_transportation',
+  'local_operator_original_tax_invoice',
+  'local_operator_copy_tax_invoice'
 ];
 const DOCUMENT_SERVICE_TYPES = {
   original_tax_invoice: ['transfer', 'excursion', 'tour', 'tour_hotel', 'hotel', 'other', 'special_package', 'assistance_fee'],
   tax_invoice: ['transfer', 'excursion', 'tour', 'tour_hotel', 'hotel', 'other', 'special_package', 'assistance_fee'],
   original_receipt_transportation: ['transfer', 'excursion', 'tour'],
-  tax_invoice_hotel: ['hotel', 'tour_hotel']
+  tax_invoice_hotel: ['hotel', 'tour_hotel'],
+  local_operator_original_tax_invoice: ['transfer', 'excursion', 'tour', 'tour_hotel', 'hotel', 'other', 'special_package', 'assistance_fee'],
+  local_operator_copy_tax_invoice: ['transfer', 'excursion', 'tour', 'tour_hotel', 'hotel', 'other', 'special_package', 'assistance_fee']
 };
 const ORIGINAL_DOCUMENT_TYPE = 'original_tax_invoice';
 
@@ -71,7 +81,9 @@ function buildInvoiceNumber(trip, documentType) {
     original_tax_invoice: 'OTI',
     tax_invoice: 'TI',
     original_receipt_transportation: 'ORT',
-    tax_invoice_hotel: 'TIH'
+    tax_invoice_hotel: 'TIH',
+    local_operator_original_tax_invoice: 'LOTI',
+    local_operator_copy_tax_invoice: 'LCTI'
   }[documentType] || 'TI';
   const date = new Date();
   const year = date.getFullYear();
@@ -251,9 +263,24 @@ function sanitizeServices(baseRows, submittedServices) {
       adv_enabled: advEnabled,
       adv,
       tax_treatment: taxTreatment,
-      vat_base: vatBase
+      vat_base: vatBase,
+      wht_selected: Boolean(input?.wht_selected)
     };
   });
+}
+
+function applyWithholdingSelections(masterRows, submittedServices) {
+  const submitted = new Map((Array.isArray(submittedServices) ? submittedServices : [])
+    .filter((row) => row && typeof row.id === 'string')
+    .map((row) => [row.id, row]));
+
+  return masterRows.map((row) => ({
+    ...row,
+    // WHT selection is independent from the Tax Settings inclusion flag.
+    // A Tax Invoice preview may only toggle WHT on a service already included
+    // by the saved Original Tax Invoice.
+    wht_selected: row.selected !== false && Boolean(submitted.get(row.id)?.wht_selected)
+  }));
 }
 
 function treatmentAdv(row, total) {
@@ -272,8 +299,53 @@ function usesRemainingAmountVat(row) {
   return ['transfer', 'excursion', 'tour'].includes(String(row?.type || '').toLowerCase());
 }
 
+function isLocalOperatorDocument(documentType) {
+  return LOCAL_OPERATOR_DOCUMENT_TYPES.has(documentType);
+}
+
+function usesSelectiveWithholding(documentType) {
+  return documentType === 'tax_invoice';
+}
+
+function calculateWithholdingSummary(totals, documentType, rows = []) {
+  if (!isLocalOperatorDocument(documentType) && !usesSelectiveWithholding(documentType)) return null;
+  const withholdingRows = usesSelectiveWithholding(documentType)
+    ? rows.filter((row) => row.wht_selected)
+    : rows;
+  const withholdingTaxBase = Math.max(0, round(withholdingRows.reduce(
+    (sum, row) => sum + number(row.vat_taxable_amount),
+    0
+  )));
+  const withholdingTax = round(withholdingTaxBase * WHT_RATE);
+  const invoiceTotal = Math.max(0, round(totals.document_total));
+  return {
+    withholding_tax_rate: WHT_RATE,
+    withholding_tax_base: withholdingTaxBase,
+    withholding_tax: withholdingTax,
+    invoice_total: invoiceTotal,
+    amount_payable: round(Math.max(0, invoiceTotal - withholdingTax))
+  };
+}
+
+function applyWithholdingAmounts(rows, documentType, withholdingSummary) {
+  if (!withholdingSummary) return rows;
+  const targets = rows.filter((row) => isLocalOperatorDocument(documentType) || row.wht_selected);
+  let allocated = 0;
+
+  return rows.map((row) => {
+    if (!targets.includes(row)) return { ...row, withholding_tax: 0 };
+    const isLast = row === targets[targets.length - 1];
+    const amount = isLast
+      ? round(withholdingSummary.withholding_tax - allocated)
+      : round(number(row.vat_taxable_amount) * WHT_RATE);
+    allocated = round(allocated + amount);
+    return { ...row, withholding_tax: Math.max(0, amount) };
+  });
+}
+
 function calculateRows(rows, documentType) {
   const noVat = documentType === 'original_receipt_transportation';
+  const localOperatorDocument = isLocalOperatorDocument(documentType);
   const childTotals = rows.reduce((sum, row) => {
     if (row.parent_id && row.selected) sum[row.parent_id] = (sum[row.parent_id] || 0) + Math.max(0, round(row.total));
     return sum;
@@ -287,7 +359,7 @@ function calculateRows(rows, documentType) {
     const taxableGross = remainingGross;
     const vat = noVat ? 0 : round(taxableGross - taxableNet);
     const allocatedGross = round(adv + taxableGross);
-    const documentTotal = noVat ? adv : documentType === ORIGINAL_DOCUMENT_TYPE ? total : taxableGross;
+    const documentTotal = noVat ? adv : (documentType === ORIGINAL_DOCUMENT_TYPE || localOperatorDocument) ? total : taxableGross;
     const vatTaxableAmount = noVat ? 0 : taxableNet;
     const documentAdv = documentType === 'tax_invoice' || documentType === 'tax_invoice_hotel' ? 0 : adv;
     return { ...row, adv_enabled: usesRemainingAmountVat(row) && adv > 0, tax_treatment: treatment, total, gross_total: total, adv, vat_base: taxableNet, document_adv: documentAdv, taxable_gross: taxableGross, taxable_net: taxableNet, vat_taxable_amount: vatTaxableAmount, vat, allocated_gross: allocatedGross, document_total: documentTotal };
@@ -302,7 +374,13 @@ function calculateRows(rows, documentType) {
     vat_taxable_amount: sum.vat_taxable_amount + row.vat_taxable_amount,
     vat: sum.vat + row.vat
   }), { total: 0, document_total: 0, adv: 0, document_adv: 0, taxable_gross: 0, taxable_net: 0, vat_taxable_amount: 0, vat: 0 });
-  return { rows: calculated, totals: Object.fromEntries(Object.entries(totals).map(([key, value]) => [key, round(value)])) };
+  const roundedTotals = Object.fromEntries(Object.entries(totals).map(([key, value]) => [key, round(value)]));
+  const withholdingSummary = calculateWithholdingSummary(roundedTotals, documentType, calculated);
+  const calculatedWithWithholding = applyWithholdingAmounts(calculated, documentType, withholdingSummary);
+  return {
+    rows: calculatedWithWithholding,
+    totals: withholdingSummary ? { ...roundedTotals, ...withholdingSummary } : roundedTotals
+  };
 }
 
 function validateTaxTreatments(rows) {
@@ -501,7 +579,10 @@ export async function saveTaxInvoiceDocument(req, res, next) {
       if (!original) return res.status(400).json({ message: 'Create and save the Original Tax Invoice first. The remaining tax documents will then be copied automatically.' });
       resolvedInvoiceDate = normalizeInvoiceDate(original.invoice_date);
       if (!resolvedInvoiceDate) return res.status(400).json({ message: 'The Original Tax Invoice does not have a valid Invoice Date.' });
-      visibleRows = sanitizeServices(allowedRows, parseJson(original.selected_services, []));
+      const masterRows = sanitizeServices(allowedRows, parseJson(original.selected_services, []));
+      visibleRows = usesSelectiveWithholding(documentType)
+        ? applyWithholdingSelections(masterRows, services)
+        : masterRows;
       effectiveAdjustments = parseJson(original.adjustments, {});
     }
 
@@ -519,13 +600,16 @@ export async function saveTaxInvoiceDocument(req, res, next) {
     if (documentType === ORIGINAL_DOCUMENT_TYPE) {
       for (const secondaryType of PUBLIC_DOCUMENT_TYPES.filter((type) => type !== ORIGINAL_DOCUMENT_TYPE)) {
         const copiedRows = sanitizeServices(servicesForDocument(booking, secondaryType), visibleRows);
-        const copiedCalculation = calculateRows(copiedRows, secondaryType);
+        const synchronizedRows = usesSelectiveWithholding(secondaryType)
+          ? applyWithholdingSelections(copiedRows, parseJson(byType.get(secondaryType)?.selected_services, []))
+          : copiedRows;
+        const copiedCalculation = calculateRows(synchronizedRows, secondaryType);
         preparedDocuments.push({
           tripId,
           documentType: secondaryType,
           invoiceNumber: String(byType.get(secondaryType)?.invoice_number || buildInvoiceNumber(booking, secondaryType)).trim(),
           invoiceDate: resolvedInvoiceDate,
-          services: copiedRows,
+          services: synchronizedRows,
           adjustments: effectiveAdjustments,
           snapshot: buildSnapshot(booking, copiedCalculation, resolvedInvoiceDate)
         });
@@ -644,4 +728,4 @@ export async function listTaxInvoicesByDateRange(req, res, next) { return listTa
 export async function generateTaxInvoicePDF(req, res, next) { return res.status(501).json({ message: 'Open the saved tax invoice and use Open PDF / Print.' }); }
 export async function generateTaxInvoicePDFWithProfile(req, res, next) { return generateTaxInvoicePDF(req, res, next); }
 
-export { buildServices, calculateRows, sanitizeServices, servicesForDocument, isPaymentReceived, validateTaxTreatments, validateAllocations, VAT_RATE, PUBLIC_DOCUMENT_TYPES, bookingConfirmed };
+export { applyWithholdingSelections, buildServices, calculateRows, calculateWithholdingSummary, sanitizeServices, servicesForDocument, isPaymentReceived, validateTaxTreatments, validateAllocations, VAT_RATE, WHT_RATE, PUBLIC_DOCUMENT_TYPES, bookingConfirmed };

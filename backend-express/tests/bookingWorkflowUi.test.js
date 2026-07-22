@@ -192,20 +192,26 @@ test('tax invoice editor uses the Proforma document structure and correct docume
   assert.doesNotMatch(taxInvoiceEditorSource, /<tr><td class="passenger-label">Agent Name/);
   assert.doesNotMatch(taxInvoiceEditorSource, /<tr><td class="passenger-label">Address/);
   assert.match(taxInvoiceEditorPage, /Open PDF \/ Print/);
-  assert.match(taxInvoiceEditorSource, /documentType !== ORIGINAL_DOCUMENT_TYPE[\s\S]*saveButton'\)\.style\.display = 'none'/);
+  assert.match(taxInvoiceEditorSource, /!\[ORIGINAL_DOCUMENT_TYPE, 'tax_invoice'\]\.includes\(documentType\)/);
+  assert.match(taxInvoiceEditorSource, /Save WHT Selection/);
+  assert.match(taxInvoiceEditorSource, /Apply 3% Withholding Tax to this service line/);
+  assert.match(taxInvoiceEditorSource, /row\.wht_selected/);
+  assert.match(taxInvoiceEditorSource, /3% of VAT Taxable Amount/);
   assert.match(taxInvoiceEditorSource, /row\.type === 'transfer' \? 'Car Fee:' : 'ADV \(Non-VAT\):'/);
   assert.match(taxInvoiceEditorSource, /class="print-billed-title">BILLED TO/);
   assert.match(taxInvoiceEditorSource, /bookingInvoiceNumber = booking\.invoice_number \|\| '-'/);
   assert.match(taxInvoiceEditorSource, /taxDocumentLabel = documentType === 'original_receipt_transportation' \? 'RECEIPT N°:' : 'TAX INVOICE N°:'/);
 });
 
-test('tax invoice list exposes the three required downloadable documents', () => {
+test('tax invoice list exposes the five required downloadable documents', () => {
   const taxInvoiceListSource = readFileSync(resolve(rootDirectory, 'frontend-main/production/js/tax_invoices/tax_invoices.js'), 'utf8');
   assert.match(taxInvoiceListSource, /original_tax_invoice/);
   assert.match(taxInvoiceListSource, /tax_invoice/);
   assert.match(taxInvoiceListSource, /original_receipt_transportation/);
+  assert.match(taxInvoiceListSource, /local_operator_original_tax_invoice/);
+  assert.match(taxInvoiceListSource, /local_operator_copy_tax_invoice/);
   assert.match(taxInvoiceListPage, /Tax Settings/);
-  assert.match(taxInvoiceListSource, /Complete Tax Settings to unlock the 3 document previews/);
+  assert.match(taxInvoiceListSource, /Complete Tax Settings to unlock the 5 document previews/);
   assert.doesNotMatch(taxInvoiceEditorSource, /defaultTreatmentFor/);
   assert.doesNotMatch(taxInvoiceEditorSource, /data-treatment-option="vat"/);
   assert.doesNotMatch(taxInvoiceEditorSource, /data-treatment-option="adv"/);
@@ -219,4 +225,12 @@ test('tax invoice list exposes the three required downloadable documents', () =>
   assert.doesNotMatch(taxInvoiceListSource, /type: 'tax_invoice_hotel'/);
   assert.match(taxInvoiceControllerSource, /return bookingConfirmed\(booking\)/);
   assert.match(taxInvoiceControllerSource, /prisma\.\$transaction\(async \(transaction\)/);
+  assert.match(taxInvoiceEditorSource, /ORIGINAL TAX INVOICE - LOCAL OPERATOR/);
+  assert.match(taxInvoiceEditorSource, /COPY TAX INVOICE - LOCAL OPERATOR/);
+  assert.match(taxInvoiceEditorSource, /Less 3% Withholding Tax/);
+  assert.match(taxInvoiceEditorSource, /documentType === 'tax_invoice' && rows\.some\(\(row\) => row\.wht_selected\)/);
+  assert.match(taxInvoiceEditorSource, /WHT selection saved successfully/);
+  assert.match(taxInvoiceEditorSource, /withholding_tax_base \* WHT_RATE/);
+  assert.match(taxInvoiceEditorSource, /amount_payable = round\(Math\.max\(0, roundedTotals\.invoice_total - roundedTotals\.withholding_tax\)\)/);
+  assert.match(taxInvoiceControllerSource, /withholdingTaxBase \* WHT_RATE/);
 });
