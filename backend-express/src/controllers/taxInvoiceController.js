@@ -3,6 +3,7 @@ import { attachProformaBilling } from './tripController.js';
 
 const VAT_RATE = 0.07;
 const WHT_RATE = 0.03;
+const TRANSPORT_WHT_RATE = 0.01;
 const LOCAL_OPERATOR_DOCUMENT_TYPES = new Set([
   'local_operator_original_tax_invoice',
   'local_operator_copy_tax_invoice'
@@ -304,7 +305,17 @@ function isLocalOperatorDocument(documentType) {
 }
 
 function usesSelectiveWithholding(documentType) {
-  return documentType === 'tax_invoice';
+  return documentType === 'tax_invoice' || documentType === 'original_receipt_transportation';
+}
+
+function withholdingRateForDocument(documentType) {
+  return documentType === 'original_receipt_transportation' ? TRANSPORT_WHT_RATE : WHT_RATE;
+}
+
+function withholdingBaseForRow(row, documentType) {
+  return documentType === 'original_receipt_transportation'
+    ? number(row.document_adv ?? row.adv)
+    : number(row.vat_taxable_amount);
 }
 
 function calculateWithholdingSummary(totals, documentType, rows = []) {
@@ -312,14 +323,15 @@ function calculateWithholdingSummary(totals, documentType, rows = []) {
   const withholdingRows = usesSelectiveWithholding(documentType)
     ? rows.filter((row) => row.wht_selected)
     : rows;
+  const withholdingRate = withholdingRateForDocument(documentType);
   const withholdingTaxBase = Math.max(0, round(withholdingRows.reduce(
-    (sum, row) => sum + number(row.vat_taxable_amount),
+    (sum, row) => sum + withholdingBaseForRow(row, documentType),
     0
   )));
-  const withholdingTax = round(withholdingTaxBase * WHT_RATE);
+  const withholdingTax = round(withholdingTaxBase * withholdingRate);
   const invoiceTotal = Math.max(0, round(totals.document_total));
   return {
-    withholding_tax_rate: WHT_RATE,
+    withholding_tax_rate: withholdingRate,
     withholding_tax_base: withholdingTaxBase,
     withholding_tax: withholdingTax,
     invoice_total: invoiceTotal,
@@ -337,7 +349,7 @@ function applyWithholdingAmounts(rows, documentType, withholdingSummary) {
     const isLast = row === targets[targets.length - 1];
     const amount = isLast
       ? round(withholdingSummary.withholding_tax - allocated)
-      : round(number(row.vat_taxable_amount) * WHT_RATE);
+      : round(withholdingBaseForRow(row, documentType) * withholdingRateForDocument(documentType));
     allocated = round(allocated + amount);
     return { ...row, withholding_tax: Math.max(0, amount) };
   });
@@ -728,4 +740,4 @@ export async function listTaxInvoicesByDateRange(req, res, next) { return listTa
 export async function generateTaxInvoicePDF(req, res, next) { return res.status(501).json({ message: 'Open the saved tax invoice and use Open PDF / Print.' }); }
 export async function generateTaxInvoicePDFWithProfile(req, res, next) { return generateTaxInvoicePDF(req, res, next); }
 
-export { applyWithholdingSelections, buildServices, calculateRows, calculateWithholdingSummary, sanitizeServices, servicesForDocument, isPaymentReceived, validateTaxTreatments, validateAllocations, VAT_RATE, WHT_RATE, PUBLIC_DOCUMENT_TYPES, bookingConfirmed };
+export { applyWithholdingSelections, buildServices, calculateRows, calculateWithholdingSummary, sanitizeServices, servicesForDocument, isPaymentReceived, validateTaxTreatments, validateAllocations, VAT_RATE, WHT_RATE, TRANSPORT_WHT_RATE, PUBLIC_DOCUMENT_TYPES, bookingConfirmed };

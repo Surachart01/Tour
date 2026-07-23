@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyWithholdingSelections, buildServices, calculateRows, sanitizeServices, servicesForDocument, isPaymentReceived, validateTaxTreatments, validateAllocations, PUBLIC_DOCUMENT_TYPES, WHT_RATE } from '../src/controllers/taxInvoiceController.js';
+import { applyWithholdingSelections, buildServices, calculateRows, sanitizeServices, servicesForDocument, isPaymentReceived, validateTaxTreatments, validateAllocations, PUBLIC_DOCUMENT_TYPES, WHT_RATE, TRANSPORT_WHT_RATE } from '../src/controllers/taxInvoiceController.js';
 
 test('calculates VAT only from the selling price remaining after ADV', () => {
   const result = calculateRows([{
@@ -125,6 +125,22 @@ test('keeps transportation receipt free of VAT', () => {
   assert.equal(result.totals.vat, 0);
   assert.equal(result.totals.document_total, 1000);
   assert.equal(result.totals.document_adv, 1000);
+});
+
+test('calculates transportation receipt WHT 1% only from selected ADV lines', () => {
+  const result = calculateRows([
+    { id: 'selected-transfer', type: 'transfer', total: 3000, adv: 3000, adv_enabled: true, selected: true, wht_selected: true },
+    { id: 'unselected-excursion', type: 'excursion', total: 2500, adv: 2500, adv_enabled: true, selected: true, wht_selected: false }
+  ], 'original_receipt_transportation');
+
+  assert.equal(TRANSPORT_WHT_RATE, 0.01);
+  assert.equal(result.totals.document_total, 5500);
+  assert.equal(result.totals.withholding_tax_rate, 0.01);
+  assert.equal(result.totals.withholding_tax_base, 3000);
+  assert.equal(result.totals.withholding_tax, 30);
+  assert.equal(result.totals.amount_payable, 5470);
+  assert.equal(result.rows.find((row) => row.id === 'selected-transfer').withholding_tax, 30);
+  assert.equal(result.rows.find((row) => row.id === 'unselected-excursion').withholding_tax, 0);
 });
 
 test('deducts manually allocated tour accommodation from the tour selling price', () => {
