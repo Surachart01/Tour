@@ -96,6 +96,8 @@ function applyModulePermissions() {
     "edit_special_package.html": "special_packages",
     "analytics.html": "analytics",
     "room_nights.html": "analytics",
+    "check_invoices.html": "analytics",
+    "operations.html": "bookings",
     "city_info.html": "city_info",
     "stop_sale.html": "stop_sale",
     "special_promo.html": "special_promo",

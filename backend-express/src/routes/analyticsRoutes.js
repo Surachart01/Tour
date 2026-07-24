@@ -1,6 +1,6 @@
 import express from 'express';
 import { validateJWT, authorize } from '../middleware/auth.js';
-import { getSalesMetrics, getRevenueMetrics, getEfficiencyMetrics, getCustomerMetrics, getDashboardSummary, getMonthlyTrends, getSalesMetricsForDateRange, getRevenueMetricsForDateRange, getEfficiencyMetricsForDateRange, getCustomerMetricsForDateRange, getDashboardSummaryForDateRange, getSalesMetricsForFullYear, getRevenueMetricsForFullYear, getEfficiencyMetricsForFullYear, getCustomerMetricsForFullYear, getDashboardSummaryForFullYear, getAgentPerformance, getGlobalSummary, invalidateCache, getUserActivities, getActivityStats, getUserStats, getEntityPopularity, getRoomNights } from '../controllers/analyticsController.js';
+import { getSalesMetrics, getRevenueMetrics, getEfficiencyMetrics, getCustomerMetrics, getDashboardSummary, getMonthlyTrends, getSalesMetricsForDateRange, getRevenueMetricsForDateRange, getEfficiencyMetricsForDateRange, getCustomerMetricsForDateRange, getDashboardSummaryForDateRange, getSalesMetricsForFullYear, getRevenueMetricsForFullYear, getEfficiencyMetricsForFullYear, getCustomerMetricsForFullYear, getDashboardSummaryForFullYear, getAgentPerformance, getGlobalSummary, invalidateCache, getUserActivities, getActivityStats, getUserStats, getEntityPopularity, getRoomNights, getCheckInvoices, generateCheckInvoiceNumbers, exportCheckInvoices } from '../controllers/analyticsController.js';
 const router = express.Router();
 router.use(validateJWT);
 // Single month
@@ -11,6 +11,9 @@ router.get('/analytics/customers', authorize('admin', 'agent'), getCustomerMetri
 router.get('/analytics/dashboard', authorize('admin', 'agent'), getDashboardSummary);
 router.get('/analytics/trends', authorize('admin', 'agent'), getMonthlyTrends);
 router.get('/analytics/room-nights', authorize('admin', 'agent'), getRoomNights);
+router.get('/analytics/check-invoices', authorize('admin', 'agent'), getCheckInvoices);
+router.post('/analytics/check-invoices/generate', authorize('admin'), generateCheckInvoiceNumbers);
+router.get('/analytics/check-invoices/export', authorize('admin', 'agent'), exportCheckInvoices);
 // Date range
 router.get('/analytics/sales/range', authorize('admin', 'agent'), getSalesMetricsForDateRange);
 router.get('/analytics/revenue/range', authorize('admin', 'agent'), getRevenueMetricsForDateRange);

@@ -1,4 +1,6 @@
 import prisma from '../config/db.js';
+import ExcelJS from 'exceljs';
+import { ensureCheckInvoiceSchema } from '../utils/schemaMaintenance.js';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -255,6 +257,296 @@ export async function getRoomNights(req, res, next) {
       rows,
       hotels: hotelOptions
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+function checkInvoiceTripWhere(req, range) {
+  const where = {
+    trip_start_date: {
+      gte: range.start,
+      lt: range.endExclusive
+    }
+  };
+  const agentId = getAgentId(req);
+  if (agentId) where.agent_id = agentId;
+  return where;
+}
+
+function latestDate(values) {
+  const valid = values
+    .filter(Boolean)
+    .map((value) => new Date(value))
+    .filter((value) => !Number.isNaN(value.getTime()));
+  if (valid.length === 0) return null;
+  return valid.reduce((latest, current) => current > latest ? current : latest);
+}
+
+function tripDepartureDate(trip) {
+  return latestDate([
+    ...(trip.flight_trip_items || []).map((item) => item.to_date),
+    ...(trip.hotel_trip_items || []).map((item) => item.to_date),
+    ...(trip.transfer_trip_items || []).map((item) => item.from_date),
+    ...(trip.excursion_trip_items || []).map((item) => item.to_date),
+    ...(trip.tour_trip_items || []).map((item) => item.to_date)
+  ]) || trip.trip_start_date;
+}
+
+function checkInvoiceTripSelect() {
+  return {
+    id: true,
+    agent_id: true,
+    client_name: true,
+    number_of_adults: true,
+    number_of_kids: true,
+    booking_reference: true,
+    file_reference: true,
+    invoice_number: true,
+    booking_date: true,
+    created_at: true,
+    trip_start_date: true,
+    final_amount: true,
+    total_amount: true,
+    received_amount: true,
+    amount_paid: true,
+    payment_date: true,
+    approved: true,
+    is_booking: true,
+    status: true,
+    agents: { select: { id: true, name: true } },
+    flight_trip_items: { select: { to_date: true } },
+    hotel_trip_items: { select: { to_date: true } },
+    transfer_trip_items: { select: { from_date: true } },
+    excursion_trip_items: { select: { to_date: true } },
+    tour_trip_items: { select: { to_date: true } }
+  };
+}
+
+function checkInvoiceRow(trip, record, range) {
+  const arrival = trip.trip_start_date;
+  const received = toNumber(trip.received_amount || trip.amount_paid);
+  const referenceDate = trip.booking_date || trip.created_at || arrival;
+  const referenceYear = referenceDate instanceof Date
+    ? referenceDate.getUTCFullYear()
+    : new Date(referenceDate).getUTCFullYear();
+  return {
+    trip_id: trip.id,
+    date: formatDateOnly(trip.booking_date || trip.created_at),
+    invoice_number: record?.generated_invoice_number || trip.invoice_number || '',
+    year: (Number.isFinite(referenceYear) ? referenceYear : range.year) + 543,
+    agent_id: trip.agents?.id || trip.agent_id || null,
+    agent_name: trip.agents?.name || '',
+    client_name: trip.client_name || '',
+    pax: Math.max(0, toNumber(trip.number_of_adults)) + Math.max(0, toNumber(trip.number_of_kids)),
+    total: toNumber(trip.final_amount ?? trip.total_amount),
+    month: MONTH_NAMES[range.startMonth - 1].slice(0, 3).toUpperCase(),
+    file_number: record?.monthly_file_number || null,
+    source_file_number: trip.file_reference || trip.booking_reference || '',
+    received_money: received,
+    received_date: formatDateOnly(trip.payment_date),
+    arrival: formatDateOnly(arrival),
+    departure: formatDateOnly(tripDepartureDate(trip)),
+    status: trip.status || '',
+    numbers_generated: Boolean(record)
+  };
+}
+
+async function loadCheckInvoiceReport(req) {
+  await ensureCheckInvoiceSchema();
+  const range = getDateRange(req.query, 'month');
+  const trips = (await prisma.trips.findMany({
+    where: checkInvoiceTripWhere(req, range),
+    select: checkInvoiceTripSelect(),
+    orderBy: [{ trip_start_date: 'asc' }, { id: 'asc' }]
+  })).filter(isBooking);
+  const tripIds = trips.map((trip) => trip.id);
+  const records = tripIds.length
+    ? await prisma.check_invoice_records.findMany({ where: { trip_id: { in: tripIds } } })
+    : [];
+  const recordMap = new Map(records.map((record) => [record.trip_id, record]));
+  const rows = trips.map((trip) => checkInvoiceRow(trip, recordMap.get(trip.id), range));
+  return {
+    period: {
+      year: range.year,
+      month: range.startMonth,
+      label: range.period
+    },
+    totals: {
+      bookings: rows.length,
+      pax: rows.reduce((sum, row) => sum + row.pax, 0),
+      total: rows.reduce((sum, row) => sum + row.total, 0),
+      received: rows.reduce((sum, row) => sum + row.received_money, 0),
+      missing_numbers: rows.filter((row) => !row.numbers_generated).length
+    },
+    rows
+  };
+}
+
+export async function getCheckInvoices(req, res, next) {
+  try {
+    return res.json(await loadCheckInvoiceReport(req));
+  } catch (error) {
+    next(error);
+  }
+}
+
+function extractInvoiceSequence(value, year) {
+  const match = String(value || '').trim().match(/^(\d+)[_-](\d{4})$/);
+  if (!match || Number(match[2]) !== year) return 0;
+  return Number(match[1]) || 0;
+}
+
+export async function generateCheckInvoiceNumbers(req, res, next) {
+  try {
+    await ensureCheckInvoiceSchema();
+    const range = getDateRange(req.body || req.query, 'month');
+    const agentId = getAgentId({ ...req, query: req.body || req.query });
+    const where = {
+      trip_start_date: { gte: range.start, lt: range.endExclusive }
+    };
+    if (agentId) where.agent_id = agentId;
+
+    const generated = await prisma.$transaction(async (tx) => {
+      await tx.$queryRawUnsafe('SELECT pg_advisory_xact_lock($1)', (range.year * 100) + range.startMonth);
+      const trips = (await tx.trips.findMany({
+        where,
+        select: {
+          id: true,
+          invoice_number: true,
+          approved: true,
+          is_booking: true,
+          status: true
+        },
+        orderBy: [{ trip_start_date: 'asc' }, { id: 'asc' }]
+      })).filter(isBooking);
+      if (trips.length === 0) return 0;
+
+      const existing = await tx.check_invoice_records.findMany({
+        where: { trip_id: { in: trips.map((trip) => trip.id) } }
+      });
+      const existingTripIds = new Set(existing.map((record) => record.trip_id));
+      const monthStart = range.start;
+      const monthlyMax = await tx.check_invoice_records.aggregate({
+        where: { report_month: monthStart },
+        _max: { monthly_file_number: true }
+      });
+      const [yearTrips, yearRecords] = await Promise.all([
+        tx.trips.findMany({
+          where: { invoice_number: { not: null } },
+          select: { invoice_number: true }
+        }),
+        tx.check_invoice_records.findMany({
+          where: { invoice_year: range.year },
+          select: { generated_invoice_number: true }
+        })
+      ]);
+      const recordedInvoiceNumbers = new Set(yearRecords.map((item) => item.generated_invoice_number));
+      const invoiceNumberCounts = yearTrips.reduce((counts, item) => {
+        const number = String(item.invoice_number || '').trim();
+        if (number) counts.set(number, (counts.get(number) || 0) + 1);
+        return counts;
+      }, new Map());
+      const usedInvoiceNumbers = new Set([
+        ...recordedInvoiceNumbers,
+        ...invoiceNumberCounts.keys()
+      ]);
+      let invoiceSequence = Math.max(
+        0,
+        ...yearTrips.map((item) => extractInvoiceSequence(item.invoice_number, range.year)),
+        ...yearRecords.map((item) => extractInvoiceSequence(item.generated_invoice_number, range.year))
+      );
+      let fileSequence = monthlyMax._max.monthly_file_number || 0;
+      let count = 0;
+
+      for (const trip of trips) {
+        if (existingTripIds.has(trip.id)) continue;
+        fileSequence += 1;
+        const existingInvoiceNumber = String(trip.invoice_number || '').trim();
+        const canReuseExisting = Boolean(existingInvoiceNumber) &&
+          invoiceNumberCounts.get(existingInvoiceNumber) === 1 &&
+          !recordedInvoiceNumbers.has(existingInvoiceNumber);
+        let invoiceNumber = canReuseExisting ? existingInvoiceNumber : '';
+        if (!invoiceNumber) {
+          do {
+            invoiceSequence += 1;
+            invoiceNumber = `${String(invoiceSequence).padStart(3, '0')}_${range.year}`;
+          } while (usedInvoiceNumbers.has(invoiceNumber));
+        }
+        usedInvoiceNumbers.add(invoiceNumber);
+        await tx.check_invoice_records.create({
+          data: {
+            trip_id: trip.id,
+            report_month: monthStart,
+            monthly_file_number: fileSequence,
+            generated_invoice_number: invoiceNumber,
+            invoice_year: range.year
+          }
+        });
+        if (!trip.invoice_number) {
+          await tx.trips.update({
+            where: { id: trip.id },
+            data: { invoice_number: invoiceNumber }
+          });
+        }
+        count += 1;
+      }
+      return count;
+    });
+
+    const reportRequest = {
+      ...req,
+      query: {
+        year: range.year,
+        month: range.startMonth,
+        ...(req.body?.agent_id ? { agent_id: req.body.agent_id } : {})
+      }
+    };
+    return res.json({ generated, report: await loadCheckInvoiceReport(reportRequest) });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function exportCheckInvoices(req, res, next) {
+  try {
+    const report = await loadCheckInvoiceReport(req);
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet(report.period.label);
+    sheet.mergeCells('A1:L1');
+    sheet.getCell('A1').value = report.period.label;
+    sheet.getCell('A1').font = { bold: true, size: 20 };
+    sheet.getCell('A1').alignment = { horizontal: 'center' };
+    sheet.addRow([]);
+    sheet.addRow([
+      'Date', 'Invoice No', 'Year', "Agent's Name", "Client's Name", 'Pax',
+      'Total', 'Mth', 'File No', 'Received Money', 'Arrival', 'Departure'
+    ]);
+    const header = sheet.getRow(3);
+    header.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    header.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E78' } };
+    report.rows.forEach((row) => {
+      sheet.addRow([
+        row.date, row.invoice_number, row.year, row.agent_name, row.client_name, row.pax,
+        row.total, row.month, row.file_number || '', row.received_date || '',
+        row.arrival, row.departure
+      ]);
+    });
+    sheet.addRow([]);
+    sheet.addRow(['', '', '', '', 'TOTAL', report.totals.pax, report.totals.total]);
+    sheet.columns = [
+      { width: 13 }, { width: 16 }, { width: 10 }, { width: 24 }, { width: 30 },
+      { width: 8 }, { width: 16 }, { width: 8 }, { width: 10 }, { width: 18 },
+      { width: 13 }, { width: 13 }
+    ];
+    sheet.getColumn(7).numFmt = '#,##0.00';
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="check-invoice-${report.period.year}-${String(report.period.month).padStart(2, '0')}.xlsx"`
+    );
+    await workbook.xlsx.write(res);
+    res.end();
   } catch (error) {
     next(error);
   }

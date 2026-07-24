@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Check Invoice</title>
+    <link href="../vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="../vendors/font-awesome/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
+    <style>
+      :root { --ink:#243b53; --teal:#1abb9c; --soft:#f5f8fb; --line:#dce5ee; }
+      body, .right_col { background:var(--soft); color:var(--ink); }
+      .left_col.scroll-view { overflow-y:auto; max-height:100vh; }
+      .right_col { min-height:100vh; }
+      .filter-band, .report-section, .kpi {
+        background:#fff; border:1px solid var(--line);
+      }
+      .filter-band { padding:18px; margin-bottom:18px; }
+      .filter-grid {
+        display:grid; grid-template-columns:minmax(220px,.8fr) minmax(240px,1fr) auto;
+        gap:14px; align-items:end;
+      }
+      .month-control { display:grid; grid-template-columns:40px minmax(150px,1fr) 40px; gap:6px; }
+      .icon-button { width:40px; height:38px; padding:0; display:inline-flex; align-items:center; justify-content:center; }
+      .filter-actions { display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
+      .notice {
+        border-left:4px solid #3498db; background:#eef7fd; color:#315b75;
+        padding:12px 15px; margin-bottom:18px;
+      }
+      .kpi-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-bottom:18px; }
+      .kpi { min-height:92px; padding:15px 18px; border-left:4px solid var(--teal); }
+      .kpi:nth-child(2) { border-left-color:#3498db; }
+      .kpi:nth-child(3) { border-left-color:#f39c12; }
+      .kpi:nth-child(4) { border-left-color:#27ae60; }
+      .kpi-label { color:#627d98; font-size:11px; font-weight:700; text-transform:uppercase; }
+      .kpi-value { margin-top:5px; font-size:28px; font-weight:700; font-variant-numeric:tabular-nums; }
+      .report-section { margin-bottom:18px; }
+      .section-heading {
+        display:flex; justify-content:space-between; align-items:center; gap:12px;
+        padding:15px 18px; border-bottom:1px solid var(--line);
+      }
+      .section-heading h4 { margin:0; font-weight:700; }
+      .report-table { margin-bottom:0; }
+      .report-table thead th {
+        background:var(--ink); color:#fff; border-color:#314e68 !important;
+        font-size:11px; text-transform:uppercase; white-space:nowrap; vertical-align:middle !important;
+      }
+      .report-table td { vertical-align:middle !important; }
+      .number-cell { text-align:right; font-variant-numeric:tabular-nums; }
+      .generated-number { color:#138a72; font-weight:700; }
+      .pending-number { color:#b7791f; font-weight:700; }
+      .empty-state { text-align:center; padding:52px 20px; color:#627d98; }
+      .empty-state .fa { display:block; margin-bottom:12px; color:#cbd5e1; font-size:42px; }
+      .loading-panel {
+        display:none; position:fixed; inset:0; z-index:3000; background:rgba(245,248,251,.84);
+        align-items:center; justify-content:center;
+      }
+      .loading-panel.active { display:flex; }
+      .loading-content {
+        min-width:240px; background:#fff; border:1px solid var(--line); padding:25px 32px;
+        text-align:center; box-shadow:0 8px 24px rgba(36,59,83,.16);
+      }
+      .loading-content .fa { display:block; color:var(--teal); font-size:30px; margin-bottom:10px; }
+      @media (max-width:1050px) {
+        .filter-grid { grid-template-columns:1fr 1fr; }
+        .filter-actions { grid-column:1/-1; justify-content:flex-start; }
+        .kpi-grid { grid-template-columns:repeat(2,1fr); }
+      }
+      @media (max-width:650px) {
+        .filter-grid, .kpi-grid { grid-template-columns:1fr; }
+        .filter-actions { grid-column:auto; }
+      }
+      @media print {
+        .left_col,.top_nav,.sidebar-footer,.filter-band,.notice,.page-actions,.loading-panel { display:none !important; }
+        .right_col { margin-left:0 !important; padding:0 !important; }
+        .report-section { border:0; }
+      }
+    </style>
+  </head>
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+        <div class="col-md-3 left_col menu_fixed">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border:0"><a href="index.html" class="site_title" style="display:block;text-align:center;font-size:2rem;font-weight:bold;color:#fff;text-decoration:none"><span style="font-size:1.5rem">VeraThailandia!</span></a></div>
+            <div class="clearfix"></div>
+            <div class="profile clearfix"><div class="profile_pic"><img id="navProfileImage" src="images/verathailandlogo.png" alt="" class="img-circle profile_img" /></div><div class="profile_info"><span>Welcome,</span><h2 id="profileName"></h2></div></div>
+            <br />
+            <div id="sidebar-menu" class="main_menu_side hidden-print main_menu">
+              <div class="menu_section"><h3>General</h3><ul class="nav side-menu">
+                <li><a href="index.html"><i class="fa fa-home"></i> Home</a></li>
+                <li id="controlPanelMenu"><a><i class="fa fa-edit"></i> Control-Panel <span class="fa fa-chevron-down"></span></a><ul class="nav child_menu">
+                  <li><a href="activities.html">Activities</a></li><li><a href="agents.html">Agents</a></li><li><a href="booking.html">Bookings</a></li><li><a href="city_info.html">City Information</a></li><li><a href="excursion_description.html">Excursion Description</a></li><li><a href="excursions.html">Excursions</a></li><li><a href="hotels.html">Hotels</a></li><li><a href="markup.html">Markups</a></li><li><a href="othercharges.html">Other Charges</a></li><li><a href="special_packages.html">Special Packages</a></li><li><a href="stop_sale.html">Stop Sale</a></li><li><a href="suppliers.html">Suppliers</a></li><li><a href="tools.html">Tools</a></li><li><a href="tour_description.html">Tour Description</a></li><li><a href="tours.html">Tours</a></li><li><a href="transfers.html">Transfers</a></li><li><a href="users.html">Users</a></li>
+                </ul></li>
+                <li><a href="trip.html"><i class="fa fa-book"></i> Quotation</a></li>
+                <li><a href="payment.html"><i class="fa fa-pencil-square-o"></i> Statement</a></li>
+                <li><a href="invoice_management.html"><i class="fa fa-file-o"></i> Proforma Invoice</a></li>
+                <li><a href="tax_invoices.html"><i class="fa fa-file-text-o"></i> Tax Invoices</a></li>
+                <li><a href="itinerary.html"><i class="fa fa-ticket"></i> Itinerary</a></li>
+                <li id="analyticsMenu" class="active"><a><i class="fa fa-bar-chart"></i> Analytics <span class="fa fa-chevron-up"></span></a><ul class="nav child_menu" style="display:block"><li><a href="analytics.html">Dashboard</a></li><li><a href="room_nights.html">Room Nights</a></li><li class="current-page"><a href="check_invoices.html">Check Invoice</a></li></ul></li>
+                <li><a href="special_promo.html"><i class="fa fa-bullhorn"></i> Special Promo</a></li>
+              </ul></div>
+            </div>
+            <div class="sidebar-footer hidden-small"><a title="Settings"><span class="glyphicon glyphicon-cog"></span></a><a title="FullScreen"><span class="glyphicon glyphicon-fullscreen"></span></a><a title="Lock"><span class="glyphicon glyphicon-eye-close"></span></a><a title="Logout" href="logout.html"><span class="glyphicon glyphicon-off"></span></a></div>
+          </div>
+        </div>
+
+        <div class="top_nav"><div class="nav_menu"><div class="nav toggle"><a id="menu_toggle"><i class="fa fa-bars"></i></a></div><nav class="nav navbar-nav"><ul class="navbar-right"><li class="nav-item dropdown open" style="padding-left:15px"><a href="javascript:;" class="user-profile dropdown-toggle" data-toggle="dropdown"><img src="images/verathailandlogo.png" alt="" /><span id="navProfileName"></span></a><div class="dropdown-menu dropdown-usermenu pull-right"><a class="dropdown-item" href="profile.html"><i class="fa fa-user pull-right"></i> Profile</a><a class="dropdown-item" href="logout.html"><i class="fa fa-sign-out pull-right"></i> Log Out</a></div></li></ul></nav></div></div>
+
+        <div class="right_col" role="main">
+          <div class="page-title">
+            <div class="title_left"><h3>Check Invoice</h3></div>
+            <div class="title_right page-actions"><a href="analytics.html" class="btn btn-default pull-right"><i class="fa fa-arrow-left"></i> Analytics Dashboard</a></div>
+          </div>
+          <div class="clearfix"></div>
+
+          <section class="filter-band" aria-label="Check invoice filters">
+            <div class="filter-grid">
+              <div>
+                <label for="periodMonth">Booking Arrival Month</label>
+                <div class="month-control">
+                  <button id="previousMonth" class="btn btn-default icon-button" type="button" title="Previous month"><i class="fa fa-chevron-left"></i></button>
+                  <input id="periodMonth" class="form-control" type="month" />
+                  <button id="nextMonth" class="btn btn-default icon-button" type="button" title="Next month"><i class="fa fa-chevron-right"></i></button>
+                </div>
+              </div>
+              <div id="agentFilterGroup">
+                <label for="agentFilter">Agent</label>
+                <select id="agentFilter" class="form-control"><option value="">All Agents</option></select>
+              </div>
+              <div class="filter-actions">
+                <button id="refreshReport" class="btn btn-primary" type="button"><i class="fa fa-refresh"></i> Refresh</button>
+                <button id="generateNumbers" class="btn btn-warning" type="button"><i class="fa fa-magic"></i> Generate Missing Numbers</button>
+                <button id="exportXlsx" class="btn btn-success" type="button"><i class="fa fa-file-excel-o"></i> XLSX</button>
+                <button id="printReport" class="btn btn-default" type="button"><i class="fa fa-print"></i> Print</button>
+              </div>
+            </div>
+          </section>
+
+          <div class="notice"><i class="fa fa-info-circle"></i> Invoice and monthly file numbers are assigned only when <strong>Generate Missing Numbers</strong> is clicked. Opening or refreshing this report will not consume a number.</div>
+
+          <section class="kpi-grid" aria-label="Check invoice totals">
+            <div class="kpi"><div class="kpi-label">Bookings</div><div id="totalBookings" class="kpi-value">0</div></div>
+            <div class="kpi"><div class="kpi-label">Pax</div><div id="totalPax" class="kpi-value">0</div></div>
+            <div class="kpi"><div class="kpi-label">Booking Total</div><div id="totalAmount" class="kpi-value">THB 0.00</div></div>
+            <div class="kpi"><div class="kpi-label">Received Money</div><div id="totalReceived" class="kpi-value">THB 0.00</div></div>
+          </section>
+
+          <section class="report-section">
+            <div class="section-heading"><h4><i class="fa fa-list-alt"></i> Monthly Booking Recap</h4><span id="periodLabel" class="text-muted"></span></div>
+            <div class="table-responsive">
+              <table class="table table-striped table-bordered report-table">
+                <thead><tr><th>Date</th><th>Invoice No.</th><th>Year</th><th>Agent's Name</th><th>Client's Name</th><th>Pax</th><th>Total</th><th>Mth</th><th>File No.</th><th>Received Money</th><th>Arrival</th><th>Departure</th></tr></thead>
+                <tbody id="checkInvoiceRows"></tbody>
+              </table>
+            </div>
+            <div id="emptyState" class="empty-state" style="display:none"><i class="fa fa-file-text-o"></i><strong>No confirmed bookings found for this month</strong></div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <div id="loadingPanel" class="loading-panel" aria-live="polite"><div class="loading-content"><i class="fa fa-circle-o-notch fa-spin"></i><div id="loadingMessage">Loading check invoice...</div></div></div>
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <script src="../vendors/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="../build/js/custom.min.js?v=20260724"></script>
+    <script src="js/common/sidebar-control.js?v=20260724"></script>
+    <script src="js/common/sidebar-profile.js?v=20260724"></script>
+    <script src="js/common/role-permissions.js?v=20260724"></script>
+    <script src="js/config.js?v=20260724"></script>
+    <script src="js/analytics/check_invoices.js?v=20260724"></script>
+  </body>
+</html>

@@ -1,1864 +1,423 @@
-// Operations Management JavaScript
-let currentPage = 1;
-let currentFilters = {};
-let operationsData = [];
-let currentSort = { field: 'due_date', direction: 'asc' };
-let currentTab = 'daily';
-let upcomingDays = 3;
+(function () {
+  const state = {
+    items: [],
+    summary: {},
+    options: { suppliers: [], guides: [], agents: [] },
+    activeTab: 'transfer',
+    selected: new Set(),
+    editingKey: null,
+    readOnly: !['admin', 'superadmin'].includes(localStorage.getItem('role')),
+  };
 
-// Updated operation status constants (removed pending, removed priority system)
-const OPERATION_STATUS = {
-    IN_PROGRESS: 'in_progress',
-    COMPLETED: 'completed',
-    CANCELLED: 'cancelled',
-    OVERDUE: 'overdue'
-};
+  const byId = id => document.getElementById(id);
+  const token = localStorage.getItem('token');
 
-// Updated operation types according to API documentation
-const OPERATION_TYPES = {
-    // Hotel Operations
-    HOTEL_CONFIRMATION: 'hotel_confirmation',
-    HOTEL_CHECKOUT: 'hotel_checkout',
-    
-    // Transfer Operations
-    TRANSFER_CONFIRMATION: 'transfer_confirmation',
-    TRANSFER_PICKUP: 'transfer_pickup',
-    
-    // Excursion Operations
-    EXCURSION_CONFIRMATION: 'excursion_confirmation',
-    EXCURSION_REMINDER: 'excursion_reminder',
-    
-    // Tour Operations
-    TOUR_CONFIRMATION: 'tour_confirmation',
-    
-    // Flight Operations
-    FLIGHT_ASSISTANCE: 'flight_assistance',
-    AIRPORT_PICKUP: 'airport_pickup',
-    AIRPORT_DROPOFF: 'airport_dropoff',
-    
-    // General Operations
-    CLIENT_FOLLOWUP: 'client_followup',
-    DOCUMENT_COLLECTION: 'document_collection',
-    SUPPLIER_CONFIRMATION: 'supplier_confirmation',
-    PAYMENT_FOLLOWUP: 'payment_followup',
-    ITINERARY_PREP: 'itinerary_prep',
-    ARRIVAL_ASSISTANCE: 'arrival_assistance',
-    CUSTOM: 'custom'
-};
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
 
-// Initialize the page
-document.addEventListener('DOMContentLoaded', function() {
-    initializePage();
-});
+  function localIsoDate(date) {
+    const offset = date.getTimezoneOffset();
+    return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 10);
+  }
 
-function initializePage() {
-    // Load user profile
-    loadUserProfile();
-    
-    // Load summary data
-    loadSummaryCards();
-    
-    // Load daily operations by default
-    switchTab('daily');
-    
-    // Load assignees for filter
-    loadAssignees();
-    
-    // Load locations for filter
-    loadLocations();
+  function addDays(value, days) {
+    const date = new Date(`${value}T12:00:00`);
+    date.setDate(date.getDate() + days);
+    return localIsoDate(date);
+  }
 
-    // Set up filter event listeners
-    setupFilterListeners();
+  function formatDate(value) {
+    if (!value) return '-';
+    const parts = value.slice(0, 10).split('-');
+    return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : value;
+  }
 
-    // Set up client search event listeners
-    setupClientSearch();
-}
+  function dayName(value) {
+    if (!value) return '';
+    return new Intl.DateTimeFormat('en-GB', { weekday: 'short' }).format(new Date(`${value}T12:00:00`));
+  }
 
-// Load user profile information
-function loadUserProfile() {
-    const token = localStorage.getItem('token');
-    const storedUsername = localStorage.getItem('username');
-    
-    // First try to use the username from localStorage if available
-    if (storedUsername) {
-        updateProfileDisplay(storedUsername);
+  function showLoading(message) {
+    byId('loadingText').textContent = message || 'Loading operations...';
+    byId('loadingPanel').classList.add('active');
+  }
+
+  function hideLoading() {
+    byId('loadingPanel').classList.remove('active');
+  }
+
+  async function api(path, options = {}) {
+    const headers = { ...(options.headers || {}), Authorization: `Bearer ${token}` };
+    if (options.body && !(options.body instanceof FormData)) headers['Content-Type'] = 'application/json';
+    const response = await fetch(`${Endpoint}/api/v1${path}`, { ...options, headers });
+    if (!response.ok) {
+      const contentType = response.headers.get('content-type') || '';
+      const error = contentType.includes('application/json') ? await response.json() : await response.text();
+      throw new Error(error.message || error || `Request failed (${response.status})`);
     }
-    
-    if (!token) {
-        // If no token and no stored username, use fallback
-        if (!storedUsername) {
-            updateProfileDisplay('Guest');
-        }
-        return;
-    }
-    
-    // Load actual profile data from API
-    fetch(`${Endpoint}/api/v1/profile`, {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        const username = data.username || data.name || storedUsername || 'User';
-        updateProfileDisplay(username);
-    })
-    .catch(error => {
-        console.error('Error loading profile:', error);
-        // Fallback to stored username or Guest if API fails
-        if (storedUsername) {
-            updateProfileDisplay(storedUsername);
-        } else {
-            updateProfileDisplay('Guest');
-        }
+    return response;
+  }
+
+  function queryString() {
+    const params = new URLSearchParams({
+      from_date: byId('fromDate').value,
+      to_date: byId('toDate').value,
+      city: byId('cityFilter').value || 'all',
+      status: byId('statusFilter').value || 'all',
+      search: byId('searchInput').value.trim(),
     });
-}
+    if (byId('agentFilter').value) params.set('agent_id', byId('agentFilter').value);
+    return params.toString();
+  }
 
-function updateProfileDisplay(name) {
-    const profileNameEl = document.getElementById('profileName');
-    const navProfileNameEl = document.getElementById('navProfileName');
-    
-    if (profileNameEl) profileNameEl.textContent = name;
-    if (navProfileNameEl) navProfileNameEl.textContent = name;
-}
+  async function loadOptions() {
+    const response = await api('/operations/options');
+    state.options = await response.json();
+    byId('agentFilter').innerHTML = '<option value="">All Agents</option>' +
+      state.options.agents.map(agent => `<option value="${agent.id}">${escapeHtml(agent.name)}</option>`).join('');
+    byId('guideOptions').innerHTML = state.options.guides
+      .map(guide => `<option value="${escapeHtml(guide.name)}" data-mobile="${escapeHtml(guide.mobile || '')}"></option>`).join('');
+  }
 
-// Load summary cards (updated to remove Pending and Completion Rate, keep only In Progress and Completed)
-function loadSummaryCards() {
-    const token = localStorage.getItem('token');
-    const apiUrl = `${Endpoint}/api/v1/operations`;
-    
-    fetch(apiUrl, {
-        headers: token ? {
-            'Authorization': `Bearer ${token}`
-        } : {}
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        const operations = Array.isArray(data) ? data : (data.operations || []);
-        
-        // Calculate simplified metrics (only In Progress and Completed)
-        const inProgressCount = operations.filter(op => op.status === 'in_progress').length;
-        const completedCount = operations.filter(op => op.status === 'completed').length;
-        
-        const summaryCardsHtml = `
-            <div class="summary-card">
-                <div class="summary-number" style="color: #007bff;">${inProgressCount}</div>
-                <div class="summary-label">In Progress</div>
-            </div>
-            <div class="summary-card">
-                <div class="summary-number" style="color: #28a745;">${completedCount}</div>
-                <div class="summary-label">Completed</div>
-            </div>
-        `;
-        
-        document.getElementById('summaryCards').innerHTML = summaryCardsHtml;
-    })
-    .catch(error => {
-        console.error('Error loading summary:', error);
-        document.getElementById('summaryCards').innerHTML = `
-            <div class="summary-card">
-                <div class="summary-number" style="color: #dc3545;">--</div>
-                <div class="summary-label">Error Loading</div>
-            </div>
-        `;
-    });
-}
-
-// Switch between tabs
-function switchTab(tabName) {
-    currentTab = tabName;
-    
-    // Update tab UI
-    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-    document.querySelectorAll('.tab-pane').forEach(pane => {
-        pane.classList.remove('show', 'active');
-    });
-    
-    document.getElementById(tabName + '-tab').classList.add('active');
-    document.getElementById(tabName).classList.add('show', 'active');
-    
-    // Show/hide upcoming navigation controls
-    const upcomingControls = document.querySelector('.upcoming-nav-controls');
-    if (tabName === 'upcoming') {
-        upcomingControls.style.display = 'inline-block';
-    } else {
-        upcomingControls.style.display = 'none';
+  async function loadOperations(options = {}) {
+    showLoading(options.message || 'Loading confirmed operations...');
+    try {
+      const response = await api(`/operations?${queryString()}`);
+      const data = await response.json();
+      state.items = data.items || [];
+      state.summary = data.summary || {};
+      state.readOnly = Boolean(data.read_only);
+      state.selected.clear();
+      updateCityFilter();
+      render();
+      byId('readOnlyNote').style.display = state.readOnly ? 'block' : 'none';
+    } catch (error) {
+      console.error(error);
+      alert(`Failed to load operations: ${error.message}`);
+    } finally {
+      hideLoading();
     }
-    
-    // Load data for the selected tab
-    switch(tabName) {
-        case 'daily':
-            loadDailyOperations();
-            break;
-        case 'upcoming':
-            loadUpcomingOperations();
-            break;
-        case 'client':
-            loadClientsList();
-            break;
-    }
-}
+  }
 
-// Load daily operations
-function loadDailyOperations() {
-    showLoading(true);
-    
-    const token = localStorage.getItem('token');
-    const apiUrl = `${Endpoint}/api/v1/operations/today`;
-    
-    fetch(apiUrl, {
-        headers: token ? {
-            'Authorization': `Bearer ${token}`
-        } : {}
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Daily operations response:', data);
-        const operations = Array.isArray(data) ? data : (data.operations || []);
-        operationsData = operations;
-        renderOperationsInTable(operations, 'dailyOperationsTableBody');
-        showLoading(false);
-    })
-    .catch(error => {
-        console.error('Error loading daily operations:', error);
-        showErrorMessage('Unable to load daily operations');
-        showLoading(false);
-    });
-}
+  function updateCityFilter() {
+    const select = byId('cityFilter');
+    const current = select.value || 'all';
+    const cities = [...new Set(state.items.map(item => item.city).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    select.innerHTML = '<option value="all">All Cities</option>' +
+      cities.map(city => `<option value="${escapeHtml(city)}">${escapeHtml(city)}</option>`).join('');
+    select.value = cities.includes(current) ? current : 'all';
+  }
 
-// Load upcoming operations
-function loadUpcomingOperations() {
-    showLoading(true);
-    
-    const token = localStorage.getItem('token');
-    const apiUrl = `${Endpoint}/api/v1/operations/upcoming?days=${upcomingDays}`;
-    
-    fetch(apiUrl, {
-        headers: token ? {
-            'Authorization': `Bearer ${token}`
-        } : {}
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Upcoming operations response:', data);
-        const operations = Array.isArray(data) ? data : (data.operations || []);
-        operationsData = operations;
-        renderOperationsInTable(operations, 'upcomingOperationsTableBody');
-        updateUpcomingDaysIndicator();
-        showLoading(false);
-    })
-    .catch(error => {
-        console.error('Error loading upcoming operations:', error);
-        showErrorMessage('Unable to load upcoming operations');
-        showLoading(false);
-    });
-}
+  function renderSummary() {
+    const summary = state.summary;
+    byId('totalCount').textContent = summary.total || 0;
+    byId('unassignedCount').textContent = summary.unassigned || 0;
+    byId('assignedCount').textContent = summary.assigned || 0;
+    byId('inOperationCount').textContent = summary.in_operation || 0;
+    byId('completedCount').textContent = summary.completed || 0;
+    byId('changedCount').textContent = summary.changed || 0;
+    byId('transferTabCount').textContent = summary.by_type?.transfer || 0;
+    byId('excursionTabCount').textContent = summary.by_type?.excursion || 0;
+    byId('tourTabCount').textContent = summary.by_type?.tour || 0;
+  }
 
-// Change upcoming days and reload
-function changeUpcomingDays(direction) {
-    upcomingDays = Math.max(1, Math.min(14, upcomingDays + direction)); // Keep between 1-14 days
-    updateUpcomingDaysIndicator();
-    loadUpcomingOperations();
-}
-
-// Update the upcoming days indicator
-function updateUpcomingDaysIndicator() {
-    const indicator = document.getElementById('upcomingDaysIndicator');
-    indicator.textContent = `Next ${upcomingDays} day${upcomingDays > 1 ? 's' : ''}`;
-}
-
-// Load clients list for client operations tab
-function loadClientsList() {
-    const token = localStorage.getItem('token');
-    const clientSelect = document.getElementById('clientSelect');
-    
-    // Clear existing options except the first one
-    clientSelect.innerHTML = '<option value="">Choose a client...</option>';
-    
-    if (!token) {
-        // Add sample clients
-        clientSelect.innerHTML += `
-            <option value="1">Wheels Apart</option>
-            <option value="2">Sample Client 2</option>
-            <option value="3">Sample Client 3</option>
-        `;
-        return;
-    }
-    
-    fetch(`${Endpoint}/api/v1/agents`, {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        const agents = Array.isArray(data) ? data : (data.agents || []);
-        agents.forEach(agent => {
-            clientSelect.innerHTML += `<option value="${agent.id}">${agent.name}</option>`;
-        });
-    })
-    .catch(error => {
-        console.error('Error loading clients:', error);
-        // Keep sample data as fallback
-    });
-}
-
-// Load operations for selected client using new by-client endpoint
-function loadClientOperations() {
-    const clientId = document.getElementById('clientSelect').value;
-    
-    if (!clientId) {
-        document.getElementById('clientOperationsTableBody').innerHTML = '';
-        return;
-    }
-    
-    showLoading(true);
-    
-    const token = localStorage.getItem('token');
-    // Get the client name for the search
-    const clientSelect = document.getElementById('clientSelect');
-    const selectedOption = clientSelect.options[clientSelect.selectedIndex];
-    const clientName = selectedOption.text;
-    
-    // Use the new by-client endpoint with client name
-    const apiUrl = `${Endpoint}/api/v1/operations/by-client?client=${encodeURIComponent(clientName)}`;
-    
-    fetch(apiUrl, {
-        headers: token ? {
-            'Authorization': `Bearer ${token}`
-        } : {}
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Client operations response:', data);
-        const operations = Array.isArray(data) ? data : [];
-        operationsData = operations;
-        renderClientOperations(operations);
-        showLoading(false);
-    })
-    .catch(error => {
-        console.error('Error loading client operations:', error);
-        showErrorMessage('Unable to load client operations');
-        showLoading(false);
-    });
-}
-
-// Enhanced search clients functionality using the by-client endpoint
-let searchTimeout = null;
-let lastSearchTerm = '';
-let lastSearchFilters = '';
-let currentClientPage = 1;
-let clientPagination = {};
-
-// Set up client search event listeners
-function setupClientSearch() {
-    const searchInput = document.getElementById('clientSearch');
-    if (searchInput) {
-        // Debounced search on input with longer delay for network
-        searchInput.addEventListener('input', function() {
-            debouncedClientSearch();
-        });
-        
-        // Manual search on Enter key
-        searchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                performClientSearch();
-            }
-        });
-    }
-}
-
-// Handle client filter changes
-function handleClientFilterChange() {
-    const searchTerm = document.getElementById('clientSearch').value.trim();
-    if (searchTerm.length >= 2) {
-        currentClientPage = 1; // Reset to first page
-        performClientSearch();
-    } else {
-        // If no search term, just update the UI message
-        updateSearchStatus('Enter 2+ characters to search');
-        clearClientSearchResults();
-    }
-}
-
-// Debounced search function with improved network handling
-function debouncedClientSearch() {
-    const searchTerm = document.getElementById('clientSearch').value.trim();
-    
-    // Clear previous timeout
-    if (searchTimeout) {
-        clearTimeout(searchTimeout);
-    }
-    
-    // Update search status
-    updateSearchStatus('Typing...');
-    
-    // Longer delay for network conditions and avoid rapid calls
-    searchTimeout = setTimeout(() => {
-        if (searchTerm.length >= 2) {
-            currentClientPage = 1; // Reset to first page
-            performClientSearch();
-        } else if (searchTerm.length === 0) {
-            clearClientSearchResults();
-            updateSearchStatus('');
-            updateSearchResults('');
-        } else {
-            updateSearchStatus('Enter 2+ characters to search');
-            clearClientSearchResults();
-        }
-    }, 800); // Increased to 800ms for better network performance
-}
-
-// Manual search function with enhanced filtering
-function performClientSearch(page = 1) {
-    const searchTerm = document.getElementById('clientSearch').value.trim().toLowerCase();
-    
-    if (searchTerm.length < 2) {
-        updateSearchStatus('Please enter at least 2 characters to search');
-        clearClientSearchResults();
-        return;
-    }
-    
-    // Get filter values
-    const statusFilter = document.getElementById('clientStatusFilter').value;
-    const currentFilters = `${searchTerm}|${statusFilter}|${page}`;
-    
-    // Avoid duplicate searches for the same parameters
-    if (currentFilters === lastSearchFilters) {
-        return;
-    }
-    
-    lastSearchTerm = searchTerm;
-    lastSearchFilters = currentFilters;
-    currentClientPage = page;
-    updateSearchStatus('Searching...');
-    
-    showLoading(true);
-    
-    const token = localStorage.getItem('token');
-    
-    // Build query parameters
-    const queryParams = new URLSearchParams({
-        client: searchTerm,
-        page: page.toString(),
-        limit: '20'
-    });
-    
-    // Handle status filtering logic
-    if (statusFilter === 'active') {
-        // For "active", we want in_progress and overdue
-        // We'll filter this on the frontend since backend might not support multiple statuses
-        // Let's get all and filter client-side, or make two calls
-        queryParams.append('include_completed', 'false');
-    } else if (statusFilter && statusFilter !== '') {
-        // Specific status
-        queryParams.append('status', statusFilter);
-    }
-    // If statusFilter is empty (''), get all operations (default backend behavior)
-    
-    const apiUrl = `${Endpoint}/api/v1/operations/by-client?${queryParams.toString()}`;
-    
-    fetch(apiUrl, {
-        headers: token ? {
-            'Authorization': `Bearer ${token}`
-        } : {}
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Client search response:', data);
-        
-        // Handle both direct array response and paginated response
-        let operations = Array.isArray(data) ? data : (data.operations || []);
-        const pagination = data.pagination || {};
-        
-        // Client-side filtering for "active" status (in_progress + overdue)
-        if (statusFilter === 'active') {
-            operations = operations.filter(op => 
-                op.status === 'in_progress' || op.status === 'overdue'
-            );
-        }
-        
-        // Update pagination info
-        clientPagination = pagination;
-        
-        if (operations.length === 0) {
-            updateSearchStatus(`No results for "${searchTerm}"`);
-            updateSearchResults('');
-            const tableBody = document.getElementById('clientOperationsTableBody');
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="10" class="text-center" style="padding: 40px;">
-                        <i class="fa fa-search fa-2x" style="color: #ddd; margin-bottom: 10px;"></i>
-                        <div>No operations found for "${searchTerm}"</div>
-                        <div class="text-muted" style="margin-top: 10px; font-size: 0.9em;">
-                            Try changing the filter or search for a different client.
-                        </div>
-                    </td>
-                </tr>
-            `;
-        } else {
-            updateSearchStatus(`Found results for "${searchTerm}"`);
-            
-            // Update results count
-            if (pagination.total) {
-                updateSearchResults(
-                    `Showing ${operations.length} of ${pagination.total} operations ` +
-                    `(Page ${pagination.current_page || 1} of ${pagination.total_pages || 1})`
-                );
-            } else {
-                updateSearchResults(`Found ${operations.length} operation(s)`);
-            }
-            
-            // Render operations
-            renderClientOperations(operations);
-        }
-        
-        // Render pagination
-        renderClientPagination();
-        
-        showLoading(false);
-    })
-    .catch(error => {
-        console.error('Error searching clients:', error);
-        updateSearchStatus('Search failed - please try again');
-        updateSearchResults('');
-        showErrorMessage('Unable to search clients - check your connection');
-        showLoading(false);
-        
-        // Reset last search to allow retry
-        lastSearchFilters = '';
-    });
-}
-
-// Update search results display
-function updateSearchResults(message) {
-    const resultsEl = document.getElementById('searchResults');
-    if (resultsEl) {
-        resultsEl.textContent = message;
-    }
-}
-
-// Render client pagination
-function renderClientPagination() {
-    const container = document.getElementById('clientPaginationContainer');
-    
-    if (!clientPagination.total_pages || clientPagination.total_pages <= 1) {
-        container.innerHTML = '';
-        return;
-    }
-    
-    const currentPage = clientPagination.current_page || 1;
-    const totalPages = clientPagination.total_pages;
-    const hasPrev = clientPagination.has_prev || currentPage > 1;
-    const hasNext = clientPagination.has_next || currentPage < totalPages;
-    
-    let pagination = '<nav><ul class="pagination justify-content-center">';
-    
-    // Previous button
-    if (hasPrev) {
-        pagination += `<li class="page-item">
-            <a class="page-link" href="#" onclick="performClientSearch(${currentPage - 1}); return false;">
-                <i class="fa fa-chevron-left"></i> Previous
-            </a>
-        </li>`;
-    } else {
-        pagination += `<li class="page-item disabled">
-            <span class="page-link"><i class="fa fa-chevron-left"></i> Previous</span>
-        </li>`;
-    }
-    
-    // Page numbers (show current and surrounding pages)
-    const startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(totalPages, currentPage + 2);
-    
-    if (startPage > 1) {
-        pagination += `<li class="page-item">
-            <a class="page-link" href="#" onclick="performClientSearch(1); return false;">1</a>
-        </li>`;
-        if (startPage > 2) {
-            pagination += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-        }
-    }
-    
-    for (let i = startPage; i <= endPage; i++) {
-        const active = i === currentPage ? 'active' : '';
-        pagination += `<li class="page-item ${active}">
-            <a class="page-link" href="#" onclick="performClientSearch(${i}); return false;">${i}</a>
-        </li>`;
-    }
-    
-    if (endPage < totalPages) {
-        if (endPage < totalPages - 1) {
-            pagination += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-        }
-        pagination += `<li class="page-item">
-            <a class="page-link" href="#" onclick="performClientSearch(${totalPages}); return false;">${totalPages}</a>
-        </li>`;
-    }
-    
-    // Next button
-    if (hasNext) {
-        pagination += `<li class="page-item">
-            <a class="page-link" href="#" onclick="performClientSearch(${currentPage + 1}); return false;">
-                Next <i class="fa fa-chevron-right"></i>
-            </a>
-        </li>`;
-    } else {
-        pagination += `<li class="page-item disabled">
-            <span class="page-link">Next <i class="fa fa-chevron-right"></i></span>
-        </li>`;
-    }
-    
-    pagination += '</ul></nav>';
-    container.innerHTML = pagination;
-}
-
-// Clear search function
-function clearClientSearch() {
-    document.getElementById('clientSearch').value = '';
-    document.getElementById('clientStatusFilter').value = 'active'; // Reset to default
-    lastSearchTerm = '';
-    lastSearchFilters = '';
-    currentClientPage = 1;
-    clientPagination = {};
-    clearClientSearchResults();
-    updateSearchStatus('');
-    updateSearchResults('');
-    
-    // Clear pagination
-    document.getElementById('clientPaginationContainer').innerHTML = '';
-    
-    // Clear timeout if active
-    if (searchTimeout) {
-        clearTimeout(searchTimeout);
-        searchTimeout = null;
-    }
-}
-
-// Show error message
-function showErrorMessage(message) {
-    const activeTabPane = document.querySelector('.tab-pane.active .table-responsive');
-    if (activeTabPane) {
-        const tableBody = activeTabPane.querySelector('tbody');
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="10" class="text-center" style="padding: 40px;">
-                    <i class="fa fa-exclamation-triangle fa-2x" style="color: #dc3545; margin-bottom: 10px;"></i>
-                    <div>${message}</div>
-                    <button class="btn btn-primary btn-sm" onclick="reloadCurrentTab()" style="margin-top: 10px;">
-                        <i class="fa fa-refresh"></i> Retry
-                    </button>
-                </td>
-            </tr>
-        `;
-    }
-}
-
-// Reload current tab
-function reloadCurrentTab() {
-    switchTab(currentTab);
-}
-
-// Load assignees for filter dropdown
-function loadAssignees() {
-    const token = localStorage.getItem('token');
-    const assigneeSelect = document.getElementById('assigneeFilter');
-    
-    if (!token) {
-        // Add sample assignees
-        assigneeSelect.innerHTML += `
-            <option value="10">Sofia Florence</option>
-            <option value="11">Marco Rome</option>
-            <option value="12">Lisa Milan</option>
-        `;
-        return;
-    }
-    
-    fetch(`${Endpoint}/api/v1/users`, {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        const users = data.users || [];
-        users.forEach(user => {
-            assigneeSelect.innerHTML += `<option value="${user.id}">${user.username}</option>`;
-        });
-    })
-    .catch(error => {
-        console.error('Error loading assignees:', error);
-    });
-}
-
-// Load locations/cities for filter dropdown
-function loadLocations() {
-    const token = localStorage.getItem('token');
-    const locationFilter = document.getElementById('locationFilter');
-
-    // Clear existing options except the first default option
-    const defaultOption = locationFilter.querySelector('option[value=""]');
-    locationFilter.innerHTML = '';
-    if (defaultOption) {
-        locationFilter.appendChild(defaultOption);
-    } else {
-        locationFilter.innerHTML = '<option value="">All Locations</option>';
-    }
-
-    if (!token) {
-        // Add sample locations as fallback
-        locationFilter.innerHTML += `
-            <option value="Bangkok">Bangkok</option>
-            <option value="Dubai">Dubai</option>
-            <option value="Rome">Rome</option>
-            <option value="Florence">Florence</option>
-            <option value="Venice">Venice</option>
-            <option value="Milan">Milan</option>
-        `;
-        return;
-    }
-
-    fetch(`${Endpoint}/api/v1/cities`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(cities => {
-        cities.forEach(city => {
-            const option = document.createElement('option');
-            option.value = city;
-            option.textContent = city;
-            locationFilter.appendChild(option);
-        });
-    })
-    .catch(error => {
-        console.error('Error loading locations:', error);
-        // Keep sample data as fallback
-        locationFilter.innerHTML += `
-            <option value="Bangkok">Bangkok</option>
-            <option value="Dubai">Dubai</option>
-            <option value="Rome">Rome</option>
-            <option value="Florence">Florence</option>
-            <option value="Venice">Venice</option>
-            <option value="Milan">Milan</option>
-        `;
-    });
-}
-
-// Set up filter event listeners
-function setupFilterListeners() {
-    // Filter button
-    const filterBtn = document.querySelector('.btn-primary[onclick="applyFilters()"]');
-    if (filterBtn) {
-        filterBtn.onclick = applyFilters;
-    }
-    
-    // Clear button
-    const clearBtn = document.querySelector('.btn-secondary[onclick="clearFilters()"]');
-    if (clearBtn) {
-        clearBtn.onclick = clearFilters;
-    }
-    
-    // Enter key on filter inputs
-    document.getElementById('statusFilter').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') applyFilters();
-    });
-    document.getElementById('locationFilter').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') applyFilters();
-    });
-    document.getElementById('assigneeFilter').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') applyFilters();
-    });
-}
-
-// Apply filters
-function applyFilters() {
-    const filters = {
-        status: document.getElementById('statusFilter').value,
-        location: document.getElementById('locationFilter').value,
-        assignee: document.getElementById('assigneeFilter').value
+  function tableDefinition() {
+    const common = [
+      { key: 'select', label: '', width: 42, className: 'select-column' },
+      { key: 'date', label: 'Date / Day', width: 105 },
+      { key: 'city', label: 'City', width: 105 },
+      { key: 'pickup', label: 'Pickup', width: 80 },
+      { key: 'svc', label: 'SVC', width: 65 },
+    ];
+    const typeColumns = {
+      transfer: [
+        { key: 'service', label: 'Transfer Service', width: 190 },
+        { key: 'flight', label: 'Flight / Time', width: 110 },
+        { key: 'route', label: 'From / To', width: 170 },
+      ],
+      excursion: [
+        { key: 'service', label: 'Excursion', width: 220 },
+        { key: 'hotel', label: 'Hotel', width: 170 },
+      ],
+      tour: [
+        { key: 'service', label: 'Tour / Day', width: 185 },
+        { key: 'program', label: 'Program', width: 250 },
+        { key: 'hotel', label: 'Hotel', width: 175 },
+        { key: 'route', label: 'Route', width: 210 },
+      ],
     };
-    
-    // Remove empty filters
-    Object.keys(filters).forEach(key => {
-        if (!filters[key]) {
-            delete filters[key];
-        }
-    });
-    
-    currentFilters = filters;
-    
-    // Reload current tab with filters
-    switch(currentTab) {
-        case 'daily':
-            loadDailyOperations();
-            break;
-        case 'upcoming':
-            loadUpcomingOperations();
-            break;
-        case 'client':
-            loadClientOperations();
-            break;
-    }
-}
+    return common.concat(typeColumns[state.activeTab], [
+      { key: 'client', label: 'Client / Pax', width: 150 },
+      { key: 'agent', label: 'Agent / File', width: 150 },
+      { key: 'supplier', label: 'Supplier / Vehicle', width: 170 },
+      { key: 'guide', label: 'Guide / Mobile', width: 145 },
+      { key: 'status', label: 'Status', width: 110 },
+      { key: 'remarks', label: 'Remarks', width: 175 },
+      { key: 'actions', label: 'Actions', width: 70, className: 'row-actions' },
+    ]);
+  }
 
-// Clear filters
-function clearFilters() {
-    document.getElementById('statusFilter').value = '';
-    document.getElementById('locationFilter').value = '';
-    document.getElementById('assigneeFilter').value = '';
-    
-    currentFilters = {};
-    
-    // Reload current tab without filters
-    reloadCurrentTab();
-}
+  function cellContent(item, key) {
+    const secondary = text => text ? `<div class="secondary">${escapeHtml(text)}</div>` : '';
+    switch (key) {
+      case 'select':
+        return state.readOnly ? '' : `<input class="operation-select" type="checkbox" data-key="${escapeHtml(item.key)}" ${state.selected.has(item.key) ? 'checked' : ''} aria-label="Select operation" />`;
+      case 'date':
+        return `<div class="date-cell">${formatDate(item.operation_date)}</div>${secondary(dayName(item.operation_date))}`;
+      case 'city': return escapeHtml(item.city || '-');
+      case 'pickup': return escapeHtml(item.pickup_time || '-');
+      case 'svc': return escapeHtml(item.service_code || '-');
+      case 'service':
+        return `<strong>${escapeHtml(item.service_name || '-')}</strong>${item.day_number ? secondary(`Day ${item.day_number}`) : ''}`;
+      case 'flight':
+        return `${escapeHtml(item.flight_number || '-')}${secondary(item.flight_time || '')}`;
+      case 'route':
+        return `<div class="route-cell">${escapeHtml(item.route || [item.from_location, item.to_location].filter(Boolean).join(' → ') || '-')}</div>`;
+      case 'program': return `<div class="route-cell">${escapeHtml(item.program || '-')}</div>`;
+      case 'hotel': return `${escapeHtml(item.hotel || '-')}${secondary(item.room_type || '')}`;
+      case 'client':
+        return `<strong>${escapeHtml(item.client_name || '-')}</strong>${secondary(`${item.pax || 0} pax${item.client_mobile ? ` · ${item.client_mobile}` : ''}`)}`;
+      case 'agent':
+        return `${escapeHtml(item.agent_name || '-')}${secondary(item.file_number || '')}`;
+      case 'supplier':
+        return `${escapeHtml(item.supplier_name || 'Unassigned')}${secondary([item.vehicle_type, item.vehicle_quantity ? `Qty ${item.vehicle_quantity}` : ''].filter(Boolean).join(' · '))}`;
+      case 'guide':
+        return `${escapeHtml(item.guide_name || '-')}${secondary(item.guide_mobile || '')}`;
+      case 'status':
+        return `<span class="status status-${escapeHtml(item.status)}">${escapeHtml(item.status.replace('_', ' '))}</span>`;
+      case 'remarks': return escapeHtml(item.remarks || '-');
+      case 'actions':
+        return state.readOnly ? '<i class="fa fa-eye text-muted" title="Read only"></i>' :
+          `<button class="btn btn-primary edit-assignment" type="button" data-key="${escapeHtml(item.key)}" title="Edit assignment"><i class="fa fa-pencil"></i></button>`;
+      default: return '';
+    }
+  }
 
-// Show/hide loading spinner
-function showLoading(show) {
-    const spinner = document.getElementById('loadingSpinner');
-    const table = document.querySelector('.table-responsive');
-    
-    if (show) {
-        spinner.style.display = 'flex';
-        if (table) table.style.display = 'none';
-    } else {
-        spinner.style.display = 'none';
-        if (table) table.style.display = 'block';
-    }
-}
+  function renderTable() {
+    const columns = tableDefinition();
+    byId('tableColumns').innerHTML = columns.map(column => `<col style="width:${column.width}px" />`).join('');
+    byId('operationHead').innerHTML = `<tr>${columns.map(column =>
+      column.key === 'select' && !state.readOnly
+        ? `<th class="${column.className || ''}"><input id="selectAllVisible" type="checkbox" aria-label="Select all visible operations" /></th>`
+        : `<th class="${column.className || ''}">${escapeHtml(column.label)}</th>`
+    ).join('')}</tr>`;
 
-// Format due date for display
-function formatDueDate(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = date - now;
-    const hours = Math.round(diff / (1000 * 60 * 60));
-    
-    if (hours < 0) {
-        return `<span style="color: #dc3545;">Overdue by ${Math.abs(hours)}h</span>`;
-    } else if (hours < 24) {
-        return `<span style="color: #fd7e14;">Due in ${hours}h</span>`;
-    } else {
-        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-    }
-}
-
-// Sort operations data (removed priority, enhanced time-based sorting)
-function sortOperationsData(operations) {
-    return [...operations].sort((a, b) => {
-        let aValue, bValue;
-        
-        switch (currentSort.field) {
-            case 'title':
-                aValue = a.title?.toLowerCase() || '';
-                bValue = b.title?.toLowerCase() || '';
-                break;
-            case 'location':
-                aValue = a.location?.toLowerCase() || '';
-                bValue = b.location?.toLowerCase() || '';
-                break;
-            case 'due_date':
-                aValue = new Date(a.due_date || 0);
-                bValue = new Date(b.due_date || 0);
-                break;
-            case 'status':
-                // Sort by status priority: in_progress > overdue > completed > cancelled
-                const statusOrder = { 
-                    'in_progress': 1, 
-                    'overdue': 2, 
-                    'completed': 3, 
-                    'cancelled': 4 
-                };
-                aValue = statusOrder[a.status] || 5;
-                bValue = statusOrder[b.status] || 5;
-                break;
-            case 'time':
-                // Sort by multiple time fields in order of preference
-                aValue = getOperationSortTime(a);
-                bValue = getOperationSortTime(b);
-                break;
-            default:
-                return 0;
-        }
-        
-        if (currentSort.direction === 'asc') {
-            return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-        } else {
-            return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-        }
-    });
-}
-
-// Enhanced time-based sorting utility
-function getOperationSortTime(operation) {
-    // Priority order for time fields:
-    // 1. event_date + scheduled_time (for specific events)
-    // 2. pickup_time (for transfers)  
-    // 3. flight_time (for flight operations)
-    // 4. checkin_time/checkout_time (for hotels)
-    // 5. due_date (fallback)
-    
-    if (operation.event_date) {
-        const eventDate = new Date(operation.event_date);
-        if (operation.scheduled_time) {
-            const [hours, minutes] = operation.scheduled_time.split(':');
-            eventDate.setHours(parseInt(hours), parseInt(minutes));
-        }
-        return eventDate;
-    }
-    
-    if (operation.pickup_time) {
-        const today = new Date();
-        const [hours, minutes] = operation.pickup_time.split(':');
-        today.setHours(parseInt(hours), parseInt(minutes));
-        return today;
-    }
-    
-    if (operation.flight_time) {
-        const today = new Date();
-        const [hours, minutes] = operation.flight_time.split(':');
-        today.setHours(parseInt(hours), parseInt(minutes));
-        return today;
-    }
-    
-    if (operation.checkin_time) {
-        const today = new Date();
-        const [hours, minutes] = operation.checkin_time.split(':');
-        today.setHours(parseInt(hours), parseInt(minutes));
-        return today;
-    }
-    
-    return new Date(operation.due_date || 0);
-}
-
-// Utility to sort operations by time for better UX (as per API documentation)
-function sortOperationsByTime(operations) {
-    return operations.sort((a, b) => {
-        // First sort by event_date if available
-        if (a.event_date && b.event_date) {
-            const dateCompare = new Date(a.event_date) - new Date(b.event_date);
-            if (dateCompare !== 0) return dateCompare;
-        }
-        
-        // Then by scheduled_time
-        if (a.scheduled_time && b.scheduled_time) {
-            return a.scheduled_time.localeCompare(b.scheduled_time);
-        }
-        
-        // Finally by due_date
-        return new Date(a.due_date || 0) - new Date(b.due_date || 0);
-    });
-}
-
-// Format due date with CSS class
-function formatDueDateWithClass(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = date - now;
-    const hours = Math.round(diff / (1000 * 60 * 60));
-    
-    if (hours < 0) {
-        return {
-            date: `Overdue by ${Math.abs(hours)}h`,
-            class: 'due-overdue'
-        };
-    } else if (hours < 24) {
-        return {
-            date: `Due in ${hours}h`,
-            class: 'due-urgent'
-        };
-    } else {
-        return {
-            date: date.toLocaleDateString(),
-            class: 'due-normal'
-        };
-    }
-}
-
-// Format operation type for display
-function formatOperationType(type) {
-    const typeMap = {
-        'hotel_confirmation': 'Hotel',
-        'transfer_pickup': 'Transfer',
-        'transfer_confirmation': 'Transfer',
-        'transfer_dropoff': 'Transfer',
-        'airport_pickup': 'Airport',
-        'airport_dropoff': 'Airport',
-        'excursion_confirmation': 'Excursion',
-        'tour_confirmation': 'Tour',
-        'dining_reservation': 'Dining',
-        'guide_assignment': 'Guide',
-        'flight_assistance': 'Flight',
-        'admin_task': 'Admin',
-        'client_followup': 'Follow-up',
-        'client_follow_up': 'Follow-up',
-        'custom': 'Custom'
-    };
-    
-    return typeMap[type] || type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-}
-
-// Get status action button based on current status (updated for new status system)
-function getStatusActionButton(operation) {
-    switch(operation.status) {
-        case 'in_progress':
-            return `<button class="btn btn-sm btn-outline-success" onclick="completeOperation(${operation.id})" title="Complete Operation">
-                        <i class="fa fa-check"></i>
-                    </button>`;
-        case 'completed':
-            return `<button class="btn btn-sm btn-outline-info" onclick="viewOperation(${operation.id})" title="View Completed">
-                        <i class="fa fa-check-circle"></i>
-                    </button>`;
-        case 'cancelled':
-            return `<button class="btn btn-sm btn-outline-secondary" onclick="viewOperation(${operation.id})" title="View Cancelled">
-                        <i class="fa fa-ban"></i>
-                    </button>`;
-        case 'overdue':
-            return `<button class="btn btn-sm btn-outline-danger" onclick="completeOperation(${operation.id})" title="Complete Overdue">
-                        <i class="fa fa-exclamation-triangle"></i>
-                    </button>`;
-        default:
-            return `<button class="btn btn-sm btn-outline-primary" onclick="viewOperation(${operation.id})" title="View Details">
-                        <i class="fa fa-info-circle"></i>
-                    </button>`;
-    }
-}
-
-// Sort operations by column
-function sortOperations(field) {
-    if (currentSort.field === field) {
-        // Toggle direction if same field
-        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-    } else {
-        // New field, default to ascending
-        currentSort.field = field;
-        currentSort.direction = 'asc';
-    }
-    
-    // Re-render with current data
-    if (operationsData.length > 0) {
-        renderOperations({ operations: operationsData });
-    }
-}
-
-// Render pagination
-function renderPagination(data) {
-    const container = document.getElementById('paginationContainer');
-    const totalPages = data.total_pages || 1;
-    const currentPage = data.page || 1;
-    
-    if (totalPages <= 1) {
-        container.innerHTML = '';
-        return;
-    }
-    
-    let pagination = '<nav><ul class="pagination">';
-    
-    // Previous button
-    if (currentPage > 1) {
-        pagination += `<li><a href="#" onclick="loadOperations(${currentPage - 1}, currentFilters)">&laquo; Previous</a></li>`;
-    }
-    
-    // Page numbers
-    for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
-        const active = i === currentPage ? 'class="active"' : '';
-        pagination += `<li ${active}><a href="#" onclick="loadOperations(${i}, currentFilters)">${i}</a></li>`;
-    }
-    
-    // Next button
-    if (currentPage < totalPages) {
-        pagination += `<li><a href="#" onclick="loadOperations(${currentPage + 1}, currentFilters)">Next &raquo;</a></li>`;
-    }
-    
-    pagination += '</ul></nav>';
-    container.innerHTML = pagination;
-}
-
-// Operation actions
-function viewOperation(operationId) {
-    window.location.href = `edit_operations.html?id=${operationId}`;
-}
-
-function editOperation(operationId) {
-    window.location.href = `edit_operations.html?id=${operationId}&mode=edit`;
-}
-
-function createNewOperation() {
-    window.location.href = `edit_operations.html?mode=create`;
-}
-
-function startOperation(operationId) {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-        alert('This is sample data. In a real scenario, this would start the operation.');
-        return;
-    }
-    
-    if (confirm('Start this operation?')) {
-        fetch(`${Endpoint}/api/v1/operations/${operationId}/start`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Check if the operation was successfully started
-            // Backend returns the operation object directly
-            if (data.status === 'in_progress' || data.id) {
-                alert('Operation started successfully!');
-                reloadCurrentTab(); // Refresh current tab data
-                loadSummaryCards(); // Refresh summary
-            } else {
-                alert('Error starting operation: Operation status not updated');
-            }
-        })
-        .catch(error => {
-            console.error('Error starting operation:', error);
-            alert('Error starting operation: ' + error.message);
-        });
-    }
-}
-
-function completeOperation(operationId) {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-        alert('This is sample data. In a real scenario, this would complete the operation.');
-        return;
-    }
-    
-    if (confirm('Mark this operation as completed?')) {
-        fetch(`${Endpoint}/api/v1/operations/${operationId}/complete`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                // Let backend auto-calculate duration and handle completion
-            })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Check if the operation was successfully completed
-            // Backend returns the operation object directly with status="completed"
-            if (data.status === 'completed' || data.id) {
-                alert('Operation completed successfully!');
-                reloadCurrentTab(); // Refresh current tab data
-                loadSummaryCards(); // Refresh summary
-            } else {
-                alert('Error completing operation: Operation status not updated');
-            }
-        })
-        .catch(error => {
-            console.error('Error completing operation:', error);
-            alert('Error completing operation: ' + error.message);
-        });
-    }
-}
-
-// Sample data for fallback (updated for new status system)
-function getSampleSummary() {
-    return {
-        by_status: {
-            in_progress: 17,
-            completed: 28,
-            cancelled: 2,
-            overdue: 3
-        }
-    };
-}
-
-function getSampleOperations() {
-    return {
-        operations: [
-            {
-                id: 1,
-                title: "Test Client Follow-up",
-                description: "Follow up with client about special dietary requirements for restaurant bookings",
-                type: "client_followup",
-                status: "in_progress",
-                due_date: "2024-02-16T10:00:00Z",
-                scheduled_time: "11:00",
-                location: "Dubai",
-                agent_id: 2,
-                assignee_id: 10,
-                trip_id: 123,
-                estimated_hours: 0.5,
-                is_auto_generated: true,
-                agent: {
-                    id: 2,
-                    name: "Wheels Apart"
-                },
-                creator: {
-                    id: 1,
-                    name: "System Admin"
-                },
-                assignee: {
-                    id: 10,
-                    username: "sofia_florence"
-                },
-                trip: {
-                    id: 123,
-                    destination: "Dubai",
-                    client_name: "Johnson Family"
-                }
-            },
-            {
-                id: 2,
-                title: "Airport Transfer Coordination",
-                description: "Arrange VIP transfer service for Emirates arrival - 6 passengers with luggage",
-                type: "transfer_pickup",
-                status: "in_progress",
-                due_date: "2024-02-15T10:30:00Z",
-                scheduled_time: "14:30",
-                pickup_time: "14:00",
-                location: "Florence",
-                agent_id: 3,
-                assignee_id: 11,
-                trip_id: 456,
-                estimated_hours: 1,
-                is_auto_generated: true,
-                assignee: {
-                    id: 11,
-                    username: "marco_rome"
-                },
-                trip: {
-                    id: 456,
-                    destination: "Florence",
-                    client_name: "Chen Group"
-                }
-            },
-            {
-                id: 3,
-                title: "Uffizi Gallery Skip-the-Line",
-                description: "Secure priority access tickets for 8 guests - morning slot preferred",
-                type: "excursion_confirmation",
-                status: "in_progress",
-                due_date: "2024-02-16T09:00:00Z",
-                scheduled_time: "10:00",
-                event_date: "2024-02-18T00:00:00Z",
-                event_time: "10:00",
-                location: "Florence",
-                agent_id: 7,
-                assignee_id: 10,
-                trip_id: 789,
-                estimated_hours: 1.5,
-                assignee: {
-                    id: 10,
-                    username: "sofia_florence"
-                },
-                trip: {
-                    id: 789,
-                    destination: "Florence",
-                    client_name: "Williams Wedding Group"
-                }
-            },
-            {
-                id: 4,
-                title: "Private Guide Assignment",
-                description: "Match expert art historian guide for Vatican Museums private tour",
-                type: "guide_assignment",
-                status: "completed",
-                due_date: "2024-02-14T16:00:00Z",
-                scheduled_time: "09:00",
-                location: "Rome",
-                agent_id: 5,
-                assignee_id: 11,
-                trip_id: 234,
-                estimated_hours: 2,
-                actual_hours: 1.5,
-                completed_at: "2024-02-14T15:30:00Z",
-                assignee: {
-                    id: 11,
-                    username: "marco_rome"
-                },
-                trip: {
-                    id: 234,
-                    destination: "Rome",
-                    client_name: "Anderson Anniversary"
-                }
-            },
-            {
-                id: 5,
-                title: "Restaurant Reservation",
-                description: "Book dinner at Michelin starred restaurant for 10 guests - dietary restrictions noted",
-                type: "dining_reservation",
-                status: "in_progress",
-                due_date: "2024-02-17T18:00:00Z",
-                scheduled_time: "20:00",
-                location: "Milan",
-                agent_id: 9,
-                assignee_id: 12,
-                trip_id: 567,
-                estimated_hours: 0.5,
-                assignee: {
-                    id: 12,
-                    username: "lisa_milan"
-                },
-                trip: {
-                    id: 567,
-                    destination: "Milan",
-                    client_name: "Roberts Business Trip"
-                }
-            },
-            {
-                id: 6,
-                title: "Hotel Check-in Confirmation",
-                description: "Confirm early check-in for VIP suite at Hotel Danieli Venice",
-                type: "hotel_confirmation",
-                status: "in_progress",
-                due_date: "2024-02-16T17:00:00Z",
-                scheduled_time: "09:00",
-                checkin_time: "15:00",
-                checkout_time: "11:00",
-                location: "Venice",
-                agent_id: 2,
-                assignee_id: 10,
-                estimated_hours: 1,
-                is_auto_generated: true,
-                assignee: {
-                    id: 10,
-                    username: "sofia_florence"
-                },
-                trip: {
-                    id: 999,
-                    destination: "Venice",
-                    client_name: "Royal Anniversary"
-                }
-            },
-            {
-                id: 7,
-                title: "Flight Assistance - Terminal 1",
-                description: "Meet and assist VIP client with special assistance needs at airport arrival",
-                type: "flight_assistance",
-                status: "overdue",
-                due_date: "2024-02-15T06:00:00Z",
-                scheduled_time: "08:30",
-                flight_time: "08:45",
-                location: "Rome",
-                agent_id: 3,
-                assignee_id: 11,
-                trip_id: 890,
-                estimated_hours: 2,
-                assignee: {
-                    id: 11,
-                    username: "marco_rome"
-                },
-                trip: {
-                    id: 890,
-                    destination: "Rome",
-                    client_name: "Peterson VIP"
-                }
-            },
-            {
-                id: 8,
-                title: "Tour Confirmation - Tuscany Wine",
-                description: "Confirm 3-day Tuscany wine tour for 12 guests with premium vineyard visits",
-                type: "tour_confirmation",
-                status: "completed",
-                due_date: "2024-02-13T12:00:00Z",
-                scheduled_time: "10:00",
-                location: "Florence",
-                agent_id: 7,
-                assignee_id: 10,
-                trip_id: 345,
-                estimated_hours: 1.5,
-                actual_hours: 2,
-                completed_at: "2024-02-13T14:00:00Z",
-                assignee: {
-                    id: 10,
-                    username: "sofia_florence"
-                },
-                trip: {
-                    id: 345,
-                    destination: "Tuscany",
-                    client_name: "Smith Wine Club"
-                }
-            }
-        ],
-        total: 8,
-        page: 1,
-        total_pages: 1
-    };
-}
-
-// Render operations in a specific table
-function renderOperationsInTable(operations, tableBodyId) {
-    const tableBody = document.getElementById(tableBodyId);
-    
-    if (operations.length === 0) {
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="9" class="text-center" style="padding: 40px;">
-                    <i class="fa fa-tasks fa-2x" style="color: #ddd; margin-bottom: 10px;"></i>
-                    <div>No operations found</div>
-                </td>
-            </tr>
-        `;
-        return;
-    }
-    
-    // Sort operations
-    const sortedOperations = sortOperationsData(operations);
-    
-    tableBody.innerHTML = sortedOperations.map(operation => {
-        const statusClass = `status-${operation.status}`;
-        
-        // Handle time formatting - use due_date if scheduled_time not available
-        const dueDateObj = new Date(operation.due_date);
-        const scheduledTime = operation.scheduled_time || dueDateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        const scheduledDate = dueDateObj.toLocaleDateString();
-        
-        // Handle assignee info - could be in assignee object or creator for fallback
-        const assigneeInfo = operation.assignee || operation.creator || {};
-        const assigneeName = assigneeInfo.name || assigneeInfo.username || 'Unassigned';
-        
-        // Handle client info - could be in trip object or agent for fallback
-        const clientInfo = operation.trip || operation.agent || {};
-        const clientName = clientInfo.client_name || clientInfo.name || 'N/A';
-        const destination = clientInfo.destination || operation.location || '';
-        
-        // Handle trip ID
-        const tripId = operation.trip_id || (operation.trip && operation.trip.id) || 'N/A';
-        
-        // Format operation type
-        const operationType = formatOperationType(operation.type);
-        
-        // Auto-generation badge
-        const autoGenBadge = operation.is_auto_generated ? 
-            '<span class="auto-badge">🤖 Auto</span>' : '';
-        
-        return `
-            <tr data-id="${operation.id}">
-                <td>
-                    <div class="operation-title">${operation.title}</div>
-                    <div class="operation-description">${operation.description || ''}</div>
-                    ${autoGenBadge}
-                </td>
-                <td>
-                    <div class="location-info">
-                        <i class="fa fa-map-marker" style="color: #dc3545; margin-right: 5px;"></i>
-                        <span style="color: #28a745; font-weight: 500;">${operation.location}</span>
-                    </div>
-                </td>
-                <td>
-                    <div class="scheduled-time" style="font-weight: 600; font-size: 1.1em; color: #333;">${scheduledTime}</div>
-                    <div class="scheduled-date" style="font-size: 0.85em; color: #666;">${scheduledDate}</div>
-                    ${operation.pickup_time ? `<div style="font-size: 0.8em; color: #fd7e14;"><i class="fa fa-car"></i> Pickup: ${operation.pickup_time}</div>` : ''}
-                    ${operation.flight_time ? `<div style="font-size: 0.8em; color: #6f42c1;"><i class="fa fa-plane"></i> Flight: ${operation.flight_time}</div>` : ''}
-                    ${operation.checkin_time ? `<div style="font-size: 0.8em; color: #28a745;"><i class="fa fa-sign-in"></i> Check-in: ${operation.checkin_time}</div>` : ''}
-                </td>
-                <td>
-                    <div class="client-info">
-                        <div class="client-name">${clientName}</div>
-                        ${clientInfo.client_email ? `<div class="client-email">${clientInfo.client_email}</div>` : ''}
-                        ${clientInfo.client_phone || clientInfo.mobile ? `<div class="client-contact"><i class="fa fa-phone"></i>${clientInfo.client_phone || clientInfo.mobile}</div>` : ''}
-                        ${destination ? `<div style="font-size: 0.8em; color: #666; margin-top: 3px;"><i class="fa fa-arrow-right" style="margin-right: 3px;"></i>${destination}</div>` : ''}
-                    </div>
-                </td>
-                <td>
-                    <span class="type-badge ${operation.type}">${operationType}</span>
-                </td>
-                <td>
-                    <div class="assignee-info">
-                        <i class="fa fa-user" style="color: #6f42c1; margin-right: 5px;"></i>
-                        <span style="color: #6f42c1; font-weight: 500;">${assigneeName}</span>
-                    </div>
-                </td>
-                <td>
-                    <span class="status-badge ${statusClass}">${operation.status.replace('_', ' ')}</span>
-                </td>
-                <td>
-                    ${operation.trip_id ? `<a href="edit_booking.html?id=${operation.trip_id}" class="trip-badge" style="text-decoration: none;">#${operation.trip_id}</a>` : '-'}
-                </td>
-                <td class="text-center">
-                    <div class="btn-group" role="group">
-                        <button class="btn btn-sm btn-outline-primary" onclick="viewOperation(${operation.id})" title="View Details">
-                            <i class="fa fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-success" onclick="editOperation(${operation.id})" title="Edit">
-                            <i class="fa fa-edit"></i>
-                        </button>
-                        ${getStatusActionButton(operation)}
-                    </div>
-                </td>
-            </tr>
-        `;
+    const items = state.items.filter(item => item.service_type === state.activeTab);
+    let previousDate = null;
+    byId('operationRows').innerHTML = items.map(item => {
+      const dateStart = previousDate !== item.operation_date;
+      previousDate = item.operation_date;
+      return `<tr class="${dateStart ? 'date-start' : ''}" data-key="${escapeHtml(item.key)}">${columns.map(column =>
+        `<td class="${column.className || ''}">${cellContent(item, column.key)}</td>`
+      ).join('')}</tr>`;
     }).join('');
-}
+    byId('emptyState').style.display = items.length ? 'none' : 'block';
 
-// Render client operations with completion tracking
-function renderClientOperations(operations) {
-    const tableBody = document.getElementById('clientOperationsTableBody');
-    
-    if (operations.length === 0) {
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="10" class="text-center" style="padding: 40px;">
-                    <i class="fa fa-users fa-2x" style="color: #ddd; margin-bottom: 10px;"></i>
-                    <div>No operations found for this client</div>
-                </td>
-            </tr>
-        `;
-        return;
-    }
-    
-    // Sort operations by status and date, then limit to top 10
-    const sortedOperations = operations.sort((a, b) => {
-        const statusOrder = { 'in_progress': 1, 'overdue': 2, 'completed': 3, 'cancelled': 4 };
-        if (statusOrder[a.status] !== statusOrder[b.status]) {
-            return statusOrder[a.status] - statusOrder[b.status];
-        }
-        return new Date(b.due_date) - new Date(a.due_date);
-    }).slice(0, 10); // Limit to top 10 operations
-    
-    tableBody.innerHTML = sortedOperations.map(operation => {
-        const statusClass = `status-${operation.status}`;
-        
-        // Handle time formatting
-        const dueDateObj = new Date(operation.due_date);
-        const scheduledTime = operation.scheduled_time || dueDateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        const scheduledDate = dueDateObj.toLocaleDateString();
-        
-        // Handle client info from trip
-        const clientInfo = operation.trip ? 
-            `<div class="client-info">
-                <div class="client-name">${operation.trip.client_name || 'Unknown Client'}</div>
-                ${operation.trip.client_email ? `<div class="client-email">${operation.trip.client_email}</div>` : ''}
-                ${operation.trip.client_mobile || operation.trip.mobile ? `<div class="client-contact"><i class="fa fa-phone"></i>${operation.trip.client_mobile || operation.trip.mobile}</div>` : ''}
-            </div>` : 
-            '<div class="client-info">No Client</div>';
-        
-        // Handle assignee info
-        const assigneeInfo = operation.assignee || operation.creator || {};
-        const assigneeName = assigneeInfo.name || assigneeInfo.username || 'Unassigned';
-        
-        // Handle trip ID
-        const tripId = operation.trip_id || (operation.trip && operation.trip.id) || 'N/A';
-        
-        // Format operation type
-        const operationType = formatOperationType(operation.type);
-        
-        // Completion info
-        let completionInfo = '';
-        if (operation.status === 'completed') {
-            const completedDate = operation.completed_at ? new Date(operation.completed_at).toLocaleDateString() : 'N/A';
-            const actualHours = operation.actual_hours || 'N/A';
-            completionInfo = `
-                <div style="font-size: 0.8em;">
-                    <div style="color: #28a745;"><i class="fa fa-check-circle"></i> ${completedDate}</div>
-                    <div style="color: #666;">Hours: ${actualHours}</div>
-                </div>
-            `;
-        } else if (operation.status === 'in_progress') {
-            const startedDate = operation.started_at ? new Date(operation.started_at).toLocaleDateString() : 'N/A';
-            completionInfo = `
-                <div style="font-size: 0.8em; color: #007bff;">
-                    <i class="fa fa-play-circle"></i> Started: ${startedDate}
-                </div>
-            `;
-        } else if (operation.status === 'overdue') {
-            completionInfo = `
-                <div style="font-size: 0.8em; color: #dc3545;">
-                    <i class="fa fa-exclamation-triangle"></i> Overdue
-                </div>
-            `;
-        } else {
-            completionInfo = `
-                <div style="font-size: 0.8em; color: #666;">
-                    <i class="fa fa-clock-o"></i> Waiting
-                </div>
-            `;
-        }
-        
-        return `
-            <tr data-id="${operation.id}">
-                <td>
-                    <div class="operation-title">${operation.title}</div>
-                    <div class="operation-description">${operation.description || ''}</div>
-                    ${operation.is_auto_generated ? '<span class="auto-badge">🤖 Auto</span>' : ''}
-                </td>
-                <td>
-                    <div class="location-info">
-                        <i class="fa fa-map-marker" style="color: #dc3545; margin-right: 5px;"></i>
-                        <span style="color: #28a745; font-weight: 500;">${operation.location || 'N/A'}</span>
-                    </div>
-                </td>
-                <td>
-                    <div class="scheduled-time" style="font-weight: 600; font-size: 1.1em; color: #333;">${scheduledTime}</div>
-                    <div class="scheduled-date" style="font-size: 0.85em; color: #666;">${scheduledDate}</div>
-                </td>
-                <td>
-                    ${clientInfo}
-                </td>
-                <td>
-                    <span class="type-badge ${operation.type}">${operationType}</span>
-                </td>
-                <td>
-                    <div class="assignee-info">
-                        <i class="fa fa-user" style="color: #6f42c1; margin-right: 5px;"></i>
-                        <span style="color: #6f42c1; font-weight: 500;">${assigneeName}</span>
-                    </div>
-                </td>
-                <td>
-                    <span class="status-badge ${statusClass}">${operation.status.replace('_', ' ')}</span>
-                </td>
-                <td>
-                    ${operation.trip_id ? `<a href="edit_booking.html?id=${operation.trip_id}" class="trip-badge" style="text-decoration: none;">#${operation.trip_id}</a>` : '-'}
-                </td>
-                <td>
-                    ${completionInfo}
-                </td>
-                <td class="text-center">
-                    <div class="btn-group" role="group">
-                        <button class="btn btn-sm btn-outline-primary" onclick="viewOperation(${operation.id})" title="View Details">
-                            <i class="fa fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-success" onclick="editOperation(${operation.id})" title="Edit">
-                            <i class="fa fa-edit"></i>
-                        </button>
-                        ${getStatusActionButton(operation)}
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join('');
-    
-    // Show message if results were limited
-    if (operations.length > 10) {
-        updateSearchStatus(`Showing top 10 of ${operations.length} operations`);
-    }
-}
+    byId('operationRows').querySelectorAll('.operation-select').forEach(input => {
+      input.addEventListener('change', event => {
+        event.target.checked ? state.selected.add(event.target.dataset.key) : state.selected.delete(event.target.dataset.key);
+        renderBulkBar();
+      });
+    });
+    byId('operationRows').querySelectorAll('.edit-assignment').forEach(button => {
+      button.addEventListener('click', () => openAssignment(button.dataset.key));
+    });
+    const selectAll = byId('selectAllVisible');
+    if (selectAll) selectAll.addEventListener('change', event => {
+      items.forEach(item => event.target.checked ? state.selected.add(item.key) : state.selected.delete(item.key));
+      renderTable();
+      renderBulkBar();
+    });
+  }
 
-// Create table row for operation (updated to remove priority, add timing fields and auto-generation metadata)
-function createOperationRow(operation) {
-    const dueDate = formatDueDate(operation.due_date);
-    const statusClass = `status-${operation.status || 'in_progress'}`;
-    
-    // Format timing information with new fields
-    const timingInfo = formatTimingInfo(operation);
-    
-    // Handle auto-generation badge
-    const autoGenBadge = operation.is_auto_generated ? 
-        '<span class="auto-badge" style="background: #17a2b8; color: white; padding: 2px 6px; border-radius: 8px; font-size: 0.7rem;">🤖 Auto</span>' : '';
-    
-    // Get agent/assignee names safely
-    const agentName = operation.agent?.name || operation.agent_name || 'Unknown Agent';
-    const assigneeName = operation.assignee?.name || operation.assignee_name || 'Unassigned';
-    
-    // Get client info from trip
-    const clientInfo = operation.trip ? 
-        `<div class="client-info">
-            <div class="client-name">${operation.trip.client_name || 'Unknown Client'}</div>
-            ${operation.trip.client_email ? `<div class="client-email">${operation.trip.client_email}</div>` : ''}
-            ${operation.trip.client_mobile || operation.trip.mobile ? `<div class="client-contact"><i class="fa fa-phone"></i>${operation.trip.client_mobile || operation.trip.mobile}</div>` : ''}
-        </div>` : 
-        '<div class="client-info">No Client</div>';
-    
-    // Operation type display
-    const typeDisplay = formatOperationType(operation.type);
-    
-    return `
-        <tr class="operation-row" data-id="${operation.id}">
-            <td>
-                <div class="operation-info">
-                    <div class="operation-title">${operation.title || 'Untitled Operation'}</div>
-                    ${operation.description ? `<div class="operation-description">${operation.description}</div>` : ''}
-                    ${autoGenBadge}
-                </div>
-            </td>
-            <td>
-                <div class="location-info">
-                    <i class="fa fa-map-marker"></i> ${operation.location || 'No Location'}
-                </div>
-            </td>
-            <td>
-                <div class="timing-display">
-                    ${timingInfo}
-                    <div class="due-date ${dueDate.class}">${dueDate.text}</div>
-                </div>
-            </td>
-            <td>${clientInfo}</td>
-            <td>
-                <span class="type-badge">${typeDisplay}</span>
-            </td>
-            <td>
-                <div class="assignee-info">
-                    <i class="fa fa-user"></i> ${assigneeName}
-                </div>
-            </td>
-            <td>
-                <span class="status-badge ${statusClass}">${formatStatus(operation.status)}</span>
-            </td>
-            <td>
-                ${operation.trip_id ? `<a href="edit_booking.html?id=${operation.trip_id}" class="trip-badge" style="text-decoration: none;">#${operation.trip_id}</a>` : '-'}
-            </td>
-            <td>
-                <div class="action-buttons">
-                    <button class="btn btn-sm btn-primary" onclick="editOperation(${operation.id})" title="Edit">
-                        <i class="fa fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-success" onclick="markCompleted(${operation.id})" title="Mark Complete">
-                        <i class="fa fa-check"></i>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `;
-}
+  function renderBulkBar() {
+    byId('selectedCount').textContent = state.selected.size;
+    byId('bulkBar').classList.toggle('active', !state.readOnly && state.selected.size > 0);
+  }
 
-// Format timing information with new fields
-function formatTimingInfo(operation) {
-    const timingParts = [];
-    
-    // Scheduled time (most important)
-    if (operation.scheduled_time) {
-        timingParts.push(`<div class="scheduled-time"><i class="fa fa-clock-o"></i> ${operation.scheduled_time}</div>`);
-    }
-    
-    // Pickup time for transfers
-    if (operation.pickup_time) {
-        timingParts.push(`<div class="pickup-time"><i class="fa fa-car"></i> Pickup: ${operation.pickup_time}</div>`);
-    }
-    
-    // Flight time for flight operations
-    if (operation.flight_time) {
-        timingParts.push(`<div class="flight-time"><i class="fa fa-plane"></i> Flight: ${operation.flight_time}</div>`);
-    }
-    
-    // Check-in/out times for hotels
-    if (operation.checkin_time) {
-        timingParts.push(`<div class="checkin-time"><i class="fa fa-sign-in"></i> Check-in: ${operation.checkin_time}</div>`);
-    }
-    
-    if (operation.checkout_time) {
-        timingParts.push(`<div class="checkout-time"><i class="fa fa-sign-out"></i> Check-out: ${operation.checkout_time}</div>`);
-    }
-    
-    // Event time for excursions
-    if (operation.event_time) {
-        timingParts.push(`<div class="event-time"><i class="fa fa-calendar"></i> Event: ${operation.event_time}</div>`);
-    }
-    
-    // Duration if available
-    if (operation.duration_minutes) {
-        const hours = Math.floor(operation.duration_minutes / 60);
-        const minutes = operation.duration_minutes % 60;
-        const durationText = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-        timingParts.push(`<div class="duration"><i class="fa fa-hourglass-half"></i> ${durationText}</div>`);
-    }
-    
-    return timingParts.length > 0 ? timingParts.join('') : '<div class="no-timing">No specific timing</div>';
-}
+  function render() {
+    renderSummary();
+    renderTable();
+    renderBulkBar();
+  }
 
-// Format status for display (updated status list)
-function formatStatus(status) {
-    const statusMap = {
-        'in_progress': 'In Progress',
-        'completed': 'Completed',
-        'cancelled': 'Cancelled',
-        'overdue': 'Overdue'
+  function supplierOptions(type, selectedId) {
+    return state.options.suppliers
+      .filter(supplier => type === 'transfer' ? supplier.offers_transfers : type === 'excursion' ? supplier.offers_excursions : supplier.offers_tours)
+      .map(supplier => `<option value="${supplier.id}" ${Number(selectedId) === supplier.id ? 'selected' : ''}>${escapeHtml(supplier.name)}</option>`).join('');
+  }
+
+  function openAssignment(key) {
+    const item = state.items.find(row => row.key === key);
+    if (!item || state.readOnly) return;
+    state.editingKey = key;
+    byId('sourceSummary').innerHTML = `<strong>${escapeHtml(item.service_name)}</strong> · ${formatDate(item.operation_date)} · ${escapeHtml(item.client_name)}<div class="secondary">${escapeHtml(item.agent_name)} · ${escapeHtml(item.file_number || 'No file number')}</div>`;
+    byId('assignmentStatus').value = item.status === 'changed' ? 'assigned' : item.status;
+    byId('assignmentPickup').value = /^\d{2}:\d{2}/.test(item.pickup_time || '') ? item.pickup_time.slice(0, 5) : '';
+    byId('assignmentSupplier').innerHTML = '<option value="">Select supplier</option>' + supplierOptions(item.service_type, item.supplier_id);
+    byId('assignmentVehicle').value = item.vehicle_type || '';
+    byId('assignmentVehicleQty').value = item.vehicle_quantity ?? 1;
+    byId('assignmentGuide').value = item.guide_name || '';
+    byId('assignmentGuideMobile').value = item.guide_mobile || '';
+    byId('assignmentRemarks').value = item.remarks || '';
+    $('#assignmentModal').modal('show');
+  }
+
+  function assignmentPayload(item) {
+    const supplierSelect = byId('assignmentSupplier');
+    return {
+      trip_id: item.trip_id,
+      status: byId('assignmentStatus').value,
+      supplier_id: supplierSelect.value ? Number(supplierSelect.value) : null,
+      supplier_name: supplierSelect.selectedOptions[0]?.textContent === 'Select supplier' ? '' : supplierSelect.selectedOptions[0]?.textContent || '',
+      vehicle_type: byId('assignmentVehicle').value.trim(),
+      vehicle_quantity: Number(byId('assignmentVehicleQty').value || 1),
+      guide_name: byId('assignmentGuide').value.trim(),
+      guide_mobile: byId('assignmentGuideMobile').value.trim(),
+      pickup_time: byId('assignmentPickup').value,
+      remarks: byId('assignmentRemarks').value.trim(),
+      source_updated_at: item.source_updated_at,
     };
-    return statusMap[status] || 'Unknown';
-}
+  }
 
-// Update search status indicator
-function updateSearchStatus(message) {
-    const statusEl = document.getElementById('searchStatus');
-    if (statusEl) {
-        statusEl.textContent = message;
+  async function saveAssignment(event) {
+    event.preventDefault();
+    const item = state.items.find(row => row.key === state.editingKey);
+    if (!item) return;
+    showLoading('Saving operation assignment...');
+    try {
+      await api(`/operations/assignments/${item.service_type}/${item.service_item_id}/${item.operation_date}`, {
+        method: 'PUT',
+        body: JSON.stringify(assignmentPayload(item)),
+      });
+      $('#assignmentModal').modal('hide');
+      await loadOperations({ message: 'Refreshing operation data...' });
+    } catch (error) {
+      hideLoading();
+      alert(`Unable to save assignment: ${error.message}`);
     }
-}
+  }
 
-// Clear search results
-function clearClientSearchResults() {
-    document.getElementById('clientOperationsTableBody').innerHTML = `
-        <tr>
-            <td colspan="10" class="text-center" style="padding: 40px;">
-                <i class="fa fa-search fa-2x" style="color: #ddd; margin-bottom: 10px;"></i>
-                <div style="font-size: 1.1em; margin-bottom: 10px;">Enter a client name to search operations</div>
-                <div class="text-muted" style="font-size: 0.9em;">
-                    <strong>Default:</strong> Shows active operations only (In Progress + Overdue)<br>
-                    <strong>Filter:</strong> Use dropdown to show specific status or all operations
-                </div>
-            </td>
-        </tr>
-    `;
-}
-
-// Legacy function - now calls the new debounced search
-function searchClients() {
-    // This function is kept for backward compatibility
-    // but now uses the improved debounced search
-    debouncedClientSearch();
-}
-
-// Load clients list for client operations tab (kept for compatibility)
-function loadClientsList() {
-    // This function is kept for potential future use
-    // Current implementation uses search-based approach
-    clearClientSearchResults();
-}
-
-// Load operations for selected client (kept for compatibility)
-function loadClientOperations() {
-    // This function is kept for potential future use
-    // Current implementation uses search-based approach
-    const searchTerm = document.getElementById('clientSearch').value.trim();
-    if (searchTerm.length >= 2) {
-        performClientSearch();
+  async function applyBulk() {
+    const status = byId('bulkStatus').value;
+    const guide = byId('bulkGuide').value.trim();
+    if (!status && !guide) {
+      alert('Choose a status or enter a guide name.');
+      return;
     }
-} 
+    const items = state.items.filter(item => state.selected.has(item.key));
+    const assignments = items.map(item => ({
+      trip_id: item.trip_id,
+      service_type: item.service_type,
+      service_item_id: item.service_item_id,
+      operation_date: item.operation_date,
+      status: status || (item.status === 'changed' ? 'assigned' : item.status),
+      supplier_id: item.supplier_id,
+      supplier_name: item.supplier_name,
+      vehicle_type: item.vehicle_type,
+      vehicle_quantity: item.vehicle_quantity,
+      guide_name: guide || item.guide_name,
+      guide_mobile: item.guide_mobile,
+      pickup_time: item.pickup_time,
+      remarks: item.remarks,
+      source_updated_at: item.source_updated_at,
+    }));
+    showLoading(`Updating ${assignments.length} operation(s)...`);
+    try {
+      await api('/operations/assignments/bulk', { method: 'POST', body: JSON.stringify({ assignments }) });
+      byId('bulkStatus').value = '';
+      byId('bulkGuide').value = '';
+      await loadOperations({ message: 'Refreshing operation data...' });
+    } catch (error) {
+      hideLoading();
+      alert(`Unable to update operations: ${error.message}`);
+    }
+  }
+
+  async function exportExcel() {
+    showLoading('Preparing Excel workbook...');
+    try {
+      const response = await api(`/operations/export.xlsx?${queryString()}`);
+      const blob = await response.blob();
+      const disposition = response.headers.get('content-disposition') || '';
+      const filename = disposition.match(/filename="([^"]+)"/)?.[1] || 'operations.xlsx';
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      alert(`Unable to export operations: ${error.message}`);
+    } finally {
+      hideLoading();
+    }
+  }
+
+  function setQuickRange(range) {
+    const today = localIsoDate(new Date());
+    byId('fromDate').value = today;
+    byId('toDate').value = range === 'today' ? today : addDays(today, Number(range) - 1);
+    document.querySelectorAll('.quick-range button').forEach(button => button.classList.toggle('active', button.dataset.range === String(range)));
+    loadOperations();
+  }
+
+  function resetFilters() {
+    byId('cityFilter').value = 'all';
+    byId('agentFilter').value = '';
+    byId('statusFilter').value = 'all';
+    byId('searchInput').value = '';
+    setQuickRange('30');
+  }
+
+  function bindEvents() {
+    document.querySelectorAll('.operation-tabs button').forEach(button => button.addEventListener('click', () => {
+      state.activeTab = button.dataset.tab;
+      state.selected.clear();
+      document.querySelectorAll('.operation-tabs button').forEach(tab => tab.classList.toggle('active', tab === button));
+      renderTable();
+      renderBulkBar();
+    }));
+    document.querySelectorAll('.quick-range button').forEach(button => button.addEventListener('click', () => setQuickRange(button.dataset.range)));
+    byId('applyFilters').addEventListener('click', () => loadOperations());
+    byId('resetFilters').addEventListener('click', resetFilters);
+    byId('refreshButton').addEventListener('click', () => loadOperations());
+    byId('exportButton').addEventListener('click', exportExcel);
+    byId('printButton').addEventListener('click', () => window.print());
+    byId('clearSelection').addEventListener('click', () => { state.selected.clear(); renderTable(); renderBulkBar(); });
+    byId('applyBulk').addEventListener('click', applyBulk);
+    byId('assignmentForm').addEventListener('submit', saveAssignment);
+    byId('assignmentGuide').addEventListener('change', event => {
+      const guide = state.options.guides.find(option => option.name === event.target.value);
+      if (guide && !byId('assignmentGuideMobile').value) byId('assignmentGuideMobile').value = guide.mobile || '';
+    });
+    byId('searchInput').addEventListener('keydown', event => {
+      if (event.key === 'Enter') loadOperations();
+    });
+  }
+
+  async function init() {
+    if (!token) {
+      window.location.href = 'login.html';
+      return;
+    }
+    const today = localIsoDate(new Date());
+    byId('fromDate').value = today;
+    byId('toDate').value = addDays(today, 29);
+    bindEvents();
+    showLoading('Preparing Operations...');
+    try {
+      await loadOptions();
+      await loadOperations();
+    } catch (error) {
+      hideLoading();
+      console.error(error);
+      alert(`Unable to open Operations: ${error.message}`);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();

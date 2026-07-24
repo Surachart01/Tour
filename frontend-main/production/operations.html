@@ -2,1415 +2,215 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <script src="js/native-dialogs.js?v=20260713"></script>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Operations Management</title>
-    <link
-      href="../vendors/bootstrap/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <!-- Font Awesome -->
-    <link
-      href="../vendors/font-awesome/css/font-awesome.min.css"
-      rel="stylesheet"
-    />
-
-    <!-- Custom Theme Style -->
+    <title>Operations</title>
+    <link href="../vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="../vendors/font-awesome/css/font-awesome.min.css" rel="stylesheet" />
     <link href="../build/css/custom.min.css" rel="stylesheet" />
-
     <style>
-      /* Sidebar and navbar text size */
-      .nav_title span,
-      .profile_info span,
-      .profile_info h2,
-      .side-menu a,
-      .navbar-right a {
-        font-size: 1rem;
-      }
-
-      /* Removed constraining CSS for sidebar-menu to allow proper submenu expansion */
-
-      /* Sidebar scrolling - allow scroll when expanded, but not when collapsed */
-      .left_col.scroll-view {
-        overflow-y: auto;
-        max-height: 100vh;
-      }
-
-      /* When sidebar is collapsed, remove height constraints to allow submenu expansion */
-      body.nav-sm .left_col.scroll-view {
-        overflow-y: visible;
-        max-height: none;
-      }
-
-      .operations-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 20px;
-        margin-top: 20px;
-      }
-
-      .operation-card {
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        padding: 20px;
-        border-left: 4px solid transparent;
-        transition: all 0.3s ease;
-      }
-
-      .operation-card:hover {
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        transform: translateY(-2px);
-      }
-
-      .operation-header {
-        display: flex;
-        justify-content: between;
-        align-items: flex-start;
-        margin-bottom: 10px;
-      }
-
-      .operation-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 5px;
-      }
-
-      .operation-description {
-        color: #666;
-        font-size: 0.9rem;
-        margin-bottom: 15px;
-        line-height: 1.4;
-      }
-
-      .operation-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-bottom: 15px;
-      }
-
-      .meta-item {
-        display: flex;
-        align-items: center;
-        font-size: 0.8rem;
-        color: #666;
-      }
-
-      .meta-item i {
-        margin-right: 5px;
-        width: 12px;
-      }
-
-      .status-badge {
-        padding: 4px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 500;
-        text-transform: uppercase;
-      }
-
-      .status-in_progress {
-        background-color: #cce5ff;
-        color: #004085;
-      }
-      .status-completed {
-        background-color: #d4edda;
-        color: #155724;
-      }
-      .status-cancelled {
-        background-color: #f8d7da;
-        color: #721c24;
-      }
-      .status-overdue {
-        background-color: #ffcc99;
-        color: #cc6600;
-      }
-
-      .operation-actions {
-        display: flex;
-        gap: 8px;
-        margin-top: 15px;
-      }
-
-      .btn-action {
-        padding: 6px 12px;
-        font-size: 0.8rem;
-        border-radius: 4px;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s;
-      }
-
-      .btn-primary {
-        background: #007bff;
-        color: white;
-      }
-      .btn-success {
-        background: #28a745;
-        color: white;
-      }
-      .btn-warning {
-        background: #ffc107;
-        color: #212529;
-      }
-      .btn-info {
-        background: #17a2b8;
-        color: white;
-      }
-
-      .btn-action:hover {
-        opacity: 0.9;
-        transform: translateY(-1px);
-      }
-
-      .summary-cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 15px;
-        margin: 20px 0;
-        max-width: 400px;
-      }
-
-      .summary-card {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        padding: 15px;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        text-align: center;
-        border-left: 4px solid transparent;
-      }
-
-      .summary-card:first-child {
-        border-left-color: #007bff;
-      }
-
-      .summary-card:last-child {
-        border-left-color: #28a745;
-      }
-
-      .summary-number {
-        font-size: 1.5rem;
-        font-weight: bold;
-        margin-bottom: 5px;
-      }
-
-      .summary-label {
-        color: #666;
-        font-size: 0.8rem;
-        font-weight: 500;
-      }
-
-      .filters-bar {
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
-      }
-
-      .filters-row {
-        display: flex;
-        gap: 15px;
-        align-items: center;
-        flex-wrap: wrap;
-      }
-
-      .filter-group {
-        display: flex;
-        flex-direction: column;
-        min-width: 120px;
-      }
-
-      .filter-label {
-        font-size: 0.8rem;
-        color: #666;
-        margin-bottom: 5px;
-      }
-
-      .filter-input {
-        padding: 8px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 0.9rem;
-      }
-
-      .loading-spinner {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 200px;
-      }
-
-      .no-operations {
-        text-align: center;
-        padding: 40px;
-        color: #666;
-      }
-
-      /* Operations Table Styles */
-      #operationsTable {
-        font-size: 0.9rem;
-      }
-
-      #operationsTable th {
-        border-top: none;
-        font-weight: 600;
-        color: #333;
-        vertical-align: middle;
-      }
-
-      #operationsTable td {
-        vertical-align: middle;
-        padding: 12px 8px;
-      }
-
-      #operationsTable tbody tr:hover {
-        background-color: #f8f9fa;
-      }
-
-      .operation-title {
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 3px;
-      }
-
-      .operation-description {
-        color: #666;
-        font-size: 0.8rem;
-        line-height: 1.3;
-      }
-
-      .due-date {
-        font-size: 0.85rem;
-        line-height: 1.2;
-      }
-
-      .due-overdue {
-        color: #dc3545;
-        font-weight: 600;
-      }
-
-      .due-urgent {
-        color: #fd7e14;
-        font-weight: 600;
-      }
-
-      .due-normal {
-        color: #333;
-      }
-
-      .client-info {
-        font-size: 0.85rem;
-        line-height: 1.3;
-        color: #2c5aa0;
-        font-weight: 500;
-        max-width: 200px;
-      }
-
-      .client-info .client-name {
-        font-weight: 600;
-        color: #2c5aa0;
-        margin-bottom: 3px;
-        display: block;
-      }
-
-      .client-info .client-email {
-        color: #6c757d;
-        font-weight: normal;
-        font-size: 0.8rem;
-        margin-bottom: 2px;
-        display: block;
-        word-break: break-word;
-      }
-
-      .client-info .client-contact {
-        color: #28a745;
-        font-weight: 500;
-        font-size: 0.8rem;
-        display: block;
-      }
-
-      .client-info .client-contact i {
-        margin-right: 3px;
-        width: 10px;
-      }
-
-      .client-info small {
-        color: #6c757d;
-        font-weight: normal;
-      }
-
-      .location-info {
-        font-size: 0.85rem;
-        color: #28a745;
-        font-weight: 500;
-      }
-
-      .location-info i {
-        color: #dc3545;
-        margin-right: 4px;
-      }
-
-      .operation-type {
-        font-size: 0.8rem;
-        padding: 3px 8px;
-        border-radius: 12px;
-        background-color: #e9ecef;
-        color: #495057;
-        white-space: nowrap;
-      }
-
-      .assignee-info {
-        font-size: 0.85rem;
-        color: #6f42c1;
-        font-weight: 500;
-      }
-
-      .assignee-info i {
-        color: #495057;
-        margin-right: 4px;
-      }
-
-      .status-badge {
-        padding: 4px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 500;
-        text-transform: uppercase;
-      }
-
-      .status-in_progress {
-        background-color: #cce5ff;
-        color: #004085;
-      }
-      .status-completed {
-        background-color: #d4edda;
-        color: #155724;
-      }
-      .status-cancelled {
-        background-color: #f8d7da;
-        color: #721c24;
-      }
-      .status-overdue {
-        background-color: #ffcc99;
-        color: #cc6600;
-      }
-
-      .type-badge {
-        font-size: 0.8rem;
-        padding: 3px 8px;
-        border-radius: 12px;
-        background-color: #e9ecef;
-        color: #495057;
-        white-space: nowrap;
-        text-transform: capitalize;
-      }
-
-      .trip-badge {
-        background-color: #17a2b8;
-        color: white;
-        padding: 3px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        transition: all 0.2s ease;
-      }
-
-      .trip-badge:hover {
-        background-color: #138496;
-        color: white;
-        text-decoration: none;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-      }
-
-      .trip-badge:focus {
-        outline: none;
-        box-shadow: 0 0 0 2px rgba(23, 162, 184, 0.3);
-      }
-
-      .action-buttons {
-        display: flex;
-        gap: 5px;
-        justify-content: center;
-      }
-
-      .btn-group .btn {
-        margin: 0 1px;
-      }
-
-      .btn-sm {
-        padding: 4px 8px;
-        font-size: 0.75rem;
-      }
-
-      /* Mobile responsiveness */
-      @media (max-width: 768px) {
-        .filters-row {
-          flex-direction: column;
-          align-items: stretch;
-        }
-
-        .filter-group {
-          min-width: auto;
-        }
-
-        #operationsTable {
-          font-size: 0.8rem;
-        }
-
-        .operation-title {
-          font-size: 0.9rem;
-        }
-
-        .operation-description {
-          font-size: 0.75rem;
-        }
-      }
-
-      .operations-tabs-container .nav-tabs {
-        border-bottom: 2px solid #dee2e6;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 8px 8px 0 0;
-        padding: 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: stretch;
-        border: 1px solid #dee2e6;
-        border-bottom: none;
-        height: 60px;
-      }
-
-      .operations-tabs-container .nav-item {
-        flex: 1;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border-right: 1px solid rgba(0, 0, 0, 0.1);
-      }
-
-      .operations-tabs-container .nav-item:last-child {
-        border-right: none;
-      }
-
-      .operations-tabs-container .nav-item:first-child {
-        border-radius: 8px 0 0 0;
-      }
-
-      .operations-tabs-container .nav-item:last-child {
-        border-radius: 0 8px 0 0;
-      }
-
-      .operations-tabs-container .nav-link {
-        border: none;
-        padding: 0;
-        color: #495057;
-        transition: all 0.3s ease;
-        font-size: 0.95rem;
-        font-weight: 600;
-        margin: 0;
-        background: transparent;
-        min-width: 100%;
-        height: 100%;
-        text-align: center;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 0;
-      }
-
-      .operations-tabs-container .nav-item:first-child .nav-link {
-        border-radius: 8px 0 0 0;
-      }
-
-      .operations-tabs-container .nav-item:last-child .nav-link {
-        border-radius: 0 8px 0 0;
-      }
-
-      .operations-tabs-container .nav-link:hover {
-        color: #007bff;
-        background: rgba(255, 255, 255, 0.7);
-        box-shadow: inset 0 -3px 0 rgba(0, 123, 255, 0.3);
-      }
-
-      .operations-tabs-container .nav-link.active {
-        color: #007bff;
-        background: white;
-        border-bottom: 3px solid #007bff;
-        font-weight: 700;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      }
-
-      .tab-content {
-        min-height: 500px;
-        background: white;
-        border-radius: 0 0 8px 8px;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-      }
-
-      .client-search-bar {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-bottom: 2px solid #dee2e6;
-      }
-
-      .upcoming-nav-controls .btn {
-        padding: 3px 8px;
-        font-size: 0.75rem;
-        background: rgba(255, 255, 255, 0.9);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        color: #333;
-        border-radius: 4px;
-        margin: 0 2px;
-      }
-
-      .upcoming-nav-controls .btn:hover {
-        background: white;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-      }
-
-      /* Hide legacy operations table */
-      #legacyOperationsTable {
-        display: none !important;
-      }
-
-      /* New timing field styles */
-      .timing-display {
-        font-size: 0.85rem;
-        line-height: 1.3;
-      }
-
-      .scheduled-time {
-        color: #007bff;
-        font-weight: 600;
-        margin-bottom: 2px;
-      }
-
-      .pickup-time {
-        color: #fd7e14;
-        font-weight: 500;
-        margin-bottom: 2px;
-      }
-
-      .flight-time {
-        color: #6f42c1;
-        font-weight: 500;
-        margin-bottom: 2px;
-      }
-
-      .checkin-time,
-      .checkout-time {
-        color: #28a745;
-        font-weight: 500;
-        margin-bottom: 2px;
-      }
-
-      .event-time {
-        color: #dc3545;
-        font-weight: 500;
-        margin-bottom: 2px;
-      }
-
-      .duration {
-        color: #6c757d;
-        font-style: italic;
-        margin-bottom: 2px;
-      }
-
-      .no-timing {
-        color: #6c757d;
-        font-style: italic;
-      }
-
-      /* Auto-generation badge */
-      .auto-badge {
-        background: #17a2b8;
-        color: white;
-        padding: 2px 6px;
-        border-radius: 8px;
-        font-size: 0.7rem;
-        font-weight: 600;
-        margin-left: 8px;
-        white-space: nowrap;
-      }
-
-      .operation-info {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 5px;
+      :root { --ink:#20384f; --teal:#1abb9c; --blue:#2487ce; --soft:#f4f7fa; --line:#d8e2eb; --muted:#627d98; }
+      body { background:var(--soft); color:var(--ink); }
+      .left_col.scroll-view { overflow-y:auto; max-height:100vh; }
+      .right_col { clear:both; min-height:100vh; background:var(--soft); }
+      .page-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; }
+      .page-head h3 { margin:0; font-weight:700; }
+      .page-actions { display:flex; gap:8px; flex-wrap:wrap; }
+      .filter-band { background:#fff; border:1px solid var(--line); padding:16px; margin-bottom:14px; }
+      .quick-range { display:inline-flex; border:1px solid #cbd8e3; margin-bottom:14px; }
+      .quick-range button { border:0; border-right:1px solid #cbd8e3; background:#fff; height:36px; min-width:76px; }
+      .quick-range button:last-child { border-right:0; }
+      .quick-range button.active { background:var(--ink); color:#fff; }
+      .filter-grid { display:grid; grid-template-columns:repeat(6,minmax(130px,1fr)) auto; gap:10px; align-items:end; }
+      .filter-actions { display:flex; gap:7px; }
+      .icon-button { width:40px; height:38px; display:inline-flex; align-items:center; justify-content:center; padding:0; }
+      .kpi-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+      .kpi { background:#fff; border:1px solid var(--line); border-top:3px solid var(--teal); padding:12px 14px; min-height:78px; }
+      .kpi:nth-child(2) { border-top-color:#e74c3c; } .kpi:nth-child(3) { border-top-color:#3498db; }
+      .kpi:nth-child(4) { border-top-color:#f39c12; } .kpi:nth-child(5) { border-top-color:#27ae60; }
+      .kpi:nth-child(6) { border-top-color:#9b59b6; }
+      .kpi-label { font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700; }
+      .kpi-value { font-size:25px; font-weight:700; line-height:1.2; margin-top:3px; }
+      .work-panel { background:#fff; border:1px solid var(--line); }
+      .operation-tabs { display:flex; background:#edf2f6; border-bottom:1px solid var(--line); }
+      .operation-tabs button { position:relative; flex:1; min-height:48px; border:0; border-right:1px solid var(--line); background:transparent; font-weight:700; color:#526d82; }
+      .operation-tabs button:last-child { border-right:0; }
+      .operation-tabs button.active { background:#fff; color:var(--ink); box-shadow:inset 0 -3px var(--teal); }
+      .tab-count { display:inline-block; min-width:23px; padding:2px 6px; margin-left:6px; background:#dce7ef; font-size:10px; }
+      .operation-tabs button.active .tab-count { background:#d9f3ed; color:#0f806b; }
+      .bulk-bar { display:none; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px; border-bottom:1px solid var(--line); background:#edf8ff; }
+      .bulk-bar.active { display:flex; }
+      .bulk-actions { display:flex; gap:7px; flex-wrap:wrap; }
+      .table-scroll { overflow:auto; max-height:calc(100vh - 420px); min-height:310px; }
+      .operations-table { margin:0; min-width:1720px; table-layout:fixed; }
+      .operations-table th { position:sticky; top:0; z-index:4; background:var(--ink); color:#fff; border-color:#385269!important; text-align:center; vertical-align:middle!important; font-size:10px; text-transform:uppercase; padding:10px 7px!important; }
+      .operations-table td { vertical-align:middle!important; border-color:#dfe7ee!important; padding:8px 7px!important; line-height:1.25; overflow-wrap:anywhere; }
+      .operations-table tr.date-start td { border-top:3px solid #9cb3c4!important; }
+      .date-cell { font-weight:700; white-space:nowrap; }
+      .secondary { color:var(--muted); font-size:10px; margin-top:3px; }
+      .route-cell { font-size:11px; }
+      .status { display:inline-block; padding:4px 7px; font-size:10px; font-weight:700; text-transform:uppercase; white-space:nowrap; }
+      .status-unassigned { background:#fee8e7; color:#b42318; }
+      .status-assigned { background:#e4f1fc; color:#1469a2; }
+      .status-ready { background:#e3f8ef; color:#107553; }
+      .status-in_operation { background:#fff2cc; color:#916100; }
+      .status-completed { background:#dff3df; color:#216e39; }
+      .status-changed { background:#f3e7fb; color:#7c35a4; }
+      .status-cancelled { background:#eceff2; color:#52606d; }
+      .row-actions { text-align:center; }
+      .edit-assignment { width:34px; height:34px; padding:0; }
+      .empty-state { display:none; text-align:center; padding:55px 20px; color:var(--muted); }
+      .empty-state .fa { display:block; font-size:42px; color:#ccd7e0; margin-bottom:12px; }
+      .loading-panel { display:none; position:fixed; inset:0; z-index:5000; background:rgba(244,247,250,.84); align-items:center; justify-content:center; }
+      .loading-panel.active { display:flex; }
+      .loading-box { background:#fff; border:1px solid var(--line); padding:24px 34px; text-align:center; box-shadow:0 12px 30px rgba(32,56,79,.18); }
+      .loading-box i { display:block; color:var(--teal); font-size:30px; margin-bottom:10px; }
+      .modal-header { background:var(--ink); color:#fff; }
+      .modal-title { font-weight:700; }
+      .modal-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+      .modal-grid .full { grid-column:1/-1; }
+      .source-summary { border-left:3px solid var(--teal); background:#f3f8fb; padding:11px 13px; margin-bottom:16px; }
+      .read-only-note { display:none; margin-bottom:14px; padding:10px 14px; background:#fff5d9; border:1px solid #f1d58a; }
+      @media(max-width:1200px) { .filter-grid { grid-template-columns:repeat(3,1fr); } .filter-actions { grid-column:1/-1; } .kpi-grid { grid-template-columns:repeat(3,1fr); } }
+      @media(max-width:700px) { .page-head { align-items:flex-start; flex-direction:column; } .filter-grid,.kpi-grid,.modal-grid { grid-template-columns:1fr; } .modal-grid .full { grid-column:auto; } }
+      @media print {
+        .left_col,.top_nav,.page-actions,.filter-band,.kpi-grid,.operation-tabs,.bulk-bar,.row-actions,.select-column,.sidebar-footer { display:none!important; }
+        .right_col { margin:0!important; padding:0!important; }
+        .work-panel { border:0; }
+        .table-scroll { overflow:visible; max-height:none; }
+        .operations-table { min-width:0; width:100%; font-size:8px; }
+        .operations-table th { position:static; }
       }
     </style>
   </head>
-
   <body class="nav-md">
     <div class="container body">
       <div class="main_container">
-        <div class="col-md-3 left_col menu_fixed">
-          <div class="left_col scroll-view">
-            <div class="navbar nav_title" style="border: 0">
-              <a
-                href="index.html"
-                class="site_title"
-                style="
-                  display: block;
-                  text-align: center;
-                  font-size: 2rem;
-                  font-weight: bold;
-                  color: #007bff;
-                  text-decoration: none;
-                "
-              >
-                <span style="font-size: 1.5rem">VeraThailandia!</span>
-              </a>
-            </div>
+        <div class="col-md-3 left_col menu_fixed"><div class="left_col scroll-view">
+          <div class="navbar nav_title" style="border:0"><a href="index.html" class="site_title" style="display:block;text-align:center;font-size:1.5rem;font-weight:bold;color:#fff;text-decoration:none">VeraThailandia!</a></div>
+          <div class="clearfix"></div>
+          <div class="profile clearfix"><div class="profile_pic"><img id="navProfileImage" src="images/verathailandlogo.png" alt="" class="img-circle profile_img" /></div><div class="profile_info"><span>Welcome,</span><h2 id="profileName"></h2></div></div>
+          <br />
+          <div id="sidebar-menu" class="main_menu_side hidden-print main_menu"><div class="menu_section"><h3>General</h3><ul class="nav side-menu">
+            <li><a href="index.html"><i class="fa fa-home"></i> Home</a></li>
+            <li id="controlPanelMenu"><a><i class="fa fa-edit"></i> Control-Panel <span class="fa fa-chevron-down"></span></a><ul class="nav child_menu">
+              <li><a href="activities.html">Activities</a></li><li><a href="agents.html">Agents</a></li><li><a href="booking.html">Bookings</a></li><li><a href="city_info.html">City Information</a></li><li><a href="excursions.html">Excursions</a></li><li><a href="hotels.html">Hotels</a></li><li><a href="markup.html">Markups</a></li><li><a href="special_packages.html">Special Packages</a></li><li><a href="stop_sale.html">Stop Sale</a></li><li><a href="suppliers.html">Suppliers</a></li><li><a href="tours.html">Tours</a></li><li><a href="transfers.html">Transfers</a></li><li><a href="users.html">Users</a></li>
+            </ul></li>
+            <li><a href="trip.html"><i class="fa fa-book"></i> Quotation</a></li>
+            <li><a href="payment.html"><i class="fa fa-pencil-square-o"></i> Statement</a></li>
+            <li><a href="invoice_management.html"><i class="fa fa-file-o"></i> Proforma Invoice</a></li>
+            <li><a href="tax_invoices.html"><i class="fa fa-file-text-o"></i> Tax Invoices</a></li>
+            <li><a href="itinerary.html"><i class="fa fa-ticket"></i> Itinerary</a></li>
+            <li class="active current-page"><a href="operations.html"><i class="fa fa-tasks"></i> Operations</a></li>
+            <li id="analyticsMenu"><a><i class="fa fa-bar-chart"></i> Analytics <span class="fa fa-chevron-down"></span></a><ul class="nav child_menu"><li><a href="analytics.html">Dashboard</a></li><li><a href="room_nights.html">Room Nights</a></li></ul></li>
+            <li><a href="special_promo.html"><i class="fa fa-bullhorn"></i> Special Promo</a></li>
+          </ul></div></div>
+          <div class="sidebar-footer hidden-small"><a title="Settings"><span class="glyphicon glyphicon-cog"></span></a><a title="FullScreen"><span class="glyphicon glyphicon-fullscreen"></span></a><a title="Lock"><span class="glyphicon glyphicon-eye-close"></span></a><a title="Logout" href="logout.html"><span class="glyphicon glyphicon-off"></span></a></div>
+        </div></div>
 
-            <div class="clearfix"></div>
+        <div class="top_nav"><div class="nav_menu"><div class="nav toggle"><a id="menu_toggle"><i class="fa fa-bars"></i></a></div><nav class="nav navbar-nav"><ul class="navbar-right"><li class="nav-item dropdown open" style="padding-left:15px"><a href="javascript:;" class="user-profile dropdown-toggle" data-toggle="dropdown"><img src="images/verathailandlogo.png" alt="" /><span id="navProfileName"></span></a><div class="dropdown-menu dropdown-usermenu pull-right"><a class="dropdown-item" href="profile.html"><i class="fa fa-user pull-right"></i> Profile</a><a class="dropdown-item" href="logout.html"><i class="fa fa-sign-out pull-right"></i> Log Out</a></div></li></ul></nav></div></div>
 
-            <!-- menu profile quick info -->
-            <div class="profile clearfix">
-              <div class="profile_pic">
-                <img
-                  src="images/verathailandlogo.png"
-                  alt="..."
-                  class="img-circle profile_img"
-                />
-              </div>
-              <div class="profile_info">
-                <span>Welcome,</span>
-                <h2 id="profileName"></h2>
-              </div>
-            </div>
-            <!-- /menu profile quick info -->
-
-            <br />
-
-            <!-- sidebar menu -->
-            <div
-              id="sidebar-menu"
-              class="main_menu_side hidden-print main_menu"
-            >
-              <div class="menu_section">
-                <h3>General</h3>
-                <ul class="nav side-menu">
-                  <li>
-                    <a href="index.html"><i class="fa fa-home"></i> Home</a>
-                  </li>
-                  <li id="controlPanelMenu">
-                    <a
-                      ><i class="fa fa-edit"></i> Control-Panel
-                      <span class="fa fa-chevron-down"></span
-                    ></a>
-                                        <ul class="nav child_menu">
-                      <li><a href="activities.html">Activities</a></li>
-                      <li><a href="agents.html">Agents</a></li>
-                      <li><a href="booking.html">Bookings</a></li>
-                      <li><a href="city_info.html">City Information</a></li>
-                      <li><a href="excursion_description.html">Excursion Description</a></li>
-                      <li><a href="excursions.html">Excursions</a></li>
-                      <li><a href="hotels.html">Hotels</a></li>
-                      <li><a href="markup.html">Markups</a></li>
-                      <li><a href="othercharges.html">Other Charges</a></li>
-                      <li><a href="special_packages.html">Special Packages</a></li>
-                      <li><a href="stop_sale.html">Stop Sale</a></li>
-                      <li><a href="special_promo.html">Special Promo</a></li>
-                      <li><a href="suppliers.html">Suppliers</a></li>
-                      <li><a href="tools.html">Tools</a></li>
-                      <li><a href="tour_description.html">Tour Description</a></li>
-                      <li><a href="tours.html">Tours</a></li>
-                      <li><a href="transfers.html">Transfers</a></li>
-                      <li><a href="users.html">Users</a></li>
-                    </ul>
-                  </li>
-                  <li>
-                    <a href="trip.html"
-                      ><i class="fa fa-book"></i> Quotation
-                      <span class="label label-success pull-right"></span
-                    ></a>
-                  </li>
-                  <li>
-                    <a href="payment.html"
-                      ><i class="fa fa-pencil-square-o"></i> Statement
-                      <span class="label label-success pull-right"></span
-                    ></a>
-                  </li>
-                  <!--<li>
-                    <a href="tax_invoices.html"
-                      ><i class="fa fa-file-text-o"></i> Tax Invoices
-                      <span class="label label-success pull-right"></span
-                    ></a>
-                  </li> -->
-                  <li>
-                    <a href="itinerary.html"
-                      ><i class="fa fa-ticket"></i> Itinerary
-                      <span class="label label-success pull-right"></span
-                    ></a>
-                  </li>
-                  <li id="analyticsMenu"><a><i class="fa fa-bar-chart"></i> Analytics <span class="fa fa-chevron-down"></span></a><ul class="nav child_menu"><li><a href="analytics.html">Dashboard</a></li><li><a href="room_nights.html">Room Nights</a></li></ul></li>
-                </ul>
-              </div>
-            </div>
-            <!-- /sidebar menu -->
-
-            <!-- /menu footer buttons -->
-            <div class="sidebar-footer hidden-small">
-              <a data-toggle="tooltip" data-placement="top" title="Settings">
-                <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
-              </a>
-              <a data-toggle="tooltip" data-placement="top" title="FullScreen">
-                <span
-                  class="glyphicon glyphicon-fullscreen"
-                  aria-hidden="true"
-                ></span>
-              </a>
-              <a data-toggle="tooltip" data-placement="top" title="Lock">
-                <span
-                  class="glyphicon glyphicon-eye-close"
-                  aria-hidden="true"
-                ></span>
-              </a>
-              <a
-                data-toggle="tooltip"
-                data-placement="top"
-                title="Logout"
-                href="logout.html"
-              >
-                <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
-              </a>
-            </div>
-            <!-- /menu footer buttons -->
-          </div>
-        </div>
-
-        <!-- top navigation -->
-        <div class="top_nav">
-          <div class="nav_menu">
-            <div class="nav toggle">
-              <a id="menu_toggle"><i class="fa fa-bars"></i></a>
-            </div>
-            <nav class="nav navbar-nav">
-              <ul class="navbar-right">
-                <li class="nav-item dropdown open" style="padding-left: 15px">
-                  <a
-                    href="javascript:;"
-                    class="user-profile dropdown-toggle"
-                    aria-haspopup="true"
-                    id="navbarDropdown"
-                    data-toggle="dropdown"
-                    aria-expanded="false"
-                  >
-                    <img
-                      id="navProfileImage"
-                      src="images/verathailandlogo.png"
-                      alt=""
-                    />
-                    <span id="navProfileName"></span>
-                  </a>
-                  <div
-                    class="dropdown-menu dropdown-usermenu pull-right"
-                    aria-labelledby="navbarDropdown"
-                  >
-                    <a class="dropdown-item" href="profile.html"
-                      ><i class="fa fa-user pull-right"></i> Profile</a
-                    >
-                    <a class="dropdown-item" href="logout.html"
-                      ><i class="fa fa-sign-out pull-right"></i> Log Out</a
-                    >
-                  </div>
-                </li>
-              </ul>
-            </nav>
-          </div>
-        </div>
-        <!-- /top navigation -->
-
-        <!-- Page content -->
         <div class="right_col" role="main">
-          <div class="">
-            <div class="page-title">
-              <div class="title_left">
-                <h3>Operations Management</h3>
-              </div>
-              <div class="title_right">
-                <div class="pull-right">
-                  <button
-                    type="button"
-                    class="btn btn-success"
-                    onclick="createNewOperation()"
-                    style="margin-left: auto"
-                  >
-                    <i class="fa fa-plus"></i> New Operation
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="clearfix"></div>
-
-            <!-- Summary Cards -->
-            <div class="summary-cards" id="summaryCards">
-              <!-- Summary cards will be loaded here -->
-            </div>
-
-            <!-- Filters -->
-            <div class="filters-bar">
-              <div class="filters-row">
-                <div class="filter-group">
-                  <label class="filter-label">Status</label>
-                  <select class="filter-input" id="statusFilter">
-                    <option value="">All Statuses</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
-                    <option value="overdue">Overdue</option>
-                  </select>
-                </div>
-                <div class="filter-group">
-                  <label class="filter-label">Location</label>
-                  <select class="filter-input" id="locationFilter">
-                    <option value="">All Locations</option>
-                    <option value="Rome">Rome</option>
-                    <option value="Florence">Florence</option>
-                    <option value="Milan">Milan</option>
-                    <option value="Venice">Venice</option>
-                    <option value="Naples">Naples</option>
-                    <option value="Dubai">Dubai</option>
-                  </select>
-                </div>
-                <div class="filter-group">
-                  <label class="filter-label">Assignee</label>
-                  <select class="filter-input" id="assigneeFilter">
-                    <option value="">All Assignees</option>
-                  </select>
-                </div>
-                <div class="filter-group">
-                  <label class="filter-label">&nbsp;</label>
-                  <button
-                    class="btn btn-primary btn-action"
-                    onclick="applyFilters()"
-                  >
-                    <i class="fa fa-search"></i> Filter
-                  </button>
-                </div>
-                <div class="filter-group">
-                  <label class="filter-label">&nbsp;</label>
-                  <button
-                    class="btn btn-secondary btn-action"
-                    onclick="clearFilters()"
-                  >
-                    <i class="fa fa-refresh"></i> Clear
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Operations Grid -->
-            <div
-              id="loadingSpinner"
-              class="loading-spinner"
-              style="display: none"
-            >
-              <i class="fa fa-spinner fa-spin fa-2x"></i>
-            </div>
-
-            <!-- Operations Tabs -->
-            <div class="operations-tabs-container">
-              <!-- Tab Navigation -->
-              <div
-                class="tab-navigation"
-                style="
-                  background: white;
-                  border-radius: 8px 8px 0 0;
-                  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                  margin-bottom: 0;
-                "
-              >
-                <ul
-                  class="nav nav-tabs"
-                  style="border-bottom: 1px solid #dee2e6; margin: 0"
-                >
-                  <li class="nav-item">
-                    <a
-                      class="nav-link active"
-                      id="daily-tab"
-                      data-toggle="tab"
-                      href="#daily"
-                      role="tab"
-                      onclick="switchTab('daily')"
-                    >
-                      Daily Operations
-                    </a>
-                  </li>
-                  <li class="nav-item">
-                    <a
-                      class="nav-link"
-                      id="upcoming-tab"
-                      data-toggle="tab"
-                      href="#upcoming"
-                      role="tab"
-                      onclick="switchTab('upcoming')"
-                    >
-                      Upcoming Operations
-                      <span
-                        class="upcoming-nav-controls"
-                        style="margin-left: 10px; display: none"
-                      >
-                        <button
-                          class="btn btn-sm btn-outline-secondary"
-                          onclick="changeUpcomingDays(-1)"
-                          title="Previous day"
-                        >
-                          <i class="fa fa-chevron-left"></i>
-                        </button>
-                        <span
-                          id="upcomingDaysIndicator"
-                          style="margin: 0 8px; font-size: 0.9em"
-                          >Next 3 days</span
-                        >
-                        <button
-                          class="btn btn-sm btn-outline-secondary"
-                          onclick="changeUpcomingDays(1)"
-                          title="Next day"
-                        >
-                          <i class="fa fa-chevron-right"></i>
-                        </button>
-                      </span>
-                    </a>
-                  </li>
-                  <li class="nav-item">
-                    <a
-                      class="nav-link"
-                      id="client-tab"
-                      data-toggle="tab"
-                      href="#client"
-                      role="tab"
-                      onclick="switchTab('client')"
-                    >
-                      Client Operations
-                    </a>
-                  </li>
-                </ul>
-              </div>
-
-              <!-- Tab Content -->
-              <div
-                class="tab-content"
-                style="
-                  background: white;
-                  border-radius: 0 0 8px 8px;
-                  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                "
-              >
-                <!-- Daily Operations Tab -->
-                <div
-                  class="tab-pane fade show active"
-                  id="daily"
-                  role="tabpanel"
-                >
-                  <div class="table-responsive">
-                    <table
-                      class="table table-striped"
-                      id="dailyOperationsTable"
-                    >
-                      <thead style="background-color: #f8f9fa">
-                        <tr>
-                          <th style="width: 25%">
-                            <button
-                              class="btn btn-sm btn-link"
-                              onclick="sortOperations('title')"
-                              title="Sort by Title"
-                            >
-                              Operation <i class="fa fa-sort"></i>
-                            </button>
-                          </th>
-                          <th style="width: 10%">
-                            <button
-                              class="btn btn-sm btn-link"
-                              onclick="sortOperations('location')"
-                              title="Sort by Location"
-                            >
-                              Location <i class="fa fa-sort"></i>
-                            </button>
-                          </th>
-                          <th style="width: 15%">
-                            <button
-                              class="btn btn-sm btn-link"
-                              onclick="sortOperations('time')"
-                              title="Sort by Timing"
-                            >
-                              Scheduled Time <i class="fa fa-sort"></i>
-                            </button>
-                          </th>
-                          <th style="width: 10%">Client</th>
-                          <th style="width: 8%">Type</th>
-                          <th style="width: 10%">Assignee</th>
-                          <th style="width: 8%">
-                            <button
-                              class="btn btn-sm btn-link"
-                              onclick="sortOperations('status')"
-                              title="Sort by Status"
-                            >
-                              Status <i class="fa fa-sort"></i>
-                            </button>
-                          </th>
-                          <th style="width: 7%">Trip ID</th>
-                          <th style="width: 7%; text-align: center">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody id="dailyOperationsTableBody">
-                        <!-- Daily operations will be loaded here -->
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                <!-- Upcoming Operations Tab -->
-                <div class="tab-pane fade" id="upcoming" role="tabpanel">
-                  <div class="table-responsive">
-                    <table
-                      class="table table-striped"
-                      id="upcomingOperationsTable"
-                    >
-                      <thead style="background-color: #f8f9fa">
-                        <tr>
-                          <th style="width: 25%">
-                            <button
-                              class="btn btn-sm btn-link"
-                              onclick="sortOperations('title')"
-                              title="Sort by Title"
-                            >
-                              Operation <i class="fa fa-sort"></i>
-                            </button>
-                          </th>
-                          <th style="width: 10%">
-                            <button
-                              class="btn btn-sm btn-link"
-                              onclick="sortOperations('location')"
-                              title="Sort by Location"
-                            >
-                              Location <i class="fa fa-sort"></i>
-                            </button>
-                          </th>
-                          <th style="width: 15%">
-                            <button
-                              class="btn btn-sm btn-link"
-                              onclick="sortOperations('time')"
-                              title="Sort by Timing"
-                            >
-                              Scheduled Time <i class="fa fa-sort"></i>
-                            </button>
-                          </th>
-                          <th style="width: 10%">Client</th>
-                          <th style="width: 8%">Type</th>
-                          <th style="width: 10%">Assignee</th>
-                          <th style="width: 8%">
-                            <button
-                              class="btn btn-sm btn-link"
-                              onclick="sortOperations('status')"
-                              title="Sort by Status"
-                            >
-                              Status <i class="fa fa-sort"></i>
-                            </button>
-                          </th>
-                          <th style="width: 7%">Trip ID</th>
-                          <th style="width: 7%; text-align: center">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody id="upcomingOperationsTableBody">
-                        <!-- Upcoming operations will be loaded here -->
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                <!-- Client Operations Tab -->
-                <div class="tab-pane fade" id="client" role="tabpanel">
-                  <div
-                    class="client-search-bar"
-                    style="padding: 20px; border-bottom: 1px solid #dee2e6"
-                  >
-                    <div class="row">
-                      <div class="col-md-5">
-                        <div class="form-group">
-                          <label for="clientSearch">Search Client:</label>
-                          <div class="input-group">
-                            <input
-                              type="text"
-                              class="form-control"
-                              id="clientSearch"
-                              placeholder="Enter client name or email (2+ characters)..."
-                            />
-                            <div class="input-group-append">
-                              <button
-                                class="btn btn-outline-secondary"
-                                type="button"
-                                onclick="performClientSearch()"
-                                title="Search"
-                              >
-                                <i class="fa fa-search"></i>
-                              </button>
-                              <button
-                                class="btn btn-outline-secondary"
-                                type="button"
-                                onclick="clearClientSearch()"
-                                title="Clear"
-                              >
-                                <i class="fa fa-times"></i>
-                              </button>
-                            </div>
-                          </div>
-                          <small class="text-muted"
-                            >Search manually with button or automatically after
-                            you stop typing</small
-                          >
-                        </div>
-                      </div>
-                      <div class="col-md-3">
-                        <div class="form-group">
-                          <label for="clientStatusFilter"
-                            >Show Operations:</label
-                          >
-                          <select
-                            class="form-control"
-                            id="clientStatusFilter"
-                            onchange="handleClientFilterChange()"
-                          >
-                            <option value="active" selected>
-                              Active Only (In Progress + Overdue)
-                            </option>
-                            <option value="">All Operations</option>
-                            <option value="in_progress">
-                              In Progress Only
-                            </option>
-                            <option value="completed">Completed Only</option>
-                            <option value="cancelled">Cancelled Only</option>
-                            <option value="overdue">Overdue Only</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div class="col-md-4">
-                        <div class="form-group">
-                          <label>&nbsp;</label>
-                          <div style="margin-top: 8px">
-                            <span
-                              id="searchStatus"
-                              class="text-muted"
-                              style="font-size: 0.85em"
-                            ></span>
-                            <div
-                              id="searchResults"
-                              class="text-info"
-                              style="font-size: 0.9em; margin-top: 5px"
-                            ></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="table-responsive">
-                    <table
-                      class="table table-striped"
-                      id="clientOperationsTable"
-                    >
-                      <thead style="background-color: #f8f9fa">
-                        <tr>
-                          <th style="width: 25%">
-                            <button
-                              class="btn btn-sm btn-link"
-                              onclick="sortOperations('title')"
-                              title="Sort by Title"
-                            >
-                              Operation <i class="fa fa-sort"></i>
-                            </button>
-                          </th>
-                          <th style="width: 10%">
-                            <button
-                              class="btn btn-sm btn-link"
-                              onclick="sortOperations('location')"
-                              title="Sort by Location"
-                            >
-                              Location <i class="fa fa-sort"></i>
-                            </button>
-                          </th>
-                          <th style="width: 15%">
-                            <button
-                              class="btn btn-sm btn-link"
-                              onclick="sortOperations('time')"
-                              title="Sort by Timing"
-                            >
-                              Scheduled Time <i class="fa fa-sort"></i>
-                            </button>
-                          </th>
-                          <th style="width: 10%">Client</th>
-                          <th style="width: 8%">Type</th>
-                          <th style="width: 10%">Assignee</th>
-                          <th style="width: 8%">
-                            <button
-                              class="btn btn-sm btn-link"
-                              onclick="sortOperations('status')"
-                              title="Sort by Status"
-                            >
-                              Status <i class="fa fa-sort"></i>
-                            </button>
-                          </th>
-                          <th style="width: 7%">Trip ID</th>
-                          <th style="width: 10%">Completion</th>
-                          <th style="width: 7%; text-align: center">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody id="clientOperationsTableBody">
-                        <!-- Client operations will be loaded here -->
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <!-- Client Operations Pagination -->
-                  <div
-                    id="clientPaginationContainer"
-                    style="text-align: center; margin-top: 20px"
-                  >
-                    <!-- Pagination will be loaded here -->
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Operations Table -->
-            <div
-              class="table-responsive"
-              id="legacyOperationsTable"
-              style="
-                background: white;
-                border-radius: 8px;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                display: none;
-              "
-            >
-              <table class="table table-striped" id="operationsTable">
-                <thead style="background-color: #f8f9fa">
-                  <tr>
-                    <th style="width: 25%">
-                      <button
-                        class="btn btn-sm btn-link"
-                        onclick="sortOperations('title')"
-                        title="Sort by Title"
-                      >
-                        Operation <i class="fa fa-sort"></i>
-                      </button>
-                    </th>
-                    <th style="width: 10%">
-                      <button
-                        class="btn btn-sm btn-link"
-                        onclick="sortOperations('location')"
-                        title="Sort by Location"
-                      >
-                        Location <i class="fa fa-sort"></i>
-                      </button>
-                    </th>
-                    <th style="width: 15%">
-                      <button
-                        class="btn btn-sm btn-link"
-                        onclick="sortOperations('time')"
-                        title="Sort by Timing"
-                      >
-                        Scheduled Time <i class="fa fa-sort"></i>
-                      </button>
-                    </th>
-                    <th style="width: 10%">Client</th>
-                    <th style="width: 8%">Type</th>
-                    <th style="width: 10%">Assignee</th>
-                    <th style="width: 8%">
-                      <button
-                        class="btn btn-sm btn-link"
-                        onclick="sortOperations('status')"
-                        title="Sort by Status"
-                      >
-                        Status <i class="fa fa-sort"></i>
-                      </button>
-                    </th>
-                    <th style="width: 7%">Trip ID</th>
-                    <th style="width: 7%; text-align: center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="operationsTableBody">
-                  <!-- Operations will be loaded here -->
-                </tbody>
-              </table>
-            </div>
-
-            <div id="noOperations" class="no-operations" style="display: none">
-              <i
-                class="fa fa-tasks fa-3x"
-                style="color: #ddd; margin-bottom: 20px"
-              ></i>
-              <h3>No Operations Found</h3>
-              <p>
-                Create your first operation to get started with operations
-                management.
-              </p>
-              <button class="btn btn-success" onclick="createNewOperation()">
-                <i class="fa fa-plus"></i> Create Operation
-              </button>
-            </div>
-
-            <!-- Pagination -->
-            <div
-              id="paginationContainer"
-              style="text-align: center; margin-top: 30px"
-            >
-              <!-- Pagination will be loaded here -->
+          <div class="page-head">
+            <h3><i class="fa fa-tasks"></i> Operations</h3>
+            <div class="page-actions">
+              <button id="refreshButton" class="btn btn-primary" type="button"><i class="fa fa-refresh"></i> Refresh</button>
+              <button id="exportButton" class="btn btn-success" type="button"><i class="fa fa-file-excel-o"></i> Excel</button>
+              <button id="printButton" class="btn btn-default" type="button"><i class="fa fa-print"></i> Print</button>
             </div>
           </div>
-        </div>
-        <!-- /Page content -->
 
-        <!-- Footer content -->
-        <footer></footer>
-        <!-- /Footer content -->
+          <div id="readOnlyNote" class="read-only-note"><i class="fa fa-eye"></i> Operations are read-only for agents.</div>
+
+          <section class="filter-band" aria-label="Operation filters">
+            <div class="quick-range" aria-label="Quick date range">
+              <button type="button" data-range="today">Today</button>
+              <button type="button" data-range="7">7 Days</button>
+              <button type="button" data-range="30" class="active">30 Days</button>
+            </div>
+            <div class="filter-grid">
+              <div><label for="fromDate">From</label><input id="fromDate" class="form-control" type="date" /></div>
+              <div><label for="toDate">To</label><input id="toDate" class="form-control" type="date" /></div>
+              <div><label for="cityFilter">City</label><select id="cityFilter" class="form-control"><option value="all">All Cities</option></select></div>
+              <div><label for="agentFilter">Agent</label><select id="agentFilter" class="form-control"><option value="">All Agents</option></select></div>
+              <div><label for="statusFilter">Status</label><select id="statusFilter" class="form-control"><option value="all">All Statuses</option><option value="unassigned">Unassigned</option><option value="assigned">Assigned</option><option value="ready">Ready</option><option value="in_operation">In Operation</option><option value="completed">Completed</option><option value="changed">Changed</option><option value="cancelled">Cancelled</option></select></div>
+              <div><label for="searchInput">Search</label><input id="searchInput" class="form-control" type="search" placeholder="Client, file, service..." /></div>
+              <div class="filter-actions">
+                <button id="applyFilters" class="btn btn-primary icon-button" type="button" title="Apply filters"><i class="fa fa-search"></i></button>
+                <button id="resetFilters" class="btn btn-default icon-button" type="button" title="Reset filters"><i class="fa fa-undo"></i></button>
+              </div>
+            </div>
+          </section>
+
+          <section class="kpi-grid" aria-label="Operation totals">
+            <div class="kpi"><div class="kpi-label">Total Services</div><div id="totalCount" class="kpi-value">0</div></div>
+            <div class="kpi"><div class="kpi-label">Unassigned</div><div id="unassignedCount" class="kpi-value">0</div></div>
+            <div class="kpi"><div class="kpi-label">Assigned / Ready</div><div id="assignedCount" class="kpi-value">0</div></div>
+            <div class="kpi"><div class="kpi-label">In Operation</div><div id="inOperationCount" class="kpi-value">0</div></div>
+            <div class="kpi"><div class="kpi-label">Completed</div><div id="completedCount" class="kpi-value">0</div></div>
+            <div class="kpi"><div class="kpi-label">Booking Changed</div><div id="changedCount" class="kpi-value">0</div></div>
+          </section>
+
+          <section class="work-panel">
+            <div class="operation-tabs" role="tablist">
+              <button type="button" class="active" data-tab="transfer"><i class="fa fa-bus"></i> Transfers <span id="transferTabCount" class="tab-count">0</span></button>
+              <button type="button" data-tab="excursion"><i class="fa fa-binoculars"></i> Excursions <span id="excursionTabCount" class="tab-count">0</span></button>
+              <button type="button" data-tab="tour"><i class="fa fa-map-signs"></i> Tours <span id="tourTabCount" class="tab-count">0</span></button>
+            </div>
+            <div id="bulkBar" class="bulk-bar">
+              <strong><span id="selectedCount">0</span> selected</strong>
+              <div class="bulk-actions">
+                <select id="bulkStatus" class="form-control input-sm"><option value="">Set status...</option><option value="assigned">Assigned</option><option value="ready">Ready</option><option value="in_operation">In Operation</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select>
+                <input id="bulkGuide" class="form-control input-sm" list="guideOptions" placeholder="Guide name" />
+                <button id="applyBulk" class="btn btn-primary btn-sm" type="button"><i class="fa fa-check"></i> Apply</button>
+                <button id="clearSelection" class="btn btn-default btn-sm" type="button"><i class="fa fa-times"></i> Clear</button>
+              </div>
+            </div>
+            <div class="table-scroll">
+              <table class="table table-bordered table-striped operations-table">
+                <colgroup id="tableColumns"></colgroup>
+                <thead id="operationHead"></thead>
+                <tbody id="operationRows"></tbody>
+              </table>
+              <div id="emptyState" class="empty-state"><i class="fa fa-calendar-check-o"></i><strong>No confirmed operations found</strong><div>Adjust the filters or confirm the booking first.</div></div>
+            </div>
+          </section>
+        </div>
       </div>
     </div>
 
-    <!-- jQuery -->
+    <div class="modal fade" id="assignmentModal" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document"><div class="modal-content">
+        <div class="modal-header"><button type="button" class="close" data-dismiss="modal" style="color:#fff;opacity:1"><span>&times;</span></button><h4 class="modal-title"><i class="fa fa-pencil-square-o"></i> Operation Assignment</h4></div>
+        <form id="assignmentForm">
+          <div class="modal-body">
+            <div id="sourceSummary" class="source-summary"></div>
+            <div class="modal-grid">
+              <div><label for="assignmentStatus">Status</label><select id="assignmentStatus" class="form-control" required><option value="unassigned">Unassigned</option><option value="assigned">Assigned</option><option value="ready">Ready</option><option value="in_operation">In Operation</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></div>
+              <div><label for="assignmentPickup">Pickup Time</label><input id="assignmentPickup" class="form-control" type="time" /></div>
+              <div><label for="assignmentSupplier">Supplier</label><select id="assignmentSupplier" class="form-control"><option value="">Select supplier</option></select></div>
+              <div><label for="assignmentVehicle">Vehicle Type</label><input id="assignmentVehicle" class="form-control" list="vehicleOptions" placeholder="E.g. Minivan" /></div>
+              <div><label for="assignmentVehicleQty">Vehicle Quantity</label><input id="assignmentVehicleQty" class="form-control" type="number" min="0" step="1" value="1" /></div>
+              <div><label for="assignmentGuide">Guide</label><input id="assignmentGuide" class="form-control" list="guideOptions" placeholder="Guide name" /></div>
+              <div><label for="assignmentGuideMobile">Guide Mobile</label><input id="assignmentGuideMobile" class="form-control" type="tel" /></div>
+              <div class="full"><label for="assignmentRemarks">Remarks</label><textarea id="assignmentRemarks" class="form-control" rows="3"></textarea></div>
+            </div>
+          </div>
+          <div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button><button id="saveAssignment" type="submit" class="btn btn-success"><i class="fa fa-save"></i> Save Assignment</button></div>
+        </form>
+      </div></div>
+    </div>
+
+    <datalist id="guideOptions"></datalist>
+    <datalist id="vehicleOptions"><option value="Car"></option><option value="SUV"></option><option value="Minivan"></option><option value="Van"></option><option value="Bus"></option><option value="Boat"></option></datalist>
+    <div id="loadingPanel" class="loading-panel" aria-live="polite"><div class="loading-box"><i class="fa fa-circle-o-notch fa-spin"></i><div id="loadingText">Loading operations...</div></div></div>
+
     <script src="../vendors/jquery/dist/jquery.min.js"></script>
-    <!-- Bootstrap -->
-    <script src="../vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../build/js/custom.min.js?v=20260722"></script>
-    <script src="js/operations/operations.js"></script>
-    <script src="js/config.js"></script>
-
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        const token = localStorage.getItem("token");
-        const role = localStorage.getItem("role");
-
-        // If the user is not logged in, redirect to the login page
-        if (!token) {
-          alert("You are not authorized. Please log in first.");
-          window.location.href = "login.html";
-          return;
-        }
-
-        // Retrieve the username from localStorage and set it immediately
-        const username = localStorage.getItem("username") || "Guest";
-        const profileNameEl = document.getElementById("profileName");
-        const navProfileNameEl = document.getElementById("navProfileName");
-
-        if (profileNameEl) profileNameEl.innerText = username;
-        if (navProfileNameEl) navProfileNameEl.innerText = username;
-
-        // Hide the Control Panel menu item if the user is not an admin or superadmin
-        if (role !== "admin" && role !== "superadmin") {
-          const controlPanelMenu = document.querySelector(
-            'a[href*="Control-Panel"]'
-          );
-          if (controlPanelMenu && controlPanelMenu.parentElement) {
-            controlPanelMenu.parentElement.style.display = "none";
-          }
-        }
-      });
-    </script>
+    <script src="../vendors/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="../build/js/custom.min.js"></script>
+    <script src="js/common/sidebar-control.js?v=20260724"></script>
+    <script src="js/common/sidebar-profile.js?v=20260724"></script>
+    <script src="js/common/role-permissions.js?v=20260724"></script>
+    <script src="js/config.js?v=20260724"></script>
+    <script src="js/operations/operations.js?v=20260724"></script>
   </body>
 </html>

@@ -314,6 +314,110 @@ export async function getAvailableDatesForTour(req, res, next) {
   } catch (err) { next(err); }
 }
 
+export async function updateExcursionStopSaleStatus(req, res, next) {
+  try {
+    const data = req.body;
+    const excursionId = Number.parseInt(data.excursion_id, 10);
+    if (!Number.isFinite(excursionId)) {
+      return res.status(400).send('excursion_id is required');
+    }
+    if (!data.start_date || !data.end_date) {
+      return res.status(400).send('start_date and end_date are required');
+    }
+
+    const startDate = new Date(data.start_date);
+    const endDate = new Date(data.end_date);
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()) || endDate < startDate) {
+      return res.status(400).send('Invalid stop sale date range');
+    }
+
+    const existing = await prisma.excursion_stop_sales.findFirst({
+      where: {
+        excursion_id: excursionId,
+        start_date: startDate,
+        end_date: endDate,
+        deleted_at: null
+      }
+    });
+    const values = {
+      stopped: data.stopped !== false,
+      attachment_url: data.attachment_url || existing?.attachment_url || null,
+      updated_at: new Date()
+    };
+    const stopSale = existing
+      ? await prisma.excursion_stop_sales.update({ where: { id: existing.id }, data: values })
+      : await prisma.excursion_stop_sales.create({
+          data: {
+            excursion_id: excursionId,
+            start_date: startDate,
+            end_date: endDate,
+            ...values
+          }
+        });
+
+    if (data.notify_agents && process.env.SMTP_USER) {
+      try {
+        const [excursion, agents] = await Promise.all([
+          prisma.excursions.findUnique({
+            where: { id: excursionId },
+            select: { name: true, city: true }
+          }),
+          prisma.agent.findMany({ select: { email: true } })
+        ]);
+        const recipients = agents.map((agent) => agent.email).filter(Boolean);
+        if (recipients.length > 0) {
+          const isStopped = values.stopped;
+          const status = isStopped ? 'STOP SALE (Not Available)' : 'START SALE (Available)';
+          const attachments = data.attachment_url
+            ? [{
+                filename: data.attachment_name || path.basename(data.attachment_url),
+                path: path.join(process.cwd(), data.attachment_url.replace(/^\/+/, ''))
+              }]
+            : [];
+          await transporter.sendMail({
+            from: process.env.SMTP_FROM || process.env.SMTP_USER,
+            to: recipients.join(','),
+            subject: `[Availability Alert] ${status}: ${excursion?.name || 'Excursion'}`,
+            html: `
+              <div style="font-family:Arial,sans-serif;max-width:600px;border:1px solid #ddd;padding:20px">
+                <h2>Excursion Sale Availability Update</h2>
+                <p>Dear Partner Agent,</p>
+                <p>The excursion availability has been updated.</p>
+                <table style="width:100%;border-collapse:collapse">
+                  <tr><td style="padding:8px;font-weight:bold">Excursion</td><td>${excursion?.name || '-'}</td></tr>
+                  <tr><td style="padding:8px;font-weight:bold">City</td><td>${excursion?.city || '-'}</td></tr>
+                  <tr><td style="padding:8px;font-weight:bold">Period</td><td>${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}</td></tr>
+                  <tr><td style="padding:8px;font-weight:bold">Status</td><td>${status}</td></tr>
+                </table>
+              </div>
+            `,
+            attachments
+          });
+        }
+      } catch (emailError) {
+        console.error('Error sending excursion stop sale notification:', emailError);
+      }
+    }
+
+    return res.json(stopSale);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getAvailableDatesForExcursion(req, res, next) {
+  try {
+    const excursionId = Number.parseInt(req.params.excursion_id, 10);
+    if (!Number.isFinite(excursionId)) return res.status(400).send('Invalid excursion ID');
+    return res.json(await prisma.excursion_stop_sales.findMany({
+      where: { excursion_id: excursionId, deleted_at: null },
+      orderBy: [{ start_date: 'asc' }, { end_date: 'asc' }]
+    }));
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function updateSpecialPackageStopSaleStatus(req, res, next) {
   try {
     const data = req.body;

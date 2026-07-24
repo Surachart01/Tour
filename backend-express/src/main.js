@@ -3,7 +3,12 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import errorHandler from './middleware/error.js';
-import { ensureMarkupSchema } from './utils/schemaMaintenance.js';
+import {
+  ensureAvailabilitySchema,
+  ensureCheckInvoiceSchema,
+  ensureMarkupSchema,
+  ensureOperationSchema
+} from './utils/schemaMaintenance.js';
 
 // BigInt JSON serialization polyfill
 BigInt.prototype.toJSON = function () {
@@ -114,6 +119,9 @@ app.get('/health', (req, res) => {
 app.use(errorHandler);
 
 await ensureMarkupSchema();
+await ensureOperationSchema();
+await ensureAvailabilitySchema();
+await ensureCheckInvoiceSchema();
 
 // Start server
 const server = app.listen(PORT, () => {

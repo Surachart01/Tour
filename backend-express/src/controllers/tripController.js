@@ -276,6 +276,34 @@ async function validateTourAvailability(tx, tourItems, tripFallbackDate) {
   }
 }
 
+async function validateExcursionAvailability(tx, excursionItems, tripFallbackDate) {
+  if (!excursionItems || excursionItems.length === 0) return;
+
+  for (const item of excursionItems) {
+    const excursionId = parseSafeInt(item.excursion_id);
+    if (!excursionId) continue;
+    const fromDate = parseRequiredDate(item.from_date, tripFallbackDate);
+    const toDate = parseRequiredDate(item.to_date, fromDate);
+    const name = item.excursion_name || item.name || `Excursion ID ${excursionId}`;
+    const activeStopSale = await tx.excursion_stop_sales.findFirst({
+      where: {
+        excursion_id: excursionId,
+        stopped: true,
+        start_date: { lte: toDate },
+        end_date: { gte: fromDate },
+        deleted_at: null
+      }
+    });
+    if (activeStopSale) {
+      throw new Error(
+        `quotation creation failed: Excursion '${name}' is not available for the requested dates ` +
+        `(${fromDate.toISOString().slice(0, 10)} to ${toDate.toISOString().slice(0, 10)}). ` +
+        'This excursion is currently on stop sale. Please select a different excursion or adjust your travel dates'
+      );
+    }
+  }
+}
+
 async function validateSpecialPackageAvailability(tx, packageId, tripStartDate) {
   if (!packageId) return;
 
@@ -677,6 +705,7 @@ export async function createQuotation(req, res, next) {
     const createdTrip = await prisma.$transaction(async (tx) => {
       await validateHotelAvailability(tx, hotelItems);
       await validateTourAvailability(tx, tourItems, trip_start_date);
+      await validateExcursionAvailability(tx, excursionItems, trip_start_date);
       await validateSpecialPackageAvailability(tx, finalSpecialPackageId, trip_start_date);
 
       const trip = await tx.trips.create({
@@ -1203,6 +1232,7 @@ export async function updateQuotation(req, res, next) {
       const tripFallbackDate = final_trip_start_date && !isNaN(new Date(final_trip_start_date).getTime()) ? new Date(final_trip_start_date) : new Date();
 
       await validateTourAvailability(tx, tourItems, tripFallbackDate);
+      await validateExcursionAvailability(tx, excursionItems, tripFallbackDate);
       const packageIdToValidate = finalSpecialPackageId !== undefined ? finalSpecialPackageId : existing.special_package_id;
       await validateSpecialPackageAvailability(tx, packageIdToValidate, tripFallbackDate);
 
