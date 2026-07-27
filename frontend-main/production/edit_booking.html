@@ -11865,6 +11865,7 @@
                 let rowData = {};
                 const cells = row.querySelectorAll("td");
                 const isPackage = row.dataset.isPackageItem === "true";
+                rowData["is_special_package"] = isPackage;
 
                 // Ensure correct ISO format for date fields
                 const transferDate = getCellDateValue(cells[0]).substring(0, 10) || row.dataset.transferDate || "";
@@ -11929,9 +11930,11 @@
               rows.forEach((row) => {
                 let rowData = {};
                 const cells = row.querySelectorAll("td");
+                const isPackage = row.dataset.isPackageItem === "true";
 
                 const parsedTourId = parseInt(row.dataset.tourId, 10);
                 rowData["tour_id"] = isNaN(parsedTourId) || parsedTourId === 0 ? null : parsedTourId;
+                rowData["is_special_package"] = isPackage;
                 console.log("Extracted Tour ID:", rowData["tour_id"]); // Debugging
 
                 rowData["tour_name"] = getCellText(cells[3]) || "";
@@ -12259,6 +12262,11 @@
               return !text || text === "-" || text.toLowerCase() === "n/a";
             }
 
+            function isSpecialPackageService(row) {
+              return row?.is_special_package === true ||
+                /\[Special Package\]/i.test(String(row?.remarks || ""));
+            }
+
             function markFieldInvalid(id, message) {
               const field = document.getElementById(id);
               if (!field) return;
@@ -12332,7 +12340,10 @@
               addMissingRows(errors, data.transfers, "Transfer", [
                 { label: "Date", isMissing: (row) => isBlankValue(row.date) },
                 { label: "City", isMissing: (row) => isBlankValue(row.city) },
-                { label: "Transfer Description", isMissing: (row) => isBlankValue(row.transfer_description) },
+                {
+                  label: "Transfer Description",
+                  isMissing: (row) => !isSpecialPackageService(row) && isBlankValue(row.transfer_description)
+                },
                 { label: "TOT", isMissing: (row) => isBlankValue(row.tot) },
                 { label: "From", isMissing: (row) => isBlankValue(row.from_location) },
                 { label: "To", isMissing: (row) => isBlankValue(row.to_location) }
@@ -12356,7 +12367,10 @@
                 { label: "City", isMissing: (row) => isBlankValue(row.from_location) },
                 { label: "Name", isMissing: (row) => isBlankValue(row.tour_name) },
                 { label: "TOT", isMissing: (row) => isBlankValue(row.tot) },
-                { label: "Route", isMissing: (row) => isBlankValue(row.route) }
+                {
+                  label: "Route",
+                  isMissing: (row) => !isSpecialPackageService(row) && isBlankValue(row.route)
+                }
               ]);
               addMissingRows(errors, data.others, "Other", [
                 { label: "Description", isMissing: (row) => isBlankValue(row.description) },

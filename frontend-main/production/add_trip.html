@@ -5825,6 +5825,7 @@
                 let rowData = {};
                 const cells = row.querySelectorAll("td");
                 const isPackage = row.dataset.isPackageItem === "true";
+                rowData["is_special_package"] = isPackage;
 
                 // Ensure correct ISO format for date fields
                 const transferDate = getCellDateValue(cells[0]).substring(0, 10) || row.dataset.transferDate || "";
@@ -5875,8 +5876,10 @@
               rows.forEach((row) => {
                 let rowData = {};
                 const cells = row.querySelectorAll("td");
+                const isPackage = row.dataset.isPackageItem === "true";
 
                 rowData["tour_id"] = parseInt(row.dataset.tourId, 10) || 0;
+                rowData["is_special_package"] = isPackage;
                 console.log("Extracted Tour ID:", rowData["tour_id"]); // Debugging
 
                 rowData["tour_name"] = getCellText(cells[3]) || "";
@@ -6169,6 +6172,11 @@
               return !text || text === "-" || text.toLowerCase() === "n/a";
             }
 
+            function isSpecialPackageService(row) {
+              return row?.is_special_package === true ||
+                /\[Special Package\]/i.test(String(row?.remarks || ""));
+            }
+
             function markFieldInvalid(id, message) {
               const field = document.getElementById(id);
               if (!field) return;
@@ -6242,7 +6250,10 @@
               addMissingRows(errors, data.transfers, "Transfer", [
                 { label: "Date", isMissing: (row) => isBlankValue(row.date) },
                 { label: "City", isMissing: (row) => isBlankValue(row.city) },
-                { label: "Transfer Description", isMissing: (row) => isBlankValue(row.transfer_description) },
+                {
+                  label: "Transfer Description",
+                  isMissing: (row) => !isSpecialPackageService(row) && isBlankValue(row.transfer_description)
+                },
                 { label: "TOT", isMissing: (row) => isBlankValue(row.tot) },
                 { label: "From", isMissing: (row) => isBlankValue(row.from_location) },
                 { label: "To", isMissing: (row) => isBlankValue(row.to_location) }
@@ -6266,7 +6277,10 @@
                 { label: "City", isMissing: (row) => isBlankValue(row.from_location) },
                 { label: "Name", isMissing: (row) => isBlankValue(row.tour_name) },
                 { label: "TOT", isMissing: (row) => isBlankValue(row.tot) },
-                { label: "Route", isMissing: (row) => isBlankValue(row.route) }
+                {
+                  label: "Route",
+                  isMissing: (row) => !isSpecialPackageService(row) && isBlankValue(row.route)
+                }
               ]);
               addMissingRows(errors, data.others, "Other", [
                 { label: "Description", isMissing: (row) => isBlankValue(row.description) },
@@ -6932,16 +6946,24 @@
             const cleanRemarks = (item.remarks || "").replace(/\[Special Package\]/gi, "").trim();
             const remarksWithSig = item.remarks ? (item.remarks.includes("[Special Package]") ? item.remarks : `${item.remarks} [Special Package]`) : "[Special Package]";
             const packageBadge = `<span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`;
-            const actionButtons = `
+            const actionButtons = (itemType = "") => {
+              const isOperationalEdit = itemType === "transfer" || itemType === "excursion";
+              const editDisabled = isOperationalEdit ? "" : " disabled";
+              const editStyle = isOperationalEdit
+                ? ' style="margin-right: 5px;"'
+                : ' style="opacity: 0.5; cursor: not-allowed; margin-right: 5px;"';
+              const editTitle = isOperationalEdit ? "Edit" : "Edit Locked";
+              return `
               <td>
-                <button disabled class="btn btn-sm btn-warning editBtn" type="button" style="opacity: 0.5; cursor: not-allowed; margin-right: 5px;" title="Edit Locked">
+                <button${editDisabled} class="btn btn-sm btn-warning editBtn" type="button"${isOperationalEdit ? ' data-package-operational-edit="true"' : ""}${editStyle} title="${editTitle}">
                   <i class="fas fa-edit"></i>
                 </button>
                 <button disabled class="btn btn-sm btn-danger deleteBtn" type="button" style="opacity: 0.5; cursor: not-allowed;" title="Delete Locked">
                   <i class="fas fa-trash"></i>
                 </button>
               </td>
-            `;
+              `;
+            };
 
             if (item.item_type === 'hotel') {
               const checkoutDate = new Date(itemDate.getTime() + (item.nights || 1) * 24 * 60 * 60 * 1000);
@@ -6975,7 +6997,7 @@
                 <td>-</td>
                 <td>-</td>
                 <td>${item.price || "-"}</td>
-                ${actionButtons}
+                ${actionButtons()}
               `;
               tbody.appendChild(tr);
             } else if (item.item_type === 'transfer') {
@@ -6999,7 +7021,7 @@
                 <td>${item.to_location || "-"}</td>
                 <td><small>${cleanRemarks}</small></td>
                 <td class="transfer-price">${item.price || "-"}</td>
-                ${actionButtons}
+                ${actionButtons("transfer")}
               `;
               tbody.appendChild(tr);
             } else if (item.item_type === 'excursion') {
@@ -7022,7 +7044,7 @@
                 <td><small>${cleanRemarks}</small></td>
                 <td>SIC</td>
                 <td>${item.price || "-"}</td>
-                ${actionButtons}
+                ${actionButtons("excursion")}
               `;
               tbody.appendChild(tr);
             } else if (item.item_type === 'flight') {
@@ -7045,7 +7067,7 @@
                 <td>-</td>
                 <td>${item.price || "-"}</td>
                 <td><small>${cleanRemarks}</small></td>
-                ${actionButtons}
+                ${actionButtons()}
               `;
               tbody.appendChild(tr);
             } else if (item.item_type === 'tour') {
@@ -7072,7 +7094,7 @@
                 <td>-</td>
                 <td><small>${cleanRemarks}</small></td>
                 <td>${item.price || "-"}</td>
-                ${actionButtons}
+                ${actionButtons()}
               `;
               tbody.appendChild(tr);
             } else if (item.item_type === 'other') {
@@ -7129,7 +7151,12 @@
             if (tbody) {
               const buttons = tbody.querySelectorAll("button, a");
               buttons.forEach(b => {
-                b.disabled = !enabled;
+                const packageRow = b.closest("tr")?.dataset.isPackageItem === "true";
+                if (packageRow) {
+                  b.disabled = !enabled || b.dataset.packageOperationalEdit !== "true";
+                } else {
+                  b.disabled = !enabled;
+                }
                 b.style.display = enabled ? "" : "none";
               });
             }

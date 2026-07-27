@@ -174,25 +174,39 @@ document.getElementById("saveTransfer").addEventListener("click", function (even
   const transferDropdown = document.querySelector(".transfer-dropdown");
 
   // Get input values from the modal
-  const transferCity = document.getElementById("transferCity").value;
-  const transferType = transferDropdown.options[transferDropdown.selectedIndex].textContent;
-  const transferDate = formatToDDMMYYYY(document.getElementById("transferDate").value);
-  const transferFrom = document.getElementById("transferFrom").value;
-  const transferTo = document.getElementById("transferTo").value;
-  const transferToT = document.getElementById("transferToT").value;
+  let transferCity = document.getElementById("transferCity").value;
+  let transferType = transferDropdown.options[transferDropdown.selectedIndex]?.textContent || "";
+  let transferDate = formatToDDMMYYYY(document.getElementById("transferDate").value);
+  let transferFrom = document.getElementById("transferFrom").value;
+  let transferTo = document.getElementById("transferTo").value;
+  let transferToT = document.getElementById("transferToT").value;
   const transferPickupTime = document.getElementById("transferPickupTime").value;
   const flightTime = document.getElementById("flightTime").value || "";
   const transferFlight = document.getElementById("transferFlight").value || "";
-  const remarks = document.getElementById("remarks").value;
-  const transferPrice = document.getElementById("updatedTransferPrice").value || "N/A";
+  let remarks = document.getElementById("remarks").value;
+  let transferPrice = document.getElementById("updatedTransferPrice").value || "N/A";
+  let transferId = document.getElementById("transferType").value;
+
+  const packageTransfer = editingTransferRow?.dataset.isPackageItem === "true"
+    ? editingTransferRow._packageTransferData
+    : null;
+  if (packageTransfer) {
+    transferCity = packageTransfer.transferCity;
+    transferType = packageTransfer.transferType;
+    transferDate = formatToDDMMYYYY(document.getElementById("transferDate").value) || packageTransfer.transferDate;
+    transferFrom = packageTransfer.transferFrom;
+    transferTo = packageTransfer.transferTo;
+    transferToT = "SIC";
+    transferId = packageTransfer.transferId;
+    transferPrice = packageTransfer.price;
+    const cleanRemarks = remarks.replace(/\[Special Package\]/gi, "").trim();
+    remarks = cleanRemarks ? `${cleanRemarks} [Special Package]` : "[Special Package]";
+  }
 
   if (!transferCity || !transferDate || !transferFrom || !transferTo) {
     alert("Please fill in all required fields.");
     return;
   }
-
-  // ✅ Ensure `transferId` is properly assigned
-  const transferId = document.getElementById("transferType").value; // Assign the selected transfer ID
 
   const newTransfer = {
     transferId, // ✅ Ensure ID is included
@@ -272,9 +286,14 @@ function addTransferRow(transfer) {
 
 // Update an existing row in the table
 function updateTransferRow(row, transfer) {
-  row.cells[0].innerHTML = `${transfer.transferDate}<br>${transfer.transferFlight || ""}`;
+  const transferDateCell = row.dataset.isPackageItem === "true"
+    ? `<input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(transfer.transferDate) || ""}" data-item-index="${row.dataset.packageItemIndex || ""}">`
+    : transfer.transferDate;
+  row.cells[0].innerHTML = `${transferDateCell}<br>${transfer.transferFlight || ""}`;
   row.cells[1].textContent = transfer.transferCity;
-  row.cells[2].textContent = transfer.transferType;
+  row.cells[2].innerHTML = row.dataset.isPackageItem === "true"
+    ? `${transfer.transferType} <span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
+    : transfer.transferType;
   row.cells[3].textContent = transfer.transferToT || "";
   row.cells[4].textContent = transfer.transferFrom;
   row.cells[5].textContent = transfer.transferTo;
@@ -297,6 +316,7 @@ function updateTransferRow(row, transfer) {
   row.dataset.transferFlight = transfer.transferFlight || "";
   row.dataset.pickupTime = displayPickupTime;
   row.dataset.transferDate = formatToYYYYMMDD(transfer.transferDate) || "";
+  row.dataset.remarks = transfer.remarks || "";
 }
 
 // Handle edit and delete button clicks
@@ -310,15 +330,31 @@ document.getElementById("transferTableBody").addEventListener("click", function 
   }
 
   if (event.target.classList.contains("editBtn") || event.target.closest(".editBtn")) {
+    const isPackageItem = row.dataset.isPackageItem === "true";
     const transferId = row.dataset.transferId; // ✅ Retrieve ID from dataset
     console.log("Editing Transfer ID:", transferId);
 
-    if (!transferId) {
+    if (!transferId && !isPackageItem) {
       console.error("Error: Transfer ID not found in dataset.");
       return;
     }
 
-    const rowData = transfersArray.find(t => t.transferId == transferId);
+    const rowData = isPackageItem
+      ? {
+          transferId,
+          transferCity: row.cells[1]?.textContent.trim() || "",
+          transferType: row.cells[2]?.textContent.replace("Special Package", "").trim() || "",
+          transferDate: row.dataset.transferDate || row.cells[0]?.querySelector("input")?.value || "",
+          transferFrom: row.cells[4]?.textContent.trim() || "",
+          transferTo: row.cells[5]?.textContent.trim() || "",
+          transferToT: "SIC",
+          transferPickupTime: row.dataset.pickupTime || "",
+          flightTime: row.dataset.flightTime || "",
+          transferFlight: row.dataset.transferFlight || "",
+          remarks: row.dataset.remarks || row.cells[6]?.textContent.trim() || "",
+          price: row.cells[7]?.textContent.trim() || "0",
+        }
+      : transfersArray.find(t => t.transferId == transferId);
 
     if (!rowData) {
       console.error("Error: No transfer found in array for ID:", transferId);
@@ -367,14 +403,20 @@ document.getElementById("transferTableBody").addEventListener("click", function 
 
     editingTransferRow = row;
 
-    const isPackageItem = row.dataset.isPackageItem === "true";
     if (isPackageItem) {
       const totSelect = document.getElementById("transferToT");
       if (totSelect) totSelect.value = "SIC";
+      editingTransferRow._packageTransferData = rowData;
     }
     setTimeout(() => {
       if (typeof window.toggleModalFieldsForPackage === "function") {
-        window.toggleModalFieldsForPackage("#addTransferModal", isPackageItem, ["#transferDate"]);
+        window.toggleModalFieldsForPackage("#addTransferModal", isPackageItem, [
+          "#transferDate",
+          "#transferFlight",
+          "#flightTime",
+          "#transferPickupTime",
+          "#remarks",
+        ]);
       }
     }, 300);
 

@@ -1,6 +1,28 @@
+function canUseHotelMassEdit() {
+  const role = String(localStorage.getItem("role") || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
+  return role === "admin" || role === "superadmin";
+}
+
+document.documentElement.classList.toggle(
+  "hotel-agent-role",
+  !canUseHotelMassEdit()
+);
+
 function toggleEditButtonVisibility() {
   const checkboxes = document.querySelectorAll('.rowCheckbox');
   const massEditButton = document.getElementById('massEditButton');
+
+  if (!massEditButton || !canUseHotelMassEdit()) {
+    if (massEditButton) massEditButton.style.display = 'none';
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = false;
+      checkbox.disabled = true;
+    });
+    return;
+  }
 
   // Check if at least one checkbox is selected
   const anyChecked = Array.from(checkboxes).some(checkbox => checkbox.checked);
@@ -120,6 +142,24 @@ function installRoomTypeSeasonalityView() {
       width: 100%;
       align-items: stretch;
     }
+    html.hotel-agent-role #massEditButton,
+    html.hotel-agent-role #massEditRoomTypeModal,
+    html.hotel-agent-role #roomTypesTable th:first-child,
+    html.hotel-agent-role #roomTypesTable td:first-child {
+      display: none !important;
+    }
+    html.hotel-agent-role #roomTypesTable thead tr,
+    html.hotel-agent-role #roomTypesTable tbody tr {
+      grid-template-columns:
+        minmax(220px, 1.45fr)
+        minmax(120px, 0.72fr)
+        minmax(120px, 0.72fr)
+        minmax(140px, 0.9fr)
+        minmax(130px, 0.82fr)
+        minmax(170px, 1fr)
+        minmax(170px, 1fr)
+        minmax(130px, 0.78fr);
+    }
     #roomTypesTable th,
     #roomTypesTable td {
       display: flex;
@@ -237,7 +277,9 @@ function installRoomTypeSeasonalityView() {
 document.addEventListener("DOMContentLoaded", installRoomTypeSeasonalityView);
 
 function loadSelectedRowsIntoModal() {
-  const selectedRows = document.querySelectorAll('input[type="checkbox"]:checked');
+  if (!canUseHotelMassEdit()) return;
+
+  const selectedRows = document.querySelectorAll('.rowCheckbox:checked');
   const dynamicContainer = document.getElementById("dynamicRoomEntriesContainer");
   // ✅ Clear all input fields and dynamic entries before proceeding
   dynamicContainer.innerHTML = "";
@@ -379,7 +421,9 @@ function loadSelectedRowsIntoModal() {
 }
 
 function applyMassEdit() {
-  const selectedRows = document.querySelectorAll('input[type="checkbox"]:checked');
+  if (!canUseHotelMassEdit()) return;
+
+  const selectedRows = document.querySelectorAll('.rowCheckbox:checked');
   const dynamicEntries = document.querySelectorAll("#dynamicRoomEntriesContainer .dynamic-entry");
 
   if (selectedRows.length === 0) {
@@ -493,6 +537,8 @@ function applyMassEdit() {
 }
 
 function addNewRoomType() {
+  if (!canUseHotelMassEdit()) return;
+
   const roomTypesTable = document
       .getElementById("roomTypesTable")
       .getElementsByTagName("tbody")[0];
@@ -1066,6 +1112,7 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("hotelName").value = hotel.name;
       document.getElementById("displayOrder").value = hotel.display_order ?? 0;
       document.getElementById("hotelAddress").value = hotel.address;
+      document.getElementById("hotelWebsite").value = hotel.website || "";
       document.getElementById("earlycheckinadd").value =
         hotel.fees.early_checkin_fee || "";
       document.getElementById("latecheckoutadd").value =
@@ -1194,6 +1241,7 @@ document.addEventListener("DOMContentLoaded", function () {
         country: getSelectedCountryName(),
         city: document.getElementById("hotelLocation").value,
         address: document.getElementById("hotelAddress").value,
+        website: document.getElementById("hotelWebsite").value.trim() || null,
         fees: {
           early_checkin_fee:
             parseInt(document.getElementById("earlycheckinadd").value) || 0,

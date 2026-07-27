@@ -2895,22 +2895,29 @@
           return role === "admin" || role === "superadmin";
         }
 
-        function renderRowActionButtons(editClass, deleteClass, isPackageItem = false) {
-          const isLocked = isPackageItem && !canModifySpecialPackageItems();
-          const disabledAttr = isLocked ? " disabled" : "";
-          const lockedStyle = isLocked ? ' style="opacity: 0.5; cursor: not-allowed;"' : "";
-          const editTip = isLocked ? "Edit Locked" : "Edit";
-          const deleteTip = isLocked ? "Delete Locked" : "Delete";
+        function canEditSpecialPackageOperationalFields(itemType) {
+          return itemType === "transfer" || itemType === "excursion";
+        }
+
+        function renderRowActionButtons(editClass, deleteClass, isPackageItem = false, itemType = "") {
+          const isPackageLocked = isPackageItem && !canModifySpecialPackageItems();
+          const editAllowed = !isPackageLocked || canEditSpecialPackageOperationalFields(itemType);
+          const editDisabledAttr = editAllowed ? "" : " disabled";
+          const editStyle = editAllowed ? "" : ' style="opacity: 0.5; cursor: not-allowed;"';
+          const deleteDisabledAttr = isPackageLocked ? " disabled" : "";
+          const deleteStyle = isPackageLocked ? ' style="opacity: 0.5; cursor: not-allowed;"' : "";
+          const editTip = editAllowed ? "Edit" : "Edit Locked";
+          const deleteTip = isPackageLocked ? "Delete Locked" : "Delete";
 
           return `
                   <div class="tooltip-btn" style="display: inline-block; margin-right: 5px;">
-                    <button${disabledAttr} class="btn btn-sm btn-warning ${editClass}" type="button"${lockedStyle}>
+                    <button${editDisabledAttr} class="btn btn-sm btn-warning ${editClass}" type="button"${editStyle}>
                       <i class="fa fa-edit"></i>
                     </button>
                     <span class="tooltip-text">${editTip}</span>
                   </div>
                   <div class="tooltip-btn" style="display: inline-block;">
-                    <button${disabledAttr} class="btn btn-sm btn-danger ${deleteClass}" type="button"${lockedStyle}>
+                    <button${deleteDisabledAttr} class="btn btn-sm btn-danger ${deleteClass}" type="button"${deleteStyle}>
                       <i class="fa fa-trash"></i>
                     </button>
                     <span class="tooltip-text">${deleteTip}</span>
@@ -2918,8 +2925,8 @@
               `;
         }
 
-        function renderRowActionCell(editClass, deleteClass, isPackageItem = false) {
-          return `<td>${renderRowActionButtons(editClass, deleteClass, isPackageItem)}</td>`;
+        function renderRowActionCell(editClass, deleteClass, isPackageItem = false, itemType = "") {
+          return `<td>${renderRowActionButtons(editClass, deleteClass, isPackageItem, itemType)}</td>`;
         }
 
         function getCellText(cell) {
@@ -2957,6 +2964,10 @@
 
         function stripSpecialPackageSignature(value) {
           return (value || "").replace(/\[Special Package\]/gi, "").trim();
+        }
+
+        function stripSpecialPackageLabel(value) {
+          return (value || "").replace(/\s*Special Package\s*/gi, " ").trim();
         }
 
         function withSpecialPackageSignature(value) {
@@ -3721,7 +3732,7 @@
           // ✅ Update row directly
           const pkgBadge = isPkg ? ` ${getSpecialPackageBadgeHtml()}` : "";
           const dateCell = renderPackageAwareDateCell(editingExcursionRow, excursion.date);
-          const buttonsHtml = renderRowActionButtons("edit-excursion", "delete-excursion", isPkg);
+          const buttonsHtml = renderRowActionButtons("edit-excursion", "delete-excursion", isPkg, "excursion");
           editingExcursionRow.innerHTML = `
                 <td data-date="${formatToYYYYMMDD(excursion.date || "")}">${dateCell}</td>
                 <td>${excursion.city}${pkgBadge}</td>
@@ -3790,7 +3801,7 @@
             ? `<span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
             : "";
 
-          const buttonsHtml = renderRowActionButtons("edit-excursion", "delete-excursion", isPackage);
+          const buttonsHtml = renderRowActionButtons("edit-excursion", "delete-excursion", isPackage, "excursion");
 
           const dateCell = isPackage
             ? `<input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(excursion.date || '')}" data-item-index="${row.dataset.packageItemIndex || ''}">`
@@ -3974,8 +3985,9 @@
             const excursionDropdown = document.getElementById("excursionName");
             const excursionName =
               excursionDropdown.options[excursionDropdown.selectedIndex]
-                .textContent;
+                ?.textContent || "";
 
+            const isPackageExcursion = isSpecialPackageRow(editingExcursionRow);
             const excursion = {
               excursion_id: document.getElementById("excursionName").value,
               city: document.getElementById("excursionCity").value.trim(),
@@ -3992,6 +4004,15 @@
                   document.getElementById("updatedExcursionPrice").value
                 ) || "N/A",
             };
+
+            if (isPackageExcursion) {
+              excursion.excursion_id = editingExcursionRow.dataset.excursionId || 0;
+              excursion.city = stripSpecialPackageLabel(editingExcursionRow.cells[1].textContent);
+              excursion.excursion_name = editingExcursionRow.cells[2].textContent.trim();
+              excursion.hotel = editingExcursionRow.cells[4].textContent.trim();
+              excursion.toe = "SIC";
+              excursion.total_cost = editingExcursionRow.cells[7].textContent.trim() || "0";
+            }
 
             console.log("Saving Excursion:", excursion);
 
@@ -4055,7 +4076,8 @@
           }
 
           const excursionId = row.dataset.excursionId;
-          if (!excursionId) {
+          const isPackageItem = isSpecialPackageRow(row);
+          if (!excursionId && !isPackageItem) {
             console.error("Error: Excursion ID missing in row dataset.");
             alert("Error: Excursion ID is missing!");
             return;
@@ -4063,8 +4085,8 @@
 
           let excursion = {
             excursion_id: excursionId,
-            excursionDate: row.cells[0].textContent.trim(),
-            excursionCity: row.cells[1].textContent.trim(),
+            excursionDate: row.cells[0].querySelector("input")?.value || row.cells[0].dataset.date || row.cells[0].textContent.trim(),
+            excursionCity: stripSpecialPackageLabel(row.cells[1].textContent),
             excursionName: row.cells[2].textContent.trim(),
             excursionPickupTime: row.cells[3].textContent.trim(),
             excursionHotel: row.cells[4].textContent.trim(),
@@ -4168,10 +4190,15 @@
           document.getElementById("excursionRemarks").disabled = false;
 
           // ✅ Ensure old selections do not persist
-          const isPackageItem = row.dataset.isPackageItem === "true";
-          setTimeout(() => {
-            toggleModalFieldsForPackage("#addExcursionModal", isPackageItem, ["#excursionDate"]);
-          }, 300);
+          if (isPackageItem && !canModifySpecialPackageItems()) {
+            setTimeout(() => {
+              toggleModalFieldsForPackage("#addExcursionModal", true, [
+                "#excursionDate",
+                "#excursionPickupTime",
+                "#excursionRemarks",
+              ]);
+            }, 300);
+          }
 
           editingExcursionRow = row;
           $("#addExcursionModal").modal("show");
@@ -4347,7 +4374,7 @@
             ? `<span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
             : "";
 
-          const buttonsHtml = renderRowActionButtons("edit-transfer", "delete-transfer", isPackage);
+          const buttonsHtml = renderRowActionButtons("edit-transfer", "delete-transfer", isPackage, "transfer");
 
           const dateCell = isPackage
             ? `<input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(transfer.date || '')}" data-item-index="${row.dataset.packageItemIndex || ''}">`
@@ -4785,7 +4812,7 @@
             date: formatToDDMMYYYY(
               document.getElementById("transferDate").value
             ),
-            transfer_description: selectedTransferOption.textContent.trim(),
+            transfer_description: selectedTransferOption?.textContent?.trim() || "",
             from_location: document.getElementById("transferFrom").value,
             to_location: document.getElementById("transferTo").value,
             tot: document.getElementById("transferToT").value,
@@ -4802,6 +4829,17 @@
 
           // ✅ Update `data-*` attributes to store latest values
           const isPkg = isSpecialPackageRow(editingTransferRow);
+          if (isPkg) {
+            updatedTransfer.city = stripSpecialPackageLabel(editingTransferRow.cells[2].textContent);
+            updatedTransfer.transfer_description = editingTransferRow.cells[3].textContent.trim();
+            updatedTransfer.from_location = editingTransferRow.cells[5].textContent.trim();
+            updatedTransfer.to_location = editingTransferRow.cells[6].textContent.trim();
+            updatedTransfer.tot = "SIC";
+            updatedTransfer.type_of_transfer = normalizeTransferDirection(
+              editingTransferRow.dataset.typeOfTransfer || editingTransferRow.cells[1].textContent.trim()
+            );
+            updatedTransfer.final_cost = editingTransferRow.cells[8].textContent.trim() || "0";
+          }
           updatedTransfer.remarks = getPackageAwareRemarks(editingTransferRow, updatedTransfer.remarks);
           editingTransferRow.dataset.id = id || "";
           editingTransferRow.dataset.transferId = transferId || 0;
@@ -4827,7 +4865,7 @@
           // ✅ Update row directly in the table
           const pkgBadge = isPkg ? ` ${getSpecialPackageBadgeHtml()}` : "";
           const dateCell = renderPackageAwareDateCell(editingTransferRow, updatedTransfer.date);
-          const buttonsHtml = renderRowActionButtons("edit-transfer", "delete-transfer", isPkg);
+          const buttonsHtml = renderRowActionButtons("edit-transfer", "delete-transfer", isPkg, "transfer");
           editingTransferRow.innerHTML = `
                   <td data-date="${formatToYYYYMMDD(updatedTransfer.date || "")}">${dateCell}<br>${updatedTransfer.flight_number || ""}</td>
                   <td>${normalizedType}</td>
@@ -5003,9 +5041,17 @@
 
           // Set editing row and show modal
           const isPackageItem = row.dataset.isPackageItem === "true";
-          setTimeout(() => {
-            toggleModalFieldsForPackage("#addTransferModal", isPackageItem, ["#transferDate"]);
-          }, 300);
+          if (isPackageItem && !canModifySpecialPackageItems()) {
+            setTimeout(() => {
+              toggleModalFieldsForPackage("#addTransferModal", true, [
+                "#transferDate",
+                "#transferFlight",
+                "#flightTime",
+                "#transferPickupTime",
+                "#remarks",
+              ]);
+            }, 300);
+          }
 
           editingTransferRow = row;
           $("#addTransferModal").modal("show");
@@ -10167,6 +10213,7 @@
                 let rowData = {};
                 const cells = row.querySelectorAll("td");
                 const isPackage = row.dataset.isPackageItem === "true";
+                rowData["is_special_package"] = isPackage;
 
                 // Ensure correct ISO format for date fields
                 const transferDate = getCellDateValue(cells[0]).substring(0, 10) || row.dataset.transferDate || "";
@@ -10228,9 +10275,11 @@
               rows.forEach((row) => {
                 let rowData = {};
                 const cells = row.querySelectorAll("td");
+                const isPackage = row.dataset.isPackageItem === "true";
 
                 const parsedTourId = parseInt(row.dataset.tourId, 10);
                 rowData["tour_id"] = isNaN(parsedTourId) || parsedTourId === 0 ? null : parsedTourId;
+                rowData["is_special_package"] = isPackage;
                 console.log("Extracted Tour ID:", rowData["tour_id"]); // Debugging
 
                 rowData["tour_name"] = getCellText(cells[3]) || "";
@@ -10555,6 +10604,11 @@
               return !text || text === "-" || text.toLowerCase() === "n/a";
             }
 
+            function isSpecialPackageService(row) {
+              return row?.is_special_package === true ||
+                /\[Special Package\]/i.test(String(row?.remarks || ""));
+            }
+
             function markFieldInvalid(id, message) {
               const field = document.getElementById(id);
               if (!field) return;
@@ -10628,7 +10682,10 @@
               addMissingRows(errors, data.transfers, "Transfer", [
                 { label: "Date", isMissing: (row) => isBlankValue(row.date) },
                 { label: "City", isMissing: (row) => isBlankValue(row.city) },
-                { label: "Transfer Description", isMissing: (row) => isBlankValue(row.transfer_description) },
+                {
+                  label: "Transfer Description",
+                  isMissing: (row) => !isSpecialPackageService(row) && isBlankValue(row.transfer_description)
+                },
                 { label: "TOT", isMissing: (row) => isBlankValue(row.tot) },
                 { label: "From", isMissing: (row) => isBlankValue(row.from_location) },
                 { label: "To", isMissing: (row) => isBlankValue(row.to_location) }
@@ -10652,7 +10709,10 @@
                 { label: "City", isMissing: (row) => isBlankValue(row.from_location) },
                 { label: "Name", isMissing: (row) => isBlankValue(row.tour_name) },
                 { label: "TOT", isMissing: (row) => isBlankValue(row.tot) },
-                { label: "Route", isMissing: (row) => isBlankValue(row.route) }
+                {
+                  label: "Route",
+                  isMissing: (row) => !isSpecialPackageService(row) && isBlankValue(row.route)
+                }
               ]);
               addMissingRows(errors, data.others, "Other", [
                 { label: "Description", isMissing: (row) => isBlankValue(row.description) },
@@ -11750,7 +11810,7 @@
                 other: ["edit-other", "delete-other"],
               };
               const [editClass, deleteClass] = classMap[itemType] || ["edit-other", "delete-other"];
-              return renderRowActionCell(editClass, deleteClass, true);
+              return renderRowActionCell(editClass, deleteClass, true, itemType);
             };
 
             if (item.item_type === 'hotel') {
@@ -11941,12 +12001,17 @@
               const buttons = tbody.querySelectorAll("button, a");
               buttons.forEach(b => {
                 const row = b.closest("tr");
-                const isLockedPackageButton = row?.dataset?.isPackageItem === "true" && !canModifySpecialPackageItems();
+                const isPackageRow = row?.dataset?.isPackageItem === "true";
+                const isOperationalPackageEdit = b.classList.contains("edit-transfer") || b.classList.contains("edit-excursion");
+                const isLockedPackageButton = isPackageRow && !canModifySpecialPackageItems() && !isOperationalPackageEdit;
                 b.disabled = isLockedPackageButton || !enabled;
                 b.style.display = enabled ? "" : "none";
                 if (isLockedPackageButton) {
                   b.style.opacity = "0.5";
                   b.style.cursor = "not-allowed";
+                } else {
+                  b.style.opacity = "";
+                  b.style.cursor = "";
                 }
               });
             }

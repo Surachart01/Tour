@@ -81,24 +81,38 @@ document.getElementById("saveExcursion").addEventListener("click", function (eve
   const excursionId = parseInt(excursionDropdown.value, 10); 
   console.log("Saving Excursion ID:", excursionId); // Debugging
 
-  const city = document.getElementById("excursionCity").value;
-  const excursionName = excursionDropdown.options[excursionDropdown.selectedIndex].textContent;
-  const date = formatToDDMMYYYY(document.getElementById("excursionDate").value);
-  const hotel = document.getElementById("excursionHotel").value;
+  let city = document.getElementById("excursionCity").value;
+  let excursionName = excursionDropdown.options[excursionDropdown.selectedIndex]?.textContent || "";
+  let date = formatToDDMMYYYY(document.getElementById("excursionDate").value);
+  let hotel = document.getElementById("excursionHotel").value;
   const excursionPickupTime = document.getElementById("excursionPickupTime").value;
-  const typeOfExcursion = document.getElementById("typeOfExcursion").value;
-  const remarks = document.getElementById("excursionRemarks").value;
-  const price = document.getElementById("updatedExcursionPrice").value || "N/A"; 
+  let typeOfExcursion = document.getElementById("typeOfExcursion").value;
+  let remarks = document.getElementById("excursionRemarks").value;
+  let price = document.getElementById("updatedExcursionPrice").value || "N/A";
+  const packageExcursion = editingExcursionRow?.dataset.isPackageItem === "true"
+    ? editingExcursionRow._packageExcursionData
+    : null;
+  if (packageExcursion) {
+    city = packageExcursion.city;
+    excursionName = packageExcursion.excursionName;
+    date = formatToDDMMYYYY(document.getElementById("excursionDate").value) || packageExcursion.date;
+    hotel = packageExcursion.hotel;
+    typeOfExcursion = "SIC";
+    price = packageExcursion.price;
+    const cleanRemarks = remarks.replace(/\[Special Package\]/gi, "").trim();
+    remarks = cleanRemarks ? `${cleanRemarks} [Special Package]` : "[Special Package]";
+  }
 
   // ✅ Validate required fields
-  if (!city || !excursionId || !date || !hotel || !typeOfExcursion) {
+  const effectiveExcursionId = packageExcursion?.excursionId || excursionId || 0;
+  if (!city || (!packageExcursion && !effectiveExcursionId) || !date || !hotel || !typeOfExcursion) {
     alert("Please fill in all required fields.");
     return;
   }
 
   // ✅ Include excursion_id in the object
   const newExcursion = {
-    excursionId, // ✅ Ensure excursionId is saved
+    excursionId: effectiveExcursionId, // ✅ Ensure excursionId is saved
     city,
     excursionName,
     date,
@@ -159,14 +173,20 @@ function addExcursionRow(excursion) {
 
 // Update an existing row in the table
 function updateExcursionRow(row, excursion) {
-  row.cells[0].textContent = excursion.date;
+  row.cells[0].innerHTML = row.dataset.isPackageItem === "true"
+    ? `<input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(excursion.date) || ""}" data-item-index="${row.dataset.packageItemIndex || ""}">`
+    : excursion.date;
   row.cells[1].textContent = excursion.city;
-  row.cells[2].textContent = excursion.excursionName;
+  row.cells[2].innerHTML = row.dataset.isPackageItem === "true"
+    ? `${excursion.excursionName} <span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
+    : excursion.excursionName;
   row.cells[3].textContent = excursion.excursionPickupTime;
   row.cells[4].textContent = excursion.hotel;
   row.cells[5].textContent = excursion.remarks || "";
   row.cells[6].textContent = excursion.typeOfExcursion;
   row.cells[7].textContent = excursion.price; // ✅ Update price
+  row.dataset.remarks = excursion.remarks || "";
+  row.dataset.excursionId = excursion.excursionId || 0;
 }
 
 // Handle edit and delete button clicks
@@ -181,7 +201,25 @@ document.getElementById("excursionTableBody").addEventListener("click", function
 
   if (event.target.classList.contains("editBtn") || event.target.closest(".editBtn")) {
       // Populate modal with data from the row
-      const rowData = excursionsArray[row.rowIndex - 1];
+      const isPackageItem = row.dataset.isPackageItem === "true";
+      const rowData = isPackageItem
+        ? {
+            excursionId: row.dataset.excursionId || "",
+            city: row.cells[1]?.textContent.trim() || "",
+            excursionName: row.cells[2]?.textContent.replace("Special Package", "").trim() || "",
+            date: row.cells[0]?.querySelector("input")?.value || row.cells[0]?.textContent.trim() || "",
+            hotel: row.cells[4]?.textContent.trim() || "",
+            excursionPickupTime: row.cells[3]?.textContent.trim() || "",
+            typeOfExcursion: "SIC",
+            remarks: row.dataset.remarks || row.cells[5]?.textContent.trim() || "",
+            price: row.cells[7]?.textContent.trim() || "0",
+          }
+        : excursionsArray[row.rowIndex - 1];
+
+      if (!rowData) {
+        console.error("Error: No excursion data found for the selected row.");
+        return;
+      }
 
       console.log("Editing Excursion Data:", rowData);
       console.log("Excursion City to edit:", rowData.city);
@@ -199,14 +237,18 @@ document.getElementById("excursionTableBody").addEventListener("click", function
 
       editingExcursionRow = row;
 
-      const isPackageItem = row.dataset.isPackageItem === "true";
       if (isPackageItem) {
         const toeSelect = document.getElementById("typeOfExcursion");
         if (toeSelect) toeSelect.value = "SIC";
+        editingExcursionRow._packageExcursionData = rowData;
       }
       setTimeout(() => {
         if (typeof window.toggleModalFieldsForPackage === "function") {
-          window.toggleModalFieldsForPackage("#addExcursionModal", isPackageItem, ["#excursionDate"]);
+          window.toggleModalFieldsForPackage("#addExcursionModal", isPackageItem, [
+            "#excursionDate",
+            "#excursionPickupTime",
+            "#excursionRemarks",
+          ]);
         }
       }, 300);
 
