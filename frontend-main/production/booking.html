@@ -929,7 +929,7 @@
           })
           .then(trip => {
             activeTripDataForEmail = trip;
-            $("#emailModalRef").text(trip.booking_reference || trip.id);
+            $("#emailModalRef").text(trip.file_reference || trip.booking_reference || trip.id);
             $("#emailModalClient").text(trip.client_name);
 
             const container = document.getElementById("emailModalItineraryContainer");
@@ -1484,7 +1484,7 @@
                   <table class="header-table">
                     <tr>
                       <td class="col-half">
-                        <strong>File Number:</strong> ${trip.booking_reference || trip.id}<br/>
+                        <strong>File Number:</strong> ${trip.file_reference || trip.booking_reference || trip.id}<br/>
                         <strong>Client Name:</strong> ${trip.client_name || "-"}<br/>
                         <strong>Contact Info:</strong> ${trip.client_phone || "-"} / ${trip.client_email || "-"}
                       </td>
@@ -2092,7 +2092,7 @@
 
         const agentName = (trip.agent && trip.agent.name) || (trip.agents && trip.agents.name) || "Agent";
         const agentEmail = (trip.agent && trip.agent.email) || (trip.agents && trip.agents.email) || "";
-        const ref = trip.booking_reference || ("BK" + trip.id);
+        const ref = trip.file_reference || trip.booking_reference || ("BK" + trip.id);
         const pax = `${trip.number_of_adults || 0} Adults, ${trip.number_of_kids || 0} Kids`;
         const startDate = trip.trip_start_date ? new Date(trip.trip_start_date).toLocaleDateString("en-GB").replace(/\//g, "-") : "N/A";
         const totalCost = trip.final_amount || trip.final_cost || "N/A";

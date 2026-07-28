@@ -1,4 +1,9 @@
 import prisma from '../config/db.js';
+import { ensureBookingReferences } from '../utils/bookingReferences.js';
+import {
+  sendBookingGenerationRequest,
+  sendFinalBookingConfirmation
+} from '../utils/workflowEmail.js';
 
 // ==================== HELPERS ====================
 function parseRequiredDate(value, fallback) {
@@ -945,10 +950,10 @@ export async function createQuotation(req, res, next) {
 export async function listQuotations(req, res, next) {
   try {
     const claims = req.user;
-    const where = { declined: false, status: { in: ['Pending', 'InProgress', 'Approved', 'Confirmed'] } };
-    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
-      where.user_id = claims.user_id;
-    }
+    const where = applyAgentTripScope({
+      declined: false,
+      status: { in: ['Pending', 'InProgress', 'Approved', 'Confirmed'] }
+    }, claims);
     const trips = await prisma.trips.findMany({
       where,
       include: { agents: true },
@@ -966,9 +971,7 @@ export async function listQuotationsByDateRange(req, res, next) {
     if (from_date && to_date) {
       where.created_at = { gte: new Date(from_date), lte: new Date(to_date) };
     }
-    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
-      where.user_id = claims.user_id;
-    }
+    applyAgentTripScope(where, claims);
     const trips = await prisma.trips.findMany({ where, include: { agents: true }, orderBy: [{ updated_at: 'desc' }, { created_at: 'desc' }] });
     return res.json(trips.map(mapTripResponse));
   } catch (err) { next(err); }
@@ -979,10 +982,7 @@ export async function getQuotation(req, res, next) {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid quotation ID');
     const claims = req.user;
-    const where = { id };
-    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
-      where.user_id = claims.user_id;
-    }
+    const where = applyAgentTripScope({ id }, claims);
     const trip = await prisma.trips.findFirst({
       where,
       include: {
@@ -1030,10 +1030,13 @@ export async function updateQuotation(req, res, next) {
 
     const existing = await prisma.trips.findUnique({ where: { id } });
     if (!existing) return res.status(404).send('Quotation not found');
-    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
-      if (existing.user_id !== claims.user_id) {
-        return res.status(403).send('Forbidden: Access denied to this quotation');
-      }
+    if (!agentOwnsTrip(existing, claims)) {
+      return res.status(403).send('Forbidden: Access denied to this quotation');
+    }
+    if (!agentCanModifyQuotation(existing, claims)) {
+      return res.status(409).json({
+        message: 'Only pending quotations can be edited by an agent.'
+      });
     }
     const resolvedAgentId = (data.agent_id !== undefined || data.agent_name)
       ? await resolveAgentIdFromRequest(data, claims)
@@ -1518,10 +1521,8 @@ export async function finalizeQuotation(req, res, next) {
 
     const existing = await prisma.trips.findUnique({ where: { id } });
     if (!existing) return res.status(404).send('Quotation not found');
-    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
-      if (existing.user_id !== claims.user_id) {
-        return res.status(403).send('Forbidden: Access denied to this quotation');
-      }
+    if (!agentOwnsTrip(existing, claims)) {
+      return res.status(403).send('Forbidden: Access denied to this quotation');
     }
 
     if (existing.status !== 'Pending' || existing.is_booking) {
@@ -1538,11 +1539,37 @@ export async function finalizeQuotation(req, res, next) {
       updated_at: new Date()
     };
 
-    const trip = await prisma.trips.update({
-      where: { id },
-      data: updateData
+    const converted = await prisma.$transaction(async (transaction) => {
+      const conversion = await transaction.trips.updateMany({
+        where: {
+          id,
+          status: 'Pending',
+          is_booking: false
+        },
+        data: updateData
+      });
+      if (conversion.count !== 1) return null;
+
+      const updated = await transaction.trips.findUnique({ where: { id } });
+      return ensureBookingReferences(transaction, updated);
     });
-    return res.json(trip);
+    if (!converted) {
+      return res.status(409).json({
+        message: 'This quotation has already been converted or is no longer pending.'
+      });
+    }
+
+    const trip = await prisma.trips.findUnique({
+      where: { id },
+      include: { agents: true }
+    });
+    const notification = await sendBookingGenerationRequest(trip);
+
+    return res.json({
+      message: 'Quotation converted to booking successfully.',
+      booking: mapTripResponse(trip),
+      notification
+    });
   } catch (err) { next(err); }
 }
 
@@ -1554,10 +1581,13 @@ export async function cancelQuotation(req, res, next) {
 
     const existing = await prisma.trips.findUnique({ where: { id } });
     if (!existing) return res.status(404).send('Quotation not found');
-    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
-      if (existing.user_id !== claims.user_id) {
-        return res.status(403).send('Forbidden: Access denied to this quotation');
-      }
+    if (!agentOwnsTrip(existing, claims)) {
+      return res.status(403).send('Forbidden: Access denied to this quotation');
+    }
+    if (!agentCanModifyQuotation(existing, claims)) {
+      return res.status(409).json({
+        message: 'Only pending quotations can be cancelled by an agent.'
+      });
     }
 
     const trip = await prisma.trips.update({
@@ -1576,10 +1606,13 @@ export async function deleteQuotation(req, res, next) {
 
     const existing = await prisma.trips.findUnique({ where: { id } });
     if (!existing) return res.status(404).send('Quotation not found');
-    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
-      if (existing.user_id !== claims.user_id) {
-        return res.status(403).send('Forbidden: Access denied to this quotation');
-      }
+    if (!agentOwnsTrip(existing, claims)) {
+      return res.status(403).send('Forbidden: Access denied to this quotation');
+    }
+    if (!agentCanModifyQuotation(existing, claims)) {
+      return res.status(409).json({
+        message: 'Only pending quotations can be deleted by an agent.'
+      });
     }
 
     await prisma.trips.delete({ where: { id } });
@@ -1588,7 +1621,40 @@ export async function deleteQuotation(req, res, next) {
 }
 
 // ==================== BOOKINGS ====================
-const bookingStatusWhere = { status: { in: ['InProgress', 'Approved', 'Confirmed'] } };
+const bookingStatusWhere = {
+  is_booking: true,
+  status: { in: ['InProgress', 'Approved', 'Confirmed'] }
+};
+
+function applyAgentTripScope(where, claims) {
+  if (!claims || claims.role === 'admin' || claims.role === 'superadmin') return where;
+
+  const ownership = [];
+  const userId = parseSafeInt(claims.user_id);
+  const agentId = parseSafeInt(claims.agent_id);
+  if (userId) ownership.push({ user_id: userId });
+  if (agentId) ownership.push({ agent_id: agentId });
+
+  // A token without either identifier must never expose another agent's records.
+  where.OR = ownership.length ? ownership : [{ id: -1 }];
+  return where;
+}
+
+function agentOwnsTrip(trip, claims) {
+  if (!claims || claims.role === 'admin' || claims.role === 'superadmin') return true;
+
+  const userId = parseSafeInt(claims.user_id);
+  const agentId = parseSafeInt(claims.agent_id);
+  return Boolean(
+    (userId && trip.user_id === userId) ||
+    (agentId && trip.agent_id === agentId)
+  );
+}
+
+function agentCanModifyQuotation(trip, claims) {
+  if (!claims || claims.role === 'admin' || claims.role === 'superadmin') return true;
+  return trip.is_booking !== true && trip.status === 'Pending';
+}
 
 const bookingAgentWithBillingProfile = {
   users: {
@@ -1642,8 +1708,10 @@ export function attachProformaBilling(trip) {
 
 export async function listBookings(req, res, next) {
   try {
+    const claims = req.user;
+    const where = applyAgentTripScope({ ...bookingStatusWhere }, claims);
     const bookings = await prisma.trips.findMany({
-      where: bookingStatusWhere,
+      where,
       include: { agents: { include: bookingAgentWithBillingProfile } },
       orderBy: [{ updated_at: 'desc' }, { created_at: 'desc' }]
     });
@@ -1660,9 +1728,7 @@ export async function listBookingsByDateRange(req, res, next) {
     if (from_date && to_date) {
       where.created_at = { gte: new Date(from_date), lte: new Date(to_date) };
     }
-    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
-      where.agent_id = claims.agent_id || 0;
-    }
+    applyAgentTripScope(where, claims);
     const bookings = await prisma.trips.findMany({ where, include: { agents: { include: bookingAgentWithBillingProfile } }, orderBy: [{ updated_at: 'desc' }, { created_at: 'desc' }] });
     return res.json(bookings.map(attachProformaBilling));
   } catch (err) { next(err); }
@@ -1672,8 +1738,10 @@ export async function getBooking(req, res, next) {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid booking ID');
-    const trip = await prisma.trips.findUnique({
-      where: { id },
+    const claims = req.user;
+    const where = applyAgentTripScope({ id, ...bookingStatusWhere }, claims);
+    const trip = await prisma.trips.findFirst({
+      where,
       include: {
         agents: { include: bookingAgentWithBillingProfile },
         hotel_trip_items: {
@@ -1730,9 +1798,14 @@ export async function confirmBooking(req, res, next) {
 
     if (!trip) return res.status(404).json({ message: 'Booking not found' });
 
-    if (!trip.is_booking && trip.status === 'Pending') {
+    if (!trip.is_booking) {
       return res.status(409).json({
         message: 'Convert the quotation to a booking before confirming it.'
+      });
+    }
+    if (trip.status === 'Confirmed') {
+      return res.status(409).json({
+        message: 'This booking has already been confirmed.'
       });
     }
 
@@ -1756,19 +1829,59 @@ export async function confirmBooking(req, res, next) {
       });
     }
 
-    const updated = await prisma.trips.update({
+    const confirmed = await prisma.$transaction(async (transaction) => {
+      const confirmation = await transaction.trips.updateMany({
+        where: {
+          id,
+          is_booking: true,
+          status: { not: 'Confirmed' }
+        },
+        data: {
+          approved: true,
+          status: 'Confirmed',
+          updated_at: new Date()
+        }
+      });
+      if (confirmation.count !== 1) return null;
+
+      const updatedTrip = await transaction.trips.findUnique({ where: { id } });
+      return ensureBookingReferences(transaction, updatedTrip, { assignInvoice: true });
+    });
+    if (!confirmed) {
+      return res.status(409).json({
+        message: 'This booking has already been confirmed.'
+      });
+    }
+
+    const updated = await prisma.trips.findUnique({
       where: { id },
-      data: {
-        approved: true,
-        status: 'Confirmed',
-        updated_at: new Date()
+      include: {
+        agents: true,
+        hotel_trip_items: {
+          orderBy: [{ display_order: 'asc' }, { from_date: 'asc' }],
+          include: { hotels: true, hotel_room_type_items: true }
+        },
+        transfer_trip_items: {
+          orderBy: { from_date: 'asc' },
+          include: { transfers: true, suppliers: true }
+        },
+        excursion_trip_items: {
+          orderBy: { from_date: 'asc' },
+          include: { excursions: true, suppliers: true }
+        },
+        tour_trip_items: {
+          orderBy: { from_date: 'asc' },
+          include: { tours: true, suppliers: true }
+        }
       }
     });
+    const notification = await sendFinalBookingConfirmation(updated);
 
     return res.json({
       status: 'confirmed',
       message: 'Booking confirmed successfully.',
-      booking: updated
+      booking: mapTripResponse(updated),
+      notification
     });
   } catch (err) { next(err); }
 }
@@ -1778,6 +1891,8 @@ export async function approveItem(req, res, next) {
     const { itemType, itemID } = req.params;
     const id = parseInt(itemID);
     if (isNaN(id)) return res.status(400).send('Invalid item ID');
+    const tripId = parseInt(req.params.id, 10);
+    if (isNaN(tripId)) return res.status(400).send('Invalid booking ID');
     const modelMap = {
       hotel: 'hotel_trip_items', excursion: 'excursion_trip_items',
       tour: 'tour_trip_items', transfer: 'transfer_trip_items',
@@ -1785,8 +1900,15 @@ export async function approveItem(req, res, next) {
     };
     const model = modelMap[itemType];
     if (!model) return res.status(400).send('Invalid item type');
+
+    const booking = await prisma.trips.findFirst({
+      where: { id: tripId, ...bookingStatusWhere },
+      select: { id: true }
+    });
+    if (!booking) return res.status(404).send('Booking not found');
+
     const item = await prisma[model].findFirst({
-      where: { id, trip_item_id: parseInt(req.params.id, 10) },
+      where: { id, trip_item_id: tripId },
       select: { id: true }
     });
     if (!item) return res.status(404).send('Booking service not found');
@@ -1810,6 +1932,13 @@ export async function declineItem(req, res, next) {
     if (!model) return res.status(400).send('Invalid item type');
     const tripId = parseInt(req.params.id, 10);
     if (isNaN(tripId)) return res.status(400).send('Invalid booking ID');
+
+    const booking = await prisma.trips.findFirst({
+      where: { id: tripId, ...bookingStatusWhere },
+      select: { id: true }
+    });
+    if (!booking) return res.status(404).send('Booking not found');
+
     const item = await prisma[model].findFirst({
       where: { id, trip_item_id: tripId },
       select: { id: true }
@@ -1833,10 +1962,7 @@ export async function getPaymentInfo(req, res, next) {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid booking ID');
     const claims = req.user;
-    const where = { id };
-    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
-      where.agent_id = claims.agent_id || 0;
-    }
+    const where = applyAgentTripScope({ id, is_booking: true }, claims);
     const trip = await prisma.trips.findFirst({
       where,
       select: {
@@ -1860,10 +1986,7 @@ export async function updatePaymentInfo(req, res, next) {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid booking ID');
     const claims = req.user;
-    const where = { id };
-    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
-      where.agent_id = claims.agent_id || 0;
-    }
+    const where = applyAgentTripScope({ id, is_booking: true }, claims);
     const current = await prisma.trips.findFirst({
       where,
       select: {
@@ -1913,10 +2036,7 @@ export async function updatePaymentInfo(req, res, next) {
 export async function listPaymentInfoFromBookings(req, res, next) {
   try {
     const claims = req.user;
-    const where = { status: 'Confirmed' };
-    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
-      where.agent_id = claims.agent_id || 0;
-    }
+    const where = applyAgentTripScope({ is_booking: true, status: 'Confirmed' }, claims);
     const bookings = await prisma.trips.findMany({
       where,
       select: {
@@ -1937,13 +2057,11 @@ export async function listPaymentInfoByDateRange(req, res, next) {
     const from_date = req.query.from_date || req.query.start_date;
     const to_date = req.query.to_date || req.query.end_date;
     const claims = req.user;
-    const where = { status: 'Confirmed' };
+    const where = { is_booking: true, status: 'Confirmed' };
     if (from_date && to_date) {
       where.created_at = { gte: new Date(from_date), lte: new Date(to_date) };
     }
-    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
-      where.agent_id = claims.agent_id || 0;
-    }
+    applyAgentTripScope(where, claims);
     const bookings = await prisma.trips.findMany({
       where,
       select: {

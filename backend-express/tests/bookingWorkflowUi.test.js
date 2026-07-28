@@ -22,7 +22,12 @@ const taxInvoiceEditorPage = readFileSync(resolve(rootDirectory, 'frontend-main/
 const taxInvoiceEditorSource = readFileSync(resolve(rootDirectory, 'frontend-main/production/js/tax_invoices/tax_invoice_editor.js'), 'utf8');
 const taxInvoiceControllerSource = readFileSync(resolve(rootDirectory, 'backend-express/src/controllers/taxInvoiceController.js'), 'utf8');
 const tripControllerSource = readFileSync(resolve(rootDirectory, 'backend-express/src/controllers/tripController.js'), 'utf8');
+const pdfControllerSource = readFileSync(resolve(rootDirectory, 'backend-express/src/controllers/pdfController.js'), 'utf8');
+const supplierActionsSource = readFileSync(resolve(rootDirectory, 'backend-express/src/utils/supplierActions.js'), 'utf8');
+const supplierResponseSource = readFileSync(resolve(rootDirectory, 'backend-express/src/controllers/supplierResponseController.js'), 'utf8');
+const workflowEmailSource = readFileSync(resolve(rootDirectory, 'backend-express/src/utils/workflowEmail.js'), 'utf8');
 const rolePermissionsSource = readFileSync(resolve(rootDirectory, 'frontend-main/production/js/common/role-permissions.js'), 'utf8');
+const homePage = readFileSync(resolve(rootDirectory, 'frontend-main/production/index.html'), 'utf8');
 
 function getFunctionSource(source, name) {
   const start = source.indexOf(`function ${name}(`);
@@ -79,7 +84,8 @@ test('statement page provides monthly agent selection, print, and default email 
 });
 
 test('confirmed booking payment records expose the agent and invoice details needed by statements', () => {
-  assert.match(tripControllerSource, /const where = \{ status: 'Confirmed' \}/);
+  assert.match(tripControllerSource, /applyAgentTripScope\(\{ is_booking: true, status: 'Confirmed' \}, claims\)/);
+  assert.match(tripControllerSource, /const where = \{ is_booking: true, status: 'Confirmed' \}/);
   assert.doesNotMatch(tripControllerSource, /const where = \{ approved: true, status: 'Confirmed' \}/);
   assert.match(tripControllerSource, /agent_email: trip\.agents\?\.email \|\| ''/);
   assert.match(tripControllerSource, /agent_address: trip\.agents\?\.address \|\| ''/);
@@ -92,6 +98,10 @@ test('quotation conversion is wired to the finalization endpoint', () => {
   const source = getFunctionSource(quotationPage, 'attachConvertToBookingListener');
   assert.match(source, /\/api\/v1\/quotations\/\$\{tripId\}\/finalize/);
   assert.match(source, /method:\s*"POST"/);
+  assert.match(tripControllerSource, /where:\s*\{\s*id,\s*status: 'Pending',\s*is_booking: false\s*\}/);
+  assert.match(tripControllerSource, /conversion\.count !== 1/);
+  assert.match(tripControllerSource, /status: 'InProgress'/);
+  assert.match(tripControllerSource, /ensureBookingReferences\(transaction, updated\)/);
 });
 
 test('booking confirmation controls call the correct endpoints without a page reload', () => {
@@ -105,11 +115,17 @@ test('booking confirmation controls call the correct endpoints without a page re
   assert.doesNotMatch(approve, /window\.location\.reload\(\)/);
   assert.doesNotMatch(decline, /window\.location\.reload\(\)/);
   assert.doesNotMatch(confirm, /window\.location\.reload\(\)/);
+  assert.match(tripControllerSource, /status: \{ not: 'Confirmed' \}/);
+  assert.match(tripControllerSource, /This booking has already been confirmed/);
+  assert.match(tripControllerSource, /where: \{ id: tripId, \.\.\.bookingStatusWhere \}/);
+  assert.match(pdfControllerSource, /if \(!trip \|\| !trip\.is_booking\)/);
+  assert.match(supplierResponseSource, /is_booking: true/);
+  assert.match(supplierResponseSource, /This response link does not belong to an active booking/);
 });
 
 test('confirmed bookings open the single Proforma preview implementation', () => {
-  assert.match(routeSource, /router\.get\('\/bookings\/:id\/proforma-pdf', authorize\('admin'\), generateProformaInvoicePDF\)/);
-  assert.match(quotationListPage, /\(role === 'admin' \|\| role === 'superadmin'\) && trip\.status === 'Confirmed'/);
+  assert.match(routeSource, /router\.get\('\/bookings\/:id\/proforma-pdf', authorize\('admin', 'agent'\), generateProformaInvoicePDF\)/);
+  assert.match(quotationListPage, /const proformaButton = \(trip\.status === 'Confirmed'\)/);
   assert.match(quotationListPage, /class="btn-action btn-action-save proforma-btn"/);
   assert.doesNotMatch(quotationListPage, /class="btn-action btn-action-save print-btn proforma-btn"/);
   assert.match(quotationListPage, /invoice_management\.html\?preview=\$\{encodeURIComponent\(tripId\)\}/);
@@ -120,6 +136,54 @@ test('confirmed bookings open the single Proforma preview implementation', () =>
   assert.doesNotMatch(bookingListPage, /\/api\/v1\/bookings\/\$\{tripId\}\/proforma-pdf/);
   assert.doesNotMatch(bookingListPage, /class="btn table-action-btn invoice-btn"/);
   assert.doesNotMatch(bookingListPage, /summary-btn notify-agent-btn/);
+  assert.match(rolePermissionsSource, /isAgentOwnedProformaPreview/);
+  assert.match(rolePermissionsSource, /new URLSearchParams\(window\.location\.search\)\.has\("preview"\)/);
+  assert.match(pdfControllerSource, /const where = \{ id, is_booking: true, status: 'Confirmed' \}/);
+});
+
+test('converted booking requests are visible on the Admin home page', () => {
+  assert.match(homePage, /id="bookingRequestBadge"/);
+  assert.match(homePage, /id="bookingRequestCount"/);
+  assert.match(homePage, /loadBookingRequestCount\(token\)/);
+  assert.match(homePage, /\/api\/v1\/bookings/);
+  assert.match(homePage, /booking\.status === "InProgress"/);
+  assert.match(homePage, /fa fa-bell-o/);
+});
+
+test('booking workflow sends agent and supplier status emails', () => {
+  assert.match(tripControllerSource, /sendBookingGenerationRequest\(trip\)/);
+  assert.match(tripControllerSource, /sendFinalBookingConfirmation\(updated\)/);
+  assert.match(workflowEmailSource, /Booking Generation Request/);
+  assert.match(workflowEmailSource, /Booking Confirmed/);
+  assert.match(workflowEmailSource, /reservation@verathailandia\.com/);
+  assert.match(workflowEmailSource, /booking@verathailandia\.com/);
+  assert.match(pdfControllerSource, /buildSupplierActionButtons/);
+  assert.match(pdfControllerSource, /Email service is not configured\. No supplier notification was sent\./);
+  assert.match(supplierActionsSource, /CONFIRM BOOKING/);
+  assert.match(supplierActionsSource, /NOT AVAILABLE/);
+  assert.match(routeSource, /router\.get\('\/supplier-response', showSupplierResponse\);/);
+  assert.match(routeSource, /router\.post\('\/supplier-response', handleSupplierResponse\);[\s\S]*router\.use\(validateJWT\)/);
+  assert.match(supplierResponseSource, /<form method="post" action="\/api\/v1\/supplier-response">/);
+  assert.match(supplierResponseSource, /req\.body\?\.token \|\| req\.query\.token/);
+  assert.match(supplierResponseSource, /approved: true, declined: false/);
+  assert.match(supplierResponseSource, /approved: false, declined: true/);
+  assert.match(supplierResponseSource, /trip_item_id: tripId/);
+  assert.match(pdfControllerSource, /\{ id: parsedItemId, trip_item_id: tripId \}/);
+  assert.match(supplierActionsSource, /x-forwarded-proto/);
+  assert.match(supplierActionsSource, /x-forwarded-host/);
+});
+
+test('agent quotation and booking ownership supports current user and agent token identifiers', () => {
+  assert.match(tripControllerSource, /ownership\.push\(\{ user_id: userId \}\)/);
+  assert.match(tripControllerSource, /ownership\.push\(\{ agent_id: agentId \}\)/);
+  assert.match(tripControllerSource, /function agentOwnsTrip\(trip, claims\)/);
+  assert.doesNotMatch(tripControllerSource, /existing\.user_id !== claims\.user_id/);
+});
+
+test('booking APIs expose only quotations that were converted to bookings', () => {
+  assert.match(tripControllerSource, /const bookingStatusWhere = \{\s*is_booking: true,/);
+  assert.match(tripControllerSource, /applyAgentTripScope\(\{ id, \.\.\.bookingStatusWhere \}, claims\)/);
+  assert.match(tripControllerSource, /applyAgentTripScope\(\{ id, is_booking: true \}, claims\)/);
 });
 
 test('Proforma page is booking-driven and contains no legacy manual invoice form', () => {
@@ -159,6 +223,11 @@ test('tax invoice pages retain the application shell and protect direct editor a
 
   assert.match(taxInvoiceEditorPage, /@media print[\s\S]*\.left_col, \.top_nav, \.sidebar-footer/);
   assert.match(rolePermissionsSource, /"tax_invoice_editor\.html": "tax_invoices"/);
+});
+
+test('tax invoice workflow accepts only converted and confirmed bookings', () => {
+  assert.match(taxInvoiceControllerSource, /const where = \{\s*is_booking: true,\s*status: \{ equals: 'Confirmed', mode: 'insensitive' \}/);
+  assert.match(taxInvoiceControllerSource, /booking\?\.is_booking === true[\s\S]*toLowerCase\(\) === 'confirmed'/);
 });
 
 test('tax invoice editor uses the Proforma document structure and correct document prefixes', () => {
@@ -240,4 +309,35 @@ test('tax invoice list exposes the five required downloadable documents', () => 
   assert.match(taxInvoiceEditorSource, /amount_payable = round\(Math\.max\(0, roundedTotals\.invoice_total - roundedTotals\.withholding_tax\)\)/);
   assert.match(taxInvoiceControllerSource, /withholdingTaxBase \* withholdingRate/);
   assert.match(taxInvoiceControllerSource, /original_receipt_transportation' \? TRANSPORT_WHT_RATE : WHT_RATE/);
+});
+
+test('agents can modify only pending quotations before conversion', () => {
+  assert.match(
+    tripControllerSource,
+    /function agentCanModifyQuotation\(trip, claims\)[\s\S]*return trip\.is_booking !== true && trip\.status === 'Pending';/
+  );
+  assert.match(tripControllerSource, /Only pending quotations can be edited by an agent\./);
+  assert.match(tripControllerSource, /Only pending quotations can be cancelled by an agent\./);
+  assert.match(tripControllerSource, /Only pending quotations can be deleted by an agent\./);
+  assert.match(
+    quotationListPage,
+    /const agentCanModify = isAdminRole \|\| \(trip\.status === "Pending" && !trip\.is_booking\);/
+  );
+});
+
+test('booking documents and supplier messages prefer the generated file number', () => {
+  assert.match(
+    pdfControllerSource,
+    /const fileNumber = trip\.file_reference \|\| trip\.booking_reference \|\| trip\.quotation_reference/
+  );
+  assert.match(pdfControllerSource, /File Number:<\/td>[\s\S]*\$\{escapeEmailHtml\(trip\.file_reference \|\| trip\.booking_reference \|\| trip\.id\)\}/);
+  assert.match(pdfControllerSource, /Hotel Stay Booking - Ref: \$\{trip\.file_reference \|\| trip\.booking_reference \|\| trip\.id\}/);
+  assert.match(
+    proformaSource,
+    /bookingId: booking\.file_reference \|\| booking\.booking_reference \|\| booking\.quotation_reference/
+  );
+  assert.match(
+    bookingListPage,
+    /trip\.file_reference \|\| trip\.booking_reference \|\| trip\.id/
+  );
 });

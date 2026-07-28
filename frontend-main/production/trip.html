@@ -967,10 +967,17 @@
                row.style.backgroundColor = "#fffef0"; 
              }
 
-            let actionButton = `<button class="btn-action btn-action-cancel delete-btn" data-id="${trip.id}" title="Delete / Cancel Quotation"><i class="fa fa-trash"></i></button>`;
-            if (trip.status !== "Pending") {
+            const isAdminRole = role === "admin" || role === "superadmin";
+            const agentCanModify = isAdminRole || (trip.status === "Pending" && !trip.is_booking);
+            let actionButton = agentCanModify
+              ? `<button class="btn-action btn-action-cancel delete-btn" data-id="${trip.id}" title="Delete / Cancel Quotation"><i class="fa fa-trash"></i></button>`
+              : "";
+            if (trip.status !== "Pending" && role !== "agent") {
               actionButton = `<button class="btn-action btn-action-cancel cancel-btn" data-id="${trip.id}" title="Void Booking"><i class="fa fa-ban"></i></button>`;
             }
+            const editButton = agentCanModify
+              ? `<button class="btn-action btn-action-edit edit-btn" data-id="${trip.id}" title="Edit Quotation"><i class="fa fa-edit"></i></button>`
+              : "";
 
             // Convert the trip start date to DD/MM/YYYY format
             const rawStartDate = trip.start_date || trip.trip_start_date || null;
@@ -1032,7 +1039,7 @@
                ? `<button class="btn-action btn-action-notify notify-hotels-btn" data-id="${trip.id}" data-quotation-ref="${escapedRef}" title="Notify Hotels & Stay Summaries"><i class="fa fa-bell-o"></i></button>`
                : '';
  
-             const proformaButton = ((role === 'admin' || role === 'superadmin') && trip.status === 'Confirmed')
+             const proformaButton = (trip.status === 'Confirmed')
                ? `<button class="btn-action btn-action-save proforma-btn" data-id="${trip.id}" title="Open Proforma Invoice" style="color: #9b59b6 !important; border-color: #9b59b6 !important;"><i class="fa fa-file-text-o"></i></button>`
                : '';
  
@@ -1050,7 +1057,7 @@
                <td class="font-weight-bold text-success" style="white-space: nowrap;">${finalCostDisplay}</td>
                <td class="text-center" style="white-space: nowrap; width: 1%;">
                  <div class="actions-cell">
-                   <button class="btn-action btn-action-edit edit-btn" data-id="${trip.id}" title="Edit Quotation"><i class="fa fa-edit"></i></button>
+                   ${editButton}
                    ${actionButton}
                    <button class="btn-action btn-action-save print-btn" data-id="${trip.id}" title="Save / Download PDF"><i class="fa fa-save"></i></button>
                    <button class="btn-action btn-action-client email-btn" data-id="${trip.id}" data-email-sent="${trip.email_sent ? "true" : "false"}" data-client-name="${escapedName}" data-quotation-ref="${escapedRef}" title="${emailTitle}"><i class="fa ${emailIcon}"></i></button>

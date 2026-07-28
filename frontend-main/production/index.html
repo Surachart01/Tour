@@ -208,6 +208,23 @@
         border-left-color: #721c24;
         color: #ffffff;
       }
+      .booking-request-badge {
+        align-items: center;
+        background: #fff4d6;
+        border: 1px solid #f4b400;
+        border-radius: 999px;
+        color: #8a5a00;
+        display: none;
+        font-size: 12px;
+        font-weight: 700;
+        gap: 6px;
+        margin-top: 8px;
+        padding: 4px 9px;
+        width: fit-content;
+      }
+      .booking-request-badge.is-visible {
+        display: inline-flex;
+      }
 
       /* Active Card Text Styling overrides */
       .service-card.active .service-icon-wrapper {
@@ -1024,6 +1041,11 @@
                   <div class="service-card-info">
                     <h4>Bookings</h4>
                     <p>View & manage bookings</p>
+                    <span class="booking-request-badge" id="bookingRequestBadge" aria-live="polite">
+                      <i class="fa fa-bell-o" aria-hidden="true"></i>
+                      <span id="bookingRequestCount">0</span>
+                      <span>new requests</span>
+                    </span>
                   </div>
                 </div>
               </div>
@@ -2219,6 +2241,8 @@
           if (bookingsCard) {
             bookingsCard.style.display = "none";
           }
+        } else {
+          loadBookingRequestCount(token);
         }
 
         // Retrieve the username from localStorage
@@ -2230,6 +2254,29 @@
 
         // Note: Control Panel visibility is now handled by common/role-permissions.js
       });
+
+      async function loadBookingRequestCount(token) {
+        const badge = document.getElementById("bookingRequestBadge");
+        const countElement = document.getElementById("bookingRequestCount");
+        if (!badge || !countElement || !token) return;
+
+        try {
+          const response = await fetch(`${Endpoint}/api/v1/bookings`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+          const bookings = await response.json();
+          const count = Array.isArray(bookings)
+            ? bookings.filter((booking) => booking.status === "InProgress").length
+            : 0;
+          countElement.textContent = String(count);
+          badge.classList.toggle("is-visible", count > 0);
+        } catch (error) {
+          console.warn("Unable to load booking request count:", error);
+          badge.classList.remove("is-visible");
+        }
+      }
 
       function formatToDDMMYYYY(dateString) {
         const ddmmyyyyRegex = /^\d{2}-\d{2}-\d{4}$/;

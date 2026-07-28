@@ -9,8 +9,14 @@ import {
   listItinerary, getItinerary, updateItineraryDetails, updateInvoiceNumber
 } from '../controllers/tripController.js';
 import { generateQuotationPDF, generateProformaInvoicePDF, generateReceiptPDF, generateTripPDF, generateTripServicesPDF, notifyAgentBookingConfirmed, notifySupplierOrHotel, sendQuotationEmail } from '../controllers/pdfController.js';
+import { handleSupplierResponse, showSupplierResponse } from '../controllers/supplierResponseController.js';
 
 const router = express.Router();
+
+// Supplier confirmation links are signed and intentionally do not require a user login.
+router.get('/supplier-response', showSupplierResponse);
+router.post('/supplier-response', handleSupplierResponse);
+
 router.use(validateJWT);
 
 // Quotation routes
@@ -38,11 +44,11 @@ router.post('/trips/:id/cancel', authorize('agent', 'admin'), cancelQuotation);
 router.get('/bookings/date-range', authorize('admin', 'agent'), listBookingsByDateRange);
 router.get('/bookings/payments/date-range', authorize('admin', 'agent'), listPaymentInfoByDateRange);
 router.get('/bookings/all/payments', authorize('admin', 'agent'), listPaymentInfoFromBookings);
-router.get('/bookings', authorize('admin'), listBookings);
-router.get('/bookings/:id/proforma-pdf', authorize('admin'), generateProformaInvoicePDF);
+router.get('/bookings', authorize('admin', 'agent'), listBookings);
+router.get('/bookings/:id/proforma-pdf', authorize('admin', 'agent'), generateProformaInvoicePDF);
 router.get('/bookings/:id/generate-pdf', authorize('admin'), generateQuotationPDF);
 router.get('/bookings/:id/receipt', authorize('admin'), generateReceiptPDF);
-router.get('/bookings/:id', authorize('admin'), getBooking);
+router.get('/bookings/:id', authorize('admin', 'agent'), getBooking);
 router.put('/bookings/:id', authorize('admin'), updateBooking);
 router.post('/bookings/:id/confirm', authorize('admin'), confirmBooking);
 router.post('/bookings/:id/notify-agent', authorize('admin'), notifyAgentBookingConfirmed);

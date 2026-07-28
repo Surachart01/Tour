@@ -106,7 +106,7 @@ async function loadInvoices() {
         return {
           id: booking.id,
           tripId: booking.id,
-          bookingId: booking.booking_reference || booking.quotation_reference || String(booking.id),
+          bookingId: booking.file_reference || booking.booking_reference || booking.quotation_reference || String(booking.id),
           invoiceNumber: booking.invoice_number || "",
           bookingDate: booking.booking_date || booking.created_at,
           paymentDate: booking.booking_date || booking.created_at,
@@ -598,7 +598,7 @@ async function getDetailedInvoiceForPrint(invoice) {
       tours: toursWithHotels,
       id: invoice.id,
       tripId: invoice.tripId,
-      bookingId: booking.booking_reference || booking.quotation_reference || invoice.bookingId,
+      bookingId: booking.file_reference || booking.booking_reference || booking.quotation_reference || invoice.bookingId,
       invoiceNumber: booking.invoice_number || invoice.invoiceNumber || "",
       bookingDate: booking.booking_date || booking.created_at || invoice.bookingDate,
       paymentDate: booking.payment_date || booking.booking_date || booking.created_at || invoice.paymentDate,

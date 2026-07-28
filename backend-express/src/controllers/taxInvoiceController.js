@@ -513,13 +513,17 @@ function bookingAllowed(booking) {
 }
 
 function bookingConfirmed(booking) {
-  return String(booking?.status || '').toLowerCase() === 'confirmed';
+  return booking?.is_booking === true &&
+    String(booking?.status || '').toLowerCase() === 'confirmed';
 }
 
 export async function listEligibleBookings(req, res, next) {
   try {
     const claims = req.user;
-    const where = { status: { equals: 'Confirmed', mode: 'insensitive' } };
+    const where = {
+      is_booking: true,
+      status: { equals: 'Confirmed', mode: 'insensitive' }
+    };
     if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       where.agent_id = Number(claims.agent_id) || 0;
     }

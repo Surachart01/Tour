@@ -1,11 +1,13 @@
 import prisma from '../config/db.js';
 import PDFDocument from 'pdfkit';
 import nodemailer from 'nodemailer';
+import { buildSupplierActionButtons } from '../utils/supplierActions.js';
+import { bookingFromAddress, reservationFromAddress } from '../utils/workflowEmail.js';
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false,
+  secure: String(process.env.SMTP_SECURE || '').toLowerCase() === 'true',
   auth: { user: process.env.SMTP_USER || '', pass: process.env.SMTP_PASS || '' }
 });
 
@@ -378,8 +380,19 @@ export async function generateProformaInvoicePDF(req, res, next) {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid booking ID');
 
-    const trip = await prisma.trips.findUnique({
-      where: { id },
+    const where = { id, is_booking: true, status: 'Confirmed' };
+    const claims = req.user;
+    if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
+      const ownership = [];
+      const userId = Number(claims.user_id);
+      const agentId = Number(claims.agent_id);
+      if (Number.isInteger(userId) && userId > 0) ownership.push({ user_id: userId });
+      if (Number.isInteger(agentId) && agentId > 0) ownership.push({ agent_id: agentId });
+      where.OR = ownership.length ? ownership : [{ id: -1 }];
+    }
+
+    const trip = await prisma.trips.findFirst({
+      where,
       include: {
         agents: true,
         hotel_trip_items: { orderBy: [{ display_order: 'asc' }, { from_date: 'asc' }], include: { hotels: true, hotel_room_type_items: true } },
@@ -391,18 +404,19 @@ export async function generateProformaInvoicePDF(req, res, next) {
       }
     });
 
-    if (!trip) return res.status(404).send('Booking not found');
+    if (!trip) return res.status(404).send('Confirmed booking not found');
 
     const brandColor = '#f47b20';
     const brandDark = '#c85f0f';
     const brandLight = '#fff4ec';
-    const bookingRef = trip.booking_reference || trip.quotation_reference || `booking-${trip.id}`;
+    const fileNumber = trip.file_reference || trip.booking_reference || trip.quotation_reference || `booking-${trip.id}`;
+    const proformaNumber = trip.invoice_number || '-';
     const total = firstPositive(trip.final_amount, trip.final_cost, trip.total_amount, trip.total_cost);
     const rows = buildProformaServiceRows(trip);
 
     const doc = new PDFDocument({ size: 'A4', margin: 50, bufferPages: true });
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=proforma_${bookingRef}.pdf`);
+    res.setHeader('Content-Disposition', `attachment; filename=proforma_${proformaNumber === '-' ? fileNumber : proformaNumber}.pdf`);
     doc.pipe(res);
 
     const logoPath = path.resolve(process.cwd(), '../frontend-main/production/images/Verathailand_logo.png');
@@ -422,12 +436,14 @@ export async function generateProformaInvoicePDF(req, res, next) {
 
     drawProformaSectionTitle(doc, 'Booking Details', brandColor);
     const detailsY = doc.y;
-    doc.fillColor('#111111').fontSize(9).font('Helvetica-Bold').text('Booking ID:', 60, detailsY);
-    doc.font('Helvetica').text(bookingRef, 125, detailsY);
-    doc.font('Helvetica-Bold').text('Payment Date:', 315, detailsY);
+    doc.fillColor('#111111').fontSize(9).font('Helvetica-Bold').text('Proforma No.:', 60, detailsY);
+    doc.font('Helvetica').text(proformaNumber, 135, detailsY);
+    doc.font('Helvetica-Bold').text('Booking Date:', 315, detailsY);
     doc.font('Helvetica').text(proformaDate(trip.created_at || trip.booking_date), 395, detailsY);
-    doc.font('Helvetica-Bold').text('Status:', 60, detailsY + 14);
-    doc.font('Helvetica').text(trip.status || 'Confirmed', 125, detailsY + 14);
+    doc.font('Helvetica-Bold').text('File Number:', 60, detailsY + 14);
+    doc.font('Helvetica').text(fileNumber, 135, detailsY + 14);
+    doc.font('Helvetica-Bold').text('Status:', 315, detailsY + 14);
+    doc.font('Helvetica').text(trip.status || 'Confirmed', 395, detailsY + 14);
     doc.y = detailsY + 42;
 
     drawProformaSectionTitle(doc, 'Client Details', brandColor);
@@ -767,7 +783,7 @@ export async function notifyAgentBookingConfirmed(req, res, next) {
       return date.toLocaleDateString('en-GB').replace(/\//g, '-');
     };
 
-    const bookingRef = trip.booking_reference || `BK${trip.id}`;
+    const bookingRef = trip.file_reference || trip.booking_reference || `BK${trip.id}`;
     const agentName = trip.agents?.name || 'Agent';
     const subject = `Booking Confirmed - ${bookingRef} - ${trip.client_name || 'Client'}`;
     const html = `
@@ -809,7 +825,7 @@ export async function notifyAgentBookingConfirmed(req, res, next) {
     }
 
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      from: reservationFromAddress(),
       to: agentEmail,
       subject,
       text,
@@ -830,7 +846,21 @@ export async function notifySupplierOrHotel(req, res, next) {
       where: { id: tripId },
       include: { agents: true }
     });
-    if (!trip) return res.status(404).send('Trip not found');
+    if (!trip || !trip.is_booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+    if (!['InProgress', 'Approved', 'Confirmed'].includes(trip.status)) {
+      return res.status(409).json({
+        success: false,
+        message: 'Supplier notifications are available only for an active booking.'
+      });
+    }
+    if (!process.env.SMTP_USER) {
+      return res.status(503).json({
+        success: false,
+        message: 'Email service is not configured. No supplier notification was sent.'
+      });
+    }
 
     const formatDate = (d) => {
       if (!d) return 'N/A';
@@ -888,6 +918,12 @@ export async function notifySupplierOrHotel(req, res, next) {
                 <td style="padding: 8px; border: 1px solid #dfe6e9; color: #d9534f;">${escapeEmailHtml(remarksStr || '-')}</td>
               </tr>`;
           }).join('');
+          const ids = hotelGroup.originalItems.map((item) => item.id);
+          const actionButtons = buildSupplierActionButtons(req, {
+            tripId,
+            itemType: 'hotel',
+            itemIds: ids
+          });
 
           const emailHtml = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
@@ -897,8 +933,8 @@ export async function notifySupplierOrHotel(req, res, next) {
               </div>
               <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                 <tr>
-                  <td style="padding: 6px 0; color: #73879C; font-weight: bold; width: 140px;">Booking Ref:</td>
-                  <td style="padding: 6px 0; color: #2A3F54;">${trip.booking_reference || trip.id}</td>
+                  <td style="padding: 6px 0; color: #73879C; font-weight: bold; width: 140px;">File Number:</td>
+                  <td style="padding: 6px 0; color: #2A3F54;">${escapeEmailHtml(trip.file_reference || trip.booking_reference || trip.id)}</td>
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; color: #73879C; font-weight: bold;">Client Name:</td>
@@ -934,8 +970,9 @@ export async function notifySupplierOrHotel(req, res, next) {
                   <tbody>${stayRows}</tbody>
                 </table>
               </div>
+              ${actionButtons}
               <p style="color: #73879C; font-size: 12px; text-align: center; margin-top: 30px; border-top: 1px solid #e0e0e0; padding-top: 10px;">
-                Please reply to this email to confirm the booking.<br/>
+                Please use one of the buttons above to update availability.<br/>
                 VeraThailandia Co., Ltd.
               </p>
             </div>
@@ -944,15 +981,14 @@ export async function notifySupplierOrHotel(req, res, next) {
           // Send consolidated reservation email if SMTP configured
           if (process.env.SMTP_USER) {
             await transporter.sendMail({
-              from: process.env.SMTP_FROM || process.env.SMTP_USER,
+              from: bookingFromAddress(),
               to: recipientEmail,
-              subject: `Hotel Stay Booking - Ref: ${trip.booking_reference || trip.id} - ${hotelGroup.hotel_name}`,
+              subject: `Hotel Stay Booking - Ref: ${trip.file_reference || trip.booking_reference || trip.id} - ${hotelGroup.hotel_name}`,
               html: emailHtml
             });
           }
 
           // Mark all original items as email_sent = true in DB
-          const ids = hotelGroup.originalItems.map(x => x.id);
           await prisma.hotel_trip_items.updateMany({
             where: { trip_item_id: tripId, id: { in: ids } },
             data: { email_sent: true }
@@ -970,19 +1006,48 @@ export async function notifySupplierOrHotel(req, res, next) {
 
     // Handles transfer notifications
     if (itemType === 'transfer') {
+      const parsedItemId = itemID === 'all' ? null : parseInt(itemID, 10);
+      if (itemID !== 'all' && Number.isNaN(parsedItemId)) {
+        return res.status(400).json({ success: false, message: 'Invalid transfer item ID' });
+      }
       const items = await prisma.transfer_trip_items.findMany({
-        where: itemID === 'all' ? { trip_item_id: tripId } : { id: parseInt(itemID) },
+        where: itemID === 'all'
+          ? { trip_item_id: tripId }
+          : { id: parsedItemId, trip_item_id: tripId },
         include: { suppliers: true }
       });
+      if (items.length === 0) {
+        return res.status(404).json({ success: false, message: 'Transfer item not found in this booking' });
+      }
 
       for (const item of items) {
         let recipientEmail = item.suppliers?.email || 'reservation@verathailandia.com';
+        const actionButtons = buildSupplierActionButtons(req, {
+          tripId,
+          itemType: 'transfer',
+          itemIds: [item.id]
+        });
+        const emailHtml = `
+          <div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#1f2937;line-height:1.55;">
+            <h2 style="margin:0 0 18px;color:#0f766e;">Transfer Booking Request</h2>
+            <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;border:1px solid #dbe5ec;">
+              <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:700;width:160px;">File Number</td><td style="padding:8px 12px;">${escapeEmailHtml(trip.file_reference || trip.booking_reference || trip.id)}</td></tr>
+              <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:700;">Client</td><td style="padding:8px 12px;">${escapeEmailHtml(trip.client_name || '-')}</td></tr>
+              <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:700;">Date</td><td style="padding:8px 12px;">${escapeEmailHtml(formatDate(item.from_date))}</td></tr>
+              <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:700;">Route</td><td style="padding:8px 12px;">${escapeEmailHtml(item.from_location || '-')} to ${escapeEmailHtml(item.to_location || '-')}</td></tr>
+              <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:700;">Transfer Type</td><td style="padding:8px 12px;">${escapeEmailHtml(item.type_of_transfer || item.transfers?.transfer_type || '-')}</td></tr>
+              <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:700;">Pickup / Flight</td><td style="padding:8px 12px;">${escapeEmailHtml(item.pickup_time || '-')} / ${escapeEmailHtml(item.flight_number || '-')}</td></tr>
+              <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:700;">Remarks</td><td style="padding:8px 12px;">${escapeEmailHtml(item.remarks || '-')}</td></tr>
+            </table>
+            ${actionButtons}
+          </div>`;
         if (process.env.SMTP_USER) {
           await transporter.sendMail({
-            from: process.env.SMTP_FROM || process.env.SMTP_USER,
+            from: bookingFromAddress(),
             to: recipientEmail,
-            subject: `Transfer Booking Request - Ref: ${trip.booking_reference || trip.id}`,
-            text: `Please confirm transfer from ${item.from_location} to ${item.to_location} on ${formatDate(item.from_date)}. Details: Pickup: ${item.pickup_time || 'N/A'}, Flight: ${item.flight_number || 'N/A'}. Remarks: ${item.remarks || 'None'}.`
+            subject: `Transfer Booking Request - Ref: ${trip.file_reference || trip.booking_reference || trip.id}`,
+            text: `Please confirm transfer from ${item.from_location} to ${item.to_location} on ${formatDate(item.from_date)}. Details: Pickup: ${item.pickup_time || 'N/A'}, Flight: ${item.flight_number || 'N/A'}. Remarks: ${item.remarks || 'None'}.`,
+            html: emailHtml
           });
         }
         await prisma.transfer_trip_items.update({
@@ -995,19 +1060,47 @@ export async function notifySupplierOrHotel(req, res, next) {
 
     // Handles excursion notifications
     if (itemType === 'excursion') {
+      const parsedItemId = itemID === 'all' ? null : parseInt(itemID, 10);
+      if (itemID !== 'all' && Number.isNaN(parsedItemId)) {
+        return res.status(400).json({ success: false, message: 'Invalid excursion item ID' });
+      }
       const items = await prisma.excursion_trip_items.findMany({
-        where: itemID === 'all' ? { trip_item_id: tripId } : { id: parseInt(itemID) },
+        where: itemID === 'all'
+          ? { trip_item_id: tripId }
+          : { id: parsedItemId, trip_item_id: tripId },
         include: { suppliers: true, excursions: true }
       });
+      if (items.length === 0) {
+        return res.status(404).json({ success: false, message: 'Excursion item not found in this booking' });
+      }
 
       for (const item of items) {
         let recipientEmail = item.suppliers?.email || 'reservation@verathailandia.com';
+        const actionButtons = buildSupplierActionButtons(req, {
+          tripId,
+          itemType: 'excursion',
+          itemIds: [item.id]
+        });
+        const emailHtml = `
+          <div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#1f2937;line-height:1.55;">
+            <h2 style="margin:0 0 18px;color:#0f766e;">Excursion Booking Request</h2>
+            <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;border:1px solid #dbe5ec;">
+              <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:700;width:160px;">File Number</td><td style="padding:8px 12px;">${escapeEmailHtml(trip.file_reference || trip.booking_reference || trip.id)}</td></tr>
+              <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:700;">Client</td><td style="padding:8px 12px;">${escapeEmailHtml(trip.client_name || '-')}</td></tr>
+              <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:700;">Excursion</td><td style="padding:8px 12px;">${escapeEmailHtml(item.excursions?.name || 'Excursion')}</td></tr>
+              <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:700;">Date / City</td><td style="padding:8px 12px;">${escapeEmailHtml(formatDate(item.from_date))} / ${escapeEmailHtml(item.city || '-')}</td></tr>
+              <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:700;">Pickup</td><td style="padding:8px 12px;">${escapeEmailHtml(item.pickup_time || '-')}</td></tr>
+              <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:700;">Remarks</td><td style="padding:8px 12px;">${escapeEmailHtml(item.remarks || '-')}</td></tr>
+            </table>
+            ${actionButtons}
+          </div>`;
         if (process.env.SMTP_USER) {
           await transporter.sendMail({
-            from: process.env.SMTP_FROM || process.env.SMTP_USER,
+            from: bookingFromAddress(),
             to: recipientEmail,
-            subject: `Excursion Booking Request - Ref: ${trip.booking_reference || trip.id}`,
-            text: `Please confirm excursion booking for ${item.excursions?.name || 'Excursion'} in ${item.city} on ${formatDate(item.from_date)}. Pickup: ${item.pickup_time || 'N/A'}. Remarks: ${item.remarks || 'None'}.`
+            subject: `Excursion Booking Request - Ref: ${trip.file_reference || trip.booking_reference || trip.id}`,
+            text: `Please confirm excursion booking for ${item.excursions?.name || 'Excursion'} in ${item.city} on ${formatDate(item.from_date)}. Pickup: ${item.pickup_time || 'N/A'}. Remarks: ${item.remarks || 'None'}.`,
+            html: emailHtml
           });
         }
         await prisma.excursion_trip_items.update({
@@ -1020,19 +1113,47 @@ export async function notifySupplierOrHotel(req, res, next) {
 
     // Handles tour notifications
     if (itemType === 'tour') {
+      const parsedItemId = itemID === 'all' ? null : parseInt(itemID, 10);
+      if (itemID !== 'all' && Number.isNaN(parsedItemId)) {
+        return res.status(400).json({ success: false, message: 'Invalid tour item ID' });
+      }
       const items = await prisma.tour_trip_items.findMany({
-        where: itemID === 'all' ? { trip_item_id: tripId } : { id: parseInt(itemID) },
+        where: itemID === 'all'
+          ? { trip_item_id: tripId }
+          : { id: parsedItemId, trip_item_id: tripId },
         include: { suppliers: true, tours: true }
       });
+      if (items.length === 0) {
+        return res.status(404).json({ success: false, message: 'Tour item not found in this booking' });
+      }
 
       for (const item of items) {
         let recipientEmail = item.suppliers?.email || 'reservation@verathailandia.com';
+        const actionButtons = buildSupplierActionButtons(req, {
+          tripId,
+          itemType: 'tour',
+          itemIds: [item.id]
+        });
+        const emailHtml = `
+          <div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#1f2937;line-height:1.55;">
+            <h2 style="margin:0 0 18px;color:#0f766e;">Tour Booking Request</h2>
+            <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;border:1px solid #dbe5ec;">
+              <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:700;width:160px;">File Number</td><td style="padding:8px 12px;">${escapeEmailHtml(trip.file_reference || trip.booking_reference || trip.id)}</td></tr>
+              <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:700;">Client</td><td style="padding:8px 12px;">${escapeEmailHtml(trip.client_name || '-')}</td></tr>
+              <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:700;">Tour</td><td style="padding:8px 12px;">${escapeEmailHtml(item.tours?.name || 'Tour')}</td></tr>
+              <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:700;">Period</td><td style="padding:8px 12px;">${escapeEmailHtml(formatDate(item.from_date))} to ${escapeEmailHtml(formatDate(item.to_date))}</td></tr>
+              <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:700;">Route</td><td style="padding:8px 12px;">${escapeEmailHtml(item.from_location || '-')} to ${escapeEmailHtml(item.to_location || '-')}</td></tr>
+              <tr><td style="padding:8px 12px;background:#f8fafc;font-weight:700;">Remarks</td><td style="padding:8px 12px;">${escapeEmailHtml(item.remarks || '-')}</td></tr>
+            </table>
+            ${actionButtons}
+          </div>`;
         if (process.env.SMTP_USER) {
           await transporter.sendMail({
-            from: process.env.SMTP_FROM || process.env.SMTP_USER,
+            from: bookingFromAddress(),
             to: recipientEmail,
-            subject: `Tour Booking Request - Ref: ${trip.booking_reference || trip.id}`,
-            text: `Please confirm tour booking for ${item.tours?.name || 'Tour'} on ${formatDate(item.from_date)}. Route: ${item.from_location} to ${item.to_location}. Remarks: ${item.remarks || 'None'}.`
+            subject: `Tour Booking Request - Ref: ${trip.file_reference || trip.booking_reference || trip.id}`,
+            text: `Please confirm tour booking for ${item.tours?.name || 'Tour'} on ${formatDate(item.from_date)}. Route: ${item.from_location} to ${item.to_location}. Remarks: ${item.remarks || 'None'}.`,
+            html: emailHtml
           });
         }
         await prisma.tour_trip_items.update({

@@ -204,7 +204,11 @@ function applyModulePermissions() {
   }
 
   const currentKey = mapping[currentPage];
-  if (currentKey && permissions[currentKey] === false) {
+  const isAgentOwnedProformaPreview =
+    currentPage === "invoice_management.html" &&
+    role === "agent" &&
+    new URLSearchParams(window.location.search).has("preview");
+  if (currentKey && permissions[currentKey] === false && !isAgentOwnedProformaPreview) {
     alert("You do not have permission to access this page.");
     window.location.href = "index.html";
   }
