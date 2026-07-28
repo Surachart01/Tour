@@ -3132,7 +3132,9 @@
 
         function renderHotelWebsiteButton(website) {
           const url = getHotelWebsiteUrl(website);
-          if (!url) return "";
+          if (!url) {
+            return `<button type="button" class="btn btn-default btn-sm home-action-btn" disabled title="Website not available" aria-label="Hotel website not available"><i class="fa fa-globe" aria-hidden="true"></i></button>`;
+          }
           return `<a class="btn btn-info btn-sm home-action-btn" href="${url}" target="_blank" rel="noopener noreferrer" title="Open hotel website" aria-label="Open hotel website"><i class="fa fa-globe" aria-hidden="true"></i></a>`;
         }
 
@@ -3153,9 +3155,9 @@
               <td class="description-column">${row.notes || "N/A"}</td>
               <td class="view-column" style="white-space:nowrap;">
                   <div class="btn-group btn-group-sm" role="group">
-                    ${renderHotelWebsiteButton(row.website)}
                     <button class="btn btn-primary btn-sm home-action-btn view-hotel" data-index="${index}" data-toggle="modal" data-target="#viewHotelModal" title="View hotel details" aria-label="View hotel details"><i class="fa fa-eye" aria-hidden="true"></i></button>
                     ${renderHotelPrintButton(index)}
+                    ${renderHotelWebsiteButton(row.website)}
                   </div>
               </td>
             `;
@@ -3458,13 +3460,13 @@
                   .add(
                     dataStorage.map((item, index) => {
                       const isHotel = apiEndpoint === "hotels";
-                      let actionHtml = isHotel ? renderHotelWebsiteButton(item.website) : "";
-                      actionHtml += `<button class="btn btn-primary btn-sm home-action-btn view-btn"
+                      let actionHtml = `<button class="btn btn-primary btn-sm home-action-btn view-btn"
                         data-index="${index}"
                         data-target="${apiEndpoint}"
                         title="View details"
                         aria-label="View details"><i class="fa fa-eye" aria-hidden="true"></i></button>`;
                       if (isHotel) actionHtml += renderHotelPrintButton(index);
+                      if (isHotel) actionHtml += renderHotelWebsiteButton(item.website);
                       actionHtml += renderFilesButton(item.documents);
                       return [
                         item.name || item.transfer_type || "N/A",
