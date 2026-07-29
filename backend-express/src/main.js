@@ -9,6 +9,8 @@ import {
   ensureMarkupSchema,
   ensureOperationSchema
 } from './utils/schemaMaintenance.js';
+import prisma from './config/db.js';
+import { synchronizeAutoincrementSequences } from './utils/postgresSequences.js';
 
 // BigInt JSON serialization polyfill
 BigInt.prototype.toJSON = function () {
@@ -122,6 +124,7 @@ await ensureMarkupSchema();
 await ensureOperationSchema();
 await ensureAvailabilitySchema();
 await ensureCheckInvoiceSchema();
+await synchronizeAutoincrementSequences(prisma);
 
 // Start server
 const server = app.listen(PORT, () => {

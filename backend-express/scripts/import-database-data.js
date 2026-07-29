@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { Prisma, PrismaClient } from "@prisma/client";
+import { synchronizeAutoincrementSequences } from "../src/utils/postgresSequences.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -114,6 +115,9 @@ async function main() {
 
     console.log(`${table.model}: ${imported} rows imported`);
   }
+
+  await synchronizeAutoincrementSequences(prisma);
+  console.log("Database auto-increment sequences synchronized");
 }
 
 main()

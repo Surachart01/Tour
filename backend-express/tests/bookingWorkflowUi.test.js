@@ -325,6 +325,53 @@ test('agents can modify only pending quotations before conversion', () => {
   );
 });
 
+test('hotel quotation editing restores package dates and room counts safely', () => {
+  const editHotelSource = getFunctionSource(quotationPage, 'editHotel');
+  const populateHotelSource = getFunctionSource(quotationPage, 'populateHotelRow');
+  const updateNightsSource = getFunctionSource(quotationPage, 'updateNumberOfNights');
+  const searchHotelSource = getFunctionSource(
+    quotationPage,
+    'searchHotelByCity'
+  );
+  const deriveRoomCountsSource = getFunctionSource(
+    quotationPage,
+    'deriveHotelRoomCounts'
+  );
+
+  assert.match(quotationPage, /function parseStrictDateInput\(value\)/);
+  assert.match(quotationPage, /function deriveHotelRoomCounts\(hotel, isPackage\)/);
+  assert.match(
+    quotationPage,
+    /window\.pendingSpecialPkgSingleRooms[\s\S]*window\.pendingSpecialPkgDoubleRooms/
+  );
+  assert.match(editHotelSource, /getCellDateValue\(row\.cells\[0\]\)/);
+  assert.match(editHotelSource, /getCellDateValue\(row\.cells\[1\]\)/);
+  assert.match(editHotelSource, /row\.dataset\.singleRooms/);
+  assert.match(editHotelSource, /row\.dataset\.doubleRooms/);
+  assert.match(editHotelSource, /"Edit Hotel Booking"/);
+  assert.match(populateHotelSource, /deriveHotelRoomCounts\(hotel, isPackage\)/);
+  assert.match(populateHotelSource, /roomCounts\.singleRooms/);
+  assert.match(populateHotelSource, /roomCounts\.doubleRooms/);
+  assert.match(deriveRoomCountsSource, /singleRooms \+ doubleRooms === 0/);
+  assert.match(editHotelSource, /ensureCurrentHotelOption/);
+  assert.match(editHotelSource, /populateStoredHotelRoomTypes/);
+  assert.match(
+    editHotelSource,
+    /keeping saved hotel data/
+  );
+  assert.match(quotationPage, /function normalizeHotelApiDate\(value\)/);
+  assert.match(searchHotelSource, /normalizeHotelApiDate/);
+  assert.match(searchHotelSource, /method: "GET"/);
+  assert.doesNotMatch(searchHotelSource, /method: "POST"/);
+  assert.match(editHotelSource, /method: "GET"/);
+  assert.doesNotMatch(editHotelSource, /method: "POST"/);
+  assert.doesNotMatch(updateNightsSource, /alert\(/);
+  assert.match(
+    quotationPage,
+    /alert\("Check-Out date must be later than Check-In date\."\)/
+  );
+});
+
 test('booking documents and supplier messages prefer the generated file number', () => {
   assert.match(
     pdfControllerSource,

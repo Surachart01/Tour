@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import nodemailer from 'nodemailer';
+import { runWithSequenceRecovery } from '../utils/postgresSequences.js';
 
 const prisma = new PrismaClient();
 
@@ -100,7 +101,7 @@ export async function createSpecialPackage(req, res, next) {
 
     const items = data.items || [];
 
-    const pkg = await prisma.$transaction(async (tx) => {
+    const pkg = await runWithSequenceRecovery(prisma, () => prisma.$transaction(async (tx) => {
       const created = await tx.special_packages.create({
         data: {
           name: data.name,
@@ -174,7 +175,7 @@ export async function createSpecialPackage(req, res, next) {
           }
         }
       });
-    });
+    }));
 
     res.status(201).json(pkg);
   } catch (err) {
@@ -199,7 +200,7 @@ export async function updateSpecialPackage(req, res, next) {
       return res.status(404).json({ error: 'Special package not found' });
     }
 
-    const pkg = await prisma.$transaction(async (tx) => {
+    const pkg = await runWithSequenceRecovery(prisma, () => prisma.$transaction(async (tx) => {
       // Update the main package
       await tx.special_packages.update({
         where: { id: parseInt(id) },
@@ -282,7 +283,7 @@ export async function updateSpecialPackage(req, res, next) {
           }
         }
       });
-    });
+    }));
 
     res.json(pkg);
   } catch (err) {
@@ -432,10 +433,13 @@ export async function cloneSpecialPackage(req, res, next) {
       }
     };
 
-    const clonedPackage = await prisma.special_packages.create({
-      data: clonedData,
-      include: { items: true }
-    });
+    const clonedPackage = await runWithSequenceRecovery(
+      prisma,
+      () => prisma.special_packages.create({
+        data: clonedData,
+        include: { items: true }
+      })
+    );
 
     res.json(clonedPackage);
   } catch (err) {
