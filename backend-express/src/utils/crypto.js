@@ -1,6 +1,14 @@
 import crypto from 'crypto';
 
-const KEY = process.env.BANK_ENCRYPTION_KEY || 'WheelsApartBankDataEncryptKey32!';
+const isDeployedEnvironment =
+  process.env.NODE_ENV === 'production' ||
+  Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID);
+
+if (isDeployedEnvironment && !process.env.BANK_ENCRYPTION_KEY) {
+  throw new Error('BANK_ENCRYPTION_KEY must be configured in the production environment');
+}
+
+const KEY = process.env.BANK_ENCRYPTION_KEY || 'local-bank-encryption-key-32byte';
 
 /**
  * Encrypts a string using AES-256-GCM.

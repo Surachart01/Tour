@@ -92,6 +92,48 @@ export function resolveBookingStatusAfterSave(existingStatus, allServicesConfirm
   return undefined;
 }
 
+export function buildNewQuotationWorkflowState() {
+  return {
+    approved: false,
+    declined: false,
+    is_booking: false,
+    status: 'Pending'
+  };
+}
+
+export function isConvertibleQuotation(trip) {
+  return Boolean(trip) && trip.status === 'Pending' && trip.is_booking !== true;
+}
+
+export function buildQuotationConversionWhere(id) {
+  return {
+    id,
+    status: 'Pending',
+    OR: [
+      { is_booking: false },
+      { is_booking: null }
+    ]
+  };
+}
+
+export function buildQuotationConversionData(updatedAt = new Date()) {
+  return {
+    approved: false,
+    declined: false,
+    is_booking: true,
+    status: 'InProgress',
+    updated_at: updatedAt
+  };
+}
+
+export function normalizeQuotationFlightFields(item = {}) {
+  return {
+    edt: item.edt || item.departure_time || null,
+    eat: item.eat || item.arrival_time || null,
+    flight_airline: item.flight_airline || item.flight_name || null
+  };
+}
+
 async function resolveAgentIdFromRequest(data, claims, client = prisma) {
   const explicitAgentId = parseSafeInt(data.agent_id);
   if (explicitAgentId) return explicitAgentId;
@@ -170,7 +212,7 @@ function generateQuotationNumber() {
   return `Q${datePart}${suffix}`;
 }
 
-function calculateQuotationCosts(data) {
+export function calculateQuotationCosts(data) {
   let totalCost = 0;
   let discount = data.discount_amount !== undefined ? parseFloat(data.discount_amount) : (data.discount !== undefined ? parseFloat(data.discount) : 0);
 
@@ -729,16 +771,11 @@ export async function createQuotation(req, res, next) {
           total_amount,
           discount_amount,
           final_amount,
-          approved: false,
-          declined: false,
+          ...buildNewQuotationWorkflowState(),
           trip_start_date,
           user_id: parseSafeInt(data.user_id, claims ? claims.user_id : null),
-          // A newly created trip is always a quotation. Conversion is the only
-          // action that turns it into a booking and changes it to InProgress.
-          is_booking: false,
           amount_paid: data.amount_paid !== undefined ? parseFloat(data.amount_paid) : 0.00,
           penalty_cost: data.penalty_cost !== undefined ? parseFloat(data.penalty_cost) : 0.00,
-          status: 'Pending',
           include_assistance_fee: calculated.include_assistance_fee,
           assistance_fee_amount: calculated.assistance_fee_amount,
           include_description_in_itinerary: data.include_description_in_itinerary || false,
@@ -879,9 +916,7 @@ export async function createQuotation(req, res, next) {
               route: item.route, issued_by: item.issued_by, price: parseFloat(item.price) || 0,
               currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
               approved: item.approved || false, declined: item.declined || false,
-              edt: item.edt || item.departure_time || null,
-              eat: item.eat || item.arrival_time || null,
-              flight_airline: item.flight_airline || item.flight_name || null
+              ...normalizeQuotationFlightFields(item)
             }
           });
         }
@@ -1457,9 +1492,7 @@ export async function updateQuotation(req, res, next) {
               route: item.route, issued_by: item.issued_by, price: parseFloat(item.price) || 0,
               currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
               approved: item.approved || false, declined: item.declined || false,
-              edt: item.edt || item.departure_time || null,
-              eat: item.eat || item.arrival_time || null,
-              flight_airline: item.flight_airline || item.flight_name || null
+              ...normalizeQuotationFlightFields(item)
             }
           });
         }
@@ -1525,30 +1558,17 @@ export async function finalizeQuotation(req, res, next) {
       return res.status(403).send('Forbidden: Access denied to this quotation');
     }
 
-    if (existing.status !== 'Pending' || existing.is_booking) {
+    if (!isConvertibleQuotation(existing)) {
       return res.status(409).json({
         message: 'Only a pending quotation can be converted to a booking.'
       });
     }
 
-    const updateData = {
-      approved: false,
-      declined: false,
-      is_booking: true,
-      status: 'InProgress',
-      updated_at: new Date()
-    };
+    const updateData = buildQuotationConversionData();
 
     const converted = await prisma.$transaction(async (transaction) => {
       const conversion = await transaction.trips.updateMany({
-        where: {
-          id,
-          status: 'Pending',
-          OR: [
-            { is_booking: false },
-            { is_booking: null }
-          ]
-        },
+        where: buildQuotationConversionWhere(id),
         data: updateData
       });
       if (conversion.count !== 1) return null;

@@ -4,6 +4,7 @@
   "type": "module",
   "main": "src/main.js",
   "scripts": {
+    "test": "node --test tests/*.test.js",
     "start": "node src/main.js",
     "dev": "nodemon src/main.js",
     "prisma:push": "prisma db push",

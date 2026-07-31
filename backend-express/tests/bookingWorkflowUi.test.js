@@ -29,6 +29,11 @@ const supplierResponseSource = readFileSync(resolve(rootDirectory, 'backend-expr
 const workflowEmailSource = readFileSync(resolve(rootDirectory, 'backend-express/src/utils/workflowEmail.js'), 'utf8');
 const rolePermissionsSource = readFileSync(resolve(rootDirectory, 'frontend-main/production/js/common/role-permissions.js'), 'utf8');
 const homePage = readFileSync(resolve(rootDirectory, 'frontend-main/production/index.html'), 'utf8');
+const otherChargePages = [
+  'othercharges.html',
+  'add_othercharges.html',
+  'edit_othercharges.html'
+].map((file) => readFileSync(resolve(rootDirectory, 'frontend-main/production', file), 'utf8'));
 
 function getFunctionSource(source, name) {
   const start = source.indexOf(`function ${name}(`);
@@ -42,6 +47,17 @@ test('workflow status routes are restricted to their intended roles', () => {
   assert.match(routeSource, /router\.post\('\/bookings\/:id\/confirm', authorize\('admin'\), confirmBooking\)/);
   assert.match(routeSource, /router\.post\('\/bookings\/:id\/approveItem\/:itemType\/:itemID', authorize\('admin'\), approveItem\)/);
   assert.match(routeSource, /router\.post\('\/bookings\/:id\/declineItem\/:itemType\/:itemID', authorize\('admin'\), declineItem\)/);
+});
+
+test('Other Charges pages load the runtime API endpoint before their page scripts', () => {
+  for (const page of otherChargePages) {
+    const configIndex = page.indexOf('src="js/config.js"');
+    const featureIndex = page.indexOf('src="js/other_charges/');
+
+    assert.notEqual(configIndex, -1);
+    assert.notEqual(featureIndex, -1);
+    assert.ok(configIndex < featureIndex);
+  }
 });
 
 test('statement page keeps the Statement label after navigation', () => {

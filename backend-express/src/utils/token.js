@@ -1,6 +1,14 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'WheelsApartSecretTokenKeyVerySecure32!';
+const isDeployedEnvironment =
+  process.env.NODE_ENV === 'production' ||
+  Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID);
+
+if (isDeployedEnvironment && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET must be configured in the production environment');
+}
+
+const JWT_SECRET = process.env.JWT_SECRET || 'local-development-jwt-secret';
 
 /**
  * Generates an enhanced JWT token matching Go's claims structure.
