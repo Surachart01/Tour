@@ -1828,28 +1828,18 @@
           </div>
           <div class="modal-body">
             <form id="transferForm">
+              <input type="hidden" id="transferToT" value="PVT" />
+              <input type="hidden" id="transferDirectionType" value="" />
               <div class="form-row">
                 <!-- Country * -->
-                <div class="form-group col-md-3">
+                <div class="form-group col-md-4">
                   <label for="transferCountry">Country *</label>
                   <select class="form-control" id="transferCountry" required>
                     <option value="" disabled selected>Select Country</option>
                   </select>
                 </div>
-                 <!-- City * -->
-                <div class="form-group col-md-3">
-                  <label for="transferCity">City *</label>
-                  <select
-                    class="form-control city-dropdown-transfer"
-                    id="transferCity"
-                    required
-                  >
-                    <option value="" disabled selected>Select City</option>
-                    <!-- Cities will be populated dynamically -->
-                  </select>
-                </div>
                 <!-- Date * -->
-                <div class="form-group col-md-3">
+                <div class="form-group col-md-4">
                   <label for="transferDate">Date *</label>
                   <input
                     type="date"
@@ -1858,16 +1848,6 @@
                     required
                   />
                 </div>
-                <!-- Transfer Direction Type -->
-                <div class="form-group col-md-3">
-                  <label for="transferDirectionType">Transfer Type</label>
-                  <select class="form-control" id="transferDirectionType">
-                    <option value="">Select Type</option>
-                    <option value="TRF In">TRF In</option>
-                    <option value="TRF Out">TRF Out</option>
-                  </select>
-                </div>
-
                 <!-- Transfer Dropdown * -->
                 <div class="form-group col-md-4">
                   <label for="transferType">Transfer *</label>
@@ -1878,6 +1858,30 @@
                   >
                     <option value="" disabled selected>Select Transfer</option>
                   </select>
+                </div>
+
+                <!-- City * -->
+                <div class="form-group col-md-4">
+                  <label for="transferCity">City *</label>
+                  <div class="input-group">
+                    <select
+                      class="form-control city-dropdown-transfer"
+                      id="transferCity"
+                      required
+                    >
+                      <option value="" disabled selected>Select City</option>
+                    </select>
+                    <div class="input-group-append">
+                      <button
+                        class="btn btn-outline-success"
+                        type="button"
+                        id="addNewTransferCityBtn"
+                        title="Add New City"
+                      >
+                        <i class="fa fa-plus"></i>
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Flight -->
@@ -1898,6 +1902,17 @@
                     type="time"
                     class="form-control"
                     id="flightTime"
+                    required
+                  />
+                </div>
+
+                <!-- Arrival Time -->
+                <div class="form-group col-md-4">
+                  <label for="transferPickupTime">Arrival Time</label>
+                  <input
+                    type="time"
+                    class="form-control"
+                    id="transferPickupTime"
                     required
                   />
                 </div>
@@ -1923,15 +1938,6 @@
                     placeholder="Enter destination"
                     required
                   />
-                </div>
-                <!-- ToT -->
-                <div class="form-group col-md-4">
-                  <label for="transferToT">ToT *</label>
-                  <select class="form-control" id="transferToT" required>
-                    <option value="" disabled selected>Select ToT</option>
-                    <option value="PVT">PVT</option>
-                    <option value="SIC">SIC</option>
-                  </select>
                 </div>
                 <div class="col-md-4 col-sm-6 form-group">
                   <label for="updatedTransferPrice"
@@ -3351,33 +3357,38 @@
           const btn = document.getElementById("convertToBooking");
           if (!btn || btn.dataset.listenerAttached === "true") return;
           btn.dataset.listenerAttached = "true";
-          btn.addEventListener("click", function () {
+          btn.addEventListener("click", async function () {
             const confirmation = confirm(
               "Are you sure you want to convert this quotation to a booking?"
             );
             if (!confirmation) return;
-            const updateData = { convert_to_booking: true };
-            fetch(`${Endpoint}/api/v1/quotations/${tripId}/finalize`, {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(updateData),
-            })
-              .then((response) => {
-                if (!response.ok) throw new Error("Failed to update trip.");
-                return response.json();
-              })
-              .then((data) => {
-                alert("Trip successfully converted to booking!");
-                console.log("Updated Trip:", data);
-                window.location.reload();
-              })
-              .catch((error) => {
-                console.error("Error updating trip:", error);
-                alert("Error: Could not convert trip to booking.");
+
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px"></i>Converting...';
+
+            try {
+              const response = await fetch(`${Endpoint}/api/v1/quotations/${tripId}/finalize`, {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ convert_to_booking: true }),
               });
+              const payload = await response.json().catch(() => ({}));
+              if (!response.ok) {
+                throw new Error(payload.message || "Could not convert this quotation to a booking.");
+              }
+
+              alert(payload.message || "Quotation converted to booking successfully.");
+              window.location.reload();
+            } catch (error) {
+              console.error("Error converting quotation:", error);
+              alert(`Error: ${error.message}`);
+              btn.disabled = false;
+              btn.innerHTML = originalHtml;
+            }
           });
         }
 
@@ -4449,6 +4460,10 @@
                 option.dataset.remark = transfer.remark || "";
                 option.dataset.departure = transfer.departure || "";
                 option.dataset.arrival = transfer.arrival || "";
+                option.dataset.direction = normalizeTransferDirection(
+                  transfer.type_of_transfer || transfer.transfer_type || ""
+                );
+                option.dataset.tot = transfer.tot || "PVT";
                 transferDropdown.appendChild(option);
               });
 
@@ -4462,6 +4477,12 @@
                 const remarksTextarea = document.getElementById("remarks");
                 if (remarksTextarea && selectedOption) {
                   remarksTextarea.value = selectedOption.dataset.remark || "";
+                }
+                if (selectedOption) {
+                  document.getElementById("transferDirectionType").value =
+                    selectedOption.dataset.direction || "";
+                  document.getElementById("transferToT").value =
+                    selectedOption.dataset.tot || "PVT";
                 }
               };
               transferDropdown._remarkListener = remarkListener;
@@ -4627,42 +4648,15 @@
 
             console.log(`Dropdown matched flight: ${this.value}, dep: ${departure}, arr: ${arrival}`);
 
-            // Fill Time input based on Transfer Type direction
-            const directionType = (document.getElementById("transferDirectionType")?.value || "").toLowerCase();
-            if (flightTimeInput) {
-              if (directionType === "trf in") {
-                // TRF In → use ETA (arrival)
-                if (arrival) flightTimeInput.value = formatTimeToHHMM(arrival);
-              } else if (directionType === "trf out") {
-                // TRF Out → use ETD (departure)
-                if (departure) flightTimeInput.value = formatTimeToHHMM(departure);
-              } else {
-                // No direction selected → default to ETD
-                if (departure) flightTimeInput.value = formatTimeToHHMM(departure);
-              }
+            // Keep the same field meaning and order as Add Quotation:
+            // Time = departure, Arrival Time = arrival.
+            if (flightTimeInput && departure) {
+              flightTimeInput.value = formatTimeToHHMM(departure);
+            }
+            if (transferPickupTimeInput && arrival) {
+              transferPickupTimeInput.value = formatTimeToHHMM(arrival);
             }
           });
-
-          // When Transfer Type direction changes → re-apply time from the currently selected flight
-          const directionTypeSelect = document.getElementById("transferDirectionType");
-          if (directionTypeSelect) {
-            directionTypeSelect.addEventListener("change", function () {
-              const selectedOption = transferFlightSelect.options[transferFlightSelect.selectedIndex];
-              if (!selectedOption || transferFlightSelect.value === "") return;
-
-              const departure = selectedOption.dataset.departure;
-              const arrival = selectedOption.dataset.arrival;
-              const direction = this.value.toLowerCase();
-
-              if (flightTimeInput) {
-                if (direction === "trf in") {
-                  if (arrival) flightTimeInput.value = formatTimeToHHMM(arrival);
-                } else if (direction === "trf out") {
-                  if (departure) flightTimeInput.value = formatTimeToHHMM(departure);
-                }
-              }
-            });
-          }
 
           // Bind shown.bs.modal to refresh options whenever the modal opens
           $("#addTransferModal").on("shown.bs.modal", function () {
@@ -4704,7 +4698,7 @@
               transferTo: document.getElementById("transferTo").value.trim(),
               transferToT: document.getElementById("transferToT").value,
               typeOfTransfer: document.getElementById("transferDirectionType").value,
-              transferPickupTime: "",
+              transferPickupTime: document.getElementById("transferPickupTime").value,
               flightTime: document.getElementById("flightTime").value,
               transferFlight: document.getElementById("transferFlight").value,
               remarks: document.getElementById("remarks").value.trim(),

@@ -879,9 +879,9 @@ export async function createQuotation(req, res, next) {
               route: item.route, issued_by: item.issued_by, price: parseFloat(item.price) || 0,
               currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
               approved: item.approved || false, declined: item.declined || false,
-              edt: item.edt || null,
-              eat: item.eat || null,
-              flight_airline: item.flight_airline || null
+              edt: item.edt || item.departure_time || null,
+              eat: item.eat || item.arrival_time || null,
+              flight_airline: item.flight_airline || item.flight_name || null
             }
           });
         }
@@ -1457,9 +1457,9 @@ export async function updateQuotation(req, res, next) {
               route: item.route, issued_by: item.issued_by, price: parseFloat(item.price) || 0,
               currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
               approved: item.approved || false, declined: item.declined || false,
-              edt: item.edt || null,
-              eat: item.eat || null,
-              flight_airline: item.flight_airline || null
+              edt: item.edt || item.departure_time || null,
+              eat: item.eat || item.arrival_time || null,
+              flight_airline: item.flight_airline || item.flight_name || null
             }
           });
         }
@@ -1544,7 +1544,10 @@ export async function finalizeQuotation(req, res, next) {
         where: {
           id,
           status: 'Pending',
-          is_booking: false
+          OR: [
+            { is_booking: false },
+            { is_booking: null }
+          ]
         },
         data: updateData
       });

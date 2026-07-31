@@ -8,6 +8,7 @@ const testDirectory = resolve(fileURLToPath(new URL('.', import.meta.url)));
 const rootDirectory = resolve(testDirectory, '..', '..');
 const routeSource = readFileSync(resolve(rootDirectory, 'backend-express/src/routes/tripRoutes.js'), 'utf8');
 const quotationPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/edit_trip.html'), 'utf8');
+const addQuotationPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/add_trip.html'), 'utf8');
 const bookingPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/edit_booking.html'), 'utf8');
 const quotationListPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/trip.html'), 'utf8');
 const bookingListPage = readFileSync(resolve(rootDirectory, 'frontend-main/production/booking.html'), 'utf8');
@@ -98,10 +99,12 @@ test('quotation conversion is wired to the finalization endpoint', () => {
   const source = getFunctionSource(quotationPage, 'attachConvertToBookingListener');
   assert.match(source, /\/api\/v1\/quotations\/\$\{tripId\}\/finalize/);
   assert.match(source, /method:\s*"POST"/);
-  assert.match(tripControllerSource, /where:\s*\{\s*id,\s*status: 'Pending',\s*is_booking: false\s*\}/);
+  assert.match(tripControllerSource, /OR:\s*\[\s*\{ is_booking: false \},\s*\{ is_booking: null \}\s*\]/);
   assert.match(tripControllerSource, /conversion\.count !== 1/);
   assert.match(tripControllerSource, /status: 'InProgress'/);
   assert.match(tripControllerSource, /ensureBookingReferences\(transaction, updated\)/);
+  assert.match(source, /payload\.message \|\| "Could not convert this quotation to a booking\."/);
+  assert.match(source, /Converting\.\.\./);
 });
 
 test('booking confirmation controls call the correct endpoints without a page reload', () => {
@@ -323,6 +326,51 @@ test('agents can modify only pending quotations before conversion', () => {
     quotationListPage,
     /const agentCanModify = isAdminRole \|\| \(trip\.status === "Pending" && !trip\.is_booking\);/
   );
+});
+
+test('add and edit quotation transfer forms use the same field order and preserve arrival time', () => {
+  const expectedOrder = [
+    'id="transferCountry"',
+    'id="transferDate"',
+    'id="transferType"',
+    'id="transferCity"',
+    'id="transferFlight"',
+    'id="flightTime"',
+    'id="transferPickupTime"',
+    'id="transferFrom"',
+    'id="transferTo"',
+  ];
+
+  for (const source of [addQuotationPage, quotationPage]) {
+    const modalStart = source.indexOf('id="addTransferModal"');
+    const modalEnd = source.indexOf('<!-- Add Excursion Modal -->', modalStart);
+    const modal = source.slice(modalStart, modalEnd);
+    let previousIndex = -1;
+
+    for (const field of expectedOrder) {
+      const fieldIndex = modal.indexOf(field);
+      assert.ok(fieldIndex > previousIndex, `${field} must appear in the expected transfer form order`);
+      previousIndex = fieldIndex;
+    }
+  }
+
+  assert.match(
+    quotationPage,
+    /transferPickupTime:\s*document\.getElementById\("transferPickupTime"\)\.value/
+  );
+  assert.doesNotMatch(quotationPage, /transferPickupTime:\s*""/);
+});
+
+test('flight airline, ETD, and ETA survive add and edit quotation saves', () => {
+  assert.match(addQuotationPage, /flightData\["flight_airline"\]\s*=\s*flightAirline/);
+  assert.match(addQuotationPage, /flightData\["edt"\]\s*=\s*departureTime/);
+  assert.match(addQuotationPage, /flightData\["eat"\]\s*=\s*arrivalTime/);
+  assert.match(quotationPage, /flightData\["flight_airline"\]\s*=\s*getCellText\(cells\[1\]\)/);
+  assert.match(quotationPage, /flightData\["edt"\]\s*=\s*cells\[5\]/);
+  assert.match(quotationPage, /flightData\["eat"\]\s*=\s*cells\[6\]/);
+  assert.match(tripControllerSource, /edt:\s*item\.edt\s*\|\|\s*item\.departure_time\s*\|\|\s*null/);
+  assert.match(tripControllerSource, /eat:\s*item\.eat\s*\|\|\s*item\.arrival_time\s*\|\|\s*null/);
+  assert.match(tripControllerSource, /flight_airline:\s*item\.flight_airline\s*\|\|\s*item\.flight_name\s*\|\|\s*null/);
 });
 
 test('hotel quotation editing restores package dates and room counts safely', () => {

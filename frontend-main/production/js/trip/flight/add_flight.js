@@ -219,13 +219,20 @@ function extractFlightData() {
     let flightData = {};
     const cells = row.querySelectorAll("td");
 
-    flightData["flight_name"] = cells[1]?.textContent.trim() || "";
+    const flightAirline = cells[1]?.textContent.trim() || "";
+    const departureTime = cells[5]?.textContent.trim() || "";
+    const arrivalTime = cells[6]?.textContent.trim() || "";
+
+    flightData["flight_airline"] = flightAirline;
+    flightData["flight_name"] = flightAirline;
     flightData["flight_number"] = cells[2]?.textContent.trim() || "";
     flightData["in_or_out"] = cells[3]?.textContent.trim() || "";
     flightData["route"] = cells[4]?.textContent.trim() || "";
     flightData["flight_date"] = cells[0]?.textContent.trim() || "";
-    flightData["departure_time"] = cells[5]?.textContent.trim() || "";
-    flightData["arrival_time"] = cells[6]?.textContent.trim() || "";
+    flightData["edt"] = departureTime;
+    flightData["eat"] = arrivalTime;
+    flightData["departure_time"] = departureTime;
+    flightData["arrival_time"] = arrivalTime;
     flightData["issued_by"] = cells[7]?.textContent.trim() || "";
     flightData["remarks"] = cells[9]?.textContent.trim() || "";
 
