@@ -1,6 +1,7 @@
 import prisma from '../config/db.js';
 import ExcelJS from 'exceljs';
 import { ensureCheckInvoiceSchema } from '../utils/schemaMaintenance.js';
+import { acquireAdvisoryTransactionLock } from '../utils/bookingReferences.js';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -408,7 +409,10 @@ export async function generateCheckInvoiceNumbers(req, res, next) {
     if (agentId) where.agent_id = agentId;
 
     const generated = await prisma.$transaction(async (tx) => {
-      await tx.$queryRawUnsafe('SELECT pg_advisory_xact_lock($1)', (range.year * 100) + range.startMonth);
+      await acquireAdvisoryTransactionLock(
+        tx,
+        (range.year * 100) + range.startMonth
+      );
       const trips = (await tx.trips.findMany({
         where,
         select: {

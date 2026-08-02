@@ -1,12 +1,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  acquireAdvisoryTransactionLock,
   bookingReferenceDate,
   formatAnnualInvoiceNumber,
   formatMonthlyFileReference,
   nextAnnualInvoiceSequence,
   nextMonthlyFileSequence
 } from '../src/utils/bookingReferences.js';
+
+test('advisory lock query returns a Prisma-supported scalar', async () => {
+  const calls = [];
+  const client = {
+    async $queryRawUnsafe(...args) {
+      calls.push(args);
+      return [{ locked: 1 }];
+    }
+  };
+
+  await acquireAdvisoryTransactionLock(client, 12345);
+
+  assert.deepEqual(calls, [[
+    'SELECT 1 AS locked FROM pg_advisory_xact_lock($1)',
+    12345
+  ]]);
+  assert.doesNotMatch(calls[0][0], /^SELECT pg_advisory_xact_lock/);
+});
 
 test('formats the monthly booking file number using the trip start month', () => {
   const date = bookingReferenceDate({

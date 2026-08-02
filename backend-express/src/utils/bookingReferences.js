@@ -53,9 +53,13 @@ export function nextAnnualInvoiceSequence(values, value) {
   return nextSequence(values, new RegExp(`^(\\d+)_${year}$`));
 }
 
-async function acquireLock(client, lockKey) {
+export async function acquireAdvisoryTransactionLock(client, lockKey) {
   if (typeof client.$queryRawUnsafe === 'function') {
-    await client.$queryRawUnsafe('SELECT pg_advisory_xact_lock($1)', lockKey);
+    // Return a supported scalar instead of PostgreSQL's `void` lock result.
+    await client.$queryRawUnsafe(
+      'SELECT 1 AS locked FROM pg_advisory_xact_lock($1)',
+      lockKey
+    );
   }
 }
 
@@ -68,7 +72,10 @@ export async function ensureBookingReferences(client, trip, options = {}) {
   const updates = {};
 
   if (!trip.file_reference) {
-    await acquireLock(client, FILE_REFERENCE_LOCK_BASE + (year * 12) + monthIndex);
+    await acquireAdvisoryTransactionLock(
+      client,
+      FILE_REFERENCE_LOCK_BASE + (year * 12) + monthIndex
+    );
     const rows = await client.trips.findMany({
       where: { file_reference: { startsWith: month } },
       select: { file_reference: true }
@@ -81,7 +88,7 @@ export async function ensureBookingReferences(client, trip, options = {}) {
   }
 
   if (assignInvoice && !trip.invoice_number) {
-    await acquireLock(client, INVOICE_NUMBER_LOCK_BASE + year);
+    await acquireAdvisoryTransactionLock(client, INVOICE_NUMBER_LOCK_BASE + year);
     const rows = await client.trips.findMany({
       where: { invoice_number: { endsWith: `_${year}` } },
       select: { invoice_number: true }
@@ -103,4 +110,3 @@ export async function ensureBookingReferences(client, trip, options = {}) {
     }
   });
 }
-

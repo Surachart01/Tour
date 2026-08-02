@@ -123,6 +123,16 @@ test('quotation conversion is wired to the finalization endpoint', () => {
   assert.match(source, /Converting\.\.\./);
 });
 
+test('quotation conversion advisory locks never return PostgreSQL void values', () => {
+  const source = readFileSync(
+    resolve(rootDirectory, 'backend-express/src/utils/bookingReferences.js'),
+    'utf8'
+  );
+
+  assert.match(source, /SELECT 1 AS locked FROM pg_advisory_xact_lock\(\$1\)/);
+  assert.doesNotMatch(source, /['"]SELECT pg_advisory_xact_lock\(\$1\)['"]/);
+});
+
 test('booking confirmation controls call the correct endpoints without a page reload', () => {
   const approve = getFunctionSource(bookingPage, 'approveItem');
   const decline = getFunctionSource(bookingPage, 'declineItem');
