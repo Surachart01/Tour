@@ -209,6 +209,16 @@ test('agent quotation and booking ownership supports current user and agent toke
   assert.doesNotMatch(tripControllerSource, /existing\.user_id !== claims\.user_id/);
 });
 
+test('quotation and booking lists keep quotation references separate from file numbers', () => {
+  assert.match(quotationListPage, /const quotationRef = trip\.quotation_reference \|\| trip\.booking_reference \|\| ''/);
+  assert.match(quotationListPage, /const fileNumber = trip\.file_reference \|\| ''/);
+  assert.match(quotationListPage, /const displayFileNumber = escapedFileNumber \|\| '-'/);
+  assert.doesNotMatch(quotationListPage, /const clientBooking = trip\.client_booking \|\| trip\.booking_reference/);
+
+  assert.match(bookingListPage, /<td>\$\{trip\.booking_reference \|\| trip\.quotation_reference \|\| "-"\}<\/td>/);
+  assert.match(bookingListPage, /<td style="font-weight: 500;">\$\{trip\.file_reference \|\| "-"\}<\/td>/);
+});
+
 test('booking APIs expose only quotations that were converted to bookings', () => {
   assert.match(tripControllerSource, /const bookingStatusWhere = \{\s*is_booking: true,/);
   assert.match(tripControllerSource, /applyAgentTripScope\(\{ id, \.\.\.bookingStatusWhere \}, claims\)/);

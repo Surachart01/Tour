@@ -1000,7 +1000,7 @@
             }
 
             const quotationRef = trip.quotation_reference || trip.booking_reference || '';
-            const clientBooking = trip.client_booking || trip.booking_reference || '';
+            const fileNumber = trip.file_reference || '';
             const finalCostRaw = trip.final_cost !== undefined ? trip.final_cost : (trip.final_amount !== undefined ? trip.final_amount : null);
             const finalCostDisplay = (finalCostRaw !== null && finalCostRaw !== undefined)
               ? (parseFloat(finalCostRaw) === 0 ? '0' : (parseFloat(finalCostRaw).toLocaleString() || 'N/A'))
@@ -1010,7 +1010,7 @@
             const escapedRef = escapeHtml(quotationRef);
             const escapedName = escapeHtml(trip.client_name);
             const escapedPhone = escapeHtml(trip.client_phone);
-            const escapedBooking = escapeHtml(clientBooking);
+            const escapedFileNumber = escapeHtml(fileNumber);
 
              const agentName = trip.agent_name || (trip.agents ? trip.agents.name : '') || 'Direct Client';
              const escapedAgentName = escapeHtml(agentName);
@@ -1019,7 +1019,7 @@
                ${escapedAgentName ? `<div class="text-muted" style="font-size: 11px; margin-top: 3px; font-weight: normal;"><i class="fa fa-user-circle-o"></i> ${escapedAgentName}</div>` : ''}
              `;
              const displayName = escapedName;
-             const displayBooking = escapedBooking;
+             const displayFileNumber = escapedFileNumber || '-';
  
              // Status Badge rendering
              let statusBadge = '';
@@ -1052,7 +1052,7 @@
                <td style="white-space: nowrap;">${formattedBookingDate}</td>
                <td style="white-space: nowrap;">${formattedDate}</td>
                <td class="text-center" style="white-space: nowrap;">${trip.number_of_adults + trip.number_of_kids}</td>
-               <td style="white-space: nowrap;">${displayBooking}</td>
+               <td style="white-space: nowrap;">${displayFileNumber}</td>
                <td style="white-space: nowrap;">${statusBadge}</td>
                <td class="font-weight-bold text-success" style="white-space: nowrap;">${finalCostDisplay}</td>
                <td class="text-center" style="white-space: nowrap; width: 1%;">

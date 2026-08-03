@@ -134,10 +134,18 @@ export function normalizeQuotationFlightFields(item = {}) {
   };
 }
 
-async function resolveAgentIdFromRequest(data, claims, client = prisma) {
+export async function resolveAgentIdFromRequest(data, claims, client = prisma) {
+  const role = String(claims?.role || '').trim().toLowerCase();
+  const claimAgentId = parseSafeInt(claims?.agent_id);
+
+  // An agent must always own the quotation they create or edit. Do not allow
+  // stale form/localStorage values to reassign it to another agency.
+  if (role !== 'admin' && role !== 'superadmin' && claimAgentId) {
+    return claimAgentId;
+  }
+
   const explicitAgentId = parseSafeInt(data.agent_id);
   if (explicitAgentId) return explicitAgentId;
-  const claimAgentId = parseSafeInt(claims?.agent_id);
   if (claimAgentId) return claimAgentId;
 
   const agentName = (data.agent_name || '').toString().trim();

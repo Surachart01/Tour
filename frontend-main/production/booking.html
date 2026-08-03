@@ -1734,13 +1734,13 @@
 
             row.innerHTML = `
             <td style="font-weight: 500;">${(trip.agent && trip.agent.name) || (trip.agents && trip.agents.name) || "N/A"}</td>
-            <td>${trip.file_reference || trip.booking_reference || "-"}</td>
+            <td>${trip.booking_reference || trip.quotation_reference || "-"}</td>
             <td style="font-weight: 500;">${trip.client_name}</td>
             <td>${formattedBookingDate}</td>
             <td>${formattedDate}</td>
             <td style="text-align: center; font-weight: 500;">${trip.number_of_adults + trip.number_of_kids}</td>
             <td>${trip.client_phone}</td>
-            <td style="font-weight: 500;">${trip.booking_reference || ""}</td>
+            <td style="font-weight: 500;">${trip.file_reference || "-"}</td>
             <td>${statusHtml}</td>
             <td style="font-weight: 600;">${trip.final_amount || "N/A"}</td>
             <td style="text-align: center; white-space: nowrap;">

@@ -6,7 +6,8 @@ import {
   buildQuotationConversionWhere,
   calculateQuotationCosts,
   isConvertibleQuotation,
-  normalizeQuotationFlightFields
+  normalizeQuotationFlightFields,
+  resolveAgentIdFromRequest
 } from '../src/controllers/tripController.js';
 
 test('a new quotation always starts pending and is not a booking', () => {
@@ -110,4 +111,31 @@ test('flight fields preserve canonical values and support legacy aliases', () =>
     eat: null,
     flight_airline: null
   });
+});
+
+test('an agent cannot assign a quotation to a different agent from form data', async () => {
+  const lookupClient = {
+    agent: {
+      findFirst: async () => {
+        throw new Error('agent lookup must not run for an authenticated agent');
+      }
+    }
+  };
+
+  const resolved = await resolveAgentIdFromRequest(
+    { agent_id: 999, agent_name: 'Wrong Agent' },
+    { role: 'agent', agent_id: 42 },
+    lookupClient
+  );
+
+  assert.equal(resolved, 42);
+});
+
+test('an admin can explicitly select the quotation owner', async () => {
+  const resolved = await resolveAgentIdFromRequest(
+    { agent_id: 77 },
+    { role: 'admin', agent_id: 1 }
+  );
+
+  assert.equal(resolved, 77);
 });
