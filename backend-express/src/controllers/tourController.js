@@ -107,6 +107,9 @@ export async function createTour(req, res, next) {
       : (data.valid_days || null);
 
     // Accept both 'tour_pricings' (frontend) and 'pricing' (legacy)
+    const hasPricings = Object.prototype.hasOwnProperty.call(data, 'tour_pricings') ||
+      Object.prototype.hasOwnProperty.call(data, 'pricing');
+    const hasTourDays = Object.prototype.hasOwnProperty.call(data, 'tour_days');
     const pricings = data.tour_pricings || data.pricing || [];
     const tour_days = data.tour_days || [];
 
@@ -310,7 +313,7 @@ export async function listAvailableToursByCity(req, res, next) {
     // Filter by day of week if from_date provided
     let filtered = tours;
     if (from_date) {
-      const requestedDayOfWeek = new Date(from_date).getDay(); // 0=Sun, 1=Mon, ...
+      const requestedDayOfWeek = new Date(from_date).getUTCDay(); // 0=Sun, 1=Mon, ...
       filtered = tours.filter(tour => {
         // If valid_days not set, tour is available every day
         if (!tour.valid_days) return true;
@@ -369,19 +372,26 @@ export async function updateTour(req, res, next) {
       : (data.valid_days !== undefined ? data.valid_days : undefined);
 
     // Accept both 'tour_pricings' (frontend) and 'pricing' (legacy)
+    const hasPricings = Object.prototype.hasOwnProperty.call(data, 'tour_pricings') ||
+      Object.prototype.hasOwnProperty.call(data, 'pricing');
+    const hasTourDays = Object.prototype.hasOwnProperty.call(data, 'tour_days');
     const pricings = data.tour_pricings || data.pricing || [];
     const tour_days = data.tour_days || [];
 
     await prisma.$transaction(async (tx) => {
-      await tx.tour_pricing.deleteMany({ where: { tour_id: id } });
-      await tx.tour_details.deleteMany({
-        where: {
-          tour_days: {
-            tour_id: id
+      if (hasPricings) {
+        await tx.tour_pricing.deleteMany({ where: { tour_id: id } });
+      }
+      if (hasTourDays) {
+        await tx.tour_details.deleteMany({
+          where: {
+            tour_days: {
+              tour_id: id
+            }
           }
-        }
-      });
-      await tx.tour_days.deleteMany({ where: { tour_id: id } });
+        });
+        await tx.tour_days.deleteMany({ where: { tour_id: id } });
+      }
 
       // Build update data object — only include fields that are defined to avoid Prisma undefined error
       const updateData = {};
@@ -396,7 +406,7 @@ export async function updateTour(req, res, next) {
       if (data.country !== undefined) updateData.country = data.country;
       if (valid_days !== undefined) updateData.valid_days = valid_days;
       if (data.display_order !== undefined) updateData.display_order = data.display_order;
-      if (pricings.length > 0) {
+      if (hasPricings && pricings.length > 0) {
         updateData.tour_pricing = {
           create: pricings.map(p => ({
             start_date: new Date(p.start_date),
@@ -408,7 +418,7 @@ export async function updateTour(req, res, next) {
           }))
         };
       }
-      if (tour_days.length > 0) {
+      if (hasTourDays && tour_days.length > 0) {
         updateData.tour_days = {
           create: tour_days.map(d => ({
             day: parseInt(d.day),

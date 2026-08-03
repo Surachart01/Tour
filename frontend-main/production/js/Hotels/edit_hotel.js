@@ -1281,10 +1281,7 @@ document.addEventListener("DOMContentLoaded", function () {
               window.location.href = "login.html"; // Redirect to login page
             } else if (response.status === 403) {
               // Handle 403 Forbidden
-              alert(
-                "You don't have sufficient permissions to perform this action."
-              );
-              return;
+              throw new Error("You don't have sufficient permissions to perform this action.");
             } else {
               return response.text().then((errorMessage) => {
                 // If the error message is empty, use a default message
@@ -1579,6 +1576,7 @@ document.addEventListener("DOMContentLoaded", function () {
     tableBody.innerHTML = "";
     contacts.forEach((contact, idx) => {
       const row = document.createElement("tr");
+      row.dataset.contactId = contact.id || contact.key || "";
       row.innerHTML = `
                 <td>${contact.contact_name}</td>
                 <td>${contact.email}</td>
@@ -1734,6 +1732,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const enabledDisplay = promotion.enabled ? "Yes" : "No";
 
       const row = document.createElement("tr");
+      row.dataset.promotionId = promotion.id || promotion.key || "";
       row.innerHTML = `
         <td>${promotion.promotion_code || ""}</td>
         <td>${promotion.name || ""}</td>
@@ -1779,6 +1778,7 @@ document.addEventListener("DOMContentLoaded", function () {
     rows.forEach((row) => {
       const cells = row.querySelectorAll("td");
       const contact = {
+        id: parseInt(row.dataset.contactId || "0", 10) || null,
         contact_name: cells[0].textContent,
         email: cells[1].textContent,
         telephone: cells[2].textContent,
@@ -1788,6 +1788,18 @@ document.addEventListener("DOMContentLoaded", function () {
     return contacts;
   }
 
+  function safeExtractValue(text, prefix, isFloat = true, defaultValue = 0) {
+    if (!text) return defaultValue;
+    const lines = text.split("\n");
+    const line = lines.find((l) => l.toLowerCase().includes(prefix.toLowerCase()));
+    if (!line) return defaultValue;
+    const parts = line.split(":");
+    if (parts.length < 2) return defaultValue;
+    const val = parts[1].trim();
+    const parsed = isFloat ? parseFloat(val) : parseInt(val, 10);
+    return isNaN(parsed) ? defaultValue : parsed;
+  }
+
   function getRoomTypesFromTable() {
     const roomTypes = [];
     const rows = document.querySelectorAll("#roomTypesTable tbody tr");
@@ -1795,40 +1807,21 @@ document.addEventListener("DOMContentLoaded", function () {
     rows.forEach((row, index) => {
       const cells = row.getElementsByTagName("td");
 
-      // Retrieve room type ID from a data attribute or elsewhere as appropriate
       const roomTypeId = parseInt(
         row.getAttribute("data-room-type-id") || "0",
         10
       );
 
-      // Extract the name, allotment, cutoff, and max capacity properly
-      const nameLine = cells[3].innerText.split("\n")[0];
-      const allotmentLine = cells[3].innerText.split("\n")[1];
-      const cutoffLine =
-        cells[3].innerText
-          .split("\n")
-          .find((line) => /cut.*off.*days/i.test(line)) || "CutOff Days: 0";
-      const maxCapacityLine =
-        cells[3].innerText
-          .split("\n")
-          .find((line) => /max.*capacity/i.test(line)) || "Max Capacity: 0";
-
-      const cutoffDays = parseIntOrDefault(
-        cutoffLine.replace(/cut.*off.*days\s*:\s*/i, "").trim()
-      );
-      const maxCapacity = parseIntOrDefault(
-        maxCapacityLine.replace(/max.*capacity\s*:\s*/i, "").trim()
-      );
-
-      // Safely handle missing or undefined fields
-      const parseOrDefault = (value, defaultValue = 0) => {
-        const parsed = parseFloat(value);
-        return isNaN(parsed) ? defaultValue : parsed;
-      };
+      const cell3Text = cells[3] ? cells[3].innerText : "";
+      const nameLine = cell3Text.split("\n")[0] || "";
+      const allotmentLine = cell3Text.split("\n")[1] || "";
+      
+      const cutoffDays = safeExtractValue(cell3Text, "CutOff Days", false, 0);
+      const maxCapacity = safeExtractValue(cell3Text, "Max Capacity", false, 0);
 
       const roomTypeName = nameLine.replace("Name: ", "").trim();
-      const startDateISO = convertToISODate(cells[1].textContent.trim());
-      const endDateISO = convertToISODate(cells[2].textContent.trim());
+      const startDateISO = convertToISODate(cells[1] ? cells[1].textContent.trim() : "");
+      const endDateISO = convertToISODate(cells[2] ? cells[2].textContent.trim() : "");
       const startDate = new Date(startDateISO);
       const endDate = new Date(endDateISO);
 
@@ -1838,61 +1831,33 @@ document.addEventListener("DOMContentLoaded", function () {
         );
       }
 
+      const cell4Text = cells[4] ? cells[4].innerText : "";
+      const cell5Text = cells[5] ? cells[5].innerText : "";
+      const cell6Text = cells[6] ? cells[6].innerText : "";
+      const cell7Text = cells[7] ? cells[7].innerText : "";
+
       const roomType = {
         id: roomTypeId,
         name: roomTypeName,
         start_date: startDate.toISOString(),
         end_date: endDate.toISOString(),
-        single_price: parseOrDefault(
-          cells[4].innerText.split("\n")[0].replace("Single: ", "").trim()
-        ),
-        double_price: parseOrDefault(
-          cells[4].innerText.split("\n")[1].replace("Double: ", "").trim()
-        ),
-        allotment:
-          parseInt(allotmentLine.replace("Allotment: ", "").trim(), 10) || 0,
+        single_price: safeExtractValue(cell4Text, "Single", true, 0),
+        double_price: safeExtractValue(cell4Text, "Double", true, 0),
+        allotment: parseInt((allotmentLine.split(":")[1] || "0").trim(), 10) || 0,
         cutoff_days: cutoffDays,
         max_capacity: maxCapacity,
-        extra_bed_adult: parseOrDefault(
-          cells[5].innerText.split("\n")[0].replace("Adult: ", "").trim()
-        ),
-        extra_bed_child: parseOrDefault(
-          cells[5].innerText.split("\n")[1].replace("Child: ", "").trim()
-        ),
-        extra_bed_shared: parseOrDefault(
-          cells[5].innerText.split("\n")[2].replace("Shared: ", "").trim()
-        ),
-        food_adult_abf: parseOrDefault(
-          cells[6].innerText.split("\n")[0].replace("ABF: ", "").trim()
-        ),
-        food_adult_lunch: parseOrDefault(
-          cells[6].innerText.split("\n")[1].replace("Lunch: ", "").trim()
-        ),
-        food_adult_dinner: parseOrDefault(
-          cells[6].innerText.split("\n")[2].replace("Dinner: ", "").trim()
-        ),
-        food_adult_all_inclusive: parseOrDefault(
-          cells[6].innerText
-            .split("\n")[3]
-            ?.replace("All Inclusive: ", "")
-            .trim()
-        ),
-        food_child_abf: parseOrDefault(
-          cells[7].innerText.split("\n")[0].replace("ABF: ", "").trim()
-        ),
-        food_child_lunch: parseOrDefault(
-          cells[7].innerText.split("\n")[1].replace("Lunch: ", "").trim()
-        ),
-        food_child_dinner: parseOrDefault(
-          cells[7].innerText.split("\n")[2].replace("Dinner: ", "").trim()
-        ),
-        food_child_all_inclusive: parseOrDefault(
-          cells[7].innerText
-            .split("\n")[3]
-            ?.replace("All Inclusive: ", "")
-            .trim()
-        ),
-        currency_id: 4, // Assuming THB as the currency ID
+        extra_bed_adult: safeExtractValue(cell5Text, "Adult", true, 0),
+        extra_bed_child: safeExtractValue(cell5Text, "Child", true, 0),
+        extra_bed_shared: safeExtractValue(cell5Text, "Shared", true, 0),
+        food_adult_abf: safeExtractValue(cell6Text, "ABF", true, 0),
+        food_adult_lunch: safeExtractValue(cell6Text, "Lunch", true, 0),
+        food_adult_dinner: safeExtractValue(cell6Text, "Dinner", true, 0),
+        food_adult_all_inclusive: safeExtractValue(cell6Text, "All Inclusive", true, 0),
+        food_child_abf: safeExtractValue(cell7Text, "ABF", true, 0),
+        food_child_lunch: safeExtractValue(cell7Text, "Lunch", true, 0),
+        food_child_dinner: safeExtractValue(cell7Text, "Dinner", true, 0),
+        food_child_all_inclusive: safeExtractValue(cell7Text, "All Inclusive", true, 0),
+        currency_id: 4,
       };
 
       roomTypes.push(roomType);
@@ -1906,33 +1871,37 @@ document.addEventListener("DOMContentLoaded", function () {
     const rows = document.querySelectorAll("#promotionsTable tbody tr");
     rows.forEach((row) => {
       const cells = row.querySelectorAll("td");
+      if (!cells || cells.length < 11) return;
       const getDateOrNull = (dateString) => {
         const date = new Date(convertToISODate(dateString));
         return isNaN(date.getTime()) ? null : date.toISOString();
       };
+      const mealsText = cells[6].textContent || "";
+      const getMealVal = (prefix) => {
+        const part = mealsText.split(",").find((p) => p.toLowerCase().includes(prefix.toLowerCase()));
+        if (!part) return 0;
+        const val = parseInt(part.replace(/[^0-9]/g, ""), 10);
+        return isNaN(val) ? 0 : val;
+      };
+
+      const discountParts = (cells[7].textContent || "").trim().split(" ");
+
       const promotion = {
-        promotion_code: cells[0].textContent,
-        name: cells[1].textContent,
+        id: parseInt(row.dataset.promotionId || "0", 10) || null,
+        promotion_code: cells[0].textContent.trim(),
+        name: cells[1].textContent.trim(),
         booking_date_from: getDateOrNull(cells[2].textContent),
         booking_date_to: getDateOrNull(cells[3].textContent),
         early_bird_days: parseIntegerOrDefault(cells[4].textContent),
         minimum_nights: parseIntegerOrDefault(cells[5].textContent),
-        free_meals_abf: parseIntegerOrDefault(
-          cells[6].textContent.split(", ")[0].replace("ABF: ", "")
-        ),
-        free_meals_lunch: parseIntegerOrDefault(
-          cells[6].textContent.split(", ")[1].replace("Lunch: ", "")
-        ),
-        free_meals_dinner: parseIntegerOrDefault(
-          cells[6].textContent.split(", ")[2].replace("Dinner: ", "")
-        ),
-        discount_amount: parseFloatOrDefault(
-          cells[7].textContent.split(" ")[0]
-        ),
-        discount_type: cells[7].textContent.split(" ")[1] || "%",
-        valid_for_extra_beds: cells[8].textContent === "Yes",
-        enabled: cells[9].textContent === "Yes",
-        description: cells[10].textContent,
+        free_meals_abf: getMealVal("ABF"),
+        free_meals_lunch: getMealVal("Lunch"),
+        free_meals_dinner: getMealVal("Dinner"),
+        discount_amount: parseFloatOrDefault(discountParts[0] || "0"),
+        discount_type: discountParts[1] || "%",
+        valid_for_extra_beds: cells[8].textContent.trim() === "Yes",
+        enabled: cells[9].textContent.trim() === "Yes",
+        description: cells[10].textContent.trim(),
       };
       promotions.push(promotion);
     });

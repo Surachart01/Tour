@@ -2019,11 +2019,7 @@
                   window.location.href = "login.html"; // Redirect to login page
                 } else if (response.status === 403) {
                   // Handle 403 Forbidden
-                  console.log("Forbidden error");
-                  alert(
-                    "You don't have sufficient permissions to perform this action."
-                  );
-                  return;
+                  throw new Error("You don't have sufficient permissions to perform this action.");
                 } else {
                   console.log("API error, parsing response...");
                   response

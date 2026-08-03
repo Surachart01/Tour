@@ -5,6 +5,7 @@ import {
   buildQuotationConversionData,
   buildQuotationConversionWhere,
   calculateQuotationCosts,
+  buildPartialQuotationCostInput,
   isConvertibleQuotation,
   normalizeQuotationFlightFields,
   resolveAgentIdFromRequest
@@ -49,6 +50,34 @@ test('quotation totals can exclude assistance fee and never become negative', ()
   assert.equal(result.total_amount, 2500);
   assert.equal(result.assistance_fee_amount, 0);
   assert.equal(result.final_amount, 0);
+});
+
+test('a partial quotation save keeps prices from service tabs that were not submitted', () => {
+  const existing = {
+    hotel_trip_items: [{ total_price: 5000 }],
+    transfer_trip_items: [{ price: 1200 }],
+    excursion_trip_items: [{ price: 800 }],
+    tour_trip_items: [],
+    flight_trip_items: [{ price: 500 }],
+    other_trip_items: [],
+    include_assistance_fee: true,
+    assistance_fee_amount: 1000,
+    discount_amount: 200
+  };
+  const data = { hotel_items: [{ total_price: 6000 }] };
+  const merged = buildPartialQuotationCostInput(data, existing, {
+    hotel: true, transfer: false, excursion: false, tour: false, flight: false, other: false
+  });
+
+  assert.deepEqual(merged.transfer_items, existing.transfer_trip_items);
+  assert.deepEqual(merged.flight_items, existing.flight_trip_items);
+  assert.deepEqual(calculateQuotationCosts(merged), {
+    total_amount: 9500,
+    discount_amount: 200,
+    final_amount: 9300,
+    include_assistance_fee: true,
+    assistance_fee_amount: 1000
+  });
 });
 
 test('only pending quotations that are not bookings can be converted', () => {

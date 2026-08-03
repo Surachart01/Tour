@@ -67,6 +67,8 @@ export async function createTransfer(req, res, next) {
     const data = req.body;
 
     // Accept both `prices` (frontend) and `pricing` (legacy)
+    const hasPricing = Object.prototype.hasOwnProperty.call(data, 'prices') ||
+      Object.prototype.hasOwnProperty.call(data, 'pricing');
     const pricingData = data.prices || data.pricing || [];
 
     // Auto-lookup supplier name from supplier_id if not provided
@@ -263,6 +265,8 @@ export async function updateTransfer(req, res, next) {
     const data = req.body;
 
     // Accept both `prices` (frontend) and `pricing` (legacy)
+    const hasPricing = Object.prototype.hasOwnProperty.call(data, 'prices') ||
+      Object.prototype.hasOwnProperty.call(data, 'pricing');
     const pricingData = data.prices || data.pricing || [];
 
     // Auto-lookup supplier name from supplier_id if not provided
@@ -294,7 +298,9 @@ export async function updateTransfer(req, res, next) {
     }
 
     await prisma.$transaction(async (tx) => {
-      await tx.transfer_pricing.deleteMany({ where: { transfer_id: id } });
+      if (hasPricing) {
+        await tx.transfer_pricing.deleteMany({ where: { transfer_id: id } });
+      }
       await tx.transfers.update({
         where: { id },
         data: {
@@ -313,7 +319,7 @@ export async function updateTransfer(req, res, next) {
           display_order: data.display_order !== undefined ? parseInt(data.display_order) :
                          (data.order !== undefined ? parseInt(data.order) : undefined),
           remark: data.remark !== undefined ? (data.remark || null) : undefined,
-          transfer_pricing: uniquePricingData.length > 0 ? {
+          transfer_pricing: hasPricing && uniquePricingData.length > 0 ? {
             create: uniquePricingData.map(p => ({
               start_date: new Date(normalizeDateStr(p.start_date)), end_date: new Date(normalizeDateStr(p.end_date)),
               pax: p.pax, price: p.price, cost: p.cost || 0, currency_id: p.currency_id || null

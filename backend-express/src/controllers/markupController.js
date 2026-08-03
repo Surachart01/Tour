@@ -48,6 +48,7 @@ async function withCachedPlanRetry(operation) {
 export async function createMarkup(req, res, next) {
   try {
     const data = req.body;
+    const hasHotelRanges = Object.prototype.hasOwnProperty.call(data, 'hotel_markup_percentages');
     await ensureHotelMarkupAmountPrecision();
     const markup = await withCachedPlanRetry(() => prisma.markups.create({
       data: {
@@ -83,13 +84,31 @@ export async function getMarkup(req, res, next) {
   } catch (err) { next(err); }
 }
 
+let markupsCache = null;
+let markupsCacheExpiry = 0;
+
+export async function getCachedMarkups() {
+  const now = Date.now();
+  if (markupsCache && now < markupsCacheExpiry) {
+    return markupsCache;
+  }
+  await ensureMarkupSchema();
+  markupsCache = await withCachedPlanRetry(() => prisma.markups.findMany({
+    include: { hotel_markup_percentages: true, currencies: true },
+    orderBy: { markup_group: 'asc' }
+  }));
+  markupsCacheExpiry = now + 30000; // Cache in memory for 30s
+  return markupsCache;
+}
+
+export function invalidateMarkupsCache() {
+  markupsCache = null;
+  markupsCacheExpiry = 0;
+}
+
 export async function getAllMarkups(req, res, next) {
   try {
-    await ensureMarkupSchema();
-    const markups = await withCachedPlanRetry(() => prisma.markups.findMany({
-      include: { hotel_markup_percentages: true, currencies: true },
-      orderBy: { markup_group: 'asc' }
-    }));
+    const markups = await getCachedMarkups();
     return res.json(markups);
   } catch (err) { next(err); }
 }
@@ -122,9 +141,12 @@ export async function updateMarkup(req, res, next) {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid markup ID');
     const data = req.body;
+    const hasHotelRanges = Object.prototype.hasOwnProperty.call(data, 'hotel_markup_percentages');
     await ensureHotelMarkupAmountPrecision();
     await withCachedPlanRetry(() => prisma.$transaction(async (tx) => {
-      await tx.hotel_markup_percentages.deleteMany({ where: { markup_id: id } });
+      if (hasHotelRanges) {
+        await tx.hotel_markup_percentages.deleteMany({ where: { markup_id: id } });
+      }
       await tx.markups.update({
         where: { id },
         data: {
@@ -136,7 +158,7 @@ export async function updateMarkup(req, res, next) {
           extra_bed_markup: data.extra_bed_markup !== undefined ? data.extra_bed_markup : undefined,
           hotel_markup_unit: data.hotel_markup_unit !== undefined ? data.hotel_markup_unit : undefined,
           hotel_markup_value: data.hotel_markup_value !== undefined ? data.hotel_markup_value : undefined,
-          hotel_markup_percentages: data.hotel_markup_percentages ? {
+          hotel_markup_percentages: hasHotelRanges && data.hotel_markup_percentages.length > 0 ? {
             create: buildHotelMarkupRows(data.hotel_markup_percentages)
           } : undefined
         }
@@ -145,6 +167,7 @@ export async function updateMarkup(req, res, next) {
       maxWait: 15000,
       timeout: 30000
     }));
+    invalidateMarkupsCache();
     return res.json({ status: 'success' });
   } catch (err) { return handleMarkupError(err, res, next); }
 }
@@ -154,6 +177,7 @@ export async function deleteMarkup(req, res, next) {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid markup ID');
     await withCachedPlanRetry(() => prisma.markups.delete({ where: { id } }));
+    invalidateMarkupsCache();
     return res.status(200).send('Markup deleted');
   } catch (err) { next(err); }
 }

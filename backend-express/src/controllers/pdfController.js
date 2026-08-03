@@ -161,13 +161,6 @@ export async function generateQuotationPDF(req, res, next) {
       });
       doc.moveDown();
     }
-    if (trip.flight_trip_items?.length) {
-      doc.fontSize(14).text('Flights', { underline: true }); doc.moveDown(0.5);
-      trip.flight_trip_items.forEach(f => {
-        doc.fontSize(10).text(`• ${f.flight_number || 'N/A'} - ${f.route || 'N/A'}`);
-      });
-      doc.moveDown();
-    }
     doc.moveDown();
     doc.fontSize(12).text(`Total: ${trip.total_amount || 0}`);
     doc.text(`Discount: ${trip.discount_amount || 0}`);
@@ -289,17 +282,6 @@ function buildProformaServiceRows(trip) {
       date: proformaDate(item.from_date),
       description: item.excursion_name || item.excursions?.name || 'Excursion',
       details: item.city || item.remarks || '-',
-      pax: proformaPax(item, trip),
-      amount: firstPositive(item.total_price, item.final_cost, item.total_cost, item.price)
-    });
-  });
-
-  (trip.flight_trip_items || []).forEach((item) => {
-    rows.push({
-      type: 'Flight',
-      date: proformaDate(item.from_date),
-      description: item.flight_number || item.route || 'Flight',
-      details: item.route || item.remarks || '-',
       pax: proformaPax(item, trip),
       amount: firstPositive(item.total_price, item.final_cost, item.total_cost, item.price)
     });

@@ -61,6 +61,8 @@ export function formatExcursionResponse(excursion, markupGroup = '', markups = [
 export async function createExcursion(req, res, next) {
   try {
     const data = req.body;
+    const hasPricing = Object.prototype.hasOwnProperty.call(data, 'pricing') ||
+      Object.prototype.hasOwnProperty.call(data, 'prices');
     const pricingData = data.pricing || data.prices || [];
     const valid_days = Array.isArray(data.available_days)
       ? data.available_days.map(d => d.day_of_week).sort().join(',')
@@ -76,13 +78,23 @@ export async function createExcursion(req, res, next) {
       supplierName = supplier?.name || null;
     }
 
+function normalizeDateStr(d) {
+  if (!d) return '';
+  const s = String(d).trim();
+  const dmy = s.match(/^(\d{2})-(\d{2})-(\d{4})/);
+  if (dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+  const ymd = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (ymd) return ymd[1];
+  return s.split('T')[0].split(' ')[0];
+}
+
     // Filter duplicates in pricingData before saving
     const seen = new Set();
     const uniquePricingData = [];
     for (const p of pricingData) {
       if (!p.start_date || !p.end_date) continue;
-      const startStr = String(p.start_date).split('T')[0].trim();
-      const endStr = String(p.end_date).split('T')[0].trim();
+      const startStr = normalizeDateStr(p.start_date);
+      const endStr = normalizeDateStr(p.end_date);
       const paxVal = parseInt(p.pax, 10);
       const priceVal = parseFloat(p.price || 0);
       const costVal = parseFloat(p.cost || 0);
@@ -245,7 +257,7 @@ export async function listAvailableExcursionsByCity(req, res, next) {
     // valid_days is stored as comma-separated day numbers, e.g. "0,1,2,6" (0=Sun, 6=Sat)
     // Excursions with no valid_days set are available every day (backward compatibility)
     if (from_date) {
-      const targetDow = new Date(from_date).getDay(); // 0=Sun ... 6=Sat
+      const targetDow = new Date(from_date).getUTCDay(); // 0=Sun ... 6=Sat
       const daysOfWeekShort = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
       const daysOfWeekFull = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
       formatted = formatted.filter(exc => {
@@ -274,6 +286,8 @@ export async function updateExcursion(req, res, next) {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).send('Invalid excursion ID');
     const data = req.body;
+    const hasPricing = Object.prototype.hasOwnProperty.call(data, 'pricing') ||
+      Object.prototype.hasOwnProperty.call(data, 'prices');
     const pricingData = data.pricing || data.prices || [];
     const valid_days = Array.isArray(data.available_days)
       ? data.available_days.map(d => d.day_of_week).sort().join(',')
@@ -304,8 +318,8 @@ export async function updateExcursion(req, res, next) {
     const uniquePricingData = [];
     for (const p of pricingData) {
       if (!p.start_date || !p.end_date) continue;
-      const startStr = String(p.start_date).split('T')[0].trim();
-      const endStr = String(p.end_date).split('T')[0].trim();
+      const startStr = normalizeDateStr(p.start_date);
+      const endStr = normalizeDateStr(p.end_date);
       const paxVal = parseInt(p.pax, 10);
       const priceVal = parseFloat(p.price || 0);
       const costVal = parseFloat(p.cost || 0);
@@ -318,7 +332,9 @@ export async function updateExcursion(req, res, next) {
     }
 
     await prisma.$transaction(async (tx) => {
-      await tx.excursion_pricing.deleteMany({ where: { excursion_id: id } });
+      if (hasPricing) {
+        await tx.excursion_pricing.deleteMany({ where: { excursion_id: id } });
+      }
       await tx.excursions.update({
         where: { id },
         data: {
@@ -332,7 +348,7 @@ export async function updateExcursion(req, res, next) {
           user_id: data.user_id !== undefined ? (data.user_id ? parseInt(data.user_id) : null) : undefined,
           country: data.country !== undefined ? data.country : undefined,
           display_order: data.display_order !== undefined ? parseInt(data.display_order) : undefined,
-          excursion_pricing: uniquePricingData.length > 0 ? {
+          excursion_pricing: hasPricing && uniquePricingData.length > 0 ? {
             create: uniquePricingData.map(p => ({
               start_date: new Date(p.start_date), end_date: new Date(p.end_date),
               pax: p.pax, price: p.price, cost: p.cost || 0, currency_id: p.currency_id || null

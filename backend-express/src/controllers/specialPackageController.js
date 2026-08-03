@@ -4,13 +4,51 @@ import { runWithSequenceRecovery } from '../utils/postgresSequences.js';
 
 const prisma = new PrismaClient();
 
+function nullableFloat(value) {
+  if (value === undefined || value === null || value === '') return null;
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function buildPackageItemData(item, index) {
+  return {
+    item_type: item.item_type,
+    day_number: item.day_number ? parseInt(item.day_number) : 1,
+    sort_order: item.sort_order !== undefined ? parseInt(item.sort_order) : index,
+    hotel_id: item.hotel_id ? parseInt(item.hotel_id) : null,
+    hotel_name: item.hotel_name || null,
+    room_type: item.room_type || null,
+    nights: item.nights ? parseInt(item.nights) : null,
+    city: item.city || null,
+    transfer_id: item.transfer_id ? parseInt(item.transfer_id) : null,
+    transfer_type: item.transfer_type || null,
+    from_location: item.from_location || null,
+    to_location: item.to_location || null,
+    pickup_time: item.pickup_time || null,
+    excursion_id: item.excursion_id ? parseInt(item.excursion_id) : null,
+    excursion_name: item.excursion_name || null,
+    tour_id: item.tour_id ? parseInt(item.tour_id) : null,
+    tour_name: item.tour_name || null,
+    flight_number: item.flight_number || null,
+    flight_airline: item.flight_airline || null,
+    flight_route: item.flight_route || null,
+    departure_time: item.departure_time || null,
+    arrival_time: item.arrival_time || null,
+    other_description: item.other_description || null,
+    description: item.description || null,
+    price: nullableFloat(item.price),
+    remarks: item.remarks || null,
+    updated_at: new Date()
+  };
+}
+
 // ============================================================
 // LIST ALL SPECIAL PACKAGES
 // ============================================================
 export async function listSpecialPackages(req, res, next) {
   try {
     const claims = req.user;
-    const isAdmin = claims && claims.role === 'admin';
+    const isAdmin = claims && ['admin', 'superadmin'].includes(claims.role);
 
     const where = {};
     // Agents can only see active packages
@@ -81,7 +119,7 @@ export async function getSpecialPackage(req, res, next) {
 
     // Agents can only see active packages
     const claims = req.user;
-    if (claims && claims.role !== 'admin' && !pkg.is_active) {
+    if (claims && !['admin', 'superadmin'].includes(claims.role) && !pkg.is_active) {
       return res.status(404).json({ error: 'Special package not found' });
     }
 
@@ -110,9 +148,9 @@ export async function createSpecialPackage(req, res, next) {
           duration: parseInt(data.duration) || 1,
           city: data.city || null,
           category: data.category || null,
-          price_per_adult: data.price_per_adult ? parseFloat(data.price_per_adult) : null,
-          price_dbl: data.price_dbl ? parseFloat(data.price_dbl) : null,
-          price_per_child: data.price_per_child ? parseFloat(data.price_per_child) : null,
+          price_per_adult: nullableFloat(data.price_per_adult),
+          price_dbl: nullableFloat(data.price_dbl),
+          price_per_child: nullableFloat(data.price_per_child),
           currency_id: data.currency_id ? parseInt(data.currency_id) : null,
           max_pax: data.max_pax ? parseInt(data.max_pax) : 20,
           min_pax: data.min_pax ? parseInt(data.min_pax) : 1,
@@ -133,32 +171,7 @@ export async function createSpecialPackage(req, res, next) {
         await tx.special_package_items.createMany({
           data: items.map((item, index) => ({
             package_id: created.id,
-            item_type: item.item_type,
-            day_number: item.day_number ? parseInt(item.day_number) : 1,
-            sort_order: item.sort_order !== undefined ? parseInt(item.sort_order) : index,
-            hotel_id: item.hotel_id ? parseInt(item.hotel_id) : null,
-            hotel_name: item.hotel_name || null,
-            room_type: item.room_type || null,
-            nights: item.nights ? parseInt(item.nights) : null,
-            city: item.city || null,
-            transfer_id: item.transfer_id ? parseInt(item.transfer_id) : null,
-            transfer_type: item.transfer_type || null,
-            from_location: item.from_location || null,
-            to_location: item.to_location || null,
-            pickup_time: item.pickup_time || null,
-            excursion_id: item.excursion_id ? parseInt(item.excursion_id) : null,
-            excursion_name: item.excursion_name || null,
-            tour_id: item.tour_id ? parseInt(item.tour_id) : null,
-            tour_name: item.tour_name || null,
-            flight_number: item.flight_number || null,
-            flight_airline: item.flight_airline || null,
-            flight_route: item.flight_route || null,
-            departure_time: item.departure_time || null,
-            arrival_time: item.arrival_time || null,
-            other_description: item.other_description || null,
-            description: item.description || null,
-            price: item.price ? parseFloat(item.price) : null,
-            remarks: item.remarks || null
+            ...buildPackageItemData(item, index)
           }))
         });
       }
@@ -211,9 +224,9 @@ export async function updateSpecialPackage(req, res, next) {
           duration: data.duration !== undefined ? parseInt(data.duration) : existing.duration,
           city: data.city !== undefined ? data.city : existing.city,
           category: data.category !== undefined ? data.category : existing.category,
-          price_per_adult: data.price_per_adult !== undefined ? parseFloat(data.price_per_adult) : existing.price_per_adult,
-          price_dbl: data.price_dbl !== undefined ? parseFloat(data.price_dbl) : existing.price_dbl,
-          price_per_child: data.price_per_child !== undefined ? parseFloat(data.price_per_child) : existing.price_per_child,
+          price_per_adult: data.price_per_adult !== undefined ? nullableFloat(data.price_per_adult) : existing.price_per_adult,
+          price_dbl: data.price_dbl !== undefined ? nullableFloat(data.price_dbl) : existing.price_dbl,
+          price_per_child: data.price_per_child !== undefined ? nullableFloat(data.price_per_child) : existing.price_per_child,
           currency_id: data.currency_id !== undefined ? (data.currency_id ? parseInt(data.currency_id) : null) : existing.currency_id,
           max_pax: data.max_pax !== undefined ? parseInt(data.max_pax) : existing.max_pax,
           min_pax: data.min_pax !== undefined ? parseInt(data.min_pax) : existing.min_pax,
@@ -230,45 +243,39 @@ export async function updateSpecialPackage(req, res, next) {
         }
       });
 
-      // Delete old items and recreate
+      // Preserve existing item IDs so edits do not break references or create duplicates.
       if (data.items !== undefined) {
-        await tx.special_package_items.deleteMany({
-          where: { package_id: parseInt(id) }
+        const packageId = parseInt(id);
+        const existingItems = await tx.special_package_items.findMany({
+          where: { package_id: packageId },
+          select: { id: true }
         });
+        const existingIds = new Set(existingItems.map((item) => item.id));
+        const retainedIds = [];
 
-        if (items.length > 0) {
-          await tx.special_package_items.createMany({
-            data: items.map((item, index) => ({
-              package_id: parseInt(id),
-              item_type: item.item_type,
-              day_number: item.day_number ? parseInt(item.day_number) : 1,
-              sort_order: item.sort_order !== undefined ? parseInt(item.sort_order) : index,
-              hotel_id: item.hotel_id ? parseInt(item.hotel_id) : null,
-              hotel_name: item.hotel_name || null,
-              room_type: item.room_type || null,
-              nights: item.nights ? parseInt(item.nights) : null,
-              city: item.city || null,
-              transfer_id: item.transfer_id ? parseInt(item.transfer_id) : null,
-              transfer_type: item.transfer_type || null,
-              from_location: item.from_location || null,
-              to_location: item.to_location || null,
-              pickup_time: item.pickup_time || null,
-              excursion_id: item.excursion_id ? parseInt(item.excursion_id) : null,
-              excursion_name: item.excursion_name || null,
-              tour_id: item.tour_id ? parseInt(item.tour_id) : null,
-              tour_name: item.tour_name || null,
-              flight_number: item.flight_number || null,
-              flight_airline: item.flight_airline || null,
-              flight_route: item.flight_route || null,
-              departure_time: item.departure_time || null,
-              arrival_time: item.arrival_time || null,
-              other_description: item.other_description || null,
-              description: item.description || null,
-              price: item.price ? parseFloat(item.price) : null,
-              remarks: item.remarks || null
-            }))
-          });
+        for (const [index, item] of items.entries()) {
+          const itemId = parseInt(item.id);
+          const itemData = buildPackageItemData(item, index);
+          if (Number.isInteger(itemId) && existingIds.has(itemId)) {
+            await tx.special_package_items.update({
+              where: { id: itemId },
+              data: itemData
+            });
+            retainedIds.push(itemId);
+          } else {
+            const createdItem = await tx.special_package_items.create({
+              data: { package_id: packageId, ...itemData }
+            });
+            retainedIds.push(createdItem.id);
+          }
         }
+
+        await tx.special_package_items.deleteMany({
+          where: {
+            package_id: packageId,
+            ...(retainedIds.length ? { id: { notIn: retainedIds } } : {})
+          }
+        });
       }
 
       return await tx.special_packages.findUnique({

@@ -754,6 +754,8 @@
           const list = btn.closest(".activity-container").querySelector(".hotels-list");
           const item = document.createElement("div");
           item.className = "activity-item hotel-row mb-3";
+          item.dataset.itemId = isCloneMode ? "" : (initData?.id || "");
+          item.dataset.price = initData?.price ?? "";
           
           item.innerHTML = `
              <div class="row">
@@ -850,6 +852,9 @@
           const list = btn.closest(".activity-container").querySelector(".transfers-list");
           const item = document.createElement("div");
           item.className = "activity-item transfer-row mb-3";
+          item.dataset.itemId = isCloneMode ? "" : (initData?.id || "");
+          item.dataset.price = initData?.price ?? "";
+          item.dataset.transferType = initData?.transfer_type || "SIC";
 
           item.innerHTML = `
             <div class="row">
@@ -926,6 +931,8 @@
           const list = btn.closest(".activity-container").querySelector(".excursions-list");
           const item = document.createElement("div");
           item.className = "activity-item excursion-row mb-3";
+          item.dataset.itemId = isCloneMode ? "" : (initData?.id || "");
+          item.dataset.price = initData?.price ?? "";
 
           item.innerHTML = `
             <div class="row">
@@ -987,6 +994,8 @@
           const list = btn.closest(".activity-container").querySelector(".tours-list");
           const item = document.createElement("div");
           item.className = "activity-item tour-row mb-3";
+          item.dataset.itemId = isCloneMode ? "" : (initData?.id || "");
+          item.dataset.price = initData?.price ?? "";
 
           item.innerHTML = `
             <div class="row">
@@ -1048,6 +1057,8 @@
           const list = btn.closest(".activity-container").querySelector(".flights-list");
           const item = document.createElement("div");
           item.className = "activity-item flight-row mb-3";
+          item.dataset.itemId = isCloneMode ? "" : (initData?.id || "");
+          item.dataset.price = initData?.price ?? "";
 
           item.innerHTML = `
             <div class="row">
@@ -1100,6 +1111,8 @@
           const list = btn.closest(".activity-container").querySelector(".others-list");
           const item = document.createElement("div");
           item.className = "activity-item other-row mb-3";
+          item.dataset.itemId = isCloneMode ? "" : (initData?.id || "");
+          item.dataset.price = initData?.price ?? "";
 
           item.innerHTML = `
             <div class="row">
@@ -1250,6 +1263,7 @@
 
               if (hotelId) {
                 itineraryItems.push({
+                  id: parseInt(row.dataset.itemId, 10) || null,
                   item_type: "hotel",
                   day_number: dayNum,
                   city: row.querySelector(".city-select").value || null,
@@ -1257,7 +1271,7 @@
                   hotel_name: hotelName.trim(),
                   room_type: roomType || null,
                   nights: parseInt(row.querySelector(".nights-input").value) || 1,
-                  price: null,
+                  price: row.dataset.price !== "" ? parseFloat(row.dataset.price) : null,
                   remarks: row.querySelector(".remarks-input").value || null
                 });
               }
@@ -1269,15 +1283,16 @@
               const transferId = row.querySelector(".transfer-select").value;
               if (transferId) {
                 itineraryItems.push({
+                  id: parseInt(row.dataset.itemId, 10) || null,
                   item_type: "transfer",
                   day_number: dayNum,
                   city: row.querySelector(".city-select").value || null,
                   transfer_id: parseInt(transferId),
-                  transfer_type: "SIC", // default
+                  transfer_type: row.dataset.transferType || "SIC",
                   from_location: row.querySelector(".from-input").value || null,
                   to_location: row.querySelector(".to-input").value || null,
                   pickup_time: row.querySelector(".pickup-time-input").value || null,
-                  price: null,
+                  price: row.dataset.price !== "" ? parseFloat(row.dataset.price) : null,
                   remarks: row.querySelector(".remarks-input").value || null
                 });
               }
@@ -1290,12 +1305,13 @@
               const excursionName = row.querySelector(".excursion-select").selectedOptions[0]?.text || "";
               if (excursionId) {
                 itineraryItems.push({
+                  id: parseInt(row.dataset.itemId, 10) || null,
                   item_type: "excursion",
                   day_number: dayNum,
                   city: row.querySelector(".city-select").value || null,
                   excursion_id: parseInt(excursionId),
                   excursion_name: excursionName.trim(),
-                  price: null,
+                  price: row.dataset.price !== "" ? parseFloat(row.dataset.price) : null,
                   remarks: row.querySelector(".remarks-input").value || null
                 });
               }
@@ -1308,12 +1324,13 @@
               const tourName = row.querySelector(".tour-select").selectedOptions[0]?.text || "";
               if (tourId) {
                 itineraryItems.push({
+                  id: parseInt(row.dataset.itemId, 10) || null,
                   item_type: "tour",
                   day_number: dayNum,
                   city: row.querySelector(".city-select").value || null,
                   tour_id: parseInt(tourId),
                   tour_name: tourName.trim(),
-                  price: null,
+                  price: row.dataset.price !== "" ? parseFloat(row.dataset.price) : null,
                   remarks: row.querySelector(".remarks-input").value || null
                 });
               }
@@ -1325,6 +1342,7 @@
               const flightNo = row.querySelector(".flight-no-input").value;
               if (flightNo) {
                 itineraryItems.push({
+                  id: parseInt(row.dataset.itemId, 10) || null,
                   item_type: "flight",
                   day_number: dayNum,
                   flight_airline: row.querySelector(".airline-input").value || null,
@@ -1332,7 +1350,7 @@
                   flight_route: row.querySelector(".route-input").value || null,
                   departure_time: row.querySelector(".dep-time-input").value || null,
                   arrival_time: row.querySelector(".arr-time-input").value || null,
-                  price: null,
+                  price: row.dataset.price !== "" ? parseFloat(row.dataset.price) : null,
                   remarks: row.querySelector(".remarks-input").value || null
                 });
               }
@@ -1344,10 +1362,11 @@
               const desc = row.querySelector(".description-input").value;
               if (desc) {
                 itineraryItems.push({
+                  id: parseInt(row.dataset.itemId, 10) || null,
                   item_type: "other",
                   day_number: dayNum,
                   other_description: desc,
-                  price: null,
+                  price: row.dataset.price !== "" ? parseFloat(row.dataset.price) : null,
                   remarks: row.querySelector(".remarks-input").value || null
                 });
               }

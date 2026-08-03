@@ -1,5 +1,6 @@
 import prisma from '../config/db.js';
 import { calculateHotelCostLogic, calculateMarkupRoomType } from '../utils/pricing.js';
+import { getCachedMarkups } from './markupController.js';
 
 function asArray(value) {
   if (!value) return [];
@@ -24,6 +25,7 @@ function normalizeHotelContacts(rawContacts) {
   const seenEmails = new Set();
   return asArray(rawContacts)
     .map(c => ({
+      id: toNullableInt(c.id ?? c.key),
       contact_name: (c.name ?? c.contact_name ?? '').toString().trim() || null,
       email: (c.email ?? '').toString().trim() || null,
       telephone: (c.tel ?? c.telephone ?? '').toString().trim() || null,
@@ -143,6 +145,7 @@ function normalizeRoomTypes(rawRoomTypes) {
       }
 
       return {
+        id: toNullableInt(rt.id ?? rt.key),
         name,
         start_date: startDate,
         end_date: endDate,
@@ -197,6 +200,7 @@ function normalizeHotelPromotions(rawPromotions) {
       const name = (p.name ?? '').toString().trim();
       const discountAmount = p.discount !== undefined ? toNumber(p.discount) : toNumber(p.discount_amount);
       return {
+        id: toNullableInt(p.id ?? p.key),
         name: name || (p.code || p.promotion_code || 'Promotion').toString().trim(),
         promotion_code: (p.code || p.promotion_code || '').toString().trim(),
         booking_date_from: toDateOrNull(p.bookingFrom ?? p.booking_date_from),
@@ -417,9 +421,7 @@ export async function listHotels(req, res, next) {
     if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       markupGroup = claims.markup_group || '';
     }
-    const markups = await prisma.markups.findMany({
-      include: { hotel_markup_percentages: true, currencies: true }
-    });
+    const markups = await getCachedMarkups();
 
     const hotels = await prisma.hotels.findMany({
       where: { deleted_at: null },
@@ -449,9 +451,7 @@ export async function listHotelsByCity(req, res, next) {
     if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       markupGroup = claims.markup_group || '';
     }
-    const markups = await prisma.markups.findMany({
-      include: { hotel_markup_percentages: true, currencies: true }
-    });
+    const markups = await getCachedMarkups();
 
     const hotels = await prisma.hotels.findMany({
       where: { city, deleted_at: null },
@@ -476,9 +476,7 @@ export async function listAvailableHotelsByCity(req, res, next) {
     if (claims && claims.role !== 'admin' && claims.role !== 'superadmin') {
       markupGroup = claims.markup_group || '';
     }
-    const markups = await prisma.markups.findMany({
-      include: { hotel_markup_percentages: true, currencies: true }
-    });
+    const markups = await getCachedMarkups();
 
     let where = { city, deleted_at: null };
     if (keyword) {
@@ -523,18 +521,22 @@ export async function updateHotel(req, res, next) {
     const data = req.body;
     const name = requiredText(data.name, 'Hotel Name');
     const city = requiredText(data.city, 'City');
+    const hasContacts = Object.prototype.hasOwnProperty.call(data, 'contacts') ||
+      Object.prototype.hasOwnProperty.call(data, 'hotel_contacts');
+    const hasRoomTypes = Object.prototype.hasOwnProperty.call(data, 'roomTypes') ||
+      Object.prototype.hasOwnProperty.call(data, 'room_types');
+    const hasPromotions = Object.prototype.hasOwnProperty.call(data, 'promotions') ||
+      Object.prototype.hasOwnProperty.call(data, 'hotel_promotions');
+    const hasFees = Object.prototype.hasOwnProperty.call(data, 'fees') || [
+      'lateCheckoutAdd', 'earlyCheckinAdd', 'lateCheckout21Add',
+      'christmasDinner', 'newYearDinner'
+    ].some((field) => Object.prototype.hasOwnProperty.call(data, field));
     const contacts = normalizeHotelContacts(data.contacts ?? data.hotel_contacts);
     const rawRoomTypes = asArray(data.roomTypes ?? data.room_types);
     const roomTypes = normalizeRoomTypes(rawRoomTypes);
     const promotions = normalizeHotelPromotions(data.promotions ?? data.hotel_promotions);
 
-    // Delete existing related data and recreate
     await prisma.$transaction(async (tx) => {
-      await tx.hotel_contacts.deleteMany({ where: { hotel_id: id } });
-      await tx.room_types.deleteMany({ where: { hotel_id: id } });
-      await tx.hotel_fees.deleteMany({ where: { hotel_id: id } });
-      await tx.hotel_promotions.deleteMany({ where: { hotel_id: id } });
-
       await tx.hotels.update({
         where: { id },
         data: cleanForPrisma({
@@ -545,13 +547,55 @@ export async function updateHotel(req, res, next) {
           website: textOrNull(data.website),
           country: textOrDefault(data.country, 'Thailand'),
           display_order: toInt(data.display_order),
-          user_id: data.user_id !== undefined ? toNullableInt(data.user_id) : undefined,
-          hotel_contacts: contacts.length ? { create: contacts } : undefined,
-          room_types: roomTypes.length ? { create: roomTypes } : undefined,
-          hotel_fees: { create: [normalizeHotelFees(data)] },
-          hotel_promotions: promotions.length ? { create: promotions } : undefined
+          user_id: data.user_id !== undefined ? toNullableInt(data.user_id) : undefined
         })
       });
+
+      const syncChildren = async (delegate, rows, parentField) => {
+        const existingRows = await delegate.findMany({
+          where: { [parentField]: id },
+          select: { id: true }
+        });
+        const existingIds = new Set(existingRows.map((row) => row.id));
+        const keptIds = [];
+
+        for (const row of rows) {
+          const rowId = toNullableInt(row.id);
+          const { id: ignoredId, ...rowData } = row;
+          if (rowId && existingIds.has(rowId)) {
+            await delegate.update({ where: { id: rowId }, data: cleanForPrisma(rowData) });
+            keptIds.push(rowId);
+          } else {
+            const created = await delegate.create({
+              data: cleanForPrisma({ ...rowData, [parentField]: id })
+            });
+            keptIds.push(created.id);
+          }
+        }
+
+        const omittedIds = existingRows
+          .map((row) => row.id)
+          .filter((rowId) => !keptIds.includes(rowId));
+        if (omittedIds.length > 0) {
+          await delegate.deleteMany({
+            where: { [parentField]: id, id: { in: omittedIds } }
+          });
+        }
+      };
+
+      if (hasContacts) await syncChildren(tx.hotel_contacts, contacts, 'hotel_id');
+      if (hasRoomTypes) await syncChildren(tx.room_types, roomTypes, 'hotel_id');
+      if (hasPromotions) await syncChildren(tx.hotel_promotions, promotions, 'hotel_id');
+
+      if (hasFees) {
+        const feeData = normalizeHotelFees(data);
+        const existingFee = await tx.hotel_fees.findFirst({ where: { hotel_id: id } });
+        if (existingFee) {
+          await tx.hotel_fees.update({ where: { id: existingFee.id }, data: feeData });
+        } else {
+          await tx.hotel_fees.create({ data: { ...feeData, hotel_id: id } });
+        }
+      }
     }, {
       maxWait: 15000,
       timeout: 30000

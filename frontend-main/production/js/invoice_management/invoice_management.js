@@ -420,21 +420,6 @@ function buildBookedServiceRows(invoice) {
     });
   });
 
-  (invoice.flights || invoice.flight_trip_items || []).forEach((item) => {
-    const flightName = item.flight_number || item.route || 'Flight';
-    rows.push({
-      section: 'Flight',
-      date: serviceDate(item.from_date || item.date),
-      description: flightName,
-      details: item.route || item.remarks || '-',
-      route: item.route || [item.from_location, item.to_location].filter(Boolean).join(' → ') || '-',
-      etd: item.edt || item.etd || item.departure_time || '-',
-      eta: item.eat || item.eta || item.arrival_time || '-',
-      type: item.flight_type || 'Flight',
-      pax: formatPax(item.pax || item.number_of_adults, invoice),
-      amount: firstPositiveAmount(item.total_price, item.total_cost, item.final_cost, item.price)
-    });
-  });
 
   (invoice.others || invoice.other_trip_items || []).forEach((item) => {
     const otherName = item.other_name || item.others?.description || item.description || 'Other Service';
@@ -515,7 +500,6 @@ function renderBookedServicesTables(rows, brandColor, brandLight) {
   }
 
   const sectionConfigs = [
-    { key: 'Flight', title: 'FLIGHTS', columns: [['Date', 'date'], ['Flight', 'description'], ['Route', 'route'], ['ETD', 'etd'], ['ETA', 'eta'], ['Pax', 'pax'], ['Net Price (THB)', 'unitAmount'], ['Total Price (THB)', 'amount']] },
     { key: 'Transfer', title: 'TRANSFERS', columns: [['Date', 'date'], ['City', 'city'], ['Description', 'description'], ['Type', 'type'], ['Pax', 'pax'], ['Net Price (THB)', 'unitAmount'], ['Total Price (THB)', 'amount']] },
     { key: 'Hotel', title: 'HOTELS', columns: [['Check In', 'fromDate'], ['Check Out', 'toDate'], ['City', 'city'], ['Hotel / Room Type', 'description'], ['Nights', 'nights'], ['Pax', 'pax'], ['Net Price (THB)', 'unitAmount'], ['Total Price (THB)', 'amount']] },
     { key: 'Excursion', title: 'EXCURSIONS', columns: [['Date', 'date'], ['City', 'city'], ['Description', 'description'], ['Type', 'type'], ['Pax', 'pax'], ['Net Price (THB)', 'unitAmount'], ['Total Price (THB)', 'amount']] },

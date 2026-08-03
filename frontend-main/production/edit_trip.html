@@ -3798,6 +3798,7 @@
           const cleanRemarks = remarksVal.replace(/\[Special Package\]/gi, "").trim();
 
           row.dataset.excursionId = excursion.excursion_id; // ✅ Store Excursion ID
+          row.dataset.tripExcursionId = excursion.id || excursion.trip_excursion_id || "";
           row.dataset.quotationStatus = quotationStatus; // ✅ Store quotation status
           row.dataset.remarks = remarksVal;
 
@@ -4048,13 +4049,34 @@
             editingExcursionRow = null;
             $("#addExcursionModal").modal("hide");
           });
+        function removeOneServiceItem(items, serviceId, serviceIdKeys, masterId, masterIdKey) {
+          let removed = false;
+          return items.filter((item) => {
+            if (removed) return true;
+            const itemServiceId = serviceIdKeys
+              .map((key) => item?.[key])
+              .find((value) => value !== undefined && value !== null && value !== "");
+            const matchesService = serviceId && String(itemServiceId) === String(serviceId);
+            const matchesUnsavedMaster = !serviceId && masterId &&
+              String(item?.[masterIdKey]) === String(masterId);
+            if (matchesService || matchesUnsavedMaster) {
+              removed = true;
+              return false;
+            }
+            return true;
+          });
+        }
+
         function deleteExcursion(row) {
           if (!confirm("Are you sure you want to delete this excursion?"))
             return;
 
-          const excursionId = row.dataset.excursionId;
-          excursionsArray = excursionsArray.filter(
-            (t) => t.excursion_id !== excursionId
+          excursionsArray = removeOneServiceItem(
+            excursionsArray,
+            row.dataset.tripExcursionId || row.dataset.trip_excursion_id,
+            ["id", "trip_excursion_id", "excursion_trip_item_id"],
+            row.dataset.excursionId,
+            "excursion_id"
           );
           row.remove();
           updateUIPriceFields();
@@ -6191,6 +6213,7 @@
           }
 
           row.dataset.hotelId = hotel.hotel_id;
+          row.dataset.tripItemId = hotel.id || hotel.trip_hotel_id || "";
           row.dataset.quotationStatus = quotationStatus; // ✅ Store quotation status
           row.dataset.extraBeds = hotel.extra_beds || 0;
 
@@ -6754,6 +6777,7 @@
 
           // Basic metadata
           newRow.dataset.hotelId = hotel.hotel_id || hotel.hotelId;
+          newRow.dataset.tripItemId = hotel.id || hotel.trip_hotel_id || "";
           const roomCounts = deriveHotelRoomCounts(
             hotel,
             hotel.notes?.includes("[Special Package]") ||
@@ -6890,8 +6914,13 @@
             return;
           }
 
-          // Remove from the hotels array
-          hotelsArray = hotelsArray.filter((h) => h.hotel_id !== hotelId);
+          hotelsArray = removeOneServiceItem(
+            hotelsArray,
+            row.dataset.tripItemId || row.dataset.trip_hotel_id,
+            ["id", "trip_hotel_id", "hotel_trip_item_id"],
+            hotelId,
+            "hotel_id"
+          );
 
           // Remove row from the table
           row.remove();
@@ -8685,9 +8714,12 @@
           if (!confirm("Are you sure you want to delete this tour?"))
             return;
 
-          const tourId = row.dataset.tourId;
-          toursArray = toursArray.filter(
-            (t) => String(t.tour_id) !== String(tourId)
+          toursArray = removeOneServiceItem(
+            toursArray,
+            row.dataset.tourItemId,
+            ["id", "trip_tour_id", "tour_trip_item_id"],
+            row.dataset.tourId,
+            "tour_id"
           );
           row.remove();
           updateUIPriceFields();
@@ -10418,7 +10450,9 @@
 
                 // Ensure correct ISO format for date fields
                 const transferDate = getCellDateValue(cells[0]).substring(0, 10) || row.dataset.transferDate || "";
-                rowData["trip_item_id"] = 0;
+                const transferItemId = parseInt(row.dataset.id, 10) || null;
+                rowData["id"] = transferItemId;
+                rowData["trip_item_id"] = transferItemId;
                 rowData["transfer_id"] = parseInt(row.dataset.transferId, 10) || 0;
                 rowData["type_of_transfer"] = normalizeTransferDirection(row.dataset.typeOfTransfer || cells[1]?.textContent.trim() || "");
 
@@ -10479,6 +10513,7 @@
                 const isPackage = row.dataset.isPackageItem === "true";
 
                 const parsedTourId = parseInt(row.dataset.tourId, 10);
+                rowData["id"] = parseInt(row.dataset.tourItemId, 10) || null;
                 rowData["tour_id"] = isNaN(parsedTourId) || parsedTourId === 0 ? null : parsedTourId;
                 rowData["is_special_package"] = isPackage;
                 console.log("Extracted Tour ID:", rowData["tour_id"]); // Debugging
@@ -10532,6 +10567,8 @@
               rows.forEach((row) => {
                 let flightData = {};
                 const cells = row.querySelectorAll("td");
+                const flightItemId = parseInt(row.dataset.id, 10) || null;
+                flightData["id"] = flightItemId;
 
                 // ✅ Map cells to backend field names
                 const dateValue = getCellDateValue(cells[0]) || "";
@@ -10561,7 +10598,7 @@
                 flightData["discount"]   = 0;
                 flightData["final_cost"] = costValue;
 
-                flightData["trip_item_id"] = 0; // Placeholder (if needed)
+                flightData["trip_item_id"] = flightItemId;
                 flightData["approved"] = false;
                 flightData["declined"] = false;
                 flightData["created_at"] = new Date().toISOString();
@@ -10591,6 +10628,8 @@
                 const cells = row.querySelectorAll("td");
 
                 // ✅ Fetch excursion_id from dataset
+                rowData["id"] =
+                  parseInt(row.dataset.tripExcursionId, 10) || null;
                 rowData["excursion_id"] =
                   parseInt(row.getAttribute("data-excursion-id"), 10) || 0;
                 console.log("Extracted Excursion ID:", rowData["excursion_id"]); // Debugging
@@ -10628,6 +10667,7 @@
                 // ✅ Basic Fields
                 rowData["trip_item_id"] =
                   parseInt(row.dataset.tripItemId, 10) || 0;
+                rowData["id"] = rowData["trip_item_id"] || null;
                 rowData["hotel_id"] = parseInt(row.dataset.hotelId, 10) || 0;
                 rowData["room_id"] = parseInt(row.dataset.roomId, 10) || 0;
                 rowData["hotel_name"] =
@@ -10764,6 +10804,8 @@
               rows.forEach((row) => {
                 let rowData = {};
                 const cells = row.querySelectorAll("td");
+
+                rowData["id"] = parseInt(row.dataset.tripOtherId, 10) || null;
 
                 rowData["description"] = getCellText(cells[0]) || "";
                 rowData["date"] = formatToYYYYMMDD(
@@ -11093,10 +11135,7 @@
                       }
                     }
 
-                    alert(errorMessage);
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-save" style="margin-right:8px"></i> Save Quotation';
-                    return; // Exit early for 403 errors
+                    throw new Error(errorMessage);
                   }
 
                   // Check if response is JSON before parsing
@@ -11162,7 +11201,8 @@
           const cleanRemarks = remarksVal.replace(/\[Special Package\]/gi, "").trim();
 
           row.dataset.otherId =
-            other.id || other.other_id || `temp-${Date.now()}`;
+            other.other_id || `temp-${Date.now()}`;
+          row.dataset.tripOtherId = other.id || other.trip_other_id || "";
           row.dataset.remarks = remarksVal;
 
           if (isPackage) {
@@ -11262,7 +11302,8 @@
           const othersTableBody = document.getElementById("othersTableBody");
           const row = document.createElement("tr");
 
-          row.dataset.otherId = otherService.id;
+          row.dataset.otherId = otherService.other_id || otherService.id;
+          row.dataset.tripOtherId = otherService.trip_other_id || "";
 
           row.innerHTML = `
             <td>${otherService.description}</td>
@@ -11419,10 +11460,12 @@
             return;
           }
 
-          othersArray = othersArray.filter(
-            (o) =>
-              String(o.id) !== String(otherId) &&
-              String(o.other_id) !== String(otherId)
+          othersArray = removeOneServiceItem(
+            othersArray,
+            row.dataset.tripOtherId,
+            ["id", "trip_other_id", "other_trip_item_id"],
+            otherId,
+            "other_id"
           );
           row.remove();
           updateUIPriceFields();

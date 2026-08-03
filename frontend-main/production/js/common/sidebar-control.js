@@ -77,9 +77,12 @@
       `<li${current === 'check_invoices.html' ? ' class="current-page"' : ''}><a href="${prefix}check_invoices.html">Check Invoice</a></li>`,
       '</ul>'
     ].join('');
+    // Keep Analytics discoverable on every page. It used to be expanded only
+    // while visiting an Analytics page, which made Room Nights appear to be
+    // missing after returning to Home or another section.
     menu.classList.toggle('active', analyticsPages.has(current));
     const submenu = menu.querySelector('ul.child_menu');
-    submenu.style.display = analyticsPages.has(current) ? 'block' : 'none';
+    submenu.style.display = 'block';
     menu.dataset.analyticsMenuReady = 'true';
   }
 

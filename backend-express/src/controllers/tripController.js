@@ -253,6 +253,27 @@ export function calculateQuotationCosts(data) {
   };
 }
 
+export function buildPartialQuotationCostInput(data, existing, suppliedItems) {
+  return {
+    ...data,
+    hotel_items: suppliedItems.hotel ? (data.hotel_items || data.hotels || []) : (existing.hotel_trip_items || []),
+    excursion_items: suppliedItems.excursion ? (data.excursion_items || data.excursions || []) : (existing.excursion_trip_items || []),
+    tour_items: suppliedItems.tour ? (data.tour_items || data.tours || []) : (existing.tour_trip_items || []),
+    transfer_items: suppliedItems.transfer ? (data.transfer_items || data.transfers || []) : (existing.transfer_trip_items || []),
+    flight_items: suppliedItems.flight ? (data.flight_items || data.flights || []) : (existing.flight_trip_items || []),
+    other_items: suppliedItems.other ? (data.other_items || data.others || []) : (existing.other_trip_items || []),
+    include_assistance_fee: data.include_assistance_fee !== undefined
+      ? data.include_assistance_fee
+      : existing.include_assistance_fee,
+    assistance_fee_amount: data.assistance_fee_amount !== undefined
+      ? data.assistance_fee_amount
+      : existing.assistance_fee_amount,
+    discount_amount: data.discount_amount !== undefined
+      ? data.discount_amount
+      : (data.discount !== undefined ? data.discount : existing.discount_amount)
+  };
+}
+
 async function validateHotelAvailability(tx, hotelItems) {
   if (!hotelItems || hotelItems.length === 0) return;
 
@@ -713,7 +734,7 @@ export async function createQuotation(req, res, next) {
             const tplPrice = pkg.price_per_child ? parseFloat(pkg.price_per_child) : 0;
             data.total_amount = (sglPrice * sglRooms * 1) + (dblPrice * dblRooms * 2) + (tplPrice * tplRooms * 3);
           } else {
-            const adults = parseSafeInt(data.number_of_adults) || 1;
+            const adults = data.number_of_adults !== undefined ? parseSafeInt(data.number_of_adults) : 1;
             const kids = parseSafeInt(data.number_of_kids) || 0;
             const pkgAdultPrice = pkg.price_per_adult ? parseFloat(pkg.price_per_adult) : 0;
             const pkgChildPrice = pkg.price_per_child ? parseFloat(pkg.price_per_child) : 0;
@@ -769,7 +790,7 @@ export async function createQuotation(req, res, next) {
           client_name: data.client_name,
           client_phone: data.client_phone,
           client_email: data.client_email || null,
-          number_of_adults: parseSafeInt(data.number_of_adults) || 1,
+          number_of_adults: data.number_of_adults !== undefined ? parseSafeInt(data.number_of_adults) : 1,
           number_of_kids: parseSafeInt(data.number_of_kids) || 0,
           booking_reference: refNumber,
           file_reference: data.file_reference || null,
@@ -808,8 +829,7 @@ export async function createQuotation(req, res, next) {
       if (hotelItems.length) {
         for (const item of hotelItems) {
           const rtItems = item.room_type_items || item.room_types || [];
-          await tx.hotel_trip_items.create({
-            data: {
+          await tx.hotel_trip_items.create({ data: {
               trip_item_id: id, hotel_id: parseSafeInt(item.hotel_id), from_date: parseRequiredDate(item.from_date, tripFallbackDate),
               to_date: parseRequiredDate(item.to_date, tripFallbackDate), city: item.city, hotel_name: item.hotel_name,
               nights: parseSafeInt(item.nights) || 1, single_price: parseFloat(item.single_price) || 0, double_price: parseFloat(item.double_price) || 0,
@@ -847,16 +867,14 @@ export async function createQuotation(req, res, next) {
                   sharing_bed: rt.sharing_bed || false
                 }))
               } : undefined
-            }
-          });
+          } });
         }
       }
 
       if (excursionItems.length) {
         for (const item of excursionItems) {
           const excursionDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
-          await tx.excursion_trip_items.create({
-            data: {
+          await tx.excursion_trip_items.create({ data: {
               trip_item_id: id, excursion_id: parseSafeInt(item.excursion_id), supplier_id: parseSafeInt(item.supplier_id),
               city: item.city, toe: item.toe, from_date: excursionDate,
               to_date: excursionDate, hotel: item.hotel,
@@ -864,15 +882,14 @@ export async function createQuotation(req, res, next) {
               price: parseFloat(item.price) || 0, currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
               approved: item.approved || false, declined: item.declined || false,
               pickup_time: item.pickup_time || null
-            }
-          });
+          } });
         }
       }
 
       if (tourItems.length) {
         for (const item of tourItems) {
-          await tx.tour_trip_items.create({
-            data: {
+          const approvalState = getApprovalState('tour', item);
+          await tx.tour_trip_items.create({ data: {
               trip_item_id: id, tour_id: parseSafeInt(item.tour_id), supplier_id: parseSafeInt(item.supplier_id),
               tot: parseTot(item.tot), from_location: item.from_location, to_location: item.to_location,
               number_of_adults: parseSafeInt(item.number_of_adults) || 0, number_of_kids: parseSafeInt(item.number_of_kids) || 0,
@@ -882,19 +899,17 @@ export async function createQuotation(req, res, next) {
               guide_name: item.guide_name, guide_contact: item.guide_contact,
               payment_car: item.payment_car, payment_service: item.payment_service,
               price: parseFloat(item.price) || 0, currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
-              approved: item.approved || false, declined: item.declined || false,
+              approved: approvalState.approved, declined: approvalState.declined,
               transfer_in: item.transfer_in || buildTourTransferText(item, 'in') || null,
               transfer_out: item.transfer_out || buildTourTransferText(item, 'out') || null
-            }
-          });
+          } });
         }
       }
 
       if (transferItems.length) {
         for (const item of transferItems) {
           const transferDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
-          await tx.transfer_trip_items.create({
-            data: {
+          await tx.transfer_trip_items.create({ data: {
               trip_item_id: id,
               transfer_id: parseSafeInt(item.transfer_id),
               from_location: item.from_location, to_location: item.to_location,
@@ -909,39 +924,34 @@ export async function createQuotation(req, res, next) {
               pickup_time: item.pickup_time || item.transferPickupTime || null,
               flight_time: item.flight_time || item.flightTime || null,
               type_of_transfer: item.type_of_transfer || item.transferRouteType || null
-            }
-          });
+          } });
         }
       }
 
       if (flightItems.length) {
         for (const item of flightItems) {
           const flightDate = parseRequiredDate(item.from_date || item.flight_date || item.date, tripFallbackDate);
-          await tx.flight_trip_items.create({
-            data: {
+          const approvalState = getApprovalState('flight', item);
+          await tx.flight_trip_items.create({ data: {
               trip_item_id: id, from_date: flightDate, to_date: flightDate,
               flight_number: item.flight_number, in_or_out: item.in_or_out,
               route: item.route, issued_by: item.issued_by, price: parseFloat(item.price) || 0,
               currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
-              approved: item.approved || false, declined: item.declined || false,
+              approved: approvalState.approved, declined: approvalState.declined,
               ...normalizeQuotationFlightFields(item)
-            }
-          });
+          } });
         }
       }
 
       if (otherItems.length) {
         for (const item of otherItems) {
           const otherDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
-          await tx.other_trip_items.create({
-            data: {
+          await tx.other_trip_items.create({ data: {
               trip_item_id: id, other_id: parseSafeInt(item.other_id),
               from_date: otherDate, to_date: otherDate
-            }
-          });
+          } });
         }
       }
-
       return trip;
     }, { timeout: 20000 });
 
@@ -1071,7 +1081,19 @@ export async function updateQuotation(req, res, next) {
     const data = req.body;
     const claims = req.user;
 
-    const existing = await prisma.trips.findUnique({ where: { id } });
+    const existing = await prisma.trips.findUnique({
+      where: { id },
+      // A partial save must retain both the existing service rows and their
+      // contribution to the quotation total.
+      include: {
+        hotel_trip_items: true,
+        excursion_trip_items: true,
+        tour_trip_items: true,
+        transfer_trip_items: true,
+        flight_trip_items: true,
+        other_trip_items: true
+      }
+    });
     if (!existing) return res.status(404).send('Quotation not found');
     if (!agentOwnsTrip(existing, claims)) {
       return res.status(403).send('Forbidden: Access denied to this quotation');
@@ -1223,7 +1245,9 @@ export async function updateQuotation(req, res, next) {
               const tplPrice = pkg.price_per_child ? parseFloat(pkg.price_per_child) : 0;
               data.total_amount = (sglPrice * sglRooms * 1) + (dblPrice * dblRooms * 2) + (tplPrice * tplRooms * 3);
             } else {
-              const adults = parseSafeInt(data.number_of_adults) || parseSafeInt(existing.number_of_adults) || 1;
+              const adults = data.number_of_adults !== undefined
+                ? parseSafeInt(data.number_of_adults)
+                : (existing.number_of_adults ?? 1);
               const kids = parseSafeInt(data.number_of_kids) || parseSafeInt(existing.number_of_kids) || 0;
               const pkgAdultPrice = pkg.price_per_adult ? parseFloat(pkg.price_per_adult) : 0;
               const pkgChildPrice = pkg.price_per_child ? parseFloat(pkg.price_per_child) : 0;
@@ -1235,6 +1259,15 @@ export async function updateQuotation(req, res, next) {
       }
     }
 
+    const hasOwn = (key) => Object.prototype.hasOwnProperty.call(data, key);
+    const suppliedItems = {
+      hotel: hasOwn('hotel_items') || hasOwn('hotels'),
+      excursion: hasOwn('excursion_items') || hasOwn('excursions'),
+      tour: hasOwn('tour_items') || hasOwn('tours'),
+      transfer: hasOwn('transfer_items') || hasOwn('transfers'),
+      flight: hasOwn('flight_items') || hasOwn('flights'),
+      other: hasOwn('other_items') || hasOwn('others')
+    };
     const hotelItems = data.hotel_items || data.hotels || [];
     const excursionItems = data.excursion_items || data.excursions || [];
     const tourItems = data.tour_items || data.tours || [];
@@ -1242,12 +1275,24 @@ export async function updateQuotation(req, res, next) {
     const flightItems = data.flight_items || data.flights || [];
     const otherItems = data.other_items || data.others || [];
 
-    const calculated = calculateQuotationCosts(data);
-    const total_amount = data.total_amount !== undefined ? parseFloat(data.total_amount) : (data.total_cost !== undefined ? parseFloat(data.total_cost) : calculated.total_amount);
-    const discount_amount = data.discount_amount !== undefined ? parseFloat(data.discount_amount) : (data.discount !== undefined ? parseFloat(data.discount) : calculated.discount_amount);
-    const final_amount = data.final_amount !== undefined ? parseFloat(data.final_amount) : (data.final_cost !== undefined ? parseFloat(data.final_cost) : calculated.final_amount);
+    const calculated = calculateQuotationCosts(buildPartialQuotationCostInput(data, existing, suppliedItems));
+    const anyServicesSupplied = Object.values(suppliedItems).some(Boolean);
+    const total_amount = data.total_amount !== undefined
+      ? parseFloat(data.total_amount)
+      : (data.total_cost !== undefined
+          ? parseFloat(data.total_cost)
+          : (anyServicesSupplied ? calculated.total_amount : existing.total_amount));
+    const discount_amount = data.discount_amount !== undefined
+      ? parseFloat(data.discount_amount)
+      : (data.discount !== undefined
+          ? parseFloat(data.discount)
+          : (anyServicesSupplied ? calculated.discount_amount : existing.discount_amount));
+    const final_amount = data.final_amount !== undefined
+      ? parseFloat(data.final_amount)
+      : (data.final_cost !== undefined
+          ? parseFloat(data.final_cost)
+          : (anyServicesSupplied ? calculated.final_amount : existing.final_amount));
 
-    
     let payment_deadline = existing.payment_deadline;
     let cancellation_deadline = existing.cancellation_deadline;
 
@@ -1299,31 +1344,50 @@ export async function updateQuotation(req, res, next) {
 
       // Approval is workflow state. Preserve it for existing services when a
       // booking is edited; only the dedicated approve/decline actions change it.
-      const [savedHotels, savedExcursions, savedTransfers] = await Promise.all([
+      const [savedHotels, savedExcursions, savedTours, savedTransfers, savedFlights, savedOthers] = await Promise.all([
         tx.hotel_trip_items.findMany({
           where: { trip_item_id: id },
-          select: { id: true, approved: true, declined: true }
+          select: { id: true, approved: true, declined: true, email_sent: true }
         }),
         tx.excursion_trip_items.findMany({
           where: { trip_item_id: id },
-          select: { id: true, approved: true, declined: true }
+          select: { id: true, approved: true, declined: true, email_sent: true }
+        }),
+        tx.tour_trip_items.findMany({
+          where: { trip_item_id: id },
+          select: { id: true, approved: true, declined: true, email_sent: true }
         }),
         tx.transfer_trip_items.findMany({
           where: { trip_item_id: id },
+          select: { id: true, approved: true, declined: true, email_sent: true }
+        }),
+        tx.flight_trip_items.findMany({
+          where: { trip_item_id: id },
           select: { id: true, approved: true, declined: true }
+        }),
+        tx.other_trip_items.findMany({
+          where: { trip_item_id: id },
+          select: { id: true }
         })
       ]);
       const approvalMaps = {
         hotel: new Map(savedHotels.map((item) => [item.id, item])),
         excursion: new Map(savedExcursions.map((item) => [item.id, item])),
-        transfer: new Map(savedTransfers.map((item) => [item.id, item]))
+        tour: new Map(savedTours.map((item) => [item.id, item])),
+        transfer: new Map(savedTransfers.map((item) => [item.id, item])),
+        flight: new Map(savedFlights.map((item) => [item.id, item])),
+        other: new Map(savedOthers.map((item) => [item.id, item]))
       };
       const getApprovalState = (type, item) =>
         resolveServiceApprovalState(approvalMaps[type], item);
+      const finalApprovalStates = (type, incomingItems, savedItems) =>
+        suppliedItems[type]
+          ? incomingItems.map((item) => getApprovalState(type, item))
+          : savedItems.map((item) => ({ approved: Boolean(item.approved), declined: Boolean(item.declined) }));
       const confirmableStates = [
-        ...hotelItems.map((item) => getApprovalState('hotel', item)),
-        ...excursionItems.map((item) => getApprovalState('excursion', item)),
-        ...transferItems.map((item) => getApprovalState('transfer', item))
+        ...finalApprovalStates('hotel', hotelItems, savedHotels),
+        ...finalApprovalStates('excursion', excursionItems, savedExcursions),
+        ...finalApprovalStates('transfer', transferItems, savedTransfers)
       ];
       const allServicesConfirmed = confirmableStates.length > 0 &&
         confirmableStates.every((item) => item.approved);
@@ -1333,21 +1397,72 @@ export async function updateQuotation(req, res, next) {
         data.status
       );
 
-      // Delete existing trip items
-      await tx.hotel_trip_items.deleteMany({ where: { trip_item_id: id } });
-      await tx.excursion_trip_items.deleteMany({ where: { trip_item_id: id } });
-      await tx.tour_trip_items.deleteMany({ where: { trip_item_id: id } });
-      await tx.transfer_trip_items.deleteMany({ where: { trip_item_id: id } });
-      await tx.flight_trip_items.deleteMany({ where: { trip_item_id: id } });
-      await tx.other_trip_items.deleteMany({ where: { trip_item_id: id } });
+      const itemIdAliases = {
+        hotel: ['id', 'trip_hotel_id', 'hotel_trip_item_id'],
+        excursion: ['id', 'trip_excursion_id', 'excursion_trip_item_id'],
+        tour: ['id', 'trip_tour_id', 'tour_trip_item_id'],
+        transfer: ['id', 'trip_transfer_id', 'transfer_trip_item_id'],
+        flight: ['id', 'trip_flight_id', 'flight_trip_item_id'],
+        other: ['id', 'trip_other_id', 'other_trip_item_id']
+      };
+      const getIncomingItemId = (type, item = {}) => {
+        for (const key of itemIdAliases[type]) {
+          const parsed = parseSafeInt(item[key]);
+          if (parsed) return parsed;
+        }
+        return null;
+      };
+      const keptIds = {
+        hotel: new Set(), excursion: new Set(), tour: new Set(),
+        transfer: new Set(), flight: new Set(), other: new Set()
+      };
+      const saveTripItem = async (type, item, createData) => {
+        const delegate = tx[`${type}_trip_items`];
+        const incomingId = getIncomingItemId(type, item);
+        if (incomingId && approvalMaps[type].has(incomingId)) {
+          keptIds[type].add(incomingId);
+          const updateData = { ...createData };
+          delete updateData.trip_item_id;
+          delete updateData.approved;
+          delete updateData.declined;
+          delete updateData.email_sent;
+          if (type === 'hotel') {
+            const roomTypesSupplied = Object.prototype.hasOwnProperty.call(item, 'room_type_items') ||
+              Object.prototype.hasOwnProperty.call(item, 'room_types');
+            if (roomTypesSupplied) {
+              await tx.hotel_room_type_items.deleteMany({ where: { hotel_trip_item_id: incomingId } });
+              if (!updateData.hotel_room_type_items) {
+                delete updateData.hotel_room_type_items;
+              }
+            } else {
+              delete updateData.hotel_room_type_items;
+            }
+          }
+          return delegate.update({ where: { id: incomingId }, data: updateData });
+        }
+        const created = await delegate.create({ data: createData });
+        keptIds[type].add(created.id);
+        return created;
+      };
+      const deleteRemovedTripItems = async (type) => {
+        if (!suppliedItems[type]) return;
+        const delegate = tx[`${type}_trip_items`];
+        const ids = [...keptIds[type]];
+        await delegate.deleteMany({
+          where: {
+            trip_item_id: id,
+            ...(ids.length ? { id: { notIn: ids } } : {})
+          }
+        });
+      };
 
       // Update trip base data
       await tx.trips.update({
         where: { id },
         data: {
           client_name: data.client_name, client_phone: data.client_phone,
-          number_of_adults: parseSafeInt(data.number_of_adults) || 1,
-          number_of_kids: parseSafeInt(data.number_of_kids) || 0,
+          number_of_adults: data.number_of_adults !== undefined ? parseSafeInt(data.number_of_adults) : undefined,
+          number_of_kids: data.number_of_kids !== undefined ? parseSafeInt(data.number_of_kids) : undefined,
           booking_reference: data.booking_reference !== undefined ? data.booking_reference : data.client_booking,
           file_reference: data.file_reference,
           invoice_number: data.invoice_number !== undefined ? data.invoice_number : undefined,
@@ -1362,8 +1477,12 @@ export async function updateQuotation(req, res, next) {
           amount_paid: data.amount_paid !== undefined ? parseFloat(data.amount_paid) : undefined,
           penalty_cost: data.penalty_cost !== undefined ? parseFloat(data.penalty_cost) : undefined,
           status: statusAfterSave,
-          include_assistance_fee: calculated.include_assistance_fee,
-          assistance_fee_amount: calculated.assistance_fee_amount,
+          include_assistance_fee: data.include_assistance_fee !== undefined
+            ? calculated.include_assistance_fee
+            : undefined,
+          assistance_fee_amount: data.assistance_fee_amount !== undefined
+            ? calculated.assistance_fee_amount
+            : undefined,
           include_description_in_itinerary: data.include_description_in_itinerary !== undefined ? data.include_description_in_itinerary : undefined,
           payment_deadline,
           cancellation_deadline,
@@ -1381,13 +1500,14 @@ export async function updateQuotation(req, res, next) {
         }
       });
 
-      // Recreate trip items
+      // Update existing service rows by their trip-item IDs. New rows are
+      // created, while rows omitted from an explicitly supplied collection
+      // are removed after all incoming rows have been processed.
       if (hotelItems.length) {
         for (const item of hotelItems) {
           const rtItems = item.room_type_items || item.room_types || [];
           const approvalState = getApprovalState('hotel', item);
-          await tx.hotel_trip_items.create({
-            data: {
+          await saveTripItem('hotel', item, {
               trip_item_id: id, hotel_id: parseSafeInt(item.hotel_id), from_date: parseRequiredDate(item.from_date, tripFallbackDate),
               to_date: parseRequiredDate(item.to_date, tripFallbackDate), city: item.city, hotel_name: item.hotel_name,
               nights: parseSafeInt(item.nights) || 1, single_price: parseFloat(item.single_price) || 0, double_price: parseFloat(item.double_price) || 0,
@@ -1425,7 +1545,7 @@ export async function updateQuotation(req, res, next) {
                   sharing_bed: rt.sharing_bed || false
                 }))
               } : undefined
-            }
+
           });
         }
       }
@@ -1433,8 +1553,7 @@ export async function updateQuotation(req, res, next) {
         for (const item of excursionItems) {
           const excursionDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           const approvalState = getApprovalState('excursion', item);
-          await tx.excursion_trip_items.create({
-            data: {
+          await saveTripItem('excursion', item, {
               trip_item_id: id, excursion_id: parseSafeInt(item.excursion_id), supplier_id: parseSafeInt(item.supplier_id),
               city: item.city, toe: item.toe, from_date: excursionDate,
               to_date: excursionDate, hotel: item.hotel,
@@ -1442,14 +1561,14 @@ export async function updateQuotation(req, res, next) {
               price: parseFloat(item.price) || 0, currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
               approved: approvalState.approved, declined: approvalState.declined,
               pickup_time: item.pickup_time || null
-            }
+
           });
         }
       }
       if (tourItems.length) {
         for (const item of tourItems) {
-          await tx.tour_trip_items.create({
-            data: {
+          const approvalState = getApprovalState('tour', item);
+          await saveTripItem('tour', item, {
               trip_item_id: id, tour_id: parseSafeInt(item.tour_id), supplier_id: parseSafeInt(item.supplier_id),
               tot: parseTot(item.tot), from_location: item.from_location, to_location: item.to_location,
               number_of_adults: parseSafeInt(item.number_of_adults) || 0, number_of_kids: parseSafeInt(item.number_of_kids) || 0,
@@ -1459,10 +1578,10 @@ export async function updateQuotation(req, res, next) {
               guide_name: item.guide_name, guide_contact: item.guide_contact,
               payment_car: item.payment_car, payment_service: item.payment_service,
               price: parseFloat(item.price) || 0, currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
-              approved: item.approved || false, declined: item.declined || false,
+              approved: approvalState.approved, declined: approvalState.declined,
               transfer_in: item.transfer_in || buildTourTransferText(item, 'in') || null,
               transfer_out: item.transfer_out || buildTourTransferText(item, 'out') || null
-            }
+
           });
         }
       }
@@ -1470,8 +1589,7 @@ export async function updateQuotation(req, res, next) {
         for (const item of transferItems) {
           const transferDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           const approvalState = getApprovalState('transfer', item);
-          await tx.transfer_trip_items.create({
-            data: {
+          await saveTripItem('transfer', item, {
               trip_item_id: id,
               transfer_id: parseSafeInt(item.transfer_id),
               from_location: item.from_location, to_location: item.to_location,
@@ -1486,36 +1604,43 @@ export async function updateQuotation(req, res, next) {
               pickup_time: item.pickup_time || item.transferPickupTime || null,
               flight_time: item.flight_time || item.flightTime || null,
               type_of_transfer: item.type_of_transfer || item.transferRouteType || null
-            }
+
           });
         }
       }
       if (flightItems.length) {
         for (const item of flightItems) {
           const flightDate = parseRequiredDate(item.from_date || item.flight_date || item.date, tripFallbackDate);
-          await tx.flight_trip_items.create({
-            data: {
+          const approvalState = getApprovalState('flight', item);
+          await saveTripItem('flight', item, {
               trip_item_id: id, from_date: flightDate, to_date: flightDate,
               flight_number: item.flight_number, in_or_out: item.in_or_out,
               route: item.route, issued_by: item.issued_by, price: parseFloat(item.price) || 0,
               currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
-              approved: item.approved || false, declined: item.declined || false,
+              approved: approvalState.approved, declined: approvalState.declined,
               ...normalizeQuotationFlightFields(item)
-            }
+
           });
         }
       }
       if (otherItems.length) {
         for (const item of otherItems) {
           const otherDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
-          await tx.other_trip_items.create({
-            data: {
+          await saveTripItem('other', item, {
               trip_item_id: id, other_id: parseSafeInt(item.other_id),
               from_date: otherDate, to_date: otherDate
-            }
+
           });
         }
       }
+      await Promise.all([
+        deleteRemovedTripItems('hotel'),
+        deleteRemovedTripItems('excursion'),
+        deleteRemovedTripItems('tour'),
+        deleteRemovedTripItems('transfer'),
+        deleteRemovedTripItems('flight'),
+        deleteRemovedTripItems('other')
+      ]);
     }, { timeout: 20000 });
 
     const updated = await prisma.trips.findUnique({
