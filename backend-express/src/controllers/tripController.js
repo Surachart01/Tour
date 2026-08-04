@@ -74,7 +74,7 @@ function formatPaymentInfo(trip) {
 
 export function resolveServiceApprovalState(savedById, item = {}) {
   const itemId = parseSafeInt(item.id || item.trip_item_id);
-  const saved = itemId ? savedById.get(itemId) : null;
+  const saved = (savedById && itemId) ? savedById.get(itemId) : null;
   if (saved) {
     return { approved: Boolean(saved.approved), declined: Boolean(saved.declined) };
   }
@@ -825,10 +825,13 @@ export async function createQuotation(req, res, next) {
       });
 
       const id = trip.id;
+      const getApprovalState = (type, item) =>
+        resolveServiceApprovalState(null, item);
 
       if (hotelItems.length) {
         for (const item of hotelItems) {
           const rtItems = item.room_type_items || item.room_types || [];
+          const approvalState = getApprovalState('hotel', item);
           await tx.hotel_trip_items.create({ data: {
               trip_item_id: id, hotel_id: parseSafeInt(item.hotel_id), from_date: parseRequiredDate(item.from_date, tripFallbackDate),
               to_date: parseRequiredDate(item.to_date, tripFallbackDate), city: item.city, hotel_name: item.hotel_name,
@@ -836,7 +839,7 @@ export async function createQuotation(req, res, next) {
               extra_bed_price: parseFloat(item.extra_bed_price) || 0, room_type: item.room_type || item.room_type_summary || null,
               abf_price: parseFloat(item.abf_price) || 0, lunch_price: parseFloat(item.lunch_price) || 0, dinner_price: parseFloat(item.dinner_price) || 0,
               promotions: parseSafeInt(item.promotions), tour_package: item.tour_package,
-              notes: item.notes, approved: item.approved || false, declined: item.declined || false,
+              notes: item.notes, approved: approvalState.approved, declined: approvalState.declined,
               promotion: item.promotion || null,
               meals: item.meals || null,
               room_types_json: item.room_types_json || null,
@@ -874,13 +877,14 @@ export async function createQuotation(req, res, next) {
       if (excursionItems.length) {
         for (const item of excursionItems) {
           const excursionDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
+          const approvalState = getApprovalState('excursion', item);
           await tx.excursion_trip_items.create({ data: {
               trip_item_id: id, excursion_id: parseSafeInt(item.excursion_id), supplier_id: parseSafeInt(item.supplier_id),
               city: item.city, toe: item.toe, from_date: excursionDate,
               to_date: excursionDate, hotel: item.hotel,
               guide_name: item.guide_name, guide_contact: item.guide_contact,
               price: parseFloat(item.price) || 0, currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
-              approved: item.approved || false, declined: item.declined || false,
+              approved: approvalState.approved, declined: approvalState.declined,
               pickup_time: item.pickup_time || null
           } });
         }
@@ -909,6 +913,7 @@ export async function createQuotation(req, res, next) {
       if (transferItems.length) {
         for (const item of transferItems) {
           const transferDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
+          const approvalState = getApprovalState('transfer', item);
           await tx.transfer_trip_items.create({ data: {
               trip_item_id: id,
               transfer_id: parseSafeInt(item.transfer_id),
@@ -918,7 +923,7 @@ export async function createQuotation(req, res, next) {
               supplier_id: parseSafeInt(item.supplier_id), guide_name: item.guide_name,
               guide_contact: item.guide_contact, price: parseFloat(item.price) || 0,
               currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
-              approved: item.approved || false, declined: item.declined || false,
+              approved: approvalState.approved, declined: approvalState.declined,
               city: item.city || item.transferCity || null,
               transfer_description: item.transfer_description || item.transferType || null,
               pickup_time: item.pickup_time || item.transferPickupTime || null,

@@ -853,7 +853,7 @@
             <form id="transferForm">
               <div class="form-row">
                 <!-- Country -->
-                <div class="form-group col-md-3">
+                <div class="form-group col-md-4">
                   <label for="transferCountry">Country *</label>
                   <select
                     class="form-control"
@@ -863,29 +863,8 @@
                     <option value="" disabled selected>Loading countries...</option>
                   </select>
                 </div>
-                <!-- Transfer Dropdown -->
-                <div class="form-group col-md-3">
-                  <label for="transferType">Transfer *</label>
-                  <select
-                    id="transferType"
-                    class="form-control transfer-dropdown"
-                    required
-                  >
-                    <option value="" disabled selected>Select Transfer</option>
-                  </select>
-                </div>
-                <!-- Date -->
-                <div class="form-group col-md-3">
-                  <label for="transferDate">Date *</label>
-                  <input
-                    type="date"
-                    class="form-control transfer-date"
-                    id="transferDate"
-                    required
-                  />
-                </div>
                 <!-- City -->
-                <div class="form-group col-md-3">
+                <div class="form-group col-md-4">
                   <label for="transferCity">City *</label>
                   <select
                     class="form-control city-dropdown-transfer"
@@ -896,29 +875,27 @@
                     <!-- Cities will be populated dynamically -->
                   </select>
                 </div>
-                <!-- Flight -->
+                <!-- Date -->
                 <div class="form-group col-md-4">
-                  <label for="transferFlight">Flight</label>
+                  <label for="transferDate">Date *</label>
                   <input
-                    type="text"
-                    class="form-control"
-                    id="transferFlight"
-                    placeholder="Flight details"
+                    type="date"
+                    class="form-control transfer-date"
+                    id="transferDate"
+                    required
                   />
                 </div>
-                <!-- Flight Time -->
+
+                <!-- Transfer Dropdown -->
                 <div class="form-group col-md-4">
-                  <label for="flightTime">Time</label>
-                  <input type="time" class="form-control" id="flightTime" />
-                </div>
-                <!-- Pickup Time -->
-                <div class="form-group col-md-4">
-                  <label for="transferPickupTime">Pickup Time</label>
-                  <input
-                    type="time"
-                    class="form-control"
-                    id="transferPickupTime"
-                  />
+                  <label for="transferType">Transfer *</label>
+                  <select
+                    id="transferType"
+                    class="form-control transfer-dropdown"
+                    required
+                  >
+                    <option value="" disabled selected>Select Transfer</option>
+                  </select>
                 </div>
                 <!-- From -->
                 <div class="form-group col-md-4">
@@ -942,6 +919,32 @@
                     required
                   />
                 </div>
+
+                <!-- Flight -->
+                <div class="form-group col-md-4">
+                  <label for="transferFlight">Flight</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="transferFlight"
+                    placeholder="Flight details"
+                  />
+                </div>
+                <!-- Flight Time -->
+                <div class="form-group col-md-4">
+                  <label for="flightTime">Time</label>
+                  <input type="time" class="form-control" id="flightTime" />
+                </div>
+                <!-- Pickup Time -->
+                <div class="form-group col-md-4">
+                  <label for="transferPickupTime">Arrival Time</label>
+                  <input
+                    type="time"
+                    class="form-control"
+                    id="transferPickupTime"
+                  />
+                </div>
+
                 <!-- ToT -->
                 <div class="form-group col-md-4">
                   <label for="transferToT">ToT *</label>

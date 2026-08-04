@@ -29,6 +29,14 @@ test('new services remain unconfirmed until an admin confirms them', () => {
     resolveServiceApprovalState(new Map(), { id: null }),
     { approved: false, declined: false }
   );
+  assert.deepEqual(
+    resolveServiceApprovalState(null, { id: 10, approved: true }),
+    { approved: true, declined: false }
+  );
+  assert.deepEqual(
+    resolveServiceApprovalState(null, { approved: 'true' }),
+    { approved: true, declined: false }
+  );
 });
 
 test('a confirmed booking returns to InProgress when a new unconfirmed service is saved', () => {

@@ -1838,28 +1838,6 @@
                     <option value="" disabled selected>Select Country</option>
                   </select>
                 </div>
-                <!-- Date * -->
-                <div class="form-group col-md-4">
-                  <label for="transferDate">Date *</label>
-                  <input
-                    type="date"
-                    class="form-control transfer-date"
-                    id="transferDate"
-                    required
-                  />
-                </div>
-                <!-- Transfer Dropdown * -->
-                <div class="form-group col-md-4">
-                  <label for="transferType">Transfer *</label>
-                  <select
-                    id="transferType"
-                    class="form-control transfer-dropdown"
-                    required
-                  >
-                    <option value="" disabled selected>Select Transfer</option>
-                  </select>
-                </div>
-
                 <!-- City * -->
                 <div class="form-group col-md-4">
                   <label for="transferCity">City *</label>
@@ -1883,6 +1861,50 @@
                     </div>
                   </div>
                 </div>
+                <!-- Date * -->
+                <div class="form-group col-md-4">
+                  <label for="transferDate">Date *</label>
+                  <input
+                    type="date"
+                    class="form-control transfer-date"
+                    id="transferDate"
+                    required
+                  />
+                </div>
+
+                <!-- Transfer Dropdown * -->
+                <div class="form-group col-md-4">
+                  <label for="transferType">Transfer *</label>
+                  <select
+                    id="transferType"
+                    class="form-control transfer-dropdown"
+                    required
+                  >
+                    <option value="" disabled selected>Select Transfer</option>
+                  </select>
+                </div>
+                <!-- From -->
+                <div class="form-group col-md-4">
+                  <label for="transferFrom">From</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="transferFrom"
+                    placeholder="Enter origin"
+                    required
+                  />
+                </div>
+                <!-- To -->
+                <div class="form-group col-md-4">
+                  <label for="transferTo">To</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="transferTo"
+                    placeholder="Enter destination"
+                    required
+                  />
+                </div>
 
                 <!-- Flight -->
                 <div class="form-group col-md-4">
@@ -1905,7 +1927,6 @@
                     required
                   />
                 </div>
-
                 <!-- Arrival Time -->
                 <div class="form-group col-md-4">
                   <label for="transferPickupTime">Arrival Time</label>
@@ -1913,29 +1934,6 @@
                     type="time"
                     class="form-control"
                     id="transferPickupTime"
-                    required
-                  />
-                </div>
-
-                <!-- From -->
-                <div class="form-group col-md-4">
-                  <label for="transferFrom">From</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="transferFrom"
-                    placeholder="Enter origin"
-                    required
-                  />
-                </div>
-                <!-- To -->
-                <div class="form-group col-md-4">
-                  <label for="transferTo">To</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="transferTo"
-                    placeholder="Enter destination"
                     required
                   />
                 </div>
@@ -3113,61 +3111,67 @@
         let editingHotelRow = null;
         let dbDiscount = 0;
 
+        function extractRowPrice(row, selector, fallbackIndex, datasetKeys) {
+          if (!row || row.dataset.isPackageItem === "true") return 0;
+          for (const key of datasetKeys) {
+            if (row.dataset && row.dataset[key] !== undefined && row.dataset[key] !== null && row.dataset[key] !== "") {
+              const val = parseFloat(row.dataset[key]);
+              if (!isNaN(val) && val > 0) return val;
+            }
+          }
+          const priceCell = selector ? row.querySelector(selector) : null;
+          const cells = row.querySelectorAll("td");
+          const cell = priceCell || (fallbackIndex !== undefined && fallbackIndex < cells.length ? cells[fallbackIndex] : null);
+          if (cell) {
+            const text = cell.textContent.replace(/[^0-9.-]/g, "").trim();
+            const val = parseFloat(text);
+            if (!isNaN(val)) return val;
+          }
+          return 0;
+        }
+
         function calculateBaseTotalCost() {
           let sum = 0;
           // sum flights
           const flightsTable = document.getElementById("flightsTableBody");
           if (flightsTable) {
             flightsTable.querySelectorAll("tr").forEach(row => {
-              if (row.dataset.isPackageItem === "true") return;
-              const cells = row.querySelectorAll("td");
-              if (cells[8]) sum += parseFloat(cells[8].textContent.trim()) || 0;
+              sum += extractRowPrice(row, ".flight-price", 8, ["flightCost", "price", "cost", "totalPrice"]);
             });
           }
           // sum transfers
           const transfersTable = document.getElementById("transferTableBody");
           if (transfersTable) {
             transfersTable.querySelectorAll("tr").forEach(row => {
-              if (row.dataset.isPackageItem === "true") return;
-              const cells = row.querySelectorAll("td");
-              if (cells[8]) sum += parseFloat(cells[8].textContent.trim()) || 0;
+              sum += extractRowPrice(row, ".transfer-price", 7, ["price", "cost", "totalPrice"]);
             });
           }
           // sum hotels
           const hotelsTable = document.getElementById("hotelsTableBody");
           if (hotelsTable) {
             hotelsTable.querySelectorAll("tr").forEach(row => {
-              if (row.dataset.isPackageItem === "true") return;
-              const priceCell = row.querySelector(".hotel-price") || row.querySelectorAll("td")[10];
-              if (priceCell) sum += parseFloat(priceCell.textContent.trim()) || 0;
+              sum += extractRowPrice(row, ".hotel-price", 10, ["totalPrice", "finalCost", "totalCost", "cost", "price"]);
             });
           }
           // sum excursions
           const excursionsTable = document.getElementById("excursionTableBody");
           if (excursionsTable) {
             excursionsTable.querySelectorAll("tr").forEach(row => {
-              if (row.dataset.isPackageItem === "true") return;
-              const cells = row.querySelectorAll("td");
-              if (cells[7]) sum += parseFloat(cells[7].textContent.trim()) || 0;
+              sum += extractRowPrice(row, ".excursion-price", 7, ["price", "cost", "finalCost", "totalPrice"]);
             });
           }
           // sum tours
           const toursTable = document.getElementById("tourTableBody");
           if (toursTable) {
             toursTable.querySelectorAll("tr:not(.tour-hotels-row)").forEach(row => {
-              if (row.dataset.isPackageItem === "true") return;
-              const cells = row.querySelectorAll("td");
-              const priceCell = row.querySelector(".tour-price") || cells[8];
-              if (priceCell) sum += parseFloat(priceCell.textContent.trim()) || 0;
+              sum += extractRowPrice(row, ".tour-price", 8, ["price", "cost", "totalPrice"]);
             });
           }
           // sum others
           const othersTable = document.getElementById("othersTableBody");
           if (othersTable) {
             othersTable.querySelectorAll("tr").forEach(row => {
-              if (row.dataset.isPackageItem === "true") return;
-              const cells = row.querySelectorAll("td");
-              if (cells[2]) sum += parseFloat(cells[2].textContent.trim()) || 0;
+              sum += extractRowPrice(row, ".other-price", 2, ["price", "totalPrice", "cost"]);
             });
           }
           return sum;
@@ -3194,6 +3198,32 @@
 
           if (totalPriceInput) totalPriceInput.value = newTotal.toFixed(2);
           if (finalPriceInput) finalPriceInput.value = newFinal.toFixed(2);
+        }
+
+        function setupRealtimePriceRecalculation() {
+          const tableIds = ["hotelsTableBody", "transferTableBody", "excursionTableBody", "flightsTableBody", "othersTableBody", "tourTableBody"];
+          const observer = new MutationObserver(() => {
+            updateUIPriceFields();
+          });
+          tableIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+              observer.observe(el, { childList: true, subtree: true, characterData: true });
+            }
+          });
+
+          ["includeAssistanceFee", "assistanceFeeAmount", "discount"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+              el.addEventListener("input", updateUIPriceFields);
+              el.addEventListener("change", updateUIPriceFields);
+            }
+          });
+        }
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", setupRealtimePriceRecalculation);
+        } else {
+          setupRealtimePriceRecalculation();
         }
         const urlParams = new URLSearchParams(window.location.search);
         const tripId = urlParams.get("id");

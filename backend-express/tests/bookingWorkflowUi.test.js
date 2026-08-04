@@ -367,14 +367,14 @@ test('agents can modify only pending quotations before conversion', () => {
 test('add and edit quotation transfer forms use the same field order and preserve arrival time', () => {
   const expectedOrder = [
     'id="transferCountry"',
+    'id="transferCity"',
     'id="transferDate"',
     'id="transferType"',
-    'id="transferCity"',
+    'id="transferFrom"',
+    'id="transferTo"',
     'id="transferFlight"',
     'id="flightTime"',
     'id="transferPickupTime"',
-    'id="transferFrom"',
-    'id="transferTo"',
   ];
 
   for (const source of [addQuotationPage, quotationPage]) {
