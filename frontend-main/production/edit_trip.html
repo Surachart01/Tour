@@ -594,7 +594,8 @@
 
       .tooltip-btn .tooltip-text {
         visibility: hidden;
-        width: 80px;
+        width: auto;
+        min-width: 60px;
         background-color: #333;
         color: #fff;
         text-align: center;
@@ -604,7 +605,7 @@
         z-index: 1000;
         bottom: 125%;
         left: 50%;
-        margin-left: -40px;
+        transform: translateX(-50%);
         opacity: 0;
         transition: opacity 0.3s;
         font-size: 12px;
@@ -618,7 +619,7 @@
         position: absolute;
         top: 100%;
         left: 50%;
-        margin-left: -5px;
+        transform: translateX(-50%);
         border-width: 5px;
         border-style: solid;
         border-color: #333 transparent transparent transparent;
@@ -2421,7 +2422,7 @@
           <div class="modal-body">
             <form id="hotelBookingForm">
               <div class="container-fluid">
-                <div class="form-row g-3">
+                <div class="form-row">
                   <!-- Check-in Date -->
                   <div class="form-group col-md-3">
                     <label for="checkInDate">Check-In *</label>
@@ -2443,15 +2444,17 @@
                       required
                     />
                   </div>
-                   <!-- Country Dropdown -->
-                   <div class="form-group col-md-3">
-                     <label for="hotelCountry">Country *</label>
-                     <select class="form-control" id="hotelCountry" required>
-                       <option value="" disabled selected>Select Country</option>
-                     </select>
-                   </div>
-                   <!-- City Dropdown -->
-                   <div class="form-group col-md-3">
+
+                  <!-- Country Dropdown -->
+                  <div class="form-group col-md-3">
+                    <label for="hotelCountry">Country *</label>
+                    <select class="form-control" id="hotelCountry" required>
+                      <option value="" disabled selected>Select Country</option>
+                    </select>
+                  </div>
+
+                  <!-- City Dropdown -->
+                  <div class="form-group col-md-3">
                     <label for="hotelCity">City *</label>
                     <select
                       id="hotelCity"
@@ -2461,8 +2464,11 @@
                       <option disabled selected>Select City</option>
                     </select>
                   </div>
+                </div>
+
+                <div class="form-row">
                   <!-- Hotel Dropdown -->
-                  <div class="form-group col-md-3">
+                  <div class="form-group col-md-6">
                     <label for="hotelType">Hotel *</label>
                     <select
                       id="hotelType"
@@ -2472,9 +2478,23 @@
                       <option value="">Select Hotel</option>
                     </select>
                   </div>
+
+                  <!-- Promotion Dropdown -->
+                  <div class="form-group col-md-6">
+                    <input type="hidden" id="couponCode" name="couponCode" />
+                    <label for="promotion">Promotion (Auto-Detected)</label>
+                    <select
+                      id="promotion"
+                      class="form-control promotion-dropdown"
+                      disabled
+                      style="pointer-events: none; background-color: #e9ecef;"
+                    >
+                      <option value="">-</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div class="form-row align-items-end">
+                <div class="form-row align-items-center">
                   <!-- Number of Nights -->
                   <div class="form-group col-md-2">
                     <label for="numberOfNights">Nights</label>
@@ -2521,7 +2541,7 @@
                   </div>
 
                   <!-- Early Check-In -->
-                  <div class="form-group col-md-2 d-flex align-items-center">
+                  <div class="form-group col-md-2 d-flex align-items-center pt-3">
                     <div class="form-check">
                       <input
                         class="form-check-input"
@@ -2535,8 +2555,8 @@
                   </div>
 
                   <!-- Late Check-Out -->
-                  <div class="form-group col-md-4" style="margin-left: 32px;">
-                    <div class="form-check">
+                  <div class="form-group col-md-2">
+                    <div class="form-check mb-1">
                       <input
                         class="form-check-input"
                         type="checkbox"
@@ -2547,10 +2567,10 @@
                         >Late Check-Out</label
                       >
                     </div>
-                    <select class="form-control mt-2" id="lateCheckOutType" disabled>
+                    <select class="form-control form-control-sm" id="lateCheckOutType" disabled>
                       <option value="">Select Late Check-Out</option>
-                      <option value="18">Late Check-out 6PM Add (50%)</option>
-                      <option value="21">Late Check-out 9PM Add (100%)</option>
+                      <option value="18">Late 6PM Add (50%)</option>
+                      <option value="21">Late 9PM Add (100%)</option>
                     </select>
                   </div>
                 </div>
@@ -2559,25 +2579,14 @@
                 <div id="roomTypesWrapper"></div>
 
                 <!-- Add Room Type Button -->
-                <button
-                  type="button"
-                  class="btn btn-success mb-3"
-                  id="addRoomTypeBtn"
-                >
-                  <i class="fa fa-plus"></i> Add Room Type
-                </button>
-
-                <!-- Promotion Dropdown -->
-                <div class="form-group col-md-4">
-                  <input type="hidden" id="couponCode" name="couponCode" />
-                  <label for="promotion">Promotion</label>
-                  <select
-                    id="promotion"
-                    class="form-control promotion-dropdown"
+                <div class="form-group mb-3">
+                  <button
+                    type="button"
+                    class="btn btn-success"
+                    id="addRoomTypeBtn"
                   >
-                    <option value="">Select Promotion</option>
-                    <!-- Populate options dynamically -->
-                  </select>
+                    <i class="fa fa-plus"></i> Add Room Type
+                  </button>
                 </div>
 
                 <!-- Meals Checkboxes -->
@@ -7385,7 +7394,7 @@
           // Populate Promotion Dropdown
           if (promotionDropdown) {
             promotionDropdown.innerHTML =
-              '<option value="">Select Promotion</option>';
+              '<option value="">-</option>';
             promotions.forEach((promotion) => {
               const option = document.createElement("option");
               option.value = promotion.id;
@@ -7925,7 +7934,7 @@
             }
 
             promotionDropdown.innerHTML =
-              '<option value="">Select Promotion</option>';
+              '<option value="">-</option>';
             promotions.forEach((promotion) => {
               const option = document.createElement("option");
               option.value = promotion.id;
