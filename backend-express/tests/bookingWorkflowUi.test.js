@@ -369,12 +369,13 @@ test('add and edit quotation transfer forms use the same field order and preserv
     'id="transferCountry"',
     'id="transferCity"',
     'id="transferDate"',
+    'id="transferDirectionType"',
     'id="transferType"',
-    'id="transferFrom"',
-    'id="transferTo"',
     'id="transferFlight"',
     'id="flightTime"',
-    'id="transferPickupTime"',
+    'id="transferFrom"',
+    'id="transferTo"',
+    'id="transferToT"',
   ];
 
   for (const source of [addQuotationPage, quotationPage]) {
