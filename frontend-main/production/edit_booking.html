@@ -3798,76 +3798,84 @@
           let failCount = 0;
 
           try {
+            const tasks = [];
+
             if (byType.hotel.length > 0) {
               const hotelItemIds = [...new Set(byType.hotel.flatMap((value) => value.split("_")).filter(Boolean))];
               const itemID = hotelItemIds.length === 1 ? hotelItemIds[0] : `group_${hotelItemIds.join("_")}`;
-              try {
-                const res = await fetch(`${Endpoint}/api/v1/bookings/${tripId}/notify/hotel/${itemID}`, {
+              tasks.push(
+                fetch(`${Endpoint}/api/v1/bookings/${tripId}/notify/hotel/${itemID}`, {
                   method: "POST",
                   headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json"
                   }
-                });
-                const result = await res.json().catch(() => ({}));
-                if (!res.ok) throw new Error(result.message || "Failed to send hotel bulk email");
-                successCount += Number(result.emailCount) || byType.hotel.length;
-              } catch (e) {
-                console.error(e);
-                failCount += byType.hotel.length;
-              }
+                }).then(async (res) => {
+                  const result = await res.json().catch(() => ({}));
+                  if (!res.ok) throw new Error(result.message || "Failed to send hotel bulk email");
+                  successCount += Number(result.emailCount) || byType.hotel.length;
+                }).catch((e) => {
+                  console.error(e);
+                  failCount += byType.hotel.length;
+                })
+              );
             }
 
             for (const id of byType.transfer) {
-              try {
-                const res = await fetch(`${Endpoint}/api/v1/bookings/${tripId}/notify/transfer/${id}`, {
+              tasks.push(
+                fetch(`${Endpoint}/api/v1/bookings/${tripId}/notify/transfer/${id}`, {
                   method: "POST",
                   headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json"
                   }
-                });
-                if (!res.ok) throw new Error("Failed to send transfer email");
-                successCount++;
-              } catch (e) {
-                console.error(e);
-                failCount++;
-              }
+                }).then((res) => {
+                  if (!res.ok) throw new Error("Failed to send transfer email");
+                  successCount++;
+                }).catch((e) => {
+                  console.error(e);
+                  failCount++;
+                })
+              );
             }
 
             for (const id of byType.excursion) {
-              try {
-                const res = await fetch(`${Endpoint}/api/v1/bookings/${tripId}/notify/excursion/${id}`, {
+              tasks.push(
+                fetch(`${Endpoint}/api/v1/bookings/${tripId}/notify/excursion/${id}`, {
                   method: "POST",
                   headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json"
                   }
-                });
-                if (!res.ok) throw new Error("Failed to send excursion email");
-                successCount++;
-              } catch (e) {
-                console.error(e);
-                failCount++;
-              }
+                }).then((res) => {
+                  if (!res.ok) throw new Error("Failed to send excursion email");
+                  successCount++;
+                }).catch((e) => {
+                  console.error(e);
+                  failCount++;
+                })
+              );
             }
 
             for (const id of byType.tour) {
-              try {
-                const res = await fetch(`${Endpoint}/api/v1/bookings/${tripId}/notify/tour/${id}`, {
+              tasks.push(
+                fetch(`${Endpoint}/api/v1/bookings/${tripId}/notify/tour/${id}`, {
                   method: "POST",
                   headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json"
                   }
-                });
-                if (!res.ok) throw new Error("Failed to send tour email");
-                successCount++;
-              } catch (e) {
-                console.error(e);
-                failCount++;
-              }
+                }).then((res) => {
+                  if (!res.ok) throw new Error("Failed to send tour email");
+                  successCount++;
+                }).catch((e) => {
+                  console.error(e);
+                  failCount++;
+                })
+              );
             }
+
+            await Promise.allSettled(tasks);
 
             $("#bulkEmailModal").modal("hide");
             

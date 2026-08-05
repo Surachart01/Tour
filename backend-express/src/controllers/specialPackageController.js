@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import nodemailer from 'nodemailer';
 import { runWithSequenceRecovery } from '../utils/postgresSequences.js';
+import transporter from '../utils/smtpTransporter.js';
 
 const prisma = new PrismaClient();
 
@@ -453,13 +453,6 @@ export async function cloneSpecialPackage(req, res, next) {
     next(err);
   }
 }
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false,
-  auth: { user: process.env.SMTP_USER || '', pass: process.env.SMTP_PASS || '' }
-});
 
 async function sendMailWithTestOverride(mailOptions) {
   const targetTo = process.env.TEST_EMAIL_RECIPIENT || mailOptions.to;

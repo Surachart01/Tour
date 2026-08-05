@@ -1724,12 +1724,15 @@ export async function finalizeQuotation(req, res, next) {
       where: { id },
       include: { agents: true }
     });
-    const notification = await sendBookingGenerationRequest(trip);
+    
+    // Trigger email notification asynchronously so conversion HTTP response returns instantly
+    sendBookingGenerationRequest(trip).catch((err) => {
+      console.error('Error sending booking generation notification email:', err);
+    });
 
     return res.json({
       message: 'Quotation converted to booking successfully.',
-      booking: mapTripResponse(trip),
-      notification
+      booking: mapTripResponse(trip)
     });
   } catch (err) { next(err); }
 }
@@ -2036,13 +2039,14 @@ export async function confirmBooking(req, res, next) {
         }
       }
     });
-    const notification = await sendFinalBookingConfirmation(updated);
+    sendFinalBookingConfirmation(updated).catch((err) => {
+      console.error('Error sending final booking confirmation email:', err);
+    });
 
     return res.json({
       status: 'confirmed',
       message: 'Booking confirmed successfully.',
-      booking: mapTripResponse(updated),
-      notification
+      booking: mapTripResponse(updated)
     });
   } catch (err) { next(err); }
 }
