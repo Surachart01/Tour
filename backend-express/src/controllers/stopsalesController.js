@@ -10,6 +10,21 @@ const transporter = nodemailer.createTransport({
   auth: { user: process.env.SMTP_USER || '', pass: process.env.SMTP_PASS || '' }
 });
 
+async function sendMailWithTestOverride(mailOptions) {
+  const targetTo = process.env.TEST_EMAIL_RECIPIENT || mailOptions.to;
+  const targetSubject = process.env.TEST_EMAIL_RECIPIENT
+    ? `[TEST MODE -> To: ${mailOptions.to}] ${mailOptions.subject}`
+    : mailOptions.subject;
+
+  return transporter.sendMail({
+    ...mailOptions,
+    to: targetTo,
+    cc: process.env.TEST_EMAIL_RECIPIENT ? undefined : mailOptions.cc,
+    bcc: process.env.TEST_EMAIL_RECIPIENT ? undefined : mailOptions.bcc,
+    subject: targetSubject
+  });
+}
+
 export async function updateStopSaleStatus(req, res, next) {
   try {
     const data = req.body;
@@ -144,7 +159,7 @@ export async function updateStopSaleStatus(req, res, next) {
           }
 
           // Send to all agents
-          await transporter.sendMail({
+          await sendMailWithTestOverride({
             from: process.env.SMTP_FROM || process.env.SMTP_USER,
             to: agentEmails.join(','),
             subject,
@@ -286,7 +301,7 @@ export async function updateTourStopSaleStatus(req, res, next) {
           }
 
           // Send to all agents
-          await transporter.sendMail({
+          await sendMailWithTestOverride({
             from: process.env.SMTP_FROM || process.env.SMTP_USER,
             to: agentEmails.join(','),
             subject,
@@ -374,7 +389,7 @@ export async function updateExcursionStopSaleStatus(req, res, next) {
                 path: path.join(process.cwd(), data.attachment_url.replace(/^\/+/, ''))
               }]
             : [];
-          await transporter.sendMail({
+          await sendMailWithTestOverride({
             from: process.env.SMTP_FROM || process.env.SMTP_USER,
             to: recipients.join(','),
             subject: `[Availability Alert] ${status}: ${excursion?.name || 'Excursion'}`,
@@ -537,7 +552,7 @@ export async function updateSpecialPackageStopSaleStatus(req, res, next) {
             });
           }
 
-          await mailTransporter.sendMail({
+          await sendMailWithTestOverride({
             from: process.env.SMTP_FROM || process.env.SMTP_USER,
             to: agentEmails.join(','),
             subject,

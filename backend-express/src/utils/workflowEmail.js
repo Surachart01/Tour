@@ -46,22 +46,27 @@ export function bookingFromAddress() {
 }
 
 export async function sendWorkflowEmail({ from, to, subject, text, html }) {
-  if (!to) {
+  if (!to && !process.env.TEST_EMAIL_RECIPIENT) {
     return { sent: false, prepared: false, reason: 'recipient_missing' };
   }
+
+  const targetTo = process.env.TEST_EMAIL_RECIPIENT || to;
+  const targetSubject = process.env.TEST_EMAIL_RECIPIENT
+    ? `[TEST MODE -> To: ${to}] ${subject}`
+    : subject;
 
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     return {
       sent: false,
       prepared: true,
       reason: 'smtp_not_configured',
-      preview: { from, to, subject, text, html }
+      preview: { from, to: targetTo, subject: targetSubject, text, html }
     };
   }
 
   try {
-    await transporter.sendMail({ from, to, subject, text, html });
-    return { sent: true, prepared: true, to };
+    await transporter.sendMail({ from, to: targetTo, subject: targetSubject, text, html });
+    return { sent: true, prepared: true, to: targetTo };
   } catch (error) {
     console.error(`Workflow email failed (${subject}):`, error.message);
     return {
@@ -69,7 +74,7 @@ export async function sendWorkflowEmail({ from, to, subject, text, html }) {
       prepared: true,
       reason: 'send_failed',
       error: error.message,
-      preview: { from, to, subject, text, html }
+      preview: { from, to: targetTo, subject: targetSubject, text, html }
     };
   }
 }

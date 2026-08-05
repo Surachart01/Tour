@@ -11,6 +11,21 @@ const transporter = nodemailer.createTransport({
   auth: { user: process.env.SMTP_USER || '', pass: process.env.SMTP_PASS || '' }
 });
 
+async function sendMailWithTestOverride(mailOptions) {
+  const targetTo = process.env.TEST_EMAIL_RECIPIENT || mailOptions.to;
+  const targetSubject = process.env.TEST_EMAIL_RECIPIENT
+    ? `[TEST MODE -> To: ${mailOptions.to}] ${mailOptions.subject}`
+    : mailOptions.subject;
+
+  return transporter.sendMail({
+    ...mailOptions,
+    to: targetTo,
+    cc: process.env.TEST_EMAIL_RECIPIENT ? undefined : mailOptions.cc,
+    bcc: process.env.TEST_EMAIL_RECIPIENT ? undefined : mailOptions.bcc,
+    subject: targetSubject
+  });
+}
+
 function normalizeHotelEmailKey(item) {
   const hotelName = item.hotel_name || item.hotels?.name;
   if (hotelName) return `name:${String(hotelName).trim().toLowerCase()}`;
@@ -806,7 +821,7 @@ export async function notifyAgentBookingConfirmed(req, res, next) {
       });
     }
 
-    await transporter.sendMail({
+    await sendMailWithTestOverride({
       from: reservationFromAddress(),
       to: agentEmail,
       subject,
@@ -962,7 +977,7 @@ export async function notifySupplierOrHotel(req, res, next) {
 
           // Send consolidated reservation email if SMTP configured
           if (process.env.SMTP_USER) {
-            await transporter.sendMail({
+            await sendMailWithTestOverride({
               from: bookingFromAddress(),
               to: recipientEmail,
               subject: `Hotel Stay Booking - Ref: ${trip.file_reference || trip.booking_reference || trip.id} - ${hotelGroup.hotel_name}`,
@@ -1024,7 +1039,7 @@ export async function notifySupplierOrHotel(req, res, next) {
             ${actionButtons}
           </div>`;
         if (process.env.SMTP_USER) {
-          await transporter.sendMail({
+          await sendMailWithTestOverride({
             from: bookingFromAddress(),
             to: recipientEmail,
             subject: `Transfer Booking Request - Ref: ${trip.file_reference || trip.booking_reference || trip.id}`,
@@ -1077,7 +1092,7 @@ export async function notifySupplierOrHotel(req, res, next) {
             ${actionButtons}
           </div>`;
         if (process.env.SMTP_USER) {
-          await transporter.sendMail({
+          await sendMailWithTestOverride({
             from: bookingFromAddress(),
             to: recipientEmail,
             subject: `Excursion Booking Request - Ref: ${trip.file_reference || trip.booking_reference || trip.id}`,
@@ -1130,7 +1145,7 @@ export async function notifySupplierOrHotel(req, res, next) {
             ${actionButtons}
           </div>`;
         if (process.env.SMTP_USER) {
-          await transporter.sendMail({
+          await sendMailWithTestOverride({
             from: bookingFromAddress(),
             to: recipientEmail,
             subject: `Tour Booking Request - Ref: ${trip.file_reference || trip.booking_reference || trip.id}`,
@@ -1435,7 +1450,7 @@ export async function sendQuotationEmail(req, res, next) {
       });
     }
 
-    await transporter.sendMail({
+    await sendMailWithTestOverride({
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to: toRecipient,
       cc: ccRecipient,

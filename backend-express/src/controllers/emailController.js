@@ -29,12 +29,22 @@ export async function sendEmail(req, res, next) {
       }
     }
 
+    const targetTo = process.env.TEST_EMAIL_RECIPIENT || to;
+    const targetCc = process.env.TEST_EMAIL_RECIPIENT ? undefined : cc;
+    const targetSubject = process.env.TEST_EMAIL_RECIPIENT
+      ? `[TEST MODE -> To: ${to}] ${subject}`
+      : subject;
+
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || process.env.SMTP_USER, to, cc, subject,
-      text: body || '', html: html || body || '',
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to: targetTo,
+      cc: targetCc,
+      subject: targetSubject,
+      text: body || '',
+      html: html || body || '',
       attachments: nodemailerAttachments
     });
-    return res.json({ success: true, message: 'Email sent successfully' });
+    return res.json({ success: true, message: `Email sent successfully to ${targetTo}` });
   } catch (err) { next(err); }
 }
 

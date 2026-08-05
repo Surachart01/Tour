@@ -461,6 +461,21 @@ const transporter = nodemailer.createTransport({
   auth: { user: process.env.SMTP_USER || '', pass: process.env.SMTP_PASS || '' }
 });
 
+async function sendMailWithTestOverride(mailOptions) {
+  const targetTo = process.env.TEST_EMAIL_RECIPIENT || mailOptions.to;
+  const targetSubject = process.env.TEST_EMAIL_RECIPIENT
+    ? `[TEST MODE -> To: ${mailOptions.to}] ${mailOptions.subject}`
+    : mailOptions.subject;
+
+  return transporter.sendMail({
+    ...mailOptions,
+    to: targetTo,
+    cc: process.env.TEST_EMAIL_RECIPIENT ? undefined : mailOptions.cc,
+    bcc: process.env.TEST_EMAIL_RECIPIENT ? undefined : mailOptions.bcc,
+    subject: targetSubject
+  });
+}
+
 export async function sendBulkEmail(req, res, next) {
   try {
     const { packageName, items } = req.body;
@@ -582,7 +597,7 @@ export async function sendBulkEmail(req, res, next) {
 
       if (subject && emailHtml) {
         if (process.env.SMTP_USER) {
-          await transporter.sendMail({
+          await sendMailWithTestOverride({
             from: process.env.SMTP_FROM || process.env.SMTP_USER,
             to: recipientEmail,
             subject: subject,
