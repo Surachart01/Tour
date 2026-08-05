@@ -1231,6 +1231,7 @@ export async function sendQuotationEmail(req, res, next) {
         room: h.room_type || '-',
         pax: trip.number_of_adults + (trip.number_of_kids || 0),
         nights: h.nights || '-',
+        website: h.hotels?.website || '',
         price: h.total_price ? parseFloat(h.total_price) : 0
       });
     });
@@ -1245,6 +1246,7 @@ export async function sendQuotationEmail(req, res, next) {
         room: '-',
         pax: trip.number_of_adults + (trip.number_of_kids || 0),
         nights: '-',
+        website: '',
         price: e.price ? parseFloat(e.price) : 0
       });
     });
@@ -1259,6 +1261,7 @@ export async function sendQuotationEmail(req, res, next) {
         room: '-',
         pax: trip.number_of_adults + (trip.number_of_kids || 0),
         nights: '-',
+        website: '',
         price: t.price ? parseFloat(t.price) : 0
       });
     });
@@ -1273,6 +1276,7 @@ export async function sendQuotationEmail(req, res, next) {
         room: '-',
         pax: trip.number_of_adults + (trip.number_of_kids || 0),
         nights: '-',
+        website: '',
         price: t.price ? parseFloat(t.price) : 0
       });
     });
@@ -1287,6 +1291,7 @@ export async function sendQuotationEmail(req, res, next) {
         room: '-',
         pax: trip.number_of_adults + (trip.number_of_kids || 0),
         nights: '-',
+        website: '',
         price: f.price ? parseFloat(f.price) : 0
       });
     });
@@ -1301,6 +1306,7 @@ export async function sendQuotationEmail(req, res, next) {
         room: '-',
         pax: trip.number_of_adults + (trip.number_of_kids || 0),
         nights: '-',
+        website: '',
         price: o.price ? parseFloat(o.price) : 0
       });
     });
@@ -1312,11 +1318,18 @@ export async function sendQuotationEmail(req, res, next) {
       return new Date(a.date) - new Date(b.date);
     });
 
+    const startDate = items.find(i => i.date)?.date || trip.trip_start_date || new Date();
+    const monthYearTitle = new Date(startDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
+
     const totalCost = trip.total_amount ? parseFloat(trip.total_amount) : 0;
     const discount = trip.discount_amount ? parseFloat(trip.discount_amount) : 0;
     const finalCost = trip.final_amount ? parseFloat(trip.final_amount) : 0;
 
     const tableRows = items.map(item => {
+      const websiteCell = item.website
+        ? `<a href="${item.website.startsWith('http') ? item.website : 'https://' + item.website}" target="_blank" style="color: #2980b9; text-decoration: underline;">${item.website.replace(/^https?:\/\//, '')}</a>`
+        : '-';
+
       return `
         <tr style="border: 1px solid #000;">
           <td style="border: 1px solid #000; padding: 6px; text-align: center; white-space: nowrap;">${item.period}</td>
@@ -1326,6 +1339,7 @@ export async function sendQuotationEmail(req, res, next) {
           <td style="border: 1px solid #000; padding: 6px; text-align: left;">${item.room}</td>
           <td style="border: 1px solid #000; padding: 6px; text-align: center;">${item.pax}</td>
           <td style="border: 1px solid #000; padding: 6px; text-align: center;">${item.nights}</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 10px; word-break: break-all;">${websiteCell}</td>
           <td style="border: 1px solid #000; padding: 6px; text-align: right; white-space: nowrap;">${item.price > 0 ? 'THB ' + Number(item.price).toLocaleString('en-US') : '-'}</td>
         </tr>
       `;
@@ -1333,40 +1347,44 @@ export async function sendQuotationEmail(req, res, next) {
 
     let totalRowsHtml = `
       <tr style="border: 1px solid #000; font-weight: bold; background-color: #f9f9f9;">
-        <td colspan="7" style="border: 1px solid #000; padding: 8px; text-align: right;">Total Price</td>
+        <td colspan="8" style="border: 1px solid #000; padding: 8px; text-align: right;">Total Price</td>
         <td style="border: 1px solid #000; padding: 8px; text-align: right; white-space: nowrap;">THB ${Number(totalCost).toLocaleString('en-US')}</td>
       </tr>
     `;
     if (discount > 0) {
       totalRowsHtml += `
         <tr style="border: 1px solid #000; font-weight: bold; background-color: #f9f9f9;">
-          <td colspan="7" style="border: 1px solid #000; padding: 8px; text-align: right; color: #c0392b;">Discount</td>
+          <td colspan="8" style="border: 1px solid #000; padding: 8px; text-align: right; color: #c0392b;">Discount</td>
           <td style="border: 1px solid #000; padding: 8px; text-align: right; white-space: nowrap; color: #c0392b;">-THB ${Number(discount).toLocaleString('en-US')}</td>
         </tr>
         <tr style="border: 1px solid #000; font-weight: bold; background-color: #fff9e6;">
-          <td colspan="7" style="border: 1px solid #000; padding: 8px; text-align: right; font-size: 13px; color: #d35400;">Final Price</td>
+          <td colspan="8" style="border: 1px solid #000; padding: 8px; text-align: right; font-size: 13px; color: #d35400;">Final Price</td>
           <td style="border: 1px solid #000; padding: 8px; text-align: right; white-space: nowrap; font-size: 13px; color: #d35400; border-bottom: 3px double #000;">THB ${Number(finalCost).toLocaleString('en-US')}</td>
         </tr>
       `;
     }
 
     const htmlContent = `
-      <div style="font-family: Arial, sans-serif; font-size: 13px; color: #333; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+      <div style="font-family: Arial, sans-serif; font-size: 13px; color: #333; line-height: 1.6; max-width: 900px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
         <p>Dear Agent,</p>
         <p>Greetings from <strong>Verathailandia</strong>!</p>
         <p>${body || 'Please find as follow the requested quotation and attached the excursion and tour descriptions.'}</p>
         
         <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11px; margin-top: 20px; margin-bottom: 20px; border: 1px solid #000;">
           <thead>
+            <tr style="background-color: #000000; color: #ff9900; font-weight: bold; text-align: center; font-size: 12px;">
+              <td colspan="9" style="padding: 10px; border: 1px solid #000; text-transform: uppercase;">${monthYearTitle} - STANDARD CATEGORY</td>
+            </tr>
             <tr style="background-color: #ffa600; color: #000000; font-weight: bold; border: 1px solid #000;">
-              <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 80px;">Period</th>
-              <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 80px;">Location</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 75px;">Period</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 75px;">Location</th>
               <th style="border: 1px solid #000; padding: 8px; text-align: left;">Service</th>
               <th style="border: 1px solid #000; padding: 8px; text-align: left;">Hotel</th>
               <th style="border: 1px solid #000; padding: 8px; text-align: left;">Typology of Room</th>
-              <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 40px;">Pax</th>
-              <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 50px;">Nights</th>
-              <th style="border: 1px solid #000; padding: 8px; text-align: right; width: 100px;">Price in THB</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 35px;">Pax</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 45px;">Nights</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 110px;">Web Site</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: right; width: 95px;">Price in THB</th>
             </tr>
           </thead>
           <tbody>

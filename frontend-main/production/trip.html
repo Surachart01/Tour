@@ -1459,6 +1459,136 @@
             document.getElementById("emailSubject").value = `Quotation Reference: ${trip.booking_reference || trip.quotation_reference || `Q-${trip.id}`}`;
             document.getElementById("emailBodyText").value = `Please find as follow the requested quotation and attached the excursion and tour descriptions.`;
 
+            // Render live Services Summary Chart Preview
+            const chartContainer = document.getElementById("quotationRecapChartContent");
+            if (chartContainer) {
+              chartContainer.innerHTML = '<span class="text-muted"><i class="fa fa-spinner fa-spin"></i> Loading chart preview...</span>';
+              fetch(`${Endpoint}/api/v1/bookings/${trip.id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+              })
+              .then(r => r.json())
+              .then(fullTrip => {
+                const items = [];
+                const fmtDate = (d) => {
+                  if (!d) return '-';
+                  const dt = new Date(d);
+                  return isNaN(dt.getTime()) ? '-' : dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+                };
+
+                (fullTrip.hotel_trip_items || []).forEach(h => {
+                  items.push({
+                    date: h.from_date,
+                    period: `${fmtDate(h.from_date)} - ${fmtDate(h.to_date)}`,
+                    location: h.city || '-',
+                    service: 'Overnight',
+                    hotel: h.hotel_name || h.hotels?.name || '-',
+                    room: h.room_type || '-',
+                    pax: (fullTrip.number_of_adults || 0) + (fullTrip.number_of_kids || 0),
+                    nights: h.nights || '-',
+                    website: h.hotels?.website || '',
+                    price: h.total_price ? parseFloat(h.total_price) : 0
+                  });
+                });
+
+                (fullTrip.excursion_trip_items || []).forEach(e => {
+                  items.push({
+                    date: e.from_date,
+                    period: `${fmtDate(e.from_date)} -`,
+                    location: e.city || '-',
+                    service: e.excursion_name || e.excursions?.name || 'Excursion',
+                    hotel: '-',
+                    room: '-',
+                    pax: (fullTrip.number_of_adults || 0) + (fullTrip.number_of_kids || 0),
+                    nights: '-',
+                    website: '',
+                    price: e.price ? parseFloat(e.price) : 0
+                  });
+                });
+
+                (fullTrip.tour_trip_items || []).forEach(t => {
+                  items.push({
+                    date: t.from_date,
+                    period: `${fmtDate(t.from_date)} -`,
+                    location: t.from_location || '-',
+                    service: t.tours?.name || 'Tour',
+                    hotel: '-',
+                    room: '-',
+                    pax: (fullTrip.number_of_adults || 0) + (fullTrip.number_of_kids || 0),
+                    nights: '-',
+                    website: '',
+                    price: t.price ? parseFloat(t.price) : 0
+                  });
+                });
+
+                (fullTrip.transfer_trip_items || []).forEach(tr => {
+                  items.push({
+                    date: tr.from_date,
+                    period: `${fmtDate(tr.from_date)} -`,
+                    location: tr.city || '-',
+                    service: tr.transfer_description || (tr.from_location && tr.to_location ? `${tr.from_location} → ${tr.to_location}` : 'Transfer'),
+                    hotel: '-',
+                    room: '-',
+                    pax: (fullTrip.number_of_adults || 0) + (fullTrip.number_of_kids || 0),
+                    nights: '-',
+                    website: '',
+                    price: tr.price ? parseFloat(tr.price) : 0
+                  });
+                });
+
+                items.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+
+                const startDate = items.find(i => i.date)?.date || fullTrip.trip_start_date || new Date();
+                const monthYearTitle = new Date(startDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
+                const totalAmount = parseFloat(fullTrip.final_amount || fullTrip.total_amount || 0);
+
+                let rowsHtml = items.map(item => `
+                  <tr>
+                    <td style="padding:4px 6px; text-align:center; white-space:nowrap; font-size:11px;">${item.period}</td>
+                    <td style="padding:4px 6px; text-align:center; font-size:11px;">${item.location}</td>
+                    <td style="padding:4px 6px; font-size:11px;">${item.service}</td>
+                    <td style="padding:4px 6px; font-size:11px;">${item.hotel}</td>
+                    <td style="padding:4px 6px; font-size:11px;">${item.room}</td>
+                    <td style="padding:4px 6px; text-align:center; font-size:11px;">${item.pax}</td>
+                    <td style="padding:4px 6px; text-align:center; font-size:11px;">${item.nights}</td>
+                    <td style="padding:4px 6px; text-align:center; font-size:10px;">${item.website ? `<a href="${item.website.startsWith('http') ? item.website : 'https://' + item.website}" target="_blank">${item.website.replace(/^https?:\/\//, '')}</a>` : '-'}</td>
+                    <td style="padding:4px 6px; text-align:right; white-space:nowrap; font-size:11px;">${item.price > 0 ? 'THB ' + Number(item.price).toLocaleString('en-US') : '-'}</td>
+                  </tr>
+                `).join('');
+
+                chartContainer.innerHTML = `
+                  <table class="table table-bordered table-sm mb-0" style="font-size: 11px; width: 100%;">
+                    <thead>
+                      <tr style="background-color: #000000; color: #ff9900; font-weight: bold; text-align: center;">
+                        <td colspan="9" style="padding: 6px; text-transform: uppercase; font-size: 12px;">${monthYearTitle} - STANDARD CATEGORY</td>
+                      </tr>
+                      <tr style="background-color: #ffa600; color: #000000; font-weight: bold;">
+                        <th style="text-align: center;">Period</th>
+                        <th style="text-align: center;">Location</th>
+                        <th>Service</th>
+                        <th>Hotel</th>
+                        <th>Typology of Room</th>
+                        <th style="text-align: center;">Pax</th>
+                        <th style="text-align: center;">Nights</th>
+                        <th style="text-align: center;">Web Site</th>
+                        <th style="text-align: right;">Price in THB</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${rowsHtml}
+                      <tr style="font-weight: bold; background-color: #fff9e6;">
+                        <td colspan="8" style="text-align: right;">Total Amount (THB)</td>
+                        <td style="text-align: right; white-space: nowrap; color: #d35400;">THB ${Number(totalAmount).toLocaleString('en-US')}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                `;
+              })
+              .catch(e => {
+                console.error("Failed to load chart preview:", e);
+                chartContainer.innerHTML = '<span class="text-muted">Services chart summary will be generated and sent automatically in the email.</span>';
+              });
+            }
+
             // Open the modal
             $("#sendQuotationEmailModal").modal("show");
             return;
@@ -1748,10 +1878,18 @@
               </div>
               <div class="form-group mb-3">
                 <label for="emailBodyText" style="font-weight: 600; color: #34495e;">Introduction Message</label>
-                <textarea class="form-control" id="emailBodyText" rows="4" style="border-radius: 6px; resize: vertical;" placeholder="Please find as follow the requested quotation and attached the excursion and tour descriptions."></textarea>
+                <textarea class="form-control" id="emailBodyText" rows="3" style="border-radius: 6px; resize: vertical;" placeholder="Please find as follow the requested quotation and attached the excursion and tour descriptions."></textarea>
+              </div>
+              <div id="quotationRecapChartContainer" class="mb-3" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; background: #fafafa;">
+                <label style="font-weight: 600; color: #34495e; margin-bottom: 8px; display: block;">
+                  <i class="fa fa-table" style="color: #ff9900;"></i> Services Summary Chart (Attached in Email)
+                </label>
+                <div id="quotationRecapChartContent" class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                  <span class="text-muted"><i class="fa fa-spinner fa-spin"></i> Loading chart preview...</span>
+                </div>
               </div>
               <div class="alert alert-info mb-0" style="border-radius: 6px; background-color: #ebf5fb; border-color: #aed6f1; color: #2e86c1;">
-                <i class="fa fa-info-circle"></i> <strong>Note:</strong> The system will automatically attach the formatted quotation summary table and any description files (brochures) of the excursions/tours in this trip.
+                <i class="fa fa-info-circle"></i> <strong>Note:</strong> The system will automatically attach the formatted quotation summary table above and any description files (brochures) of the excursions/tours in this trip.
               </div>
             </form>
           </div>

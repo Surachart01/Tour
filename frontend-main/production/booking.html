@@ -1733,7 +1733,7 @@
             const notifyAgentTitle = isConfirmed ? "Notify Agent" : "Booking must be confirmed first";
 
             row.innerHTML = `
-            <td style="font-weight: 500;">${(trip.agent && trip.agent.name) || (trip.agents && trip.agents.name) || "N/A"}</td>
+            <td style="font-weight: 500;">${trip.agent_name || (trip.agent && trip.agent.name) || (trip.agents && trip.agents.name) || "N/A"}</td>
             <td>${trip.booking_reference || trip.quotation_reference || "-"}</td>
             <td style="font-weight: 500;">${trip.client_name}</td>
             <td>${formattedBookingDate}</td>

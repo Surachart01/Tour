@@ -134,29 +134,48 @@ export function normalizeQuotationFlightFields(item = {}) {
   };
 }
 
-export async function resolveAgentIdFromRequest(data, claims, client = prisma) {
+export async function resolveAgentIdFromRequest(data = {}, claims = {}, client = prisma, existingTrip = null) {
   const role = String(claims?.role || '').trim().toLowerCase();
   const claimAgentId = parseSafeInt(claims?.agent_id);
 
-  // An agent must always own the quotation they create or edit. Do not allow
-  // stale form/localStorage values to reassign it to another agency.
+  // 1. Non-admin Agent role: MUST own their created/edited trip
   if (role !== 'admin' && role !== 'superadmin' && claimAgentId) {
     return claimAgentId;
   }
 
-  const explicitAgentId = parseSafeInt(data.agent_id);
+  // 2. Explicit agent_id in request payload
+  const explicitAgentId = parseSafeInt(data?.agent_id);
   if (explicitAgentId) return explicitAgentId;
-  if (claimAgentId) return claimAgentId;
 
-  const agentName = (data.agent_name || '').toString().trim();
-  if (!agentName) return null;
+  // 3. Lookup by explicit agent_name in request payload (if valid agent name provided)
+  const agentName = (data?.agent_name || '').toString().trim();
+  if (agentName && agentName !== 'Direct Client' && agentName !== 'Vera Thailandia Online') {
+    const agent = await client.agent.findFirst({
+      where: { name: { equals: agentName, mode: 'insensitive' } },
+      select: { id: true }
+    });
+    if (agent?.id) return agent.id;
+  }
 
-  const agent = await client.agent.findFirst({
-    where: { name: { equals: agentName, mode: 'insensitive' } },
-    select: { id: true }
-  });
+  // 4. Preserve existing trip's agent_id if available
+  const existingAgentId = parseSafeInt(existingTrip?.agent_id);
+  if (existingAgentId) return existingAgentId;
 
-  return agent?.id || null;
+  // 5. Lookup by explicit agent_name even if Vera Thailandia Online (fallback)
+  if (agentName) {
+    const agent = await client.agent.findFirst({
+      where: { name: { equals: agentName, mode: 'insensitive' } },
+      select: { id: true }
+    });
+    if (agent?.id) return agent.id;
+  }
+
+  // 6. Fallback to claimAgentId only for non-admins
+  if (claimAgentId && role !== 'admin' && role !== 'superadmin') {
+    return claimAgentId;
+  }
+
+  return existingTrip?.agent_id || null;
 }
 
 /** Ensure tot is always 'SIC' or 'PVT' (DB check constraint). Defaults to 'SIC'. */
@@ -1109,8 +1128,8 @@ export async function updateQuotation(req, res, next) {
       });
     }
     const resolvedAgentId = (data.agent_id !== undefined || data.agent_name)
-      ? await resolveAgentIdFromRequest(data, claims)
-      : undefined;
+      ? await resolveAgentIdFromRequest(data, claims, prisma, existing)
+      : existing.agent_id;
 
     const trip_start_date = data.trip_start_date !== undefined
       ? parseOptionalDate(data.trip_start_date)
