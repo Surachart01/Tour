@@ -5761,15 +5761,18 @@
             // Fill Time input based on Transfer Type direction
             const directionType = (document.getElementById("transferDirectionType")?.value || "").toLowerCase();
             if (flightTimeInput) {
-              if (directionType === "trf in") {
+              if (directionType.includes("in")) {
                 // TRF In → use ETA (arrival)
                 if (arrival) flightTimeInput.value = formatTimeToHHMM(arrival);
-              } else if (directionType === "trf out") {
+                else if (departure) flightTimeInput.value = formatTimeToHHMM(departure);
+              } else if (directionType.includes("out")) {
                 // TRF Out → use ETD (departure)
                 if (departure) flightTimeInput.value = formatTimeToHHMM(departure);
+                else if (arrival) flightTimeInput.value = formatTimeToHHMM(arrival);
               } else {
-                // No direction selected → default to ETD
-                if (departure) flightTimeInput.value = formatTimeToHHMM(departure);
+                // Default → use ETA if available, else ETD
+                if (arrival) flightTimeInput.value = formatTimeToHHMM(arrival);
+                else if (departure) flightTimeInput.value = formatTimeToHHMM(departure);
               }
             }
           });
@@ -5786,10 +5789,12 @@
               const direction = this.value.toLowerCase();
 
               if (flightTimeInput) {
-                if (direction === "trf in") {
+                if (direction.includes("in")) {
                   if (arrival) flightTimeInput.value = formatTimeToHHMM(arrival);
-                } else if (direction === "trf out") {
+                  else if (departure) flightTimeInput.value = formatTimeToHHMM(departure);
+                } else if (direction.includes("out")) {
                   if (departure) flightTimeInput.value = formatTimeToHHMM(departure);
+                  else if (arrival) flightTimeInput.value = formatTimeToHHMM(arrival);
                 }
               }
             });

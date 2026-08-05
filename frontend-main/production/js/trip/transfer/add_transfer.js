@@ -775,23 +775,52 @@ function setupFlightDropdown() {
     const selectedOption = this.options[this.selectedIndex];
     if (!selectedOption || this.value === "") return;
 
-    const inout = selectedOption.dataset.inout || "";
     const departure = selectedOption.dataset.departure;
     const arrival = selectedOption.dataset.arrival;
-    const route = selectedOption.dataset.route;
 
-    console.log(`Dropdown matched flight: ${this.value}, direction: ${inout}, dep: ${departure}, arr: ${arrival}`);
+    console.log(`Dropdown matched flight: ${this.value}, dep: ${departure}, arr: ${arrival}`);
 
-    // 1. Set Flight Time to ETD (departure)
-    if (flightTimeInput && departure) {
-      flightTimeInput.value = formatTimeToHHMM(departure);
-    }
-
-    // 2. Set Pickup Time to ETA (arrival)
-    if (transferPickupTimeInput && arrival) {
-      transferPickupTimeInput.value = formatTimeToHHMM(arrival);
+    // Fill Time input based on Transfer Type direction
+    const directionType = (document.getElementById("transferDirectionType")?.value || "").toLowerCase();
+    if (flightTimeInput) {
+      if (directionType.includes("in")) {
+        // TRF In → use ETA (arrival)
+        if (arrival) flightTimeInput.value = formatTimeToHHMM(arrival);
+        else if (departure) flightTimeInput.value = formatTimeToHHMM(departure);
+      } else if (directionType.includes("out")) {
+        // TRF Out → use ETD (departure)
+        if (departure) flightTimeInput.value = formatTimeToHHMM(departure);
+        else if (arrival) flightTimeInput.value = formatTimeToHHMM(arrival);
+      } else {
+        // Default → use ETA if available, else ETD
+        if (arrival) flightTimeInput.value = formatTimeToHHMM(arrival);
+        else if (departure) flightTimeInput.value = formatTimeToHHMM(departure);
+      }
     }
   });
+
+  // When Transfer Type direction changes → re-apply time from the currently selected flight
+  const directionTypeSelect = document.getElementById("transferDirectionType");
+  if (directionTypeSelect) {
+    directionTypeSelect.addEventListener("change", function () {
+      const selectedOption = transferFlightSelect.options[transferFlightSelect.selectedIndex];
+      if (!selectedOption || transferFlightSelect.value === "") return;
+
+      const departure = selectedOption.dataset.departure;
+      const arrival = selectedOption.dataset.arrival;
+      const direction = this.value.toLowerCase();
+
+      if (flightTimeInput) {
+        if (direction.includes("in")) {
+          if (arrival) flightTimeInput.value = formatTimeToHHMM(arrival);
+          else if (departure) flightTimeInput.value = formatTimeToHHMM(departure);
+        } else if (direction.includes("out")) {
+          if (departure) flightTimeInput.value = formatTimeToHHMM(departure);
+          else if (arrival) flightTimeInput.value = formatTimeToHHMM(arrival);
+        }
+      }
+    });
+  }
 
   // Bind shown.bs.modal to refresh options whenever the modal opens
   $("#addTransferModal").on("shown.bs.modal", function () {
