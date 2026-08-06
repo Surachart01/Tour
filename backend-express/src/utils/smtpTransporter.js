@@ -33,9 +33,9 @@ function createTransporter(user, pass) {
     pool: true,
     maxConnections: 5,
     maxMessages: 100,
-    connectionTimeout: 15000,
-    socketTimeout: 15000,
-    greetingTimeout: 15000,
+    connectionTimeout: 5000,
+    socketTimeout: 10000,
+    greetingTimeout: 5000,
     auth: { user, pass }
   });
 }
@@ -47,8 +47,8 @@ export const SENDER_ROLES = {
 };
 
 export function getTransporterForRole(role = SENDER_ROLES.QUOTATION) {
-  let user = process.env.SMTP_USER_INFO || process.env.SMTP_USER || 'info@verathailandia.com';
-  let pass = process.env.SMTP_PASS_INFO || process.env.SMTP_PASS || '';
+  let user = process.env.SMTP_USER_RESERVATION || process.env.SMTP_USER || 'reservation@verathailandia.com';
+  let pass = process.env.SMTP_PASS_RESERVATION || process.env.SMTP_PASS || '';
 
   if (role === SENDER_ROLES.BOOKING && process.env.SMTP_PASS_BOOKING) {
     user = process.env.SMTP_USER_BOOKING || 'booking@verathailandia.com';
@@ -56,9 +56,14 @@ export function getTransporterForRole(role = SENDER_ROLES.QUOTATION) {
   } else if (role === SENDER_ROLES.RESERVATION && process.env.SMTP_PASS_RESERVATION) {
     user = process.env.SMTP_USER_RESERVATION || 'reservation@verathailandia.com';
     pass = process.env.SMTP_PASS_RESERVATION;
-  } else if (role === SENDER_ROLES.QUOTATION && process.env.SMTP_PASS_INFO) {
-    user = process.env.SMTP_USER_INFO || 'info@verathailandia.com';
-    pass = process.env.SMTP_PASS_INFO;
+  } else if (role === SENDER_ROLES.QUOTATION) {
+    if (process.env.SMTP_PASS_INFO && process.env.SMTP_USER_INFO && process.env.SMTP_USER_INFO !== 'info@verathailandia.com') {
+      user = process.env.SMTP_USER_INFO;
+      pass = process.env.SMTP_PASS_INFO;
+    } else if (process.env.SMTP_PASS_RESERVATION) {
+      user = process.env.SMTP_USER_RESERVATION || 'reservation@verathailandia.com';
+      pass = process.env.SMTP_PASS_RESERVATION;
+    }
   }
 
   const key = `${user}:${pass}:${smtpHost}:${smtpPort}`;
@@ -76,7 +81,7 @@ export function getSenderAddress(role = SENDER_ROLES.QUOTATION) {
       return process.env.SMTP_FROM_RESERVATION || 'VeraThailandia Reservations <reservation@verathailandia.com>';
     case SENDER_ROLES.QUOTATION:
     default:
-      return process.env.SMTP_FROM_QUOTATION || 'VeraThailandia Quotations <info@verathailandia.com>';
+      return process.env.SMTP_FROM_QUOTATION || 'VeraThailandia Quotations <reservation@verathailandia.com>';
   }
 }
 
