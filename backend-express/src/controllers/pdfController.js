@@ -1497,7 +1497,7 @@ export async function sendQuotationEmail(req, res, next) {
     }
 
     await sendMailWithTestOverride({
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      from: process.env.SMTP_FROM_QUOTATION || process.env.SMTP_FROM || 'VeraThailandia Quotations <info@verathailandia.com>',
       to: toRecipient,
       cc: ccRecipient,
       subject: subjectLine,
