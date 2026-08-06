@@ -1885,7 +1885,7 @@
               const localFilteredTrip = filteredTrips.find(t => t.id == tripId);
               if (localFilteredTrip) localFilteredTrip.email_sent = true;
 
-              displayTrips(filteredTrips.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage));
+              renderTrips();
             })
             .catch((error) => {
               console.error("Error sending email:", error);

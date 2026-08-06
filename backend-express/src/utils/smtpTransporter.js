@@ -7,6 +7,14 @@ if (dns.setDefaultResultOrder) {
   dns.setDefaultResultOrder('ipv4first');
 }
 
+function customIPv4Lookup(hostname, options, callback) {
+  if (typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+  return dns.lookup(hostname, { ...options, family: 4, all: false }, callback);
+}
+
 const smtpHost = process.env.SMTP_HOST || 'smtp.office365.com';
 const smtpPort = Number(process.env.SMTP_PORT || 587);
 const isSecure = process.env.SMTP_SECURE !== undefined
@@ -20,6 +28,7 @@ function createTransporter(user, pass) {
     host: smtpHost,
     port: smtpPort,
     secure: isSecure,
+    lookup: customIPv4Lookup,
     family: 4,
     pool: true,
     maxConnections: 5,
