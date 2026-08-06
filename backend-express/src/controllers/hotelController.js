@@ -693,8 +693,19 @@ export async function calculateHotelCost(req, res, next) {
     const result = calculateHotelCostLogic(hotel, request, markupGroup, markups, matchingRoomTypes, feesRecord, promotion);
     return res.json(result);
   } catch (err) {
-    if (err.message && (err.message.includes('not found') || err.message.includes('not available') || err.message.includes('need to') || err.message.includes('cannot be') || err.message.includes('not supported') || err.message.includes('not enough') || err.message.includes('applicable'))) {
-      return res.status(400).send(err.message);
+    if (err.message && (
+      err.message.includes('not found') ||
+      err.message.includes('not available') ||
+      err.message.includes('need to') ||
+      err.message.includes('cannot be') ||
+      err.message.includes('not supported') ||
+      err.message.includes('not enough') ||
+      err.message.includes('applicable') ||
+      err.message.includes('must be specified') ||
+      err.message.includes('must match') ||
+      err.message.includes('must be added')
+    )) {
+      return res.status(400).json({ message: err.message });
     }
     next(err);
   }

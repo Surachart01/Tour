@@ -6927,12 +6927,30 @@
             number_of_adults: numberOfAdults,
             number_of_single_rooms: numberOfSingleRooms,
             number_of_double_rooms: numberOfDoubleRooms,
+          const totalRoomsNeeded = (parseInt(numberOfSingleRooms, 10) || 0) + (parseInt(numberOfDoubleRooms, 10) || 0);
+
+          if (totalRoomsNeeded > 0 && roomTypesData.length < totalRoomsNeeded) {
+            alert(
+              "Please select a Room Type for all requested rooms before getting the price."
+            );
+            return;
+          }
+
+          // ✅ Prepare request payload
+          const requestData = {
+            agent_name: agentName,
+            city: hotelCity,
+            hotel_id: parseInt(hotelType, 10),
+            number_of_kids: numberOfKids,
+            number_of_adults: numberOfAdults,
+            number_of_single_rooms: numberOfSingleRooms,
+            number_of_double_rooms: numberOfDoubleRooms,
             booking_date: bookingDate,
             booking_start_date: bookingStartDate,
             booking_end_date: bookingEndDate,
             coupon_code: couponCode,
             late_checkout: lateCheckOut,
-              late_checkout_type: document.getElementById("lateCheckOutType")?.value || null,
+            late_checkout_type: document.getElementById("lateCheckOutType")?.value || null,
             early_checkin: earlyCheckIn,
             christmas_dinner: christmasDinner,
             new_year_dinner: newYearDinner,
@@ -6960,7 +6978,12 @@
             .then(async (response) => {
               if (!response.ok) {
                 const errorText = await response.text();
-                throw new Error(errorText);
+                let msg = errorText;
+                try {
+                  const parsed = JSON.parse(errorText);
+                  msg = parsed.message || parsed.error || errorText;
+                } catch (e) {}
+                throw new Error(msg);
               }
               return response.json();
             })

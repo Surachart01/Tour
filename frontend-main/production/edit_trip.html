@@ -5818,6 +5818,8 @@
               });
             });
 
+          const totalRoomsNeeded = (parseInt(numberOfSingleRooms, 10) || 0) + (parseInt(numberOfDoubleRooms, 10) || 0);
+
           if (
             !hotelCity ||
             !hotelType ||
@@ -5826,6 +5828,13 @@
           ) {
             alert(
               "Please fill in all required fields before getting the price."
+            );
+            return;
+          }
+
+          if (totalRoomsNeeded > 0 && roomTypesData.length < totalRoomsNeeded) {
+            alert(
+              "Please select a Room Type for all requested rooms before getting the price."
             );
             return;
           }
@@ -5873,7 +5882,12 @@
             .then(async (response) => {
               if (!response.ok) {
                 const errorText = await response.text();
-                throw new Error(errorText);
+                let msg = errorText;
+                try {
+                  const parsed = JSON.parse(errorText);
+                  msg = parsed.message || parsed.error || errorText;
+                } catch (e) {}
+                throw new Error(msg);
               }
               return response.json();
             })

@@ -1,4 +1,4 @@
-import transporter from './smtpTransporter.js';
+import transporter, { getTransporterForRole, SENDER_ROLES } from './smtpTransporter.js';
 
 export function escapeWorkflowHtml(value) {
   return String(value ?? '')
@@ -25,17 +25,17 @@ export function reservationFromAddress() {
   return process.env.SMTP_RESERVATION_FROM ||
     process.env.RESERVATION_EMAIL_FROM ||
     process.env.SMTP_FROM ||
-    'reservation@verathailandia.com';
+    'VeraThailandia Reservations <reservation@verathailandia.com>';
 }
 
 export function bookingFromAddress() {
   return process.env.SMTP_BOOKING_FROM ||
     process.env.BOOKING_EMAIL_FROM ||
     process.env.SMTP_FROM ||
-    'booking@verathailandia.com';
+    'VeraThailandia Bookings <booking@verathailandia.com>';
 }
 
-export async function sendWorkflowEmail({ from, to, subject, text, html }) {
+export async function sendWorkflowEmail({ from, to, subject, text, html, role = SENDER_ROLES.RESERVATION }) {
   if (!to && !process.env.TEST_EMAIL_RECIPIENT) {
     return { sent: false, prepared: false, reason: 'recipient_missing' };
   }
@@ -45,7 +45,13 @@ export async function sendWorkflowEmail({ from, to, subject, text, html }) {
     ? `[TEST MODE -> To: ${to}] ${subject}`
     : subject;
 
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+  const hasConfiguredPass = (process.env.SMTP_PASS && process.env.SMTP_PASS !== 'YOUR_INFO_EMAIL_PASSWORD_HERE') ||
+    (process.env.SMTP_PASS_INFO && process.env.SMTP_PASS_INFO !== 'YOUR_INFO_EMAIL_PASSWORD_HERE') ||
+    (process.env.SMTP_PASS_RESERVATION && process.env.SMTP_PASS_RESERVATION !== 'YOUR_RESERVATION_EMAIL_PASSWORD_HERE') ||
+    (process.env.SMTP_PASS_BOOKING && process.env.SMTP_PASS_BOOKING !== 'YOUR_BOOKING_EMAIL_PASSWORD_HERE');
+
+  if (!hasConfiguredPass) {
+    console.warn(`[EMAIL SKIPPED] SMTP Passwords are not configured yet in .env. Intended email: [${targetSubject}] to [${targetTo}]`);
     return {
       sent: false,
       prepared: true,
@@ -54,11 +60,14 @@ export async function sendWorkflowEmail({ from, to, subject, text, html }) {
     };
   }
 
+  const activeTransporter = getTransporterForRole(role);
+
   try {
-    await transporter.sendMail({ from, to: targetTo, subject: targetSubject, text, html });
+    await activeTransporter.sendMail({ from, to: targetTo, subject: targetSubject, text, html });
+    console.log(`[EMAIL SENT SUCCESS] Subject: [${targetSubject}] -> Sent to: [${targetTo}]`);
     return { sent: true, prepared: true, to: targetTo };
   } catch (error) {
-    console.error(`Workflow email failed (${subject}):`, error.message);
+    console.error(`[EMAIL SEND FAILED] Subject: [${targetSubject}] Error:`, error.message);
     return {
       sent: false,
       prepared: true,
