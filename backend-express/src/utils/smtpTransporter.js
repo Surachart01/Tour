@@ -13,6 +13,7 @@ function createTransporter(user, pass) {
     host: smtpHost,
     port: smtpPort,
     secure: isSecure,
+    family: 4,
     pool: true,
     maxConnections: 5,
     maxMessages: 100,
@@ -30,8 +31,8 @@ export const SENDER_ROLES = {
 };
 
 export function getTransporterForRole(role = SENDER_ROLES.QUOTATION) {
-  let user = process.env.SMTP_USER || '';
-  let pass = process.env.SMTP_PASS || '';
+  let user = process.env.SMTP_USER_INFO || process.env.SMTP_USER || 'info@verathailandia.com';
+  let pass = process.env.SMTP_PASS_INFO || process.env.SMTP_PASS || '';
 
   if (role === SENDER_ROLES.BOOKING && process.env.SMTP_PASS_BOOKING) {
     user = process.env.SMTP_USER_BOOKING || 'booking@verathailandia.com';

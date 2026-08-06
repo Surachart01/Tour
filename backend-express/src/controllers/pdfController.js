@@ -3,6 +3,8 @@ import PDFDocument from 'pdfkit';
 import { buildSupplierActionButtons } from '../utils/supplierActions.js';
 import { bookingFromAddress, reservationFromAddress } from '../utils/workflowEmail.js';
 import transporter from '../utils/smtpTransporter.js';
+import { buildEmailFooter, getLogoAttachment } from '../utils/emailFooter.js';
+import { getTransporterForRole, SENDER_ROLES } from '../utils/smtpTransporter.js';
 
 async function sendMailWithTestOverride(mailOptions) {
   const targetTo = process.env.TEST_EMAIL_RECIPIENT || mailOptions.to;
@@ -10,13 +12,35 @@ async function sendMailWithTestOverride(mailOptions) {
     ? `[TEST MODE -> To: ${mailOptions.to}] ${mailOptions.subject}`
     : mailOptions.subject;
 
-  return transporter.sendMail({
+  const logoAtt = getLogoAttachment();
+  const rawAtts = mailOptions.attachments || [];
+  const finalAtts = logoAtt ? [...rawAtts, logoAtt] : rawAtts;
+
+  const mailData = {
     ...mailOptions,
     to: targetTo,
     cc: process.env.TEST_EMAIL_RECIPIENT ? undefined : mailOptions.cc,
     bcc: process.env.TEST_EMAIL_RECIPIENT ? undefined : mailOptions.bcc,
-    subject: targetSubject
-  });
+    subject: targetSubject,
+    attachments: finalAtts
+  };
+
+  try {
+    return await transporter.sendMail(mailData);
+  } catch (err) {
+    if (err.message && (err.message.includes('535') || err.message.includes('530') || err.message.includes('authenticated') || err.code === 'EAUTH' || err.code === 'EENVELOPE')) {
+      console.warn('Primary SMTP account authentication pending or rejected. Falling back to reservation transporter...', err.message);
+      const fallbackTransporter = getTransporterForRole(SENDER_ROLES.RESERVATION);
+      const fallbackFrom = process.env.SMTP_USER_RESERVATION
+        ? `VeraThailandia <${process.env.SMTP_USER_RESERVATION}>`
+        : mailOptions.from;
+      return await fallbackTransporter.sendMail({
+        ...mailData,
+        from: fallbackFrom
+      });
+    }
+    throw err;
+  }
 }
 
 function normalizeHotelEmailKey(item) {
@@ -1432,25 +1456,7 @@ export async function sendQuotationEmail(req, res, next) {
         <p style="font-size: 12px; color: #555;">Should you require any amendments, alternative hotel options, additional services, or a customized itinerary, please do not hesitate to contact us. Our team will be pleased to assist you.</p>
         <p style="font-size: 12px; color: #555;">We look forward to receiving your feedback and hope to have the opportunity to arrange this journey for you.</p>
         <p style="font-size: 12px; color: #555;">Thank you for choosing VeraThailandia.</p>
-        <br>
-        <p style="font-size: 12px;">Kind regards,<br><strong>VeraThailandia Reservations Team!</strong></p>
-        
-        <div style="margin-top: 30px; border-top: 1px dashed #ccc; padding-top: 20px; display: flex; align-items: flex-start; gap: 15px;">
-          <div>
-            <p style="font-size: 11px; color: #555; line-height: 1.5; margin: 0;">
-              <strong>VeraThailandia Co., Ltd.</strong><br>
-              20th Floor, Room 160/424-425, ITF Silom Palace<br>
-              160 Silom Road, Suriya Wong, Bangrak, Bangkok 10500, Thailand<br>
-              <strong>Tel:</strong> +66 2 126 6914<br>
-              <strong>Tax ID:</strong> 0105540745569<br>
-              <strong>Email:</strong> <a href="mailto:reservation@verathailandia.com" style="color: #3498db; text-decoration: none;">reservation@verathailandia.com</a><br>
-              <strong>Website:</strong> <a href="https://www.verathailandia.com" target="_blank" style="color: #3498db; text-decoration: none;">www.verathailandia.com</a>
-            </p>
-            <p style="font-size: 11px; color: #27ae60; font-weight: bold; margin: 10px 0 0 0;">
-              Before printing, think about environmental responsibility
-            </p>
-          </div>
-        </div>
+        ${buildEmailFooter({ senderName: 'Verathailandia Reservations Team', senderEmail: 'info@verathailandia.com', salutation: 'Best regards,' })}
       </div>
     `;
 
@@ -1516,7 +1522,13 @@ export async function sendQuotationEmail(req, res, next) {
       sent_to: toRecipient,
       cc: ccRecipient
     });
-  } catch (err) { next(err); }
+  } catch (err) {
+    console.error('Error sending quotation email:', err);
+    return res.status(400).json({
+      success: false,
+      message: err.message || 'Failed to send quotation email. Please check SMTP settings.'
+    });
+  }
 }
 
 // ==================== CALCULATE COST ====================

@@ -1,4 +1,5 @@
 import transporter, { getTransporterForRole, SENDER_ROLES } from './smtpTransporter.js';
+import { buildEmailFooter, buildEmailFooterText, getLogoAttachment } from './emailFooter.js';
 
 export function escapeWorkflowHtml(value) {
   return String(value ?? '')
@@ -61,9 +62,11 @@ export async function sendWorkflowEmail({ from, to, subject, text, html, role = 
   }
 
   const activeTransporter = getTransporterForRole(role);
+  const logoAtt = getLogoAttachment();
+  const mailAttachments = logoAtt ? [logoAtt] : [];
 
   try {
-    await activeTransporter.sendMail({ from, to: targetTo, subject: targetSubject, text, html });
+    await activeTransporter.sendMail({ from, to: targetTo, subject: targetSubject, text, html, attachments: mailAttachments });
     console.log(`[EMAIL SENT SUCCESS] Subject: [${targetSubject}] -> Sent to: [${targetTo}]`);
     return { sent: true, prepared: true, to: targetTo };
   } catch (error) {
@@ -136,9 +139,10 @@ export function buildBookingGenerationEmail(trip) {
     <div style="font-family:Arial,sans-serif;max-width:680px;margin:auto;color:#1f2937;line-height:1.55;">
       <h2 style="color:#0f766e;">Booking Generation Request</h2>
       <p>Dear ${escapeWorkflowHtml(agentName)},</p>
-      <p>Your quotation has been converted into a booking and is now <strong>In Progress</strong>. Our reservation team will contact the suppliers and update you when every service is confirmed.</p>
+      <p style="margin-bottom:8px;">Your quotation has been converted into a booking and is now <strong>In Progress</strong>.</p>
+      <p style="margin-top:0;margin-bottom:16px;">Our reservation team will contact the suppliers and update you when every service is confirmed.</p>
       ${renderSummaryTable(bookingSummaryRows(trip))}
-      <p style="margin-top:20px;">Best regards,<br><strong>Verathailandia Reservations Team</strong></p>
+      ${buildEmailFooter({ senderName: 'Verathailandia Reservations Team', senderEmail: 'reservation@verathailandia.com', salutation: 'Best regards,' })}
     </div>`;
   const text = [
     `Dear ${agentName},`,
@@ -147,9 +151,7 @@ export function buildBookingGenerationEmail(trip) {
     `File Number: ${trip.file_reference || '-'}`,
     `Client Name: ${trip.client_name || '-'}`,
     `Trip Start Date: ${workflowDate(trip.trip_start_date)}`,
-    '',
-    'Best regards,',
-    'Verathailandia Reservations Team'
+    buildEmailFooterText({ senderName: 'Verathailandia Reservations Team', senderEmail: 'reservation@verathailandia.com', salutation: 'Best regards,' })
   ].join('\n');
   return { subject, html, text };
 }
@@ -173,7 +175,7 @@ export function buildFinalBookingEmail(trip) {
       <p>All required services have been confirmed. The booking is now complete and its Proforma Invoice is available in the system.</p>
       ${renderSummaryTable(bookingSummaryRows(trip))}
       ${serviceSections(trip)}
-      <p style="margin-top:22px;">Best regards,<br><strong>Verathailandia Reservations Team</strong></p>
+      ${buildEmailFooter({ senderName: 'Verathailandia Reservations Team', senderEmail: 'reservation@verathailandia.com', salutation: 'Best regards,' })}
     </div>`;
   const text = [
     `Dear ${agentName},`,
@@ -182,9 +184,7 @@ export function buildFinalBookingEmail(trip) {
     `File Number: ${trip.file_reference || '-'}`,
     `Proforma Number: ${trip.invoice_number || '-'}`,
     `Client Name: ${trip.client_name || '-'}`,
-    '',
-    'Best regards,',
-    'Verathailandia Reservations Team'
+    buildEmailFooterText({ senderName: 'Verathailandia Reservations Team', senderEmail: 'reservation@verathailandia.com', salutation: 'Best regards,' })
   ].join('\n');
   return { subject, html, text };
 }

@@ -5710,12 +5710,11 @@
           calculateHotelPrice();
         }
 
-        function calculateHotelPrice() {
+        function calculateHotelPrice(isUserAction = false) {
           const token = localStorage.getItem("token");
 
           if (!token) {
-            alert("You are not authorized. Please log in first.");
-            window.location.href = "login.html";
+            if (isUserAction) alert("You are not authorized. Please log in first.");
             return;
           }
 
@@ -5826,16 +5825,16 @@
             !bookingStartDate ||
             !bookingEndDate
           ) {
-            alert(
-              "Please fill in all required fields before getting the price."
-            );
+            if (isUserAction) {
+              alert("Please fill in all required fields before getting the price.");
+            }
             return;
           }
 
           if (totalRoomsNeeded > 0 && roomTypesData.length < totalRoomsNeeded) {
-            alert(
-              "Please select a Room Type for all requested rooms before getting the price."
-            );
+            if (isUserAction) {
+              alert("Please select a Room Type for all requested rooms before getting the price.");
+            }
             return;
           }
 
@@ -7633,6 +7632,8 @@
               });
 
             // ✅ Validate mandatory fields
+            const totalRoomsNeeded = (parseInt(numberOfSingleRooms, 10) || 0) + (parseInt(numberOfDoubleRooms, 10) || 0);
+
             if (
               !hotelCity ||
               !hotelType ||
@@ -7641,6 +7642,13 @@
             ) {
               alert(
                 "Please fill in all required fields before getting the price."
+              );
+              return;
+            }
+
+            if (totalRoomsNeeded > 0 && roomTypesData.length < totalRoomsNeeded) {
+              alert(
+                "Please select a Room Type for all requested rooms before getting the price."
               );
               return;
             }

@@ -1,6 +1,7 @@
 import prisma from '../config/db.js';
 import path from 'path';
 import transporter from '../utils/smtpTransporter.js';
+import { buildEmailFooter } from '../utils/emailFooter.js';
 
 async function sendMailWithTestOverride(mailOptions) {
   const targetTo = process.env.TEST_EMAIL_RECIPIENT || mailOptions.to;
@@ -517,7 +518,7 @@ export async function updateSpecialPackageStopSaleStatus(req, res, next) {
                 <li><strong>Closed Dates:</strong> ${formattedStart} to ${formattedEnd}</li>
               </ul>
               <p>Please do not book this package during the above dates. Thank you for your cooperation.</p>
-              <p>Best regards,<br/>Operations Team</p>
+              ${buildEmailFooter({ senderName: 'Beppe', senderEmail: 'booking@verathailandia.com' })}
             `;
           } else {
             subject = `[START SALE] Special Package Reopened: ${pkg.name}`;
@@ -530,7 +531,7 @@ export async function updateSpecialPackageStopSaleStatus(req, res, next) {
                 <li><strong>Package Code:</strong> ${pkg.code || 'N/A'}</li>
                 <li><strong>Available Dates:</strong> ${formattedStart} to ${formattedEnd}</li>
               </ul>
-              <p>Best regards,<br/>Operations Team</p>
+              ${buildEmailFooter({ senderName: 'Beppe', senderEmail: 'booking@verathailandia.com' })}
             `;
           }
 
