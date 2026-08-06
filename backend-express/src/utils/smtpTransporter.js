@@ -1,4 +1,11 @@
+import dns from 'dns';
 import nodemailer from 'nodemailer';
+
+// Force Node.js DNS resolver to prioritize IPv4 over IPv6 globally across the application.
+// This prevents ENETUNREACH errors on Railway, Docker, and Cloud Run containers when connecting to Office365 SMTP.
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 const smtpHost = process.env.SMTP_HOST || 'smtp.office365.com';
 const smtpPort = Number(process.env.SMTP_PORT || 587);

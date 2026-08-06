@@ -25,11 +25,21 @@ async function sendMailWithTestOverride(mailOptions) {
     attachments: finalAtts
   };
 
+  const activeTransporter = getTransporterForRole(SENDER_ROLES.QUOTATION);
+
   try {
-    return await transporter.sendMail(mailData);
+    return await activeTransporter.sendMail(mailData);
   } catch (err) {
-    if (err.message && (err.message.includes('535') || err.message.includes('530') || err.message.includes('authenticated') || err.code === 'EAUTH' || err.code === 'EENVELOPE')) {
-      console.warn('Primary SMTP account authentication pending or rejected. Falling back to reservation transporter...', err.message);
+    if (err.message && (
+      err.message.includes('535') ||
+      err.message.includes('530') ||
+      err.message.includes('authenticated') ||
+      err.message.includes('ENETUNREACH') ||
+      err.code === 'EAUTH' ||
+      err.code === 'EENVELOPE' ||
+      err.code === 'ENETUNREACH'
+    )) {
+      console.warn('Primary quotation SMTP account rejected send or unreachable. Falling back to reservation transporter...', err.message);
       const fallbackTransporter = getTransporterForRole(SENDER_ROLES.RESERVATION);
       const fallbackFrom = process.env.SMTP_USER_RESERVATION
         ? `VeraThailandia <${process.env.SMTP_USER_RESERVATION}>`
