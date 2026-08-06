@@ -1364,11 +1364,46 @@ export async function sendQuotationEmail(req, res, next) {
       `;
     }
 
+    const quotationRef = trip.booking_reference || trip.quotation_reference || `Q-${trip.id}`;
+    const agentNameStr = trip.agents?.name || trip.agent_name || 'Vera Thailandia Online';
+    const todayStr = new Date().toLocaleDateString('en-GB');
+
     const htmlContent = `
-      <div style="font-family: Arial, sans-serif; font-size: 13px; color: #333; line-height: 1.6; max-width: 900px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-        <p>Dear Agent,</p>
-        <p>Greetings from <strong>Verathailandia</strong>!</p>
-        <p>${body || 'Please find as follow the requested quotation and attached the excursion and tour descriptions.'}</p>
+      <div style="font-family: Arial, sans-serif; font-size: 13px; color: #333; line-height: 1.6; max-width: 900px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background: #ffffff;">
+        <div style="display: table; width: 100%; border-collapse: collapse; margin-bottom: 12px; border: 1px solid #b8c5d1; padding: 12px; background: #ffffff;">
+          <div style="display: table-cell; vertical-align: top; width: 50%;">
+            <p style="font-size: 11px; color: #555; line-height: 1.5; margin: 0;">
+              <strong style="font-size: 13px; color: #2c3e50;">VeraThailandia Co., Ltd.</strong><br>
+              160/424-425, ITF Silom Palace, 20th Floor<br>
+              Silom Road, Suriya Wong, Bangrak, Bangkok 10500, Thailand<br>
+              <strong>Email:</strong> reservation@verathailandia.com
+            </p>
+          </div>
+          <div style="display: table-cell; vertical-align: top; width: 50%; text-align: right;">
+            <span style="font-size: 18px; font-weight: 800; color: #1abb9c;">QUOTATION DOCUMENT</span>
+          </div>
+        </div>
+
+        <div style="display: table; width: 100%; border-collapse: collapse; margin-bottom: 20px; border: 1px solid #b8c5d1; border-top: 0; padding: 12px; background: #ffffff;">
+          <div style="display: table-cell; vertical-align: top; width: 50%;">
+            <p style="font-size: 11px; color: #555; line-height: 1.5; margin: 0;">
+              <strong>Quotation Ref:</strong> ${quotationRef}<br>
+              <strong>Client:</strong> ${trip.client_name || '-'}
+            </p>
+          </div>
+          <div style="display: table-cell; vertical-align: top; width: 50%; text-align: right;">
+            <p style="font-size: 11px; color: #555; line-height: 1.5; margin: 0;">
+              <strong>Agent:</strong> ${agentNameStr}<br>
+              <strong>Date:</strong> ${todayStr}
+            </p>
+          </div>
+        </div>
+
+        <p style="margin-top: 10px; margin-bottom: 4px;">Dear Agent / Client,</p>
+        <p style="margin-bottom: 10px;">Greetings from <strong>VeraThailandia</strong>!</p>
+        <div style="background-color: #eef9f6; border-left: 3px solid #1abb9c; padding: 10px 14px; margin: 10px 0 15px 0; font-size: 13px; color: #2c3e50; font-style: italic;">
+          ${body || 'Please find as follow the requested quotation and attached the excursion and tour descriptions.'}
+        </div>
         
         <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11px; margin-top: 20px; margin-bottom: 20px; border: 1px solid #000;">
           <thead>
@@ -1393,12 +1428,12 @@ export async function sendQuotationEmail(req, res, next) {
           </tbody>
         </table>
         
-        <p>The quotation includes the proposed accommodation, services, and the applicable rates based on your request.</p>
-        <p>Should you require any amendments, alternative hotel options, additional services, or a customized itinerary, please do not hesitate to contact us. Our team will be pleased to assist you.</p>
-        <p>We look forward to receiving your feedback and hope to have the opportunity to arrange this journey for you.</p>
-        <p>Thank you for choosing Verathailandia.</p>
+        <p style="font-size: 12px; color: #555;">The quotation includes the proposed accommodation, services, and the applicable rates based on your request.</p>
+        <p style="font-size: 12px; color: #555;">Should you require any amendments, alternative hotel options, additional services, or a customized itinerary, please do not hesitate to contact us. Our team will be pleased to assist you.</p>
+        <p style="font-size: 12px; color: #555;">We look forward to receiving your feedback and hope to have the opportunity to arrange this journey for you.</p>
+        <p style="font-size: 12px; color: #555;">Thank you for choosing VeraThailandia.</p>
         <br>
-        <p>Kind regards,<br><strong>Verathailandia Reservations Team!</strong></p>
+        <p style="font-size: 12px;">Kind regards,<br><strong>VeraThailandia Reservations Team!</strong></p>
         
         <div style="margin-top: 30px; border-top: 1px dashed #ccc; padding-top: 20px; display: flex; align-items: flex-start; gap: 15px;">
           <div>
