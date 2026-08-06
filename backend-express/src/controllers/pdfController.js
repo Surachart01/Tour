@@ -16,8 +16,14 @@ async function sendMailWithTestOverride(mailOptions) {
   const rawAtts = mailOptions.attachments || [];
   const finalAtts = logoAtt ? [...rawAtts, logoAtt] : rawAtts;
 
+  const activeTransporter = getTransporterForRole(SENDER_ROLES.QUOTATION);
+  const activeFrom = (process.env.SMTP_USER_INFO && process.env.SMTP_USER_INFO !== 'info@verathailandia.com')
+    ? mailOptions.from
+    : (process.env.SMTP_FROM_RESERVATION || 'VeraThailandia Reservations <reservation@verathailandia.com>');
+
   const mailData = {
     ...mailOptions,
+    from: activeFrom,
     to: targetTo,
     cc: process.env.TEST_EMAIL_RECIPIENT ? undefined : mailOptions.cc,
     bcc: process.env.TEST_EMAIL_RECIPIENT ? undefined : mailOptions.bcc,
@@ -25,32 +31,7 @@ async function sendMailWithTestOverride(mailOptions) {
     attachments: finalAtts
   };
 
-  const activeTransporter = getTransporterForRole(SENDER_ROLES.QUOTATION);
-
-  try {
-    return await activeTransporter.sendMail(mailData);
-  } catch (err) {
-    if (err.message && (
-      err.message.includes('535') ||
-      err.message.includes('530') ||
-      err.message.includes('authenticated') ||
-      err.message.includes('ENETUNREACH') ||
-      err.code === 'EAUTH' ||
-      err.code === 'EENVELOPE' ||
-      err.code === 'ENETUNREACH'
-    )) {
-      console.warn('Primary quotation SMTP account rejected send or unreachable. Falling back to reservation transporter...', err.message);
-      const fallbackTransporter = getTransporterForRole(SENDER_ROLES.RESERVATION);
-      const fallbackFrom = process.env.SMTP_USER_RESERVATION
-        ? `VeraThailandia <${process.env.SMTP_USER_RESERVATION}>`
-        : mailOptions.from;
-      return await fallbackTransporter.sendMail({
-        ...mailData,
-        from: fallbackFrom
-      });
-    }
-    throw err;
-  }
+  return await activeTransporter.sendMail(mailData);
 }
 
 function normalizeHotelEmailKey(item) {
