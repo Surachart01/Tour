@@ -6,6 +6,16 @@ import transporter from '../utils/smtpTransporter.js';
 import { buildEmailFooter, getLogoAttachment } from '../utils/emailFooter.js';
 import { getTransporterForRole, SENDER_ROLES } from '../utils/smtpTransporter.js';
 
+function hasSmtpConfigured() {
+  return Boolean(
+    process.env.SMTP_USER ||
+    process.env.SMTP_USER_RESERVATION ||
+    process.env.SMTP_USER_INFO ||
+    process.env.SMTP_USER_BOOKING ||
+    process.env.SMTP_HOST
+  );
+}
+
 async function sendMailWithTestOverride(mailOptions) {
   const targetTo = process.env.TEST_EMAIL_RECIPIENT || mailOptions.to;
   const targetSubject = process.env.TEST_EMAIL_RECIPIENT
@@ -821,13 +831,6 @@ export async function notifyAgentBookingConfirmed(req, res, next) {
       'Verathailandia Reservations Team'
     ].join('\n');
 
-    if (!process.env.SMTP_USER) {
-      return res.json({
-        success: true,
-        message: 'Agent notification prepared. Email service is not configured.',
-        preview: { to: agentEmail, subject, html }
-      });
-    }
 
     await sendMailWithTestOverride({
       from: reservationFromAddress(),
@@ -860,12 +863,13 @@ export async function notifySupplierOrHotel(req, res, next) {
         message: 'Supplier notifications are available only for an active booking.'
       });
     }
-    if (!process.env.SMTP_USER) {
+    if (!hasSmtpConfigured()) {
       return res.status(503).json({
         success: false,
         message: 'Email service is not configured. No supplier notification was sent.'
       });
     }
+
 
     const formatDate = (d) => {
       if (!d) return 'N/A';
@@ -984,14 +988,12 @@ export async function notifySupplierOrHotel(req, res, next) {
           `;
 
           // Send consolidated reservation email if SMTP configured
-          if (process.env.SMTP_USER) {
-            await sendMailWithTestOverride({
-              from: bookingFromAddress(),
-              to: recipientEmail,
-              subject: `Hotel Stay Booking - Ref: ${trip.file_reference || trip.booking_reference || trip.id} - ${hotelGroup.hotel_name}`,
-              html: emailHtml
-            });
-          }
+          await sendMailWithTestOverride({
+            from: bookingFromAddress(),
+            to: recipientEmail,
+            subject: `Hotel Stay Booking - Ref: ${trip.file_reference || trip.booking_reference || trip.id} - ${hotelGroup.hotel_name}`,
+            html: emailHtml
+          });
 
           // Mark all original items as email_sent = true in DB
           await prisma.hotel_trip_items.updateMany({
@@ -1046,15 +1048,13 @@ export async function notifySupplierOrHotel(req, res, next) {
             </table>
             ${actionButtons}
           </div>`;
-        if (process.env.SMTP_USER) {
-          await sendMailWithTestOverride({
-            from: bookingFromAddress(),
-            to: recipientEmail,
-            subject: `Transfer Booking Request - Ref: ${trip.file_reference || trip.booking_reference || trip.id}`,
-            text: `Please confirm transfer from ${item.from_location} to ${item.to_location} on ${formatDate(item.from_date)}. Details: Pickup: ${item.pickup_time || 'N/A'}, Flight: ${item.flight_number || 'N/A'}. Remarks: ${item.remarks || 'None'}.`,
-            html: emailHtml
-          });
-        }
+        await sendMailWithTestOverride({
+          from: bookingFromAddress(),
+          to: recipientEmail,
+          subject: `Transfer Booking Request - Ref: ${trip.file_reference || trip.booking_reference || trip.id}`,
+          text: `Please confirm transfer from ${item.from_location} to ${item.to_location} on ${formatDate(item.from_date)}. Details: Pickup: ${item.pickup_time || 'N/A'}, Flight: ${item.flight_number || 'N/A'}. Remarks: ${item.remarks || 'None'}.`,
+          html: emailHtml
+        });
         await prisma.transfer_trip_items.update({
           where: { id: item.id },
           data: { email_sent: true }
@@ -1099,15 +1099,13 @@ export async function notifySupplierOrHotel(req, res, next) {
             </table>
             ${actionButtons}
           </div>`;
-        if (process.env.SMTP_USER) {
-          await sendMailWithTestOverride({
-            from: bookingFromAddress(),
-            to: recipientEmail,
-            subject: `Excursion Booking Request - Ref: ${trip.file_reference || trip.booking_reference || trip.id}`,
-            text: `Please confirm excursion booking for ${item.excursions?.name || 'Excursion'} in ${item.city} on ${formatDate(item.from_date)}. Pickup: ${item.pickup_time || 'N/A'}. Remarks: ${item.remarks || 'None'}.`,
-            html: emailHtml
-          });
-        }
+        await sendMailWithTestOverride({
+          from: bookingFromAddress(),
+          to: recipientEmail,
+          subject: `Excursion Booking Request - Ref: ${trip.file_reference || trip.booking_reference || trip.id}`,
+          text: `Please confirm excursion booking for ${item.excursions?.name || 'Excursion'} in ${item.city} on ${formatDate(item.from_date)}. Pickup: ${item.pickup_time || 'N/A'}. Remarks: ${item.remarks || 'None'}.`,
+          html: emailHtml
+        });
         await prisma.excursion_trip_items.update({
           where: { id: item.id },
           data: { email_sent: true }
@@ -1152,15 +1150,13 @@ export async function notifySupplierOrHotel(req, res, next) {
             </table>
             ${actionButtons}
           </div>`;
-        if (process.env.SMTP_USER) {
-          await sendMailWithTestOverride({
-            from: bookingFromAddress(),
-            to: recipientEmail,
-            subject: `Tour Booking Request - Ref: ${trip.file_reference || trip.booking_reference || trip.id}`,
-            text: `Please confirm tour booking for ${item.tours?.name || 'Tour'} on ${formatDate(item.from_date)}. Route: ${item.from_location} to ${item.to_location}. Remarks: ${item.remarks || 'None'}.`,
-            html: emailHtml
-          });
-        }
+        await sendMailWithTestOverride({
+          from: bookingFromAddress(),
+          to: recipientEmail,
+          subject: `Tour Booking Request - Ref: ${trip.file_reference || trip.booking_reference || trip.id}`,
+          text: `Please confirm tour booking for ${item.tours?.name || 'Tour'} on ${formatDate(item.from_date)}. Route: ${item.from_location} to ${item.to_location}. Remarks: ${item.remarks || 'None'}.`,
+          html: emailHtml
+        });
         await prisma.tour_trip_items.update({
           where: { id: item.id },
           data: { email_sent: true }
@@ -1475,23 +1471,6 @@ export async function sendQuotationEmail(req, res, next) {
       }
       return null;
     }).filter(Boolean);
-
-    if (!process.env.SMTP_USER) {
-      console.warn('SMTP_USER not configured. Returning email preview.');
-      await prisma.trips.update({
-        where: { id },
-        data: { email_sent: true }
-      });
-      return res.json({
-        success: true,
-        message: 'SMTP not configured. Email preview returned.',
-        sent_to: toRecipient,
-        cc: ccRecipient,
-        subject: subjectLine,
-        attachments: attachments.map(a => a.filename),
-        html: htmlContent
-      });
-    }
 
     await sendMailWithTestOverride({
       from: process.env.SMTP_FROM_QUOTATION || process.env.SMTP_FROM || 'VeraThailandia Quotations <info@verathailandia.com>',

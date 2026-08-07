@@ -6,8 +6,6 @@ export async function sendEmail(req, res, next) {
   try {
     const { to, cc, subject, body, html, attachments } = req.body;
     if (!to || !subject) return res.status(400).send('to and subject are required');
-    if (!process.env.SMTP_USER) return res.json({ success: true, message: 'Email service not configured (SMTP_USER not set)' });
-
     const nodemailerAttachments = [];
     if (attachments && Array.isArray(attachments)) {
       for (const att of attachments) {
@@ -28,8 +26,10 @@ export async function sendEmail(req, res, next) {
       ? `[TEST MODE -> To: ${to}] ${subject}`
       : subject;
 
+    const fromAddress = process.env.SMTP_FROM_RESERVATION || process.env.SMTP_FROM || 'VeraThailandia Reservations <reservation@verathailandia.com>';
+
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      from: fromAddress,
       to: targetTo,
       cc: targetCc,
       subject: targetSubject,
