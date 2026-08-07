@@ -2,7 +2,8 @@ import prisma from '../config/db.js';
 import { ensureBookingReferences } from '../utils/bookingReferences.js';
 import {
   sendBookingGenerationRequest,
-  sendFinalBookingConfirmation
+  sendFinalBookingConfirmation,
+  sendBookingUnconfirmedEmail
 } from '../utils/workflowEmail.js';
 
 // ==================== HELPERS ====================
@@ -1029,7 +1030,7 @@ export async function listQuotations(req, res, next) {
     const claims = req.user;
     const where = applyAgentTripScope({
       declined: false,
-      status: { in: ['Pending', 'InProgress', 'Approved', 'Confirmed'] }
+      status: { in: ['Pending', 'InProgress', 'Approved', 'Confirmed', 'Unconfirmed'] }
     }, claims);
     const trips = await prisma.trips.findMany({
       where,
@@ -1044,7 +1045,7 @@ export async function listQuotationsByDateRange(req, res, next) {
   try {
     const { from_date, to_date } = req.query;
     const claims = req.user;
-    const where = { declined: false, status: { in: ['Pending', 'InProgress', 'Approved', 'Confirmed'] } };
+    const where = { declined: false, status: { in: ['Pending', 'InProgress', 'Approved', 'Confirmed', 'Unconfirmed'] } };
     if (from_date && to_date) {
       where.created_at = { gte: new Date(from_date), lte: new Date(to_date) };
     }
@@ -1741,7 +1742,32 @@ export async function finalizeQuotation(req, res, next) {
 
     const trip = await prisma.trips.findUnique({
       where: { id },
-      include: { agents: true }
+      include: {
+        agents: true,
+        hotel_trip_items: {
+          orderBy: [{ display_order: 'asc' }, { from_date: 'asc' }],
+          include: { hotels: true }
+        },
+        transfer_trip_items: {
+          orderBy: { from_date: 'asc' },
+          include: { transfers: true }
+        },
+        excursion_trip_items: {
+          orderBy: { from_date: 'asc' },
+          include: { excursions: true }
+        },
+        tour_trip_items: {
+          orderBy: { from_date: 'asc' },
+          include: { tours: true }
+        },
+        flight_trip_items: {
+          orderBy: { from_date: 'asc' }
+        },
+        other_trip_items: {
+          orderBy: { from_date: 'asc' },
+          include: { others: true }
+        }
+      }
     });
     
     // Trigger email notification asynchronously so conversion HTTP response returns instantly
@@ -2065,6 +2091,70 @@ export async function confirmBooking(req, res, next) {
     return res.json({
       status: 'confirmed',
       message: 'Booking confirmed successfully.',
+      booking: mapTripResponse(updated)
+    });
+  } catch (err) { next(err); }
+}
+
+export async function unconfirmBooking(req, res, next) {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).send('Invalid booking ID');
+
+    const { reason, remarks } = req.body || {};
+    const rejectionReason = (reason || remarks || '').toString().trim();
+
+    if (!rejectionReason) {
+      return res.status(400).json({
+        message: 'Reason for unconfirming or declining the booking is required.'
+      });
+    }
+
+    const trip = await prisma.trips.findUnique({
+      where: { id },
+      include: {
+        agents: true,
+        hotel_trip_items: { include: { hotels: true } },
+        transfer_trip_items: { include: { transfers: true } },
+        excursion_trip_items: { include: { excursions: true } },
+        tour_trip_items: { include: { tours: true } },
+        flight_trip_items: true,
+        other_trip_items: { include: { others: true } }
+      }
+    });
+
+    if (!trip || !trip.is_booking) {
+      return res.status(404).json({ message: 'Booking not found.' });
+    }
+
+    const updated = await prisma.trips.update({
+      where: { id },
+      data: {
+        approved: false,
+        declined: false,
+        is_booking: false,
+        status: 'Pending',
+        remarks: rejectionReason,
+        updated_at: new Date()
+      },
+      include: {
+        agents: true,
+        hotel_trip_items: { include: { hotels: true } },
+        transfer_trip_items: { include: { transfers: true } },
+        excursion_trip_items: { include: { excursions: true } },
+        tour_trip_items: { include: { tours: true } },
+        flight_trip_items: true,
+        other_trip_items: { include: { others: true } }
+      }
+    });
+
+    sendBookingUnconfirmedEmail(updated, rejectionReason).catch((err) => {
+      console.error('Error sending booking unconfirmed email:', err);
+    });
+
+    return res.json({
+      status: 'Pending',
+      message: 'Booking unconfirmed and quotation status changed to Pending. Notification email sent to agent.',
       booking: mapTripResponse(updated)
     });
   } catch (err) { next(err); }

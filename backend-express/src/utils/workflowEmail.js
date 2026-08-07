@@ -105,43 +105,207 @@ function renderSummaryTable(rows) {
     </table>`;
 }
 
-function serviceSections(trip) {
-  const sections = [];
-  const pushSection = (title, rows) => {
-    if (!rows.length) return;
-    sections.push(`
-      <h3 style="margin:22px 0 8px;color:#0f766e;">${title}</h3>
-      <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;border:1px solid #dbe5ec;">
-        ${rows.map((row) => `<tr><td style="padding:9px 12px;border-bottom:1px solid #e5e7eb;">${row}</td></tr>`).join('')}
-      </table>`);
-  };
+function formatEmailItemDate(date) {
+  if (!date) return '-';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '-';
+  const day = d.getDate();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${day}-${months[d.getMonth()]}`;
+}
 
-  pushSection('Hotels', (trip.hotel_trip_items || []).map((item) =>
-    `<strong>${escapeWorkflowHtml(item.hotel_name || item.hotels?.name || 'Hotel')}</strong> · ${escapeWorkflowHtml(item.room_type || 'Room')} · ${workflowDate(item.from_date)} to ${workflowDate(item.to_date)}`
-  ));
-  pushSection('Transfers', (trip.transfer_trip_items || []).map((item) =>
-    `<strong>${workflowDate(item.from_date)}</strong> · ${escapeWorkflowHtml(item.from_location || '-')} to ${escapeWorkflowHtml(item.to_location || '-')} ${item.flight_number ? `· Flight ${escapeWorkflowHtml(item.flight_number)}` : ''}`
-  ));
-  pushSection('Excursions', (trip.excursion_trip_items || []).map((item) =>
-    `<strong>${workflowDate(item.from_date)}</strong> · ${escapeWorkflowHtml(item.excursions?.name || 'Excursion')} · ${escapeWorkflowHtml(item.city || '')}`
-  ));
-  pushSection('Tours', (trip.tour_trip_items || []).map((item) =>
-    `<strong>${workflowDate(item.from_date)} to ${workflowDate(item.to_date)}</strong> · ${escapeWorkflowHtml(item.tours?.name || 'Tour')}`
-  ));
+function renderQuotationItemsTable(trip) {
+  const items = [];
+  const paxCount = Number(trip.number_of_adults || 0) + Number(trip.number_of_kids || 0);
 
-  return sections.join('');
+  (trip.hotel_trip_items || []).forEach(h => {
+    const fromDateStr = formatEmailItemDate(h.from_date);
+    const toDateStr = formatEmailItemDate(h.to_date);
+    const periodStr = (fromDateStr !== '-' && toDateStr !== '-') ? `${fromDateStr} ${toDateStr}` : fromDateStr;
+
+    items.push({
+      date: h.from_date,
+      period: periodStr,
+      location: h.city || '-',
+      service: 'Overnight',
+      hotel: h.hotel_name || h.hotels?.name || '-',
+      room: h.room_type || '-',
+      pax: paxCount || '-',
+      nights: h.nights || '-',
+      website: h.hotels?.website || '',
+      price: h.total_price ? parseFloat(h.total_price) : 0
+    });
+  });
+
+  (trip.excursion_trip_items || []).forEach(e => {
+    items.push({
+      date: e.from_date,
+      period: `${formatEmailItemDate(e.from_date)} -`,
+      location: e.city || '-',
+      service: e.excursion_name || e.excursions?.name || 'Excursion',
+      hotel: '-',
+      room: '-',
+      pax: paxCount || '-',
+      nights: '-',
+      website: '',
+      price: e.price ? parseFloat(e.price) : 0
+    });
+  });
+
+  (trip.tour_trip_items || []).forEach(t => {
+    items.push({
+      date: t.from_date,
+      period: `${formatEmailItemDate(t.from_date)} -`,
+      location: t.from_location || '-',
+      service: t.tours?.name || 'Tour',
+      hotel: '-',
+      room: '-',
+      pax: paxCount || '-',
+      nights: '-',
+      website: '',
+      price: t.price ? parseFloat(t.price) : 0
+    });
+  });
+
+  (trip.transfer_trip_items || []).forEach(t => {
+    items.push({
+      date: t.from_date,
+      period: `${formatEmailItemDate(t.from_date)} -`,
+      location: t.city || '-',
+      service: t.transfer_description || (t.from_location && t.to_location ? `${t.from_location} → ${t.to_location}` : 'Transfer'),
+      hotel: '-',
+      room: '-',
+      pax: paxCount || '-',
+      nights: '-',
+      website: '',
+      price: t.price ? parseFloat(t.price) : 0
+    });
+  });
+
+  (trip.flight_trip_items || []).forEach(f => {
+    items.push({
+      date: f.from_date,
+      period: `${formatEmailItemDate(f.from_date)} -`,
+      location: '-',
+      service: f.flight_number ? `Flight: ${f.flight_number}` : 'Flight',
+      hotel: '-',
+      room: '-',
+      pax: paxCount || '-',
+      nights: '-',
+      website: '',
+      price: f.price ? parseFloat(f.price) : 0
+    });
+  });
+
+  (trip.other_trip_items || []).forEach(o => {
+    items.push({
+      date: o.from_date,
+      period: `${formatEmailItemDate(o.from_date)} -`,
+      location: '-',
+      service: o.others?.name || o.service_name || 'Service',
+      hotel: '-',
+      room: '-',
+      pax: paxCount || '-',
+      nights: '-',
+      website: '',
+      price: o.price ? parseFloat(o.price) : 0
+    });
+  });
+
+  if (!items.length) return '';
+
+  items.sort((a, b) => {
+    if (!a.date) return 1;
+    if (!b.date) return -1;
+    return new Date(a.date) - new Date(b.date);
+  });
+
+  const startDate = items.find(i => i.date)?.date || trip.trip_start_date || new Date();
+  const monthYearTitle = new Date(startDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
+  const headerTitle = `${monthYearTitle} - STANDARD CATEGORY`;
+
+  const totalCost = trip.total_amount ? parseFloat(trip.total_amount) : items.reduce((acc, i) => acc + (i.price || 0), 0);
+  const discount = trip.discount_amount ? parseFloat(trip.discount_amount) : 0;
+  const finalCost = trip.final_amount ? parseFloat(trip.final_amount) : (totalCost - discount);
+
+  const tableRows = items.map(item => {
+    const websiteCell = item.website
+      ? `<a href="${item.website.startsWith('http') ? item.website : 'https://' + item.website}" target="_blank" style="color: #2980b9; text-decoration: underline;">${escapeWorkflowHtml(item.website.replace(/^https?:\/\//, ''))}</a>`
+      : '-';
+
+    return `
+      <tr style="border: 1px solid #000;">
+        <td style="border: 1px solid #000; padding: 6px 4px; text-align: center; white-space: nowrap;">${escapeWorkflowHtml(item.period)}</td>
+        <td style="border: 1px solid #000; padding: 6px 4px; text-align: center;">${escapeWorkflowHtml(item.location)}</td>
+        <td style="border: 1px solid #000; padding: 6px 4px; text-align: left;">${escapeWorkflowHtml(item.service)}</td>
+        <td style="border: 1px solid #000; padding: 6px 4px; text-align: left;">${escapeWorkflowHtml(item.hotel)}</td>
+        <td style="border: 1px solid #000; padding: 6px 4px; text-align: left;">${escapeWorkflowHtml(item.room)}</td>
+        <td style="border: 1px solid #000; padding: 6px 4px; text-align: center;">${item.pax}</td>
+        <td style="border: 1px solid #000; padding: 6px 4px; text-align: center;">${item.nights}</td>
+        <td style="border: 1px solid #000; padding: 6px 4px; text-align: center; font-size: 10px; word-break: break-all;">${websiteCell}</td>
+        <td style="border: 1px solid #000; padding: 6px 4px; text-align: right; white-space: nowrap;">${item.price > 0 ? 'THB ' + Number(item.price).toLocaleString('en-US') : '-'}</td>
+      </tr>
+    `;
+  }).join('');
+
+  let totalRowsHtml = `
+    <tr style="border: 1px solid #000; font-weight: bold; background-color: #ffffff;">
+      <td colspan="8" style="border: 1px solid #000; padding: 8px; text-align: right;">Total Price</td>
+      <td style="border: 1px solid #000; padding: 8px; text-align: right; white-space: nowrap;">THB ${Number(totalCost).toLocaleString('en-US')}</td>
+    </tr>
+  `;
+  if (discount > 0) {
+    totalRowsHtml += `
+      <tr style="border: 1px solid #000; font-weight: bold; background-color: #ffffff;">
+        <td colspan="8" style="border: 1px solid #000; padding: 8px; text-align: right; color: #c0392b;">Discount</td>
+        <td style="border: 1px solid #000; padding: 8px; text-align: right; white-space: nowrap; color: #c0392b;">-THB ${Number(discount).toLocaleString('en-US')}</td>
+      </tr>
+      <tr style="border: 1px solid #000; font-weight: bold; background-color: #fff9e6;">
+        <td colspan="8" style="border: 1px solid #000; padding: 8px; text-align: right; font-size: 13px; color: #d35400;">Final Price</td>
+        <td style="border: 1px solid #000; padding: 8px; text-align: right; white-space: nowrap; font-size: 13px; color: #d35400;">THB ${Number(finalCost).toLocaleString('en-US')}</td>
+      </tr>
+    `;
+  }
+
+  return `
+    <div style="margin: 20px 0; overflow-x: auto;">
+      <table cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; border: 1px solid #000; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.4;">
+        <thead>
+          <tr style="background-color: #000000; color: #f39c12; font-weight: bold; text-align: center;">
+            <th colspan="9" style="padding: 10px; font-size: 13px; letter-spacing: 0.5px;">${escapeWorkflowHtml(headerTitle)}</th>
+          </tr>
+          <tr style="background-color: #f39c12; color: #000000; font-weight: bold; text-align: center;">
+            <th style="border: 1px solid #000; padding: 8px 4px; width: 11%;">Period</th>
+            <th style="border: 1px solid #000; padding: 8px 4px; width: 10%;">Location</th>
+            <th style="border: 1px solid #000; padding: 8px 4px; width: 22%;">Service</th>
+            <th style="border: 1px solid #000; padding: 8px 4px; width: 14%;">Hotel</th>
+            <th style="border: 1px solid #000; padding: 8px 4px; width: 14%;">Typology of Room</th>
+            <th style="border: 1px solid #000; padding: 8px 4px; width: 5%;">Pax</th>
+            <th style="border: 1px solid #000; padding: 8px 4px; width: 5%;">Nights</th>
+            <th style="border: 1px solid #000; padding: 8px 4px; width: 8%;">Web Site</th>
+            <th style="border: 1px solid #000; padding: 8px 4px; width: 11%;">Price in THB</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+          ${totalRowsHtml}
+        </tbody>
+      </table>
+    </div>
+  `;
 }
 
 export function buildBookingGenerationEmail(trip) {
   const agentName = trip.agents?.name || 'Agent';
   const subject = `Booking Generation Request - ${trip.file_reference || trip.booking_reference || trip.id}`;
   const html = `
-    <div style="font-family:Arial,sans-serif;max-width:680px;margin:auto;color:#1f2937;line-height:1.55;">
+    <div style="font-family:Arial,sans-serif;max-width:750px;margin:auto;color:#1f2937;line-height:1.55;">
       <h2 style="color:#0f766e;">Booking Generation Request</h2>
       <p>Dear ${escapeWorkflowHtml(agentName)},</p>
       <p style="margin-bottom:8px;">Your quotation has been converted into a booking and is now <strong>In Progress</strong>.</p>
       <p style="margin-top:0;margin-bottom:16px;">Our reservation team will contact the suppliers and update you when every service is confirmed.</p>
       ${renderSummaryTable(bookingSummaryRows(trip))}
+      ${renderQuotationItemsTable(trip)}
       ${buildEmailFooter({ senderName: 'Verathailandia Reservations Team', senderEmail: 'reservation@verathailandia.com', salutation: 'Best regards,' })}
     </div>`;
   const text = [
@@ -169,12 +333,12 @@ export function buildFinalBookingEmail(trip) {
   const agentName = trip.agents?.name || 'Agent';
   const subject = `Booking Confirmed - ${trip.file_reference || trip.booking_reference || trip.id}`;
   const html = `
-    <div style="font-family:Arial,sans-serif;max-width:720px;margin:auto;color:#1f2937;line-height:1.55;">
+    <div style="font-family:Arial,sans-serif;max-width:750px;margin:auto;color:#1f2937;line-height:1.55;">
       <h2 style="color:#15803d;">Booking Confirmed</h2>
       <p>Dear ${escapeWorkflowHtml(agentName)},</p>
       <p>All required services have been confirmed. The booking is now complete and its Proforma Invoice is available in the system.</p>
       ${renderSummaryTable(bookingSummaryRows(trip))}
-      ${serviceSections(trip)}
+      ${renderQuotationItemsTable(trip)}
       ${buildEmailFooter({ senderName: 'Verathailandia Reservations Team', senderEmail: 'reservation@verathailandia.com', salutation: 'Best regards,' })}
     </div>`;
   const text = [
@@ -191,6 +355,46 @@ export function buildFinalBookingEmail(trip) {
 
 export async function sendFinalBookingConfirmation(trip) {
   const email = buildFinalBookingEmail(trip);
+  return sendWorkflowEmail({
+    from: reservationFromAddress(),
+    to: trip.agents?.email,
+    ...email
+  });
+}
+
+export function buildBookingUnconfirmedEmail(trip, reason) {
+  const agentName = trip.agents?.name || 'Agent';
+  const subject = `Booking Unconfirmed / Action Required - ${trip.file_reference || trip.booking_reference || trip.id}`;
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:750px;margin:auto;color:#1f2937;line-height:1.55;">
+      <h2 style="color:#dc2626;">Booking Unconfirmed</h2>
+      <p>Dear ${escapeWorkflowHtml(agentName)},</p>
+      <p style="margin-bottom:8px;">Your booking (<strong>${escapeWorkflowHtml(trip.file_reference || trip.booking_reference || trip.id)}</strong>) could not be confirmed at this time.</p>
+      <div style="margin:16px 0;padding:14px 16px;background:#fef2f2;border-left:4px solid #dc2626;border-radius:4px;">
+        <strong style="color:#991b1b;display:block;margin-bottom:4px;">Reason / Issues Details:</strong>
+        <span style="color:#7f1d1d;">${escapeWorkflowHtml(reason || 'No specific reason provided.')}</span>
+      </div>
+      <p style="margin-top:0;margin-bottom:16px;">Please review the details or contact the reservation team for further assistance.</p>
+      ${renderSummaryTable(bookingSummaryRows(trip))}
+      ${renderQuotationItemsTable(trip)}
+      ${buildEmailFooter({ senderName: 'Verathailandia Reservations Team', senderEmail: 'reservation@verathailandia.com', salutation: 'Best regards,' })}
+    </div>`;
+  const text = [
+    `Dear ${agentName},`,
+    '',
+    `Your booking (${trip.file_reference || trip.booking_reference || trip.id}) could not be confirmed.`,
+    `Reason: ${reason || 'No specific reason provided.'}`,
+    '',
+    `File Number: ${trip.file_reference || '-'}`,
+    `Client Name: ${trip.client_name || '-'}`,
+    `Trip Start Date: ${workflowDate(trip.trip_start_date)}`,
+    buildEmailFooterText({ senderName: 'Verathailandia Reservations Team', senderEmail: 'reservation@verathailandia.com', salutation: 'Best regards,' })
+  ].join('\n');
+  return { subject, html, text };
+}
+
+export async function sendBookingUnconfirmedEmail(trip, reason) {
+  const email = buildBookingUnconfirmedEmail(trip, reason);
   return sendWorkflowEmail({
     from: reservationFromAddress(),
     to: trip.agents?.email,

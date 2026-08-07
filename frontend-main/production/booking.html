@@ -780,7 +780,7 @@
               return;
             }
 
-            if (!confirm("Are you sure you want to save invoice to pdf?")) {
+            if (!confirm("Are you sure you want to download PDF for this booking?")) {
               return;
             }
 
@@ -838,6 +838,13 @@
           if (notifyAgentBtn) {
             const tripId = notifyAgentBtn.getAttribute("data-id");
             notifyAgentBookingConfirmed(tripId, notifyAgentBtn);
+            return;
+          }
+
+          const unconfirmBtn = event.target.closest(".unconfirm-btn");
+          if (unconfirmBtn) {
+            const tripId = unconfirmBtn.getAttribute("data-id");
+            openUnconfirmBookingModal(tripId);
             return;
           }
 
@@ -1746,11 +1753,12 @@
             <td style="text-align: center; white-space: nowrap;">
                <button class="btn table-action-btn view-btn" data-id="${trip.id}" title="View"><i class="fa fa-eye"></i></button>
                <button class="btn table-action-btn edit-btn" data-id="${trip.id}" title="Edit"><i class="fa fa-edit"></i></button>
-               <button class="btn table-action-btn save-btn print-btn" data-id="${trip.id}" title="Save PDF"><i class="fa fa-save"></i></button>
+               <button class="btn table-action-btn save-btn print-btn" data-id="${trip.id}" title="Download PDF"><i class="fa fa-file-pdf-o"></i></button>
                <button class="btn table-action-btn email-btn" data-id="${trip.id}" title="View Itinerary & Email"><i class="fa fa-envelope"></i></button>
                <button class="btn table-action-btn bulk-email-direct-btn" data-id="${trip.id}" title="Bulk Email All Suppliers" style="background-color: #1abc9c; color: #fff; border-color: #1abc9c;"><i class="fa fa-send"></i></button>
                ${isConfirmed ? `<button class="btn table-action-btn proforma-btn" data-id="${trip.id}" title="Open Proforma Invoice"><i class="fa fa-file-text-o"></i></button>` : ""}
                <button class="btn table-action-btn notify-agent-btn" data-id="${trip.id}" title="${notifyAgentTitle}"${notifyAgentDisabled}><i class="fa fa-bell"></i></button>
+               <button class="btn table-action-btn unconfirm-btn" data-id="${trip.id}" title="Unconfirm / Decline Booking & Notify Agent" style="background-color: #e74c3c; color: #fff; border-color: #e74c3c;"><i class="fa fa-times-circle"></i></button>
              </td>
         `;
 
@@ -2195,6 +2203,125 @@
         $("#bookingConfirmationModal").modal("hide");
       }
     }
+
+    let currentUnconfirmTripId = null;
+
+    function openUnconfirmBookingModal(tripId) {
+      if (!tripId) {
+        alert("Invalid booking ID.");
+        return;
+      }
+      currentUnconfirmTripId = tripId;
+      const textarea = document.getElementById("unconfirmReasonText");
+      if (textarea) {
+        textarea.value = "";
+        textarea.disabled = false;
+        textarea.readOnly = false;
+      }
+      const submitBtn = document.getElementById("submitUnconfirmBookingBtn");
+      if (submitBtn) {
+        submitBtn.disabled = false;
+      }
+      $("#unconfirmBookingModal").appendTo("body").modal("show");
+      setTimeout(function () {
+        textarea?.focus();
+      }, 300);
+    }
+
+    $(document).on("click", "#submitUnconfirmBookingBtn", async function (e) {
+      e.preventDefault();
+      const reasonInput = document.getElementById("unconfirmReasonText");
+      const reason = reasonInput ? reasonInput.value.trim() : "";
+      if (!reason) {
+        alert("Please enter a reason for unconfirming/declining the booking.");
+        return;
+      }
+
+      const token = localStorage.getItem("token");
+      if (!token || !currentUnconfirmTripId) {
+        alert("Unable to process request. Token or Trip ID missing. Please log in again.");
+        return;
+      }
+
+      const submitBtn = this;
+      const originalHtml = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Processing...';
+
+      try {
+        const apiEndpoint = (typeof Endpoint !== "undefined" && Endpoint) ? Endpoint : (window.Endpoint || "");
+        const response = await fetch(`${apiEndpoint}/api/v1/bookings/${currentUnconfirmTripId}/unconfirm`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ reason: reason })
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          let msg = errText;
+          try { msg = JSON.parse(errText).message || errText; } catch (err) {}
+          throw new Error(msg);
+        }
+
+        const data = await response.json();
+        $("#unconfirmBookingModal").modal("hide");
+        alert(data.message || "Booking marked as Unconfirmed and email notification sent to agent successfully!");
+        if (typeof fetchBookings === "function") {
+          fetchBookings();
+        } else {
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error("Error unconfirming booking:", error);
+        alert(`Error: ${error.message}`);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalHtml;
+      }
+    });
     </script>
+
+    <!-- Unconfirm Booking Reason Modal -->
+    <div class="modal fade" id="unconfirmBookingModal" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 99999 !important;">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content" style="border-radius: 8px; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">
+          <div class="modal-header" style="background-color: #e74c3c; color: white; border-top-left-radius: 8px; border-top-right-radius: 8px; padding: 15px 20px;">
+            <h4 class="modal-title" style="margin: 0; font-size: 18px; font-weight: 600;">
+              <i class="fa fa-exclamation-triangle" style="margin-right: 8px;"></i>Unconfirm Booking / Specify Reason
+            </h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" style="padding: 20px;">
+            <p style="margin-top: 0; color: #555; font-size: 14px;">
+              Please specify the reason why this booking is unconfirmed or declined. This message will be sent to the agent via email.
+            </p>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="unconfirmReasonText" style="font-weight: 600; color: #333; margin-bottom: 8px;">
+                Reason / Issue Details (เหตุผลที่ไม่สามารถอนุมัติ / ติดปัญหา): <span style="color: #e74c3c;">*</span>
+              </label>
+              <textarea
+                id="unconfirmReasonText"
+                class="form-control"
+                rows="4"
+                placeholder="E.g. Fully booked on selected dates, Room rates changed, Flight details missing..."
+                style="border-radius: 6px; border: 1px solid #ccc; font-size: 14px; padding: 10px;"
+              ></textarea>
+            </div>
+          </div>
+          <div class="modal-footer" style="background-color: #f8f9fa; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; padding: 12px 20px;">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" style="border-radius: 6px; padding: 8px 16px;">Cancel</button>
+            <button type="button" id="submitUnconfirmBookingBtn" class="btn btn-danger" style="border-radius: 6px; padding: 8px 20px; background-color: #e74c3c; border-color: #e74c3c; font-weight: 600;">
+              <i class="fa fa-paper-plane" style="margin-right: 8px;"></i>Send Notification to Agent
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

@@ -1068,7 +1068,7 @@
                  <div class="actions-cell">
                    ${editButton}
                    ${actionButton}
-                   <button class="btn-action btn-action-save print-btn" data-id="${trip.id}" title="Save / Download PDF"><i class="fa fa-save"></i></button>
+                   <button class="btn-action btn-action-save print-btn" data-id="${trip.id}" title="Download PDF"><i class="fa fa-file-pdf-o"></i></button>
                    <button class="btn-action btn-action-client email-btn" data-id="${trip.id}" data-email-sent="${trip.email_sent ? "true" : "false"}" data-client-name="${escapedName}" data-quotation-ref="${escapedRef}" title="${emailTitle}"><i class="fa ${emailIcon}"></i></button>
                    ${proformaButton}
                    ${notifyButton}
@@ -1417,7 +1417,7 @@
               return;
             }
 
-            if (!confirm("Are you sure you want to save this quotation?")) {
+            if (!confirm("Are you sure you want to download PDF for this quotation?")) {
               return;
             }
 
