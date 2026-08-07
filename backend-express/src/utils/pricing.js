@@ -284,7 +284,14 @@ export function calculateHotelCostLogic(hotel, request, markupGroup, markups, ma
 
   const roomTypesReq = request.room_types || [];
   if (roomTypesReq.length === 0) {
-    throw new Error('at least one room type must be specified');
+    return {
+      final_cost: 0,
+      total_cost_before_discount: 0,
+      discount: 0,
+      cost_per_night: [],
+      applied_promotion: null,
+      message: 'No room types specified'
+    };
   }
 
   const bookingDate = new Date(request.booking_date);

@@ -4094,7 +4094,9 @@
             })
             .catch((error) => {
               console.error("Error fetching hotel price:", error);
-              alert(`Error: ${error.message}`);
+              if (isUserAction && !error.message?.includes('room type')) {
+                alert(`Error: ${error.message}`);
+              }
               document.getElementById("updatedHotelPrice").value = 0;
             });
         }
@@ -4416,7 +4418,9 @@
               })
               .catch((error) => {
                 console.error("Error fetching hotel price:", error);
-                alert(`Error: ${error.message}`);
+                if (!error.message?.includes('room type')) {
+                  alert(`Error: ${error.message}`);
+                }
               });
           });
 
