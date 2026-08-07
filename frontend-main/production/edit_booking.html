@@ -6918,21 +6918,19 @@
             return;
           }
 
-          // ✅ Prepare request payload
-          const requestData = {
-            agent_name: agentName,
-            city: hotelCity,
-            hotel_id: parseInt(hotelType, 10),
-            number_of_kids: numberOfKids,
-            number_of_adults: numberOfAdults,
-            number_of_single_rooms: numberOfSingleRooms,
-            number_of_double_rooms: numberOfDoubleRooms,
+          if (roomTypesData.length === 0) {
+            if (isUserAction) {
+              alert("Please select a Room Type before getting the price.");
+            }
+            return;
+          }
+
           const totalRoomsNeeded = (parseInt(numberOfSingleRooms, 10) || 0) + (parseInt(numberOfDoubleRooms, 10) || 0);
 
           if (totalRoomsNeeded > 0 && roomTypesData.length < totalRoomsNeeded) {
-            alert(
-              "Please select a Room Type for all requested rooms before getting the price."
-            );
+            if (isUserAction) {
+              alert("Please select a Room Type for all requested rooms before getting the price.");
+            }
             return;
           }
 
@@ -7005,7 +7003,7 @@
             })
             .catch((error) => {
               console.error("Error fetching hotel price:", error);
-              if (isUserAction && !error.message?.includes('room type')) {
+              if (isUserAction) {
                 alert(`Error: ${error.message}`);
               }
               document.getElementById("updatedHotelPrice").value = 0;
@@ -9042,9 +9040,7 @@
               })
               .catch((error) => {
                 console.error("Error fetching hotel price:", error);
-                if (!error.message?.includes('room type')) {
-                  alert(`Error: ${error.message}`);
-                }
+                alert(`Error: ${error.message}`);
               });
           });
 

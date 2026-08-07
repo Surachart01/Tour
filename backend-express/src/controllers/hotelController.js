@@ -14,11 +14,19 @@ function cleanForPrisma(value) {
   if (value && typeof value === 'object' && !(value instanceof Date)) {
     return Object.fromEntries(
       Object.entries(value)
-        .filter(([, entryValue]) => entryValue !== undefined)
+        .filter(([key, entryValue]) => {
+          if (entryValue === undefined) return false;
+          if (key === 'id' && entryValue === null) return false;
+          return true;
+        })
         .map(([key, entryValue]) => [key, cleanForPrisma(entryValue)])
     );
   }
   return value;
+}
+
+function stripIdsForCreate(rows) {
+  return asArray(rows).map(({ id, ...rest }) => rest);
 }
 
 function normalizeHotelContacts(rawContacts) {
@@ -363,10 +371,10 @@ export async function createHotel(req, res, next) {
     const data = req.body;
     const name = requiredText(data.name, 'Hotel Name');
     const city = requiredText(data.city, 'City');
-    const contacts = normalizeHotelContacts(data.contacts ?? data.hotel_contacts);
+    const contacts = stripIdsForCreate(normalizeHotelContacts(data.contacts ?? data.hotel_contacts));
     const rawRoomTypes = asArray(data.roomTypes ?? data.room_types);
-    const roomTypes = normalizeRoomTypes(rawRoomTypes);
-    const promotions = normalizeHotelPromotions(data.promotions ?? data.hotel_promotions);
+    const roomTypes = stripIdsForCreate(normalizeRoomTypes(rawRoomTypes));
+    const promotions = stripIdsForCreate(normalizeHotelPromotions(data.promotions ?? data.hotel_promotions));
     const hotel = await prisma.hotels.create({
       data: cleanForPrisma({
         name,

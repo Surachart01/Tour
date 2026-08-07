@@ -5831,6 +5831,13 @@
             return;
           }
 
+          if (roomTypesData.length === 0) {
+            if (isUserAction) {
+              alert("Please select a Room Type before getting the price.");
+            }
+            return;
+          }
+
           if (totalRoomsNeeded > 0 && roomTypesData.length < totalRoomsNeeded) {
             if (isUserAction) {
               alert("Please select a Room Type for all requested rooms before getting the price.");
@@ -5908,7 +5915,7 @@
             })
             .catch((error) => {
               console.error("Error fetching hotel price:", error);
-              if (isUserAction && !error.message?.includes('room type')) {
+              if (isUserAction) {
                 alert(`Error: ${error.message}`);
               }
               document.getElementById("updatedHotelPrice").value = 0;
@@ -7721,9 +7728,7 @@
               })
               .catch((error) => {
                 console.error("Error fetching hotel price:", error);
-                if (!error.message?.includes('room type')) {
-                  alert(`Error: ${error.message}`);
-                }
+                alert(`Error: ${error.message}`);
               });
           });
 
