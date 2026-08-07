@@ -1472,6 +1472,24 @@ export async function sendQuotationEmail(req, res, next) {
       return null;
     }).filter(Boolean);
 
+    // Process custom user file attachments (base64)
+    const customList = Array.isArray(req.body.customAttachments)
+      ? req.body.customAttachments
+      : (Array.isArray(req.body.attachments) ? req.body.attachments : []);
+
+    for (const custom of customList) {
+      if (custom && custom.filename && custom.content) {
+        const base64Data = typeof custom.content === 'string'
+          ? custom.content.replace(/^data:[^;]+;base64,/, '')
+          : custom.content;
+        attachments.push({
+          filename: custom.filename,
+          content: Buffer.from(base64Data, 'base64'),
+          contentType: custom.contentType || 'application/octet-stream'
+        });
+      }
+    }
+
     await sendMailWithTestOverride({
       from: process.env.SMTP_FROM_QUOTATION || process.env.SMTP_FROM || 'VeraThailandia Quotations <info@verathailandia.com>',
       to: toRecipient,

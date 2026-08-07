@@ -933,6 +933,11 @@
             });
         }
 
+        function escapeHtml(str) {
+          if (!str) return '';
+          return str.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
         // Render trips into the table
         function renderTrips() {
           // Destroy previous tooltips to prevent memory leaks and orphan elements
@@ -947,11 +952,6 @@
 
           const start = (currentPage - 1) * rowsPerPage;
           const end = Math.min(start + rowsPerPage, filteredTrips.length);
-
-          const escapeHtml = (str) => {
-            if (!str) return '';
-            return str.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-          };
 
           filteredTrips.slice(start, end).forEach((trip) => {
             const row = document.createElement("tr");
@@ -1468,6 +1468,9 @@
             document.getElementById("emailSubject").value = `Quotation Reference: ${trip.booking_reference || trip.quotation_reference || `Q-${trip.id}`}`;
             document.getElementById("emailBodyText").value = `Please find as follow the requested quotation and attached the excursion and tour descriptions.`;
 
+            uploadedCustomAttachments = [];
+            renderCustomAttachmentBadges();
+
             // Render live Statement-style Quotation Email Preview & Attachments List
             const previewContainer = document.getElementById("quotationEmailPreview");
             const attachmentsContainer = document.getElementById("quotationAttachmentsList");
@@ -1489,7 +1492,7 @@
                 attachmentsContainer.innerHTML = '<span class="text-muted"><i class="fa fa-spinner fa-spin"></i> Checking attached brochures...</span>';
               }
 
-              fetch(`${Endpoint}/api/v1/bookings/${trip.id}`, {
+              fetch(`${Endpoint}/api/v1/quotations/${trip.id}`, {
                 headers: { Authorization: `Bearer ${token}` }
               })
               .then(r => r.json())
@@ -1501,7 +1504,8 @@
                   return isNaN(dt.getTime()) ? '-' : dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
                 };
 
-                (fullTrip.hotel_trip_items || []).forEach(h => {
+                const hotels = fullTrip.hotel_trip_items || fullTrip.hotels || [];
+                hotels.forEach(h => {
                   items.push({
                     date: h.from_date,
                     period: `${fmtDate(h.from_date)} - ${fmtDate(h.to_date)}`,
@@ -1516,10 +1520,11 @@
                   });
                 });
 
-                (fullTrip.excursion_trip_items || []).forEach(e => {
+                const excursions = fullTrip.excursion_trip_items || fullTrip.excursions || [];
+                excursions.forEach(e => {
                   items.push({
-                    date: e.from_date,
-                    period: `${fmtDate(e.from_date)} -`,
+                    date: e.from_date || e.date,
+                    period: `${fmtDate(e.from_date || e.date)} -`,
                     location: e.city || '-',
                     service: e.excursion_name || e.excursions?.name || 'Excursion',
                     hotel: '-',
@@ -1531,12 +1536,13 @@
                   });
                 });
 
-                (fullTrip.tour_trip_items || []).forEach(t => {
+                const tours = fullTrip.tour_trip_items || fullTrip.tours || [];
+                tours.forEach(t => {
                   items.push({
                     date: t.from_date,
                     period: `${fmtDate(t.from_date)} -`,
                     location: t.from_location || '-',
-                    service: t.tours?.name || 'Tour',
+                    service: t.tours?.name || t.tour_name || 'Tour',
                     hotel: '-',
                     room: '-',
                     pax: (fullTrip.number_of_adults || 0) + (fullTrip.number_of_kids || 0),
@@ -1546,7 +1552,8 @@
                   });
                 });
 
-                (fullTrip.transfer_trip_items || []).forEach(tr => {
+                const transfers = fullTrip.transfer_trip_items || fullTrip.transfers || [];
+                transfers.forEach(tr => {
                   items.push({
                     date: tr.from_date,
                     period: `${fmtDate(tr.from_date)} -`,
@@ -1703,7 +1710,7 @@
               });
             };
 
-            fetch(`${Endpoint}/api/v1/bookings/${tripId}`, {
+            fetch(`${Endpoint}/api/v1/quotations/${tripId}`, {
               method: "GET",
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -1713,12 +1720,13 @@
             .then(res => res.json())
             .then(booking => {
               tbody.innerHTML = "";
-              if (!booking.hotel_trip_items || booking.hotel_trip_items.length === 0) {
+              const hotelItems = booking.hotel_trip_items || booking.hotels || [];
+              if (hotelItems.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" class="text-center">No hotels booked for this quotation.</td></tr>`;
                 $("#notifModalSendAllBtn").prop("disabled", true);
               } else {
                 $("#notifModalSendAllBtn").prop("disabled", false);
-                booking.hotel_trip_items.forEach(item => {
+                hotelItems.forEach(item => {
                   const fromStr = formatDateString(item.from_date);
                   const toStr = formatDateString(item.to_date);
                   const stayPeriod = `${fromStr} to ${toStr}`;
@@ -1864,7 +1872,17 @@
               Authorization: `Bearer ${localStorage.getItem("token")}`,
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ to, cc, subject, body: bodyText })
+            body: JSON.stringify({
+              to,
+              cc,
+              subject,
+              body: bodyText,
+              customAttachments: uploadedCustomAttachments.map(f => ({
+                filename: f.filename,
+                content: f.content,
+                contentType: f.contentType
+              }))
+            })
           })
             .then((response) => {
               if (!response.ok) {
@@ -1895,6 +1913,116 @@
               confirmBtn.innerHTML = originalHtml;
               confirmBtn.disabled = false;
             });
+        });
+
+        // Custom File Attachment Handlers for Quotation Email
+        let uploadedCustomAttachments = [];
+
+        function getFileIconClass(filename) {
+          const ext = (filename || '').split('.').pop().toLowerCase();
+          if (ext === 'pdf') return 'fa-file-pdf-o text-danger';
+          if (['doc', 'docx'].includes(ext)) return 'fa-file-word-o text-primary';
+          if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return 'fa-file-image-o text-info';
+          if (['xls', 'xlsx', 'csv'].includes(ext)) return 'fa-file-excel-o text-success';
+          if (['zip', 'rar', '7z'].includes(ext)) return 'fa-file-archive-o text-warning';
+          return 'fa-file-text-o text-secondary';
+        }
+
+        function renderCustomAttachmentBadges() {
+          const listContainer = document.getElementById("customAttachmentsFileList");
+          const attachBtnLabel = document.getElementById("customAttachBtnLabel");
+
+          if (attachBtnLabel) {
+            const count = uploadedCustomAttachments.length;
+            attachBtnLabel.innerHTML = count > 0
+              ? `<i class="fa fa-check-circle text-success"></i> Attach Additional File(s) <span class="badge badge-success" style="background-color: #27ae60;">${count} attached</span>`
+              : `<i class="fa fa-upload"></i> Attach Additional File(s)`;
+          }
+
+          if (!listContainer) return;
+          if (!uploadedCustomAttachments || uploadedCustomAttachments.length === 0) {
+            listContainer.innerHTML = '';
+            return;
+          }
+
+          const fileItemsHtml = uploadedCustomAttachments.map((fileItem, idx) => {
+            const iconClass = getFileIconClass(fileItem.filename);
+            const sizeStr = (fileItem.size / 1024).toFixed(1);
+            return `
+              <div style="background: #ffffff; border: 1px solid #27ae60; border-radius: 6px; padding: 8px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+                <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">
+                  <i class="fa ${iconClass}" style="font-size: 16px;"></i>
+                  <strong style="color: #2c3e50;">${escapeHtml(fileItem.filename)}</strong>
+                  <span class="text-muted" style="font-size: 11px;">(${sizeStr} KB)</span>
+                  <span class="badge badge-success" style="font-size: 10px; background-color: #27ae60; padding: 3px 6px;"><i class="fa fa-check"></i> Attached & Ready</span>
+                </div>
+                <button type="button" class="btn btn-xs btn-outline-danger remove-custom-file-btn" data-index="${idx}" style="padding: 2px 8px; font-size: 11px; margin-left: 8px; border-radius: 4px;" title="Remove Attachment">
+                  <i class="fa fa-trash"></i> Delete
+                </button>
+              </div>
+            `;
+          }).join('');
+
+          listContainer.innerHTML = `
+            <div class="alert alert-success p-2 mb-2" style="font-size: 11px; margin-bottom: 8px; border-radius: 4px; background-color: #d4edda; border-color: #c3e6cb; color: #155724; padding: 6px 10px;">
+              <i class="fa fa-check-circle"></i> <strong>Upload Complete! (${uploadedCustomAttachments.length} file(s) attached):</strong> These files will be included when sending this email.
+            </div>
+            ${fileItemsHtml}
+          `;
+        }
+
+        $(document).on("change", "#customEmailAttachmentInput", function (e) {
+          const files = Array.from(e.target.files || []);
+          if (!files.length) return;
+
+          const listContainer = document.getElementById("customAttachmentsFileList");
+          if (listContainer) {
+            listContainer.innerHTML = `
+              <div class="text-info p-2" style="font-size: 11px; font-weight: 600;">
+                <i class="fa fa-spinner fa-spin"></i> Attaching ${files.length} file(s)... Please wait.
+              </div>
+            `;
+          }
+
+          let loadedCount = 0;
+          files.forEach(file => {
+            if (file.size > 10 * 1024 * 1024) {
+              alert(`File "${file.name}" exceeds the 10MB limit and will not be attached.`);
+              loadedCount++;
+              if (loadedCount === files.length) renderCustomAttachmentBadges();
+              return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (evt) {
+              uploadedCustomAttachments.push({
+                filename: file.name,
+                content: evt.target.result,
+                contentType: file.type || 'application/octet-stream',
+                size: file.size
+              });
+              loadedCount++;
+              if (loadedCount === files.length) {
+                renderCustomAttachmentBadges();
+              }
+            };
+            reader.onerror = function () {
+              alert(`Error reading file "${file.name}".`);
+              loadedCount++;
+              if (loadedCount === files.length) renderCustomAttachmentBadges();
+            };
+            reader.readAsDataURL(file);
+          });
+          this.value = '';
+        });
+
+        $(document).on("click", ".remove-custom-file-btn", function (e) {
+          e.preventDefault();
+          const idx = parseInt($(this).attr("data-index"), 10);
+          if (!isNaN(idx) && idx >= 0 && idx < uploadedCustomAttachments.length) {
+            uploadedCustomAttachments.splice(idx, 1);
+            renderCustomAttachmentBadges();
+          }
         });
       });
     </script>
@@ -1980,6 +2108,18 @@
                 <label style="font-weight: 600; color: #34495e;"><i class="fa fa-paperclip" style="color: #e67e22;"></i> Attached Brochures & Service Documents</label>
                 <div id="quotationAttachmentsList" class="p-2 border rounded" style="background: #fff; max-height: 100px; overflow-y: auto; font-size: 12px; border-color: #d9e2ec !important;">
                   <span class="text-muted"><i class="fa fa-spinner fa-spin"></i> Checking attached brochures...</span>
+                </div>
+
+                <!-- Additional Custom File Attachment -->
+                <div class="mt-2" style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px dashed #cbd5e1;">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <label for="customEmailAttachmentInput" id="customAttachBtnLabel" class="btn btn-sm btn-outline-primary" style="cursor: pointer; font-size: 11px; font-weight: 600; padding: 5px 14px; margin-bottom: 0; border-radius: 4px;">
+                      <i class="fa fa-upload"></i> Attach Additional File(s)
+                    </label>
+                    <input type="file" id="customEmailAttachmentInput" multiple style="display: none;" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.zip">
+                    <span class="text-muted" style="font-size: 11px;"><i class="fa fa-info-circle"></i> PDF, DOC, Images, Zip (Max 10MB/file)</span>
+                  </div>
+                  <div id="customAttachmentsFileList" style="margin-top: 8px;"></div>
                 </div>
               </div>
 
