@@ -516,6 +516,8 @@ function mapTripResponse(trip) {
     // top-level field aliases
     agent: trip.agents || null,
     agent_name: trip.agents ? trip.agents.name : null,
+    user: trip.users || null,
+    user_name: trip.users ? trip.users.username : null,
     quotation_reference: trip.booking_reference || '',
     client_booking: trip.booking_reference || '',
     total_cost: toFloat(trip.total_amount),
@@ -1034,7 +1036,7 @@ export async function listQuotations(req, res, next) {
     }, claims);
     const trips = await prisma.trips.findMany({
       where,
-      include: { agents: true },
+      include: { agents: true, users: true },
       orderBy: [{ updated_at: 'desc' }, { created_at: 'desc' }]
     });
     return res.json(trips.map(mapTripResponse));
@@ -1050,7 +1052,7 @@ export async function listQuotationsByDateRange(req, res, next) {
       where.created_at = { gte: new Date(from_date), lte: new Date(to_date) };
     }
     applyAgentTripScope(where, claims);
-    const trips = await prisma.trips.findMany({ where, include: { agents: true }, orderBy: [{ updated_at: 'desc' }, { created_at: 'desc' }] });
+    const trips = await prisma.trips.findMany({ where, include: { agents: true, users: true }, orderBy: [{ updated_at: 'desc' }, { created_at: 'desc' }] });
     return res.json(trips.map(mapTripResponse));
   } catch (err) { next(err); }
 }
@@ -1065,6 +1067,7 @@ export async function getQuotation(req, res, next) {
       where,
       include: {
         agents: true,
+        users: true,
         hotel_trip_items: {
           orderBy: [
             { display_order: 'asc' },

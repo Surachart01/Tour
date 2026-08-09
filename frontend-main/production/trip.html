@@ -1021,11 +1021,11 @@
             const escapedPhone = escapeHtml(trip.client_phone);
             const escapedFileNumber = escapeHtml(fileNumber);
 
-             const agentName = trip.agent_name || (trip.agents ? trip.agents.name : '') || 'Direct Client';
-             const escapedAgentName = escapeHtml(agentName);
+             const userName = trip.user_name || (trip.users ? trip.users.username : '') || (trip.user ? trip.user.username : '') || trip.agent_name || (trip.agents ? trip.agents.name : '') || 'System User';
+             const escapedUserName = escapeHtml(userName);
              const displayRef = `
                <div><strong>${escapedRef}</strong></div>
-               ${escapedAgentName ? `<div class="text-muted" style="font-size: 11px; margin-top: 3px; font-weight: normal;"><i class="fa fa-user-circle-o"></i> ${escapedAgentName}</div>` : ''}
+               ${escapedUserName ? `<div class="text-muted" style="font-size: 11px; margin-top: 3px; font-weight: normal;"><i class="fa fa-user-circle-o"></i> ${escapedUserName}</div>` : ''}
              `;
              const displayName = escapedName;
              const displayFileNumber = escapedFileNumber || '-';
