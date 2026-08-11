@@ -1773,13 +1773,31 @@ export async function finalizeQuotation(req, res, next) {
       }
     });
     
-    // Trigger email notification asynchronously so conversion HTTP response returns instantly
-    sendBookingGenerationRequest(trip).catch((err) => {
+    let emailNotification;
+    try {
+      emailNotification = await sendBookingGenerationRequest(trip);
+    } catch (err) {
       console.error('Error sending booking generation notification email:', err);
-    });
+      emailNotification = { sent: false, reason: 'send_failed' };
+    }
+
+    let message = 'Quotation converted to booking successfully.';
+    if (emailNotification.sent) {
+      message += ' The agent was notified and the reservation office was copied.';
+    } else if (emailNotification.reason === 'recipient_missing') {
+      message += ' The notification email was not sent because the agent email is missing.';
+    } else {
+      message += ' The booking was created, but the notification email could not be sent. Please check the email settings.';
+    }
 
     return res.json({
-      message: 'Quotation converted to booking successfully.',
+      message,
+      email_notification: {
+        sent: Boolean(emailNotification.sent),
+        to: emailNotification.to || trip.agents?.email || null,
+        cc: emailNotification.cc || null,
+        reason: emailNotification.reason || null
+      },
       booking: mapTripResponse(trip)
     });
   } catch (err) { next(err); }

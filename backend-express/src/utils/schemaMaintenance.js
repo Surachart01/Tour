@@ -4,6 +4,7 @@ let markupSchemaReady = false;
 let operationSchemaReady = false;
 let availabilitySchemaReady = false;
 let checkInvoiceSchemaReady = false;
+let workflowEmailSchemaReady = false;
 
 export async function ensureMarkupSchema() {
   if (markupSchemaReady) return;
@@ -204,4 +205,30 @@ export async function ensureCheckInvoiceSchema() {
   `);
 
   checkInvoiceSchemaReady = true;
+}
+
+export async function ensureWorkflowEmailSchema() {
+  if (workflowEmailSchemaReady) return;
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS workflow_email_log (
+      id serial PRIMARY KEY,
+      trip_id integer REFERENCES trips(id) ON DELETE CASCADE,
+      event_type varchar(80) NOT NULL,
+      to_email text,
+      cc_email text,
+      bcc_email text,
+      subject text NOT NULL,
+      delivery_status varchar(20) NOT NULL,
+      failure_reason text,
+      error_message text,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS workflow_email_log_trip_event_idx
+    ON workflow_email_log (trip_id, event_type, created_at DESC)
+  `);
+
+  workflowEmailSchemaReady = true;
 }

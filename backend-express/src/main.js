@@ -8,7 +8,8 @@ import {
   ensureAvailabilitySchema,
   ensureCheckInvoiceSchema,
   ensureMarkupSchema,
-  ensureOperationSchema
+  ensureOperationSchema,
+  ensureWorkflowEmailSchema
 } from './utils/schemaMaintenance.js';
 import prisma from './config/db.js';
 import { synchronizeAutoincrementSequences } from './utils/postgresSequences.js';
@@ -126,6 +127,7 @@ await ensureMarkupSchema();
 await ensureOperationSchema();
 await ensureAvailabilitySchema();
 await ensureCheckInvoiceSchema();
+await ensureWorkflowEmailSchema();
 await synchronizeAutoincrementSequences(prisma);
 
 // Start server

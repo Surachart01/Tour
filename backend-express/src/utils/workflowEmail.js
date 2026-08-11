@@ -1,5 +1,7 @@
 import transporter, { getTransporterForRole, SENDER_ROLES } from './smtpTransporter.js';
 import { buildEmailFooter, buildEmailFooterText, getLogoAttachment } from './emailFooter.js';
+import prisma from '../config/db.js';
+import { ensureWorkflowEmailSchema } from './schemaMaintenance.js';
 
 export function escapeWorkflowHtml(value) {
   return String(value ?? '')
@@ -36,12 +38,77 @@ export function bookingFromAddress() {
     'VeraThailandia Bookings <booking@verathailandia.com>';
 }
 
-export async function sendWorkflowEmail({ from, to, subject, text, html, role = SENDER_ROLES.RESERVATION }) {
+export function bookingGenerationOfficeCc() {
+  return process.env.BOOKING_GENERATION_CC ||
+    process.env.RESERVATION_OFFICE_EMAIL ||
+    'reservation@verathailandia.com';
+}
+
+export function bookingGenerationAuditBcc() {
+  return process.env.BOOKING_GENERATION_AUDIT_BCC ||
+    process.env.WORKFLOW_AUDIT_BCC ||
+    undefined;
+}
+
+function emailListForLog(value) {
+  if (!value) return null;
+  return Array.isArray(value) ? value.filter(Boolean).join(', ') : String(value);
+}
+
+async function recordWorkflowEmailAttempt({
+  tripId,
+  eventType,
+  to,
+  cc,
+  bcc,
+  subject,
+  deliveryStatus,
+  failureReason,
+  errorMessage
+}) {
+  if (!eventType) return;
+
+  try {
+    await ensureWorkflowEmailSchema();
+    await prisma.$executeRaw`
+      INSERT INTO workflow_email_log (
+        trip_id, event_type, to_email, cc_email, bcc_email, subject,
+        delivery_status, failure_reason, error_message
+      ) VALUES (
+        ${tripId || null}, ${eventType}, ${emailListForLog(to)},
+        ${emailListForLog(cc)}, ${emailListForLog(bcc)}, ${subject},
+        ${deliveryStatus}, ${failureReason || null}, ${errorMessage || null}
+      )
+    `;
+  } catch (error) {
+    console.error('[EMAIL LOG FAILED]', error.message);
+  }
+}
+
+export async function sendWorkflowEmail({
+  from,
+  to,
+  cc,
+  bcc,
+  subject,
+  text,
+  html,
+  role = SENDER_ROLES.RESERVATION,
+  tripId = null,
+  eventType = null
+}) {
   if (!to && !process.env.TEST_EMAIL_RECIPIENT) {
+    await recordWorkflowEmailAttempt({
+      tripId, eventType, to, cc, bcc, subject,
+      deliveryStatus: 'skipped',
+      failureReason: 'recipient_missing'
+    });
     return { sent: false, prepared: false, reason: 'recipient_missing' };
   }
 
   const targetTo = process.env.TEST_EMAIL_RECIPIENT || to;
+  const targetCc = process.env.TEST_EMAIL_RECIPIENT ? undefined : cc;
+  const targetBcc = process.env.TEST_EMAIL_RECIPIENT ? undefined : bcc;
   const targetSubject = process.env.TEST_EMAIL_RECIPIENT
     ? `[TEST MODE -> To: ${to}] ${subject}`
     : subject;
@@ -53,12 +120,19 @@ export async function sendWorkflowEmail({ from, to, subject, text, html, role = 
 
   if (!hasConfiguredPass) {
     console.warn(`[EMAIL SKIPPED] SMTP Passwords are not configured yet in .env. Intended email: [${targetSubject}] to [${targetTo}]`);
-    return {
+    const result = {
       sent: false,
       prepared: true,
       reason: 'smtp_not_configured',
-      preview: { from, to: targetTo, subject: targetSubject, text, html }
+      preview: { from, to: targetTo, cc: targetCc, bcc: targetBcc, subject: targetSubject, text, html }
     };
+    await recordWorkflowEmailAttempt({
+      tripId, eventType, to: targetTo, cc: targetCc, bcc: targetBcc,
+      subject: targetSubject,
+      deliveryStatus: 'skipped',
+      failureReason: result.reason
+    });
+    return result;
   }
 
   const activeTransporter = getTransporterForRole(role);
@@ -66,18 +140,40 @@ export async function sendWorkflowEmail({ from, to, subject, text, html, role = 
   const mailAttachments = logoAtt ? [logoAtt] : [];
 
   try {
-    await activeTransporter.sendMail({ from, to: targetTo, subject: targetSubject, text, html, attachments: mailAttachments });
-    console.log(`[EMAIL SENT SUCCESS] Subject: [${targetSubject}] -> Sent to: [${targetTo}]`);
-    return { sent: true, prepared: true, to: targetTo };
+    await activeTransporter.sendMail({
+      from,
+      to: targetTo,
+      cc: targetCc,
+      bcc: targetBcc,
+      subject: targetSubject,
+      text,
+      html,
+      attachments: mailAttachments
+    });
+    console.log(`[EMAIL SENT SUCCESS] Subject: [${targetSubject}] -> Sent to: [${targetTo}] CC: [${targetCc || '-'}]`);
+    await recordWorkflowEmailAttempt({
+      tripId, eventType, to: targetTo, cc: targetCc, bcc: targetBcc,
+      subject: targetSubject,
+      deliveryStatus: 'sent'
+    });
+    return { sent: true, prepared: true, to: targetTo, cc: targetCc };
   } catch (error) {
     console.error(`[EMAIL SEND FAILED] Subject: [${targetSubject}] Error:`, error.message);
-    return {
+    const result = {
       sent: false,
       prepared: true,
       reason: 'send_failed',
       error: error.message,
-      preview: { from, to: targetTo, subject: targetSubject, text, html }
+      preview: { from, to: targetTo, cc: targetCc, bcc: targetBcc, subject: targetSubject, text, html }
     };
+    await recordWorkflowEmailAttempt({
+      tripId, eventType, to: targetTo, cc: targetCc, bcc: targetBcc,
+      subject: targetSubject,
+      deliveryStatus: 'failed',
+      failureReason: result.reason,
+      errorMessage: result.error
+    });
+    return result;
   }
 }
 
@@ -325,6 +421,10 @@ export async function sendBookingGenerationRequest(trip) {
   return sendWorkflowEmail({
     from: reservationFromAddress(),
     to: trip.agents?.email,
+    cc: bookingGenerationOfficeCc(),
+    bcc: bookingGenerationAuditBcc(),
+    tripId: trip.id,
+    eventType: 'booking_generation_request',
     ...email
   });
 }
@@ -401,4 +501,3 @@ export async function sendBookingUnconfirmedEmail(trip, reason) {
     ...email
   });
 }
-

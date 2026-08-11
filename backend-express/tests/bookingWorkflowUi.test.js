@@ -27,6 +27,7 @@ const pdfControllerSource = readFileSync(resolve(rootDirectory, 'backend-express
 const supplierActionsSource = readFileSync(resolve(rootDirectory, 'backend-express/src/utils/supplierActions.js'), 'utf8');
 const supplierResponseSource = readFileSync(resolve(rootDirectory, 'backend-express/src/controllers/supplierResponseController.js'), 'utf8');
 const workflowEmailSource = readFileSync(resolve(rootDirectory, 'backend-express/src/utils/workflowEmail.js'), 'utf8');
+const schemaMaintenanceSource = readFileSync(resolve(rootDirectory, 'backend-express/src/utils/schemaMaintenance.js'), 'utf8');
 const rolePermissionsSource = readFileSync(resolve(rootDirectory, 'frontend-main/production/js/common/role-permissions.js'), 'utf8');
 const homePage = readFileSync(resolve(rootDirectory, 'frontend-main/production/index.html'), 'utf8');
 const otherChargePages = [
@@ -181,11 +182,22 @@ test('converted booking requests are visible on the Admin home page', () => {
 
 test('booking workflow sends agent and supplier status emails', () => {
   assert.match(tripControllerSource, /sendBookingGenerationRequest\(trip\)/);
+  assert.match(tripControllerSource, /emailNotification = await sendBookingGenerationRequest\(trip\)/);
+  assert.match(tripControllerSource, /The agent was notified and the reservation office was copied/);
+  assert.match(tripControllerSource, /email_notification:\s*\{/);
   assert.match(tripControllerSource, /sendFinalBookingConfirmation\(updated\)/);
   assert.match(workflowEmailSource, /Booking Generation Request/);
   assert.match(workflowEmailSource, /Booking Confirmed/);
   assert.match(workflowEmailSource, /reservation@verathailandia\.com/);
   assert.match(workflowEmailSource, /booking@verathailandia\.com/);
+  assert.match(workflowEmailSource, /BOOKING_GENERATION_CC/);
+  assert.match(workflowEmailSource, /RESERVATION_OFFICE_EMAIL/);
+  assert.match(workflowEmailSource, /cc: bookingGenerationOfficeCc\(\)/);
+  assert.match(workflowEmailSource, /BOOKING_GENERATION_AUDIT_BCC/);
+  assert.match(workflowEmailSource, /process\.env\.TEST_EMAIL_RECIPIENT \? undefined : cc/);
+  assert.match(workflowEmailSource, /eventType: 'booking_generation_request'/);
+  assert.match(schemaMaintenanceSource, /CREATE TABLE IF NOT EXISTS workflow_email_log/);
+  assert.match(schemaMaintenanceSource, /delivery_status varchar\(20\) NOT NULL/);
   assert.match(pdfControllerSource, /buildSupplierActionButtons/);
   assert.match(pdfControllerSource, /Email service is not configured\. No supplier notification was sent\./);
   assert.match(supplierActionsSource, /CONFIRM BOOKING/);
