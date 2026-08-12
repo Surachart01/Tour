@@ -6,6 +6,7 @@ import path from 'path';
  */
 
 export const LOGO_CID = 'verathailandia_logo_cid';
+export const EMAIL_FOOTER_MARKER = 'data-verathailandia-email-footer="true"';
 
 export function getLogoFilePath() {
   const possiblePaths = [
@@ -60,14 +61,15 @@ export function buildEmailFooter({
   const logoSrc = useCid && getLogoFilePath() ? `cid:${LOGO_CID}` : getLogoSrc();
 
   return `
-    <div style="margin-top: 30px; padding-top: 15px; font-family: Arial, sans-serif; font-size: 13px; color: #333333; line-height: 1.5;">
+    <div ${EMAIL_FOOTER_MARKER} style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #dbe5ec; font-family: Arial, sans-serif; font-size: 13px; color: #333333; line-height: 1.5;">
       <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.4;">${cleanSalutation}<br/><strong>${cleanName}</strong></p>
       
       <div style="margin: 12px 0;">
-        <img src="${logoSrc}" alt="VeraThailandia Co., Ltd." style="max-height: 36px; height: 36px; width: auto; display: block;" />
+        <img src="${logoSrc}" alt="VeraThailandia Co., Ltd." style="max-height: 64px; height: 64px; width: auto; display: block;" />
       </div>
 
       <p style="margin: 10px 0 12px 0; font-size: 12px; color: #333333; line-height: 1.4;">
+        <strong>VeraThailandia Co., Ltd.</strong><br/>
         20th Floor, Room 160/424-425, ITF Silom Palace, 160 Silom Road, Suriya Wong, Bangrak, Bangkok 10500, Thailand
       </p>
 
@@ -95,6 +97,45 @@ export function buildEmailFooter({
       </div>
     </div>
   `;
+}
+
+export function ensureStandardEmailFooter(html, options = {}) {
+  if (html === undefined || html === null || html === '') return html;
+  const content = String(html);
+  if (content.includes(EMAIL_FOOTER_MARKER)) return content;
+  const footer = buildEmailFooter(options);
+  if (/<\/body>/i.test(content)) return content.replace(/<\/body>/i, `${footer}</body>`);
+  if (/<\/html>/i.test(content)) return content.replace(/<\/html>/i, `${footer}</html>`);
+  return `${content}${footer}`;
+}
+
+export function ensureStandardEmailFooterText(text, options = {}) {
+  if (text === undefined || text === null || text === '') return text;
+  const content = String(text);
+  if (content.includes('VeraThailandia Co., Ltd.') && content.includes('Tax ID: 0105547045569')) {
+    return content;
+  }
+  return `${content}${buildEmailFooterText(options)}`;
+}
+
+export function prepareEmailWithStandardFooter(mailOptions = {}, footerOptions = {}) {
+  const options = {
+    senderEmail: footerOptions.senderEmail || mailOptions.from || 'reservation@verathailandia.com',
+    ...footerOptions
+  };
+  const attachments = Array.isArray(mailOptions.attachments) ? [...mailOptions.attachments] : [];
+  const logoAttachment = getLogoAttachment();
+
+  if (logoAttachment && !attachments.some((attachment) => attachment?.cid === LOGO_CID)) {
+    attachments.push(logoAttachment);
+  }
+
+  return {
+    ...mailOptions,
+    html: ensureStandardEmailFooter(mailOptions.html, options),
+    text: ensureStandardEmailFooterText(mailOptions.text, options),
+    attachments
+  };
 }
 
 export function buildEmailFooterText({

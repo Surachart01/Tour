@@ -1,6 +1,7 @@
 import path from 'path';
 import prisma from '../config/db.js';
 import transporter from '../utils/smtpTransporter.js';
+import { prepareEmailWithStandardFooter } from '../utils/emailFooter.js';
 
 export async function sendEmail(req, res, next) {
   try {
@@ -28,7 +29,7 @@ export async function sendEmail(req, res, next) {
 
     const fromAddress = process.env.SMTP_FROM_RESERVATION || process.env.SMTP_FROM || 'VeraThailandia Reservations <reservation@verathailandia.com>';
 
-    await transporter.sendMail({
+    await transporter.sendMail(prepareEmailWithStandardFooter({
       from: fromAddress,
       to: targetTo,
       cc: targetCc,
@@ -36,7 +37,7 @@ export async function sendEmail(req, res, next) {
       text: body || '',
       html: html || body || '',
       attachments: nodemailerAttachments
-    });
+    }, { senderEmail: fromAddress }));
     return res.json({ success: true, message: `Email sent successfully to ${targetTo}` });
   } catch (err) { next(err); }
 }
@@ -76,11 +77,12 @@ export async function sendPromo(req, res, next) {
     }
 
     // Send email
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || process.env.SMTP_USER, to, cc, subject,
+    const fromAddress = process.env.SMTP_FROM || process.env.SMTP_USER;
+    await transporter.sendMail(prepareEmailWithStandardFooter({
+      from: fromAddress, to, cc, subject,
       text: body || '', html: body || '',
       attachments: nodemailerAttachments
-    });
+    }, { senderEmail: fromAddress }));
 
     // Save promo to database
     const promo = await prisma.special_promos.create({

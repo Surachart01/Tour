@@ -1,5 +1,5 @@
 import transporter, { getTransporterForRole, SENDER_ROLES } from './smtpTransporter.js';
-import { buildEmailFooter, buildEmailFooterText, getLogoAttachment } from './emailFooter.js';
+import { buildEmailFooter, buildEmailFooterText, prepareEmailWithStandardFooter } from './emailFooter.js';
 import prisma from '../config/db.js';
 import { ensureWorkflowEmailSchema } from './schemaMaintenance.js';
 
@@ -136,11 +136,8 @@ export async function sendWorkflowEmail({
   }
 
   const activeTransporter = getTransporterForRole(role);
-  const logoAtt = getLogoAttachment();
-  const mailAttachments = logoAtt ? [logoAtt] : [];
-
   try {
-    await activeTransporter.sendMail({
+    await activeTransporter.sendMail(prepareEmailWithStandardFooter({
       from,
       to: targetTo,
       cc: targetCc,
@@ -148,8 +145,7 @@ export async function sendWorkflowEmail({
       subject: targetSubject,
       text,
       html,
-      attachments: mailAttachments
-    });
+    }, { senderEmail: from }));
     console.log(`[EMAIL SENT SUCCESS] Subject: [${targetSubject}] -> Sent to: [${targetTo}] CC: [${targetCc || '-'}]`);
     await recordWorkflowEmailAttempt({
       tripId, eventType, to: targetTo, cc: targetCc, bcc: targetBcc,
@@ -210,7 +206,7 @@ function formatEmailItemDate(date) {
   return `${day}-${months[d.getMonth()]}`;
 }
 
-function renderQuotationItemsTable(trip) {
+function renderQuotationItemsTable(trip, { includeFlights = true } = {}) {
   const items = [];
   const paxCount = Number(trip.number_of_adults || 0) + Number(trip.number_of_kids || 0);
 
@@ -278,20 +274,22 @@ function renderQuotationItemsTable(trip) {
     });
   });
 
-  (trip.flight_trip_items || []).forEach(f => {
-    items.push({
-      date: f.from_date,
-      period: `${formatEmailItemDate(f.from_date)} -`,
-      location: '-',
-      service: f.flight_number ? `Flight: ${f.flight_number}` : 'Flight',
-      hotel: '-',
-      room: '-',
-      pax: paxCount || '-',
-      nights: '-',
-      website: '',
-      price: f.price ? parseFloat(f.price) : 0
+  if (includeFlights) {
+    (trip.flight_trip_items || []).forEach(f => {
+      items.push({
+        date: f.from_date,
+        period: `${formatEmailItemDate(f.from_date)} -`,
+        location: '-',
+        service: f.flight_number ? `Flight: ${f.flight_number}` : 'Flight',
+        hotel: '-',
+        room: '-',
+        pax: paxCount || '-',
+        nights: '-',
+        website: '',
+        price: f.price ? parseFloat(f.price) : 0
+      });
     });
-  });
+  }
 
   (trip.other_trip_items || []).forEach(o => {
     items.push({
@@ -401,7 +399,7 @@ export function buildBookingGenerationEmail(trip) {
       <p style="margin-bottom:8px;">Your quotation has been converted into a booking and is now <strong>In Progress</strong>.</p>
       <p style="margin-top:0;margin-bottom:16px;">Our reservation team will contact the suppliers and update you when every service is confirmed.</p>
       ${renderSummaryTable(bookingSummaryRows(trip))}
-      ${renderQuotationItemsTable(trip)}
+      ${renderQuotationItemsTable(trip, { includeFlights: false })}
       ${buildEmailFooter({ senderName: 'Verathailandia Reservations Team', senderEmail: 'reservation@verathailandia.com', salutation: 'Best regards,' })}
     </div>`;
   const text = [

@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { runWithSequenceRecovery } from '../utils/postgresSequences.js';
 import transporter from '../utils/smtpTransporter.js';
+import { prepareEmailWithStandardFooter } from '../utils/emailFooter.js';
 
 const prisma = new PrismaClient();
 
@@ -460,13 +461,13 @@ async function sendMailWithTestOverride(mailOptions) {
     ? `[TEST MODE -> To: ${mailOptions.to}] ${mailOptions.subject}`
     : mailOptions.subject;
 
-  return transporter.sendMail({
+  return transporter.sendMail(prepareEmailWithStandardFooter({
     ...mailOptions,
     to: targetTo,
     cc: process.env.TEST_EMAIL_RECIPIENT ? undefined : mailOptions.cc,
     bcc: process.env.TEST_EMAIL_RECIPIENT ? undefined : mailOptions.bcc,
     subject: targetSubject
-  });
+  }, { senderEmail: mailOptions.from }));
 }
 
 export async function sendBulkEmail(req, res, next) {

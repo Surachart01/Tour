@@ -3,7 +3,7 @@ import PDFDocument from 'pdfkit';
 import { buildSupplierActionButtons } from '../utils/supplierActions.js';
 import { bookingFromAddress, reservationFromAddress } from '../utils/workflowEmail.js';
 import transporter from '../utils/smtpTransporter.js';
-import { buildEmailFooter, getLogoAttachment } from '../utils/emailFooter.js';
+import { buildEmailFooter, prepareEmailWithStandardFooter } from '../utils/emailFooter.js';
 import { getTransporterForRole, SENDER_ROLES } from '../utils/smtpTransporter.js';
 
 function hasSmtpConfigured() {
@@ -22,24 +22,19 @@ async function sendMailWithTestOverride(mailOptions) {
     ? `[TEST MODE -> To: ${mailOptions.to}] ${mailOptions.subject}`
     : mailOptions.subject;
 
-  const logoAtt = getLogoAttachment();
-  const rawAtts = mailOptions.attachments || [];
-  const finalAtts = logoAtt ? [...rawAtts, logoAtt] : rawAtts;
-
   const activeTransporter = getTransporterForRole(SENDER_ROLES.QUOTATION);
   const activeFrom = (process.env.SMTP_USER_INFO && process.env.SMTP_USER_INFO !== 'info@verathailandia.com')
     ? mailOptions.from
     : (process.env.SMTP_FROM_RESERVATION || 'VeraThailandia Reservations <reservation@verathailandia.com>');
 
-  const mailData = {
+  const mailData = prepareEmailWithStandardFooter({
     ...mailOptions,
     from: activeFrom,
     to: targetTo,
     cc: process.env.TEST_EMAIL_RECIPIENT ? undefined : mailOptions.cc,
     bcc: process.env.TEST_EMAIL_RECIPIENT ? undefined : mailOptions.bcc,
-    subject: targetSubject,
-    attachments: finalAtts
-  };
+    subject: targetSubject
+  }, { senderEmail: activeFrom });
 
   return await activeTransporter.sendMail(mailData);
 }
@@ -813,8 +808,7 @@ export async function notifyAgentBookingConfirmed(req, res, next) {
           <tr><td style="background: #f8fafc; font-weight: 700;">Pax</td><td>${Number(trip.number_of_adults || 0) + Number(trip.number_of_kids || 0)}</td></tr>
           <tr><td style="background: #f8fafc; font-weight: 700;">Final Cost</td><td>${escapeHtml(trip.final_amount || 0)}</td></tr>
         </table>
-        <p style="margin-top: 18px;">Our reservations team has confirmed the required services. Please contact us if you need any further assistance.</p>
-        <p>Best regards,<br><strong>Verathailandia Reservations Team</strong></p>
+        <p style="margin-top: 18px;">Our reservations team has confirmed the required services. The Proforma Invoice can be automatically downloaded from your account.</p>
       </div>
     `;
     const text = [
@@ -827,8 +821,8 @@ export async function notifyAgentBookingConfirmed(req, res, next) {
       `Pax: ${Number(trip.number_of_adults || 0) + Number(trip.number_of_kids || 0)}`,
       `Final Cost: ${trip.final_amount || 0}`,
       '',
-      'Best regards,',
-      'Verathailandia Reservations Team'
+      'Our reservations team has confirmed the required services. The Proforma Invoice can be automatically downloaded from your account.',
+      ''
     ].join('\n');
 
 

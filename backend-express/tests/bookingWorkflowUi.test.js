@@ -188,6 +188,8 @@ test('booking workflow sends agent and supplier status emails', () => {
   assert.match(tripControllerSource, /sendFinalBookingConfirmation\(updated\)/);
   assert.match(workflowEmailSource, /Booking Generation Request/);
   assert.match(workflowEmailSource, /Booking Confirmed/);
+  assert.match(pdfControllerSource, /The Proforma Invoice can be automatically downloaded from your account\./);
+  assert.doesNotMatch(pdfControllerSource, /Please contact us if you need any further assistance\./);
   assert.match(workflowEmailSource, /reservation@verathailandia\.com/);
   assert.match(workflowEmailSource, /booking@verathailandia\.com/);
   assert.match(workflowEmailSource, /BOOKING_GENERATION_CC/);
@@ -196,6 +198,8 @@ test('booking workflow sends agent and supplier status emails', () => {
   assert.match(workflowEmailSource, /BOOKING_GENERATION_AUDIT_BCC/);
   assert.match(workflowEmailSource, /process\.env\.TEST_EMAIL_RECIPIENT \? undefined : cc/);
   assert.match(workflowEmailSource, /eventType: 'booking_generation_request'/);
+  assert.match(workflowEmailSource, /renderQuotationItemsTable\(trip, \{ includeFlights: false \}\)/);
+  assert.match(workflowEmailSource, /if \(includeFlights\) \{[\s\S]*?trip\.flight_trip_items/);
   assert.match(schemaMaintenanceSource, /CREATE TABLE IF NOT EXISTS workflow_email_log/);
   assert.match(schemaMaintenanceSource, /delivery_status varchar\(20\) NOT NULL/);
   assert.match(pdfControllerSource, /buildSupplierActionButtons/);

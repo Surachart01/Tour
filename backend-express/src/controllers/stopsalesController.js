@@ -1,7 +1,7 @@
 import prisma from '../config/db.js';
 import path from 'path';
 import transporter from '../utils/smtpTransporter.js';
-import { buildEmailFooter } from '../utils/emailFooter.js';
+import { buildEmailFooter, prepareEmailWithStandardFooter } from '../utils/emailFooter.js';
 
 async function sendMailWithTestOverride(mailOptions) {
   const targetTo = process.env.TEST_EMAIL_RECIPIENT || mailOptions.to;
@@ -9,13 +9,13 @@ async function sendMailWithTestOverride(mailOptions) {
     ? `[TEST MODE -> To: ${mailOptions.to}] ${mailOptions.subject}`
     : mailOptions.subject;
 
-  return transporter.sendMail({
+  return transporter.sendMail(prepareEmailWithStandardFooter({
     ...mailOptions,
     to: targetTo,
     cc: process.env.TEST_EMAIL_RECIPIENT ? undefined : mailOptions.cc,
     bcc: process.env.TEST_EMAIL_RECIPIENT ? undefined : mailOptions.bcc,
     subject: targetSubject
-  });
+  }, { senderEmail: mailOptions.from }));
 }
 
 export async function updateStopSaleStatus(req, res, next) {
