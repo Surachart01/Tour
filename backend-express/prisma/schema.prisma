@@ -30,6 +30,7 @@ model User {
   parentUser       User?        @relation("UserHierarchy", fields: [parentUserId], references: [id])
   subUsers         User[]       @relation("UserHierarchy")
   trips            trips[]
+  createdTours     tours[]      @relation("TourCreator")
 
   @@map("users")
 }
@@ -166,22 +167,23 @@ model Organization {
 }
 
 model Agent {
-  id                   Int      @id @default(autoincrement())
-  name                 String   @unique @db.VarChar(100)
-  markupGroup          String?  @map("markup_group") @db.VarChar(20)
+  id                   Int             @id @default(autoincrement())
+  name                 String          @unique @db.VarChar(100)
+  markupGroup          String?         @map("markup_group") @db.VarChar(20)
   address              String?
-  email                String   @unique @db.VarChar(100)
-  telephone            String?  @db.VarChar(20)
-  fax                  String?  @db.VarChar(20)
-  userId               Int?     @map("user_id")
-  createdAt            DateTime @default(now()) @map("created_at")
-  updatedAt            DateTime @default(now()) @updatedAt @map("updated_at")
-  paymentDeadlineType  String   @default("24_hours_before") @map("payment_deadline_type") @db.VarChar(50)
-  paymentDeadlineDays  Int?     @map("payment_deadline_days")
-  defaultAssistanceFee Decimal? @map("default_assistance_fee") @db.Decimal(10, 2)
-  enableAssistanceFee  Boolean? @map("enable_assistance_fee")
+  email                String          @unique @db.VarChar(100)
+  telephone            String?         @db.VarChar(20)
+  fax                  String?         @db.VarChar(20)
+  userId               Int?            @map("user_id")
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @default(now()) @updatedAt @map("updated_at")
+  paymentDeadlineType  String          @default("24_hours_before") @map("payment_deadline_type") @db.VarChar(50)
+  paymentDeadlineDays  Int?            @map("payment_deadline_days")
+  defaultAssistanceFee Decimal?        @map("default_assistance_fee") @db.Decimal(10, 2)
+  enableAssistanceFee  Boolean?        @map("enable_assistance_fee")
   trips                trips[]
   users                User[]
+  notifications        notifications[]
 
   @@map("agents")
 }
@@ -701,10 +703,57 @@ model tours {
   valid_days      String?           @db.VarChar(255)
   country         String?           @default("Thailand") @db.VarChar(100)
   display_order   Int?              @default(0) @map("display_order")
+  user_id         Int?
   tour_days       tour_days[]
   tour_pricing    tour_pricing[]
   tour_trip_items tour_trip_items[]
   tour_stop_sales tour_stop_sales[]
+  tour_services   tour_services[]
+  users           User?             @relation("TourCreator", fields: [user_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+}
+
+model countries {
+  id         Int       @id @default(autoincrement())
+  name       String    @unique @db.VarChar(100)
+  code       String?   @db.VarChar(10)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  province   String?   @db.VarChar(255)
+  cities     cities[]
+}
+
+model cities {
+  id         Int        @id @default(autoincrement())
+  name       String     @db.VarChar(255)
+  country_id Int?
+  created_at DateTime?  @default(now()) @db.Timestamp(6)
+  countries  countries? @relation(fields: [country_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+}
+
+model notifications {
+  id         BigInt    @id @default(autoincrement())
+  user_id    Int?
+  type       String    @db.VarChar(50)
+  title      String
+  message    String
+  link_id    String?   @db.VarChar(255)
+  is_read    Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  agent_id   Int?
+  agents     Agent?    @relation(fields: [agent_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+}
+
+model tour_services {
+  id           Int       @id @default(autoincrement())
+  tour_id      Int?
+  day          Int?
+  city         String?
+  service_type String?
+  service_name String?
+  from_time    String?
+  to_time      String?
+  room_type    String?
+  created_at   DateTime? @default(now()) @db.Timestamp(6)
+  tours        tours?    @relation(fields: [tour_id], references: [id], onUpdate: NoAction)
 }
 
 model transfer_pricing {

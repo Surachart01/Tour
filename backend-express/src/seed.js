@@ -132,7 +132,8 @@ async function main() {
     await client.query(filteredSqlText);
     console.log('✅ Raw SQL dump executed successfully.');
   } catch (err) {
-    console.warn('⚠️ Warning during raw SQL execution:', err.message);
+    console.error('❌ Raw SQL dump failed:', err.message);
+    throw err;
   } finally {
     await client.end();
   }
@@ -148,7 +149,11 @@ async function main() {
   console.log('🔧 Dropping legacy database constraints that conflict with new schema...');
   try {
     await prisma.$executeRawUnsafe('ALTER TABLE users DROP CONSTRAINT IF EXISTS users_google_id_key CASCADE');
-    console.log('✅ Dropped users_google_id_key constraint.');
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE hotel_promotions
+      DROP CONSTRAINT IF EXISTS hotel_promotions_hotel_id_discount_amount_discount_type_key
+    `);
+    console.log('✅ Dropped legacy constraints.');
   } catch (err) {
     console.warn('⚠️ Warning dropping users_google_id_key constraint:', err.message);
   }
@@ -186,7 +191,9 @@ async function main() {
   // Upgrade the schema to new SaaS model
   console.log('🔄 Upgrading database schema to SaaS model using Prisma db push...');
   try {
-    execSync('npx prisma db push --skip-generate', { stdio: 'inherit' });
+    // This script already recreates the schema from the verified legacy dump.
+    // The flag permits the audited legacy-to-current column casts and constraints.
+    execSync('npx prisma db push --skip-generate --accept-data-loss', { stdio: 'inherit' });
     console.log('✅ Schema upgraded to new model successfully.');
   } catch (err) {
     console.error('❌ Failed to run prisma db push:', err.message);
@@ -258,24 +265,29 @@ async function main() {
   }
   console.log('✅ User profiles migration complete.');
 
-  console.log('👤 Creating default superadmin user for testing...');
+  console.log('👤 Verifying the default superadmin user...');
   try {
     const superadminUsername = 'superadmin';
     const superadminEmail = 'superadmin@verathailandia.com';
-    const superadminPassword = 'admin123';
-    const hashedSuperPassword = await bcrypt.hash(superadminPassword, 10);
+    let testSuperUser = await prisma.user.findUnique({
+      where: { username: superadminUsername }
+    });
 
-    const testSuperUser = await prisma.user.upsert({
-      where: { username: superadminUsername },
-      update: {
-        password: hashedSuperPassword,
+    if (testSuperUser) {
+      testSuperUser = await prisma.user.update({
+        where: { id: testSuperUser.id },
+        data: {
         role: 'superadmin',
         isSuperAdmin: true,
         canCreateUsers: true,
         canViewAnalytics: true,
         organizationId: defaultOrg.id
-      },
-      create: {
+        }
+      });
+    } else if (process.env.SEED_SUPERADMIN_PASSWORD) {
+      const hashedSuperPassword = await bcrypt.hash(process.env.SEED_SUPERADMIN_PASSWORD, 10);
+      testSuperUser = await prisma.user.create({
+        data: {
         username: superadminUsername,
         email: superadminEmail,
         role: 'superadmin',
@@ -286,10 +298,13 @@ async function main() {
         canCreateUsers: true,
         canViewAnalytics: true,
         organizationId: defaultOrg.id
-      }
-    });
+        }
+      });
+    } else {
+      console.warn('⚠️ Superadmin does not exist; set SEED_SUPERADMIN_PASSWORD to create it.');
+    }
 
-    await prisma.userProfile.upsert({
+    if (testSuperUser) await prisma.userProfile.upsert({
       where: { userId: testSuperUser.id },
       update: {
         userType: 'superadmin',
@@ -311,7 +326,7 @@ async function main() {
         organizationId: defaultOrg.id
       }
     });
-    console.log('✅ Default superadmin account verified (superadmin / admin123).');
+    if (testSuperUser) console.log('✅ Default superadmin account verified without changing its password.');
   } catch (err) {
     console.warn('⚠️ Warning creating default superadmin user:', err.message);
   }

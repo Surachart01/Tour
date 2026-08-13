@@ -9,7 +9,9 @@
     "dev": "nodemon src/main.js",
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio",
-    "db:seed": "node src/seed.js"
+    "db:seed": "node src/seed.js",
+    "db:audit-migration": "node scripts/audit-migration-data.js",
+    "db:verify-migration": "node scripts/verify-database-migration.js"
   },
   "dependencies": {
     "@prisma/client": "^5.12.1",
