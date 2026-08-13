@@ -856,6 +856,7 @@ model trips {
   transfer_trip_items              transfer_trip_items[]
   tax_invoice_documents            tax_invoice_documents[]
   check_invoice_records            check_invoice_records?
+  workflow_email_log               workflow_email_log[]
   special_package_id               Int?
   special_pkg_single_rooms         Int?                    @default(0)
   special_pkg_double_rooms         Int?                    @default(0)
@@ -864,6 +865,23 @@ model trips {
   agents                           Agent?                  @relation(fields: [agent_id], references: [id], onUpdate: NoAction)
   users                            User?                   @relation(fields: [user_id], references: [id], onUpdate: NoAction)
   email_sent                       Boolean?                @default(false)
+}
+
+model workflow_email_log {
+  id              Int      @id @default(autoincrement())
+  trip_id         Int?
+  event_type      String   @db.VarChar(80)
+  to_email        String?
+  cc_email        String?
+  bcc_email       String?
+  subject         String
+  delivery_status String   @db.VarChar(20)
+  failure_reason  String?
+  error_message   String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  trips           trips?   @relation(fields: [trip_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([trip_id, event_type, created_at(sort: Desc)], map: "workflow_email_log_trip_event_idx")
 }
 
 model check_invoice_records {

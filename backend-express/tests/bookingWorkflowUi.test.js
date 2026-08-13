@@ -28,6 +28,7 @@ const supplierActionsSource = readFileSync(resolve(rootDirectory, 'backend-expre
 const supplierResponseSource = readFileSync(resolve(rootDirectory, 'backend-express/src/controllers/supplierResponseController.js'), 'utf8');
 const workflowEmailSource = readFileSync(resolve(rootDirectory, 'backend-express/src/utils/workflowEmail.js'), 'utf8');
 const schemaMaintenanceSource = readFileSync(resolve(rootDirectory, 'backend-express/src/utils/schemaMaintenance.js'), 'utf8');
+const prismaSchemaSource = readFileSync(resolve(rootDirectory, 'backend-express/prisma/schema.prisma'), 'utf8');
 const rolePermissionsSource = readFileSync(resolve(rootDirectory, 'frontend-main/production/js/common/role-permissions.js'), 'utf8');
 const homePage = readFileSync(resolve(rootDirectory, 'frontend-main/production/index.html'), 'utf8');
 const otherChargePages = [
@@ -201,6 +202,8 @@ test('booking workflow sends agent and supplier status emails', () => {
   assert.match(workflowEmailSource, /renderQuotationItemsTable\(trip, \{ includeFlights: false \}\)/);
   assert.match(workflowEmailSource, /if \(includeFlights\) \{[\s\S]*?trip\.flight_trip_items/);
   assert.match(schemaMaintenanceSource, /CREATE TABLE IF NOT EXISTS workflow_email_log/);
+  assert.match(prismaSchemaSource, /model workflow_email_log \{/);
+  assert.match(prismaSchemaSource, /workflow_email_log\s+workflow_email_log\[\]/);
   assert.match(schemaMaintenanceSource, /delivery_status varchar\(20\) NOT NULL/);
   assert.match(pdfControllerSource, /buildSupplierActionButtons/);
   assert.match(pdfControllerSource, /Email service is not configured\. No supplier notification was sent\./);
