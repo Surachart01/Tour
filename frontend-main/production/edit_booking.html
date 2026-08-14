@@ -707,29 +707,36 @@
 
       .booking-actions-dropdown {
         position: relative;
-        display: inline-flex !important;
+        display: flex !important;
+        width: 42px;
+        margin: 0 auto;
+        align-items: center;
         justify-content: center;
       }
 
       .booking-actions-toggle {
-        width: 38px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
         padding: 0;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         color: #ffffff;
-        background: #334e68;
-        border: 1px solid #334e68;
+        background: #244764;
+        border: 1px solid #244764;
         border-radius: 6px;
+        box-shadow: 0 3px 8px rgba(36, 71, 100, 0.2);
+        transition: background-color 0.15s ease, border-color 0.15s ease,
+          box-shadow 0.15s ease;
       }
 
       .booking-actions-toggle:hover,
       .booking-actions-toggle:focus {
         color: #ffffff;
-        background: #243b53;
-        border-color: #243b53;
-        box-shadow: 0 0 0 3px rgba(51, 78, 104, 0.14);
+        background: #173b57;
+        border-color: #173b57;
+        box-shadow: 0 0 0 3px rgba(36, 71, 100, 0.18);
+        outline: none;
       }
 
       .booking-actions-toggle::after {
@@ -737,27 +744,39 @@
       }
 
       .booking-actions-menu {
-        min-width: 210px;
-        padding: 6px;
+        position: fixed !important;
+        width: 232px;
+        min-width: 232px;
+        padding: 8px;
         background: #ffffff;
         border: 1px solid #d9e2ec;
         border-radius: 6px;
-        box-shadow: 0 10px 24px rgba(31, 41, 55, 0.16);
-        z-index: 1100;
+        box-shadow: 0 14px 32px rgba(31, 41, 55, 0.2);
+        transform: none !important;
+        z-index: 3000;
       }
 
       .booking-actions-menu .tooltip-btn {
-        width: 100%;
-        min-height: 40px;
+        position: relative !important;
+        width: 100% !important;
+        height: 44px;
+        min-height: 44px;
         margin: 0 !important;
-        padding: 4px 6px;
+        padding: 5px 8px !important;
         display: flex !important;
         align-items: center;
         gap: 10px;
-        border-radius: 4px;
+        color: #243b53;
+        background: transparent;
+        border-radius: 5px;
+        transition: background-color 0.15s ease;
       }
 
-      .booking-actions-menu .tooltip-btn:hover {
+      .booking-actions-menu .tooltip-btn + .tooltip-btn {
+        margin-top: 2px !important;
+      }
+
+      .booking-actions-menu .tooltip-btn.booking-action-enabled:hover {
         background: #f0f4f8;
       }
 
@@ -767,30 +786,75 @@
 
       .booking-actions-menu .tooltip-btn.booking-action-disabled {
         cursor: not-allowed;
+        background: #f8fafc;
       }
 
       .booking-actions-menu .tooltip-btn .btn {
-        width: 34px;
-        min-width: 34px;
-        height: 32px;
-        min-height: 32px;
-        padding: 5px;
+        position: static !important;
+        width: 34px !important;
+        min-width: 34px !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
         flex: 0 0 34px;
+        color: #ffffff !important;
+        border: 0 !important;
+        border-radius: 5px !important;
+        box-shadow: none !important;
+        transform: none !important;
+      }
+
+      .booking-actions-menu .tooltip-btn .btn i {
+        display: inline-block;
+        width: auto;
+        color: inherit !important;
+        font-size: 14px;
+        line-height: 1;
+      }
+
+      .booking-actions-menu .booking-action-edit .btn {
+        background: #f59e0b !important;
+      }
+
+      .booking-actions-menu .booking-action-delete .btn,
+      .booking-actions-menu .booking-action-decline .btn {
+        background: #dc3545 !important;
+      }
+
+      .booking-actions-menu .booking-action-confirm .btn {
+        background: #22b573 !important;
+      }
+
+      .booking-actions-menu .booking-action-email .btn {
+        background: #7c3aed !important;
+      }
+
+      .booking-actions-menu .booking-action-disabled .btn {
+        background: #b8c2cc !important;
+        opacity: 1 !important;
       }
 
       .booking-actions-menu .tooltip-text {
-        position: static;
-        visibility: visible;
-        width: auto;
-        margin: 0;
-        padding: 0;
-        opacity: 1;
-        color: #243b53;
-        background: transparent;
+        position: static !important;
+        visibility: visible !important;
+        width: auto !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        opacity: 1 !important;
+        transform: none !important;
+        color: #243b53 !important;
+        background: transparent !important;
         font-size: 13px;
         font-weight: 600;
+        line-height: 1.25;
         text-align: left;
         white-space: nowrap;
+        pointer-events: none;
       }
 
       .booking-actions-menu .tooltip-text::after {
@@ -8654,9 +8718,27 @@
           const menu = dropdown.querySelector(".booking-actions-menu");
           actionItems.forEach((item) => {
             const button = item.querySelector("button");
+            const actionClass = button?.classList.contains("edit-transfer") ||
+              button?.classList.contains("edit-hotel") ||
+              button?.classList.contains("edit-excursion") ||
+              button?.classList.contains("edit-tour")
+                ? "booking-action-edit"
+                : button?.classList.contains("delete-transfer") ||
+                    button?.classList.contains("delete-hotel") ||
+                    button?.classList.contains("delete-excursion") ||
+                    button?.classList.contains("delete-tour")
+                  ? "booking-action-delete"
+                  : button?.className.includes("approve-")
+                    ? "booking-action-confirm"
+                    : button?.className.includes("decline-")
+                      ? "booking-action-decline"
+                      : button?.className.includes("email-")
+                        ? "booking-action-email"
+                        : "";
             item.classList.add(
               button?.disabled ? "booking-action-disabled" : "booking-action-enabled"
             );
+            if (actionClass) item.classList.add(actionClass);
             menu.appendChild(item);
           });
           source.replaceWith(dropdown);
@@ -11971,9 +12053,42 @@
         $(document)
           .on("show.bs.dropdown", ".booking-actions-dropdown", function () {
             this.closest(".table-responsive")?.classList.add("booking-actions-open");
+            const dropdown = this;
+            window.requestAnimationFrame(() => {
+              const toggle = dropdown.querySelector(".booking-actions-toggle");
+              const menu = dropdown.querySelector(".booking-actions-menu");
+              if (!toggle || !menu) return;
+
+              const toggleRect = toggle.getBoundingClientRect();
+              const menuRect = menu.getBoundingClientRect();
+              const spacing = 6;
+              const edge = 8;
+              const openBelow = window.innerHeight - toggleRect.bottom >= menuRect.height + spacing;
+              const top = openBelow
+                ? toggleRect.bottom + spacing
+                : Math.max(edge, toggleRect.top - menuRect.height - spacing);
+              const left = Math.min(
+                window.innerWidth - menuRect.width - edge,
+                Math.max(edge, toggleRect.right - menuRect.width)
+              );
+
+              menu.style.top = `${top}px`;
+              menu.style.left = `${left}px`;
+              menu.style.right = "auto";
+              menu.style.bottom = "auto";
+              menu.style.transform = "none";
+            });
           })
           .on("hidden.bs.dropdown", ".booking-actions-dropdown", function () {
             this.closest(".table-responsive")?.classList.remove("booking-actions-open");
+            const menu = this.querySelector(".booking-actions-menu");
+            if (menu) {
+              menu.style.removeProperty("top");
+              menu.style.removeProperty("left");
+              menu.style.removeProperty("right");
+              menu.style.removeProperty("bottom");
+              menu.style.removeProperty("transform");
+            }
           })
           .on("click", ".booking-actions-menu .tooltip-btn", function (event) {
             if (event.target.closest("button")) return;
@@ -11981,7 +12096,7 @@
             if (button && !button.disabled) button.click();
           });
 
-        ["hotelsTableBody", "transferTableBody", "excursionTableBody"].forEach((bodyId) => {
+        ["hotelsTableBody", "transferTableBody", "excursionTableBody", "toursTableBody"].forEach((bodyId) => {
           const body = document.getElementById(bodyId);
           if (body) {
             compactBookingActionRows(body);
