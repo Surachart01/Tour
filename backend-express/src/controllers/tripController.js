@@ -37,6 +37,12 @@ function parseSafeInt(value, fallback = null) {
   return isNaN(parsed) ? fallback : parsed;
 }
 
+function parseSafeFK(value) {
+  if (value === null || value === undefined) return null;
+  const parsed = parseInt(value, 10);
+  return isNaN(parsed) || parsed <= 0 ? null : parsed;
+}
+
 function paymentNumber(value) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -820,9 +826,27 @@ export async function createQuotation(req, res, next) {
       await validateExcursionAvailability(tx, excursionItems, trip_start_date);
       await validateSpecialPackageAvailability(tx, finalSpecialPackageId, trip_start_date);
 
+      let resolvedUserId = parseSafeFK(data.user_id) || parseSafeFK(claims?.user_id);
+      if (resolvedUserId) {
+        const userExists = await tx.user.findUnique({ where: { id: resolvedUserId }, select: { id: true } });
+        if (!userExists) resolvedUserId = null;
+      }
+
+      let finalAgentId = resolvedAgentId ? parseSafeFK(resolvedAgentId) : null;
+      if (finalAgentId) {
+        const agentExists = await tx.agent.findUnique({ where: { id: finalAgentId }, select: { id: true } });
+        if (!agentExists) {
+          const defaultAgent = await tx.agent.findFirst({ select: { id: true } });
+          finalAgentId = defaultAgent ? defaultAgent.id : null;
+        }
+      } else {
+        const defaultAgent = await tx.agent.findFirst({ select: { id: true } });
+        finalAgentId = defaultAgent ? defaultAgent.id : null;
+      }
+
       const trip = await tx.trips.create({
         data: {
-          agent_id: resolvedAgentId,
+          agent_id: finalAgentId,
           client_name: data.client_name,
           client_phone: data.client_phone,
           client_email: data.client_email || null,
@@ -838,7 +862,7 @@ export async function createQuotation(req, res, next) {
           final_amount,
           ...buildNewQuotationWorkflowState(),
           trip_start_date,
-          user_id: parseSafeInt(data.user_id, claims ? claims.user_id : null),
+          user_id: resolvedUserId,
           amount_paid: data.amount_paid !== undefined ? parseFloat(data.amount_paid) : 0.00,
           penalty_cost: data.penalty_cost !== undefined ? parseFloat(data.penalty_cost) : 0.00,
           include_assistance_fee: calculated.include_assistance_fee,
@@ -868,13 +892,28 @@ export async function createQuotation(req, res, next) {
         for (const item of hotelItems) {
           const rtItems = item.room_type_items || item.room_types || [];
           const approvalState = getApprovalState('hotel', item);
+
+          const rawHotelId = parseSafeFK(item.hotel_id);
+          let validHotelId = null;
+          if (rawHotelId) {
+            const hotelExists = await tx.hotels.findUnique({ where: { id: rawHotelId }, select: { id: true } });
+            if (hotelExists) validHotelId = rawHotelId;
+          }
+
+          const rawPromoId = parseSafeFK(item.promotions) || parseSafeFK(item.promotion_id);
+          let validPromoId = null;
+          if (rawPromoId) {
+            const promoExists = await tx.hotel_promotions.findUnique({ where: { id: rawPromoId }, select: { id: true } });
+            if (promoExists) validPromoId = rawPromoId;
+          }
+
           await tx.hotel_trip_items.create({ data: {
-              trip_item_id: id, hotel_id: parseSafeInt(item.hotel_id), from_date: parseRequiredDate(item.from_date, tripFallbackDate),
+              trip_item_id: id, hotel_id: validHotelId, from_date: parseRequiredDate(item.from_date, tripFallbackDate),
               to_date: parseRequiredDate(item.to_date, tripFallbackDate), city: item.city, hotel_name: item.hotel_name,
               nights: parseSafeInt(item.nights) || 1, single_price: parseFloat(item.single_price) || 0, double_price: parseFloat(item.double_price) || 0,
               extra_bed_price: parseFloat(item.extra_bed_price) || 0, room_type: item.room_type || item.room_type_summary || null,
               abf_price: parseFloat(item.abf_price) || 0, lunch_price: parseFloat(item.lunch_price) || 0, dinner_price: parseFloat(item.dinner_price) || 0,
-              promotions: parseSafeInt(item.promotions), tour_package: item.tour_package,
+              promotions: validPromoId, tour_package: item.tour_package,
               notes: item.notes, approved: approvalState.approved, declined: approvalState.declined,
               promotion: item.promotion || null,
               meals: item.meals || null,
@@ -888,7 +927,7 @@ export async function createQuotation(req, res, next) {
               discount: item.discount !== undefined ? parseFloat(item.discount) : 0,
               booking_status: item.booking_status || null,
               booking_remark: item.booking_remark || null,
-              promotion_id: parseSafeInt(item.promotion_id),
+              promotion_id: validPromoId,
               total_price: item.total_price !== undefined ? parseFloat(item.total_price) : (item.final_cost !== undefined ? parseFloat(item.final_cost) : 0),
               display_order: parseSafeInt(item.display_order) || 0,
               extra_adult_bed_count: item.extra_adult_bed_count || 0,
@@ -898,7 +937,7 @@ export async function createQuotation(req, res, next) {
               payment_date: parseOptionalDate(item.payment_date),
               hotel_room_type_items: rtItems.length > 0 ? {
                 create: rtItems.map(rt => ({
-                  room_type_id: parseSafeInt(rt.room_type_id) || 0, room_type: rt.room_type,
+                  room_type_id: parseSafeFK(rt.room_type_id), room_type: rt.room_type,
                   adults: parseSafeInt(rt.adults) || 0, children: parseSafeInt(rt.children) || 0,
                   complimentary_abf: rt.complimentary_abf || false,
                   extra_adult_bed: rt.extra_adult_bed || false,
@@ -914,12 +953,34 @@ export async function createQuotation(req, res, next) {
         for (const item of excursionItems) {
           const excursionDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           const approvalState = getApprovalState('excursion', item);
+
+          const rawExcId = parseSafeFK(item.excursion_id);
+          let validExcId = null;
+          if (rawExcId) {
+            const excExists = await tx.excursions.findUnique({ where: { id: rawExcId }, select: { id: true } });
+            if (excExists) validExcId = rawExcId;
+          }
+
+          const rawSuppId = parseSafeFK(item.supplier_id);
+          let validSuppId = null;
+          if (rawSuppId) {
+            const suppExists = await tx.suppliers.findUnique({ where: { id: rawSuppId }, select: { id: true } });
+            if (suppExists) validSuppId = rawSuppId;
+          }
+
+          const rawCurrId = parseSafeFK(item.currency_id);
+          let validCurrId = null;
+          if (rawCurrId) {
+            const currExists = await tx.currencies.findUnique({ where: { id: rawCurrId }, select: { id: true } });
+            if (currExists) validCurrId = rawCurrId;
+          }
+
           await tx.excursion_trip_items.create({ data: {
-              trip_item_id: id, excursion_id: parseSafeInt(item.excursion_id), supplier_id: parseSafeInt(item.supplier_id),
+              trip_item_id: id, excursion_id: validExcId, supplier_id: validSuppId,
               city: item.city, toe: item.toe, from_date: excursionDate,
               to_date: excursionDate, hotel: item.hotel,
               guide_name: item.guide_name, guide_contact: item.guide_contact,
-              price: parseFloat(item.price) || 0, currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
+              price: parseFloat(item.price) || 0, currency_id: validCurrId, remarks: item.remarks,
               approved: approvalState.approved, declined: approvalState.declined,
               pickup_time: item.pickup_time || null
           } });
@@ -929,8 +990,30 @@ export async function createQuotation(req, res, next) {
       if (tourItems.length) {
         for (const item of tourItems) {
           const approvalState = getApprovalState('tour', item);
+
+          const rawTourId = parseSafeFK(item.tour_id);
+          let validTourId = null;
+          if (rawTourId) {
+            const tourExists = await tx.tours.findUnique({ where: { id: rawTourId }, select: { id: true } });
+            if (tourExists) validTourId = rawTourId;
+          }
+
+          const rawSuppId = parseSafeFK(item.supplier_id);
+          let validSuppId = null;
+          if (rawSuppId) {
+            const suppExists = await tx.suppliers.findUnique({ where: { id: rawSuppId }, select: { id: true } });
+            if (suppExists) validSuppId = rawSuppId;
+          }
+
+          const rawCurrId = parseSafeFK(item.currency_id);
+          let validCurrId = null;
+          if (rawCurrId) {
+            const currExists = await tx.currencies.findUnique({ where: { id: rawCurrId }, select: { id: true } });
+            if (currExists) validCurrId = rawCurrId;
+          }
+
           await tx.tour_trip_items.create({ data: {
-              trip_item_id: id, tour_id: parseSafeInt(item.tour_id), supplier_id: parseSafeInt(item.supplier_id),
+              trip_item_id: id, tour_id: validTourId, supplier_id: validSuppId,
               tot: parseTot(item.tot), from_location: item.from_location, to_location: item.to_location,
               number_of_adults: parseSafeInt(item.number_of_adults) || 0, number_of_kids: parseSafeInt(item.number_of_kids) || 0,
               from_date: parseRequiredDate(item.from_date, tripFallbackDate), to_date: parseRequiredDate(item.to_date, tripFallbackDate),
@@ -938,7 +1021,7 @@ export async function createQuotation(req, res, next) {
               flight_number: item.flight_number || item.flight_in || null, flight_out: parseOptionalDate(item.flight_out),
               guide_name: item.guide_name, guide_contact: item.guide_contact,
               payment_car: item.payment_car, payment_service: item.payment_service,
-              price: parseFloat(item.price) || 0, currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
+              price: parseFloat(item.price) || 0, currency_id: validCurrId, remarks: item.remarks,
               approved: approvalState.approved, declined: approvalState.declined,
               transfer_in: item.transfer_in || buildTourTransferText(item, 'in') || null,
               transfer_out: item.transfer_out || buildTourTransferText(item, 'out') || null
@@ -950,15 +1033,37 @@ export async function createQuotation(req, res, next) {
         for (const item of transferItems) {
           const transferDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           const approvalState = getApprovalState('transfer', item);
+
+          const rawTransId = parseSafeFK(item.transfer_id);
+          let validTransId = null;
+          if (rawTransId) {
+            const transExists = await tx.transfers.findUnique({ where: { id: rawTransId }, select: { id: true } });
+            if (transExists) validTransId = rawTransId;
+          }
+
+          const rawSuppId = parseSafeFK(item.supplier_id);
+          let validSuppId = null;
+          if (rawSuppId) {
+            const suppExists = await tx.suppliers.findUnique({ where: { id: rawSuppId }, select: { id: true } });
+            if (suppExists) validSuppId = rawSuppId;
+          }
+
+          const rawCurrId = parseSafeFK(item.currency_id);
+          let validCurrId = null;
+          if (rawCurrId) {
+            const currExists = await tx.currencies.findUnique({ where: { id: rawCurrId }, select: { id: true } });
+            if (currExists) validCurrId = rawCurrId;
+          }
+
           await tx.transfer_trip_items.create({ data: {
               trip_item_id: id,
-              transfer_id: parseSafeInt(item.transfer_id),
+              transfer_id: validTransId,
               from_location: item.from_location, to_location: item.to_location,
               from_date: transferDate, to_date: transferDate,
               flight_number: item.flight_number, tot: parseTot(item.tot),
-              supplier_id: parseSafeInt(item.supplier_id), guide_name: item.guide_name,
+              supplier_id: validSuppId, guide_name: item.guide_name,
               guide_contact: item.guide_contact, price: parseFloat(item.price) || 0,
-              currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
+              currency_id: validCurrId, remarks: item.remarks,
               approved: approvalState.approved, declined: approvalState.declined,
               city: item.city || item.transferCity || null,
               transfer_description: item.transfer_description || item.transferType || null,
@@ -973,11 +1078,19 @@ export async function createQuotation(req, res, next) {
         for (const item of flightItems) {
           const flightDate = parseRequiredDate(item.from_date || item.flight_date || item.date, tripFallbackDate);
           const approvalState = getApprovalState('flight', item);
+
+          const rawCurrId = parseSafeFK(item.currency_id);
+          let validCurrId = null;
+          if (rawCurrId) {
+            const currExists = await tx.currencies.findUnique({ where: { id: rawCurrId }, select: { id: true } });
+            if (currExists) validCurrId = rawCurrId;
+          }
+
           await tx.flight_trip_items.create({ data: {
               trip_item_id: id, from_date: flightDate, to_date: flightDate,
               flight_number: item.flight_number, in_or_out: item.in_or_out,
               route: item.route, issued_by: item.issued_by, price: parseFloat(item.price) || 0,
-              currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
+              currency_id: validCurrId, remarks: item.remarks,
               approved: approvalState.approved, declined: approvalState.declined,
               ...normalizeQuotationFlightFields(item)
           } });
@@ -988,7 +1101,7 @@ export async function createQuotation(req, res, next) {
         for (const item of otherItems) {
           const otherDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           await tx.other_trip_items.create({ data: {
-              trip_item_id: id, other_id: parseSafeInt(item.other_id),
+              trip_item_id: id, other_id: parseSafeFK(item.other_id),
               from_date: otherDate, to_date: otherDate
           } });
         }
@@ -1498,6 +1611,20 @@ export async function updateQuotation(req, res, next) {
         });
       };
 
+      let resolvedUserId = data.user_id !== undefined ? parseSafeFK(data.user_id) : parseSafeFK(existing.user_id);
+      if (resolvedUserId) {
+        const userExists = await tx.user.findUnique({ where: { id: resolvedUserId }, select: { id: true } });
+        if (!userExists) resolvedUserId = null;
+      }
+
+      let finalAgentId = resolvedAgentId ? parseSafeFK(resolvedAgentId) : null;
+      if (finalAgentId) {
+        const agentExists = await tx.agent.findUnique({ where: { id: finalAgentId }, select: { id: true } });
+        if (!agentExists) {
+          finalAgentId = existing.agent_id || null;
+        }
+      }
+
       // Update trip base data
       await tx.trips.update({
         where: { id },
@@ -1509,11 +1636,11 @@ export async function updateQuotation(req, res, next) {
           file_reference: data.file_reference,
           invoice_number: data.invoice_number !== undefined ? data.invoice_number : undefined,
           booking_date: data.booking_date !== undefined ? parseOptionalDate(data.booking_date) : undefined,
-          remarks: data.remarks, agent_id: resolvedAgentId,
+          remarks: data.remarks, agent_id: finalAgentId,
           total_amount, discount_amount, final_amount,
           trip_start_date,
           client_email: data.client_email !== undefined ? data.client_email : undefined,
-          user_id: data.user_id !== undefined ? (data.user_id ? parseSafeInt(data.user_id) : null) : undefined,
+          user_id: resolvedUserId,
           // Keep conversion state intact during normal saves.
           is_booking: undefined,
           amount_paid: data.amount_paid !== undefined ? parseFloat(data.amount_paid) : undefined,
@@ -1549,13 +1676,28 @@ export async function updateQuotation(req, res, next) {
         for (const item of hotelItems) {
           const rtItems = item.room_type_items || item.room_types || [];
           const approvalState = getApprovalState('hotel', item);
+
+          const rawHotelId = parseSafeFK(item.hotel_id);
+          let validHotelId = null;
+          if (rawHotelId) {
+            const hotelExists = await tx.hotels.findUnique({ where: { id: rawHotelId }, select: { id: true } });
+            if (hotelExists) validHotelId = rawHotelId;
+          }
+
+          const rawPromoId = parseSafeFK(item.promotions) || parseSafeFK(item.promotion_id);
+          let validPromoId = null;
+          if (rawPromoId) {
+            const promoExists = await tx.hotel_promotions.findUnique({ where: { id: rawPromoId }, select: { id: true } });
+            if (promoExists) validPromoId = rawPromoId;
+          }
+
           await saveTripItem('hotel', item, {
-              trip_item_id: id, hotel_id: parseSafeInt(item.hotel_id), from_date: parseRequiredDate(item.from_date, tripFallbackDate),
+              trip_item_id: id, hotel_id: validHotelId, from_date: parseRequiredDate(item.from_date, tripFallbackDate),
               to_date: parseRequiredDate(item.to_date, tripFallbackDate), city: item.city, hotel_name: item.hotel_name,
               nights: parseSafeInt(item.nights) || 1, single_price: parseFloat(item.single_price) || 0, double_price: parseFloat(item.double_price) || 0,
               extra_bed_price: parseFloat(item.extra_bed_price) || 0, room_type: item.room_type || item.room_type_summary || null,
               abf_price: parseFloat(item.abf_price) || 0, lunch_price: parseFloat(item.lunch_price) || 0, dinner_price: parseFloat(item.dinner_price) || 0,
-              promotions: parseSafeInt(item.promotions), tour_package: item.tour_package,
+              promotions: validPromoId, tour_package: item.tour_package,
               notes: item.notes, approved: approvalState.approved, declined: approvalState.declined,
               promotion: item.promotion || null,
               meals: item.meals || null,
@@ -1569,7 +1711,7 @@ export async function updateQuotation(req, res, next) {
               discount: item.discount !== undefined ? parseFloat(item.discount) : 0,
               booking_status: item.booking_status || null,
               booking_remark: item.booking_remark || null,
-              promotion_id: parseSafeInt(item.promotion_id),
+              promotion_id: validPromoId,
               total_price: item.total_price !== undefined ? parseFloat(item.total_price) : (item.final_cost !== undefined ? parseFloat(item.final_cost) : 0),
               display_order: parseSafeInt(item.display_order) || 0,
               extra_adult_bed_count: item.extra_adult_bed_count || 0,
@@ -1579,7 +1721,7 @@ export async function updateQuotation(req, res, next) {
               payment_date: parseOptionalDate(item.payment_date),
               hotel_room_type_items: rtItems.length > 0 ? {
                 create: rtItems.map(rt => ({
-                  room_type_id: parseSafeInt(rt.room_type_id) || 0, room_type: rt.room_type,
+                  room_type_id: parseSafeFK(rt.room_type_id), room_type: rt.room_type,
                   adults: parseSafeInt(rt.adults) || 0, children: parseSafeInt(rt.children) || 0,
                   complimentary_abf: rt.complimentary_abf || false,
                   extra_adult_bed: rt.extra_adult_bed || false,
@@ -1595,12 +1737,34 @@ export async function updateQuotation(req, res, next) {
         for (const item of excursionItems) {
           const excursionDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           const approvalState = getApprovalState('excursion', item);
+
+          const rawExcId = parseSafeFK(item.excursion_id);
+          let validExcId = null;
+          if (rawExcId) {
+            const excExists = await tx.excursions.findUnique({ where: { id: rawExcId }, select: { id: true } });
+            if (excExists) validExcId = rawExcId;
+          }
+
+          const rawSuppId = parseSafeFK(item.supplier_id);
+          let validSuppId = null;
+          if (rawSuppId) {
+            const suppExists = await tx.suppliers.findUnique({ where: { id: rawSuppId }, select: { id: true } });
+            if (suppExists) validSuppId = rawSuppId;
+          }
+
+          const rawCurrId = parseSafeFK(item.currency_id);
+          let validCurrId = null;
+          if (rawCurrId) {
+            const currExists = await tx.currencies.findUnique({ where: { id: rawCurrId }, select: { id: true } });
+            if (currExists) validCurrId = rawCurrId;
+          }
+
           await saveTripItem('excursion', item, {
-              trip_item_id: id, excursion_id: parseSafeInt(item.excursion_id), supplier_id: parseSafeInt(item.supplier_id),
+              trip_item_id: id, excursion_id: validExcId, supplier_id: validSuppId,
               city: item.city, toe: item.toe, from_date: excursionDate,
               to_date: excursionDate, hotel: item.hotel,
               guide_name: item.guide_name, guide_contact: item.guide_contact,
-              price: parseFloat(item.price) || 0, currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
+              price: parseFloat(item.price) || 0, currency_id: validCurrId, remarks: item.remarks,
               approved: approvalState.approved, declined: approvalState.declined,
               pickup_time: item.pickup_time || null
 
@@ -1610,8 +1774,30 @@ export async function updateQuotation(req, res, next) {
       if (tourItems.length) {
         for (const item of tourItems) {
           const approvalState = getApprovalState('tour', item);
+
+          const rawTourId = parseSafeFK(item.tour_id);
+          let validTourId = null;
+          if (rawTourId) {
+            const tourExists = await tx.tours.findUnique({ where: { id: rawTourId }, select: { id: true } });
+            if (tourExists) validTourId = rawTourId;
+          }
+
+          const rawSuppId = parseSafeFK(item.supplier_id);
+          let validSuppId = null;
+          if (rawSuppId) {
+            const suppExists = await tx.suppliers.findUnique({ where: { id: rawSuppId }, select: { id: true } });
+            if (suppExists) validSuppId = rawSuppId;
+          }
+
+          const rawCurrId = parseSafeFK(item.currency_id);
+          let validCurrId = null;
+          if (rawCurrId) {
+            const currExists = await tx.currencies.findUnique({ where: { id: rawCurrId }, select: { id: true } });
+            if (currExists) validCurrId = rawCurrId;
+          }
+
           await saveTripItem('tour', item, {
-              trip_item_id: id, tour_id: parseSafeInt(item.tour_id), supplier_id: parseSafeInt(item.supplier_id),
+              trip_item_id: id, tour_id: validTourId, supplier_id: validSuppId,
               tot: parseTot(item.tot), from_location: item.from_location, to_location: item.to_location,
               number_of_adults: parseSafeInt(item.number_of_adults) || 0, number_of_kids: parseSafeInt(item.number_of_kids) || 0,
               from_date: parseRequiredDate(item.from_date, tripFallbackDate), to_date: parseRequiredDate(item.to_date, tripFallbackDate),
@@ -1619,7 +1805,7 @@ export async function updateQuotation(req, res, next) {
               flight_number: item.flight_number || item.flight_in || null, flight_out: parseOptionalDate(item.flight_out),
               guide_name: item.guide_name, guide_contact: item.guide_contact,
               payment_car: item.payment_car, payment_service: item.payment_service,
-              price: parseFloat(item.price) || 0, currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
+              price: parseFloat(item.price) || 0, currency_id: validCurrId, remarks: item.remarks,
               approved: approvalState.approved, declined: approvalState.declined,
               transfer_in: item.transfer_in || buildTourTransferText(item, 'in') || null,
               transfer_out: item.transfer_out || buildTourTransferText(item, 'out') || null
@@ -1631,15 +1817,37 @@ export async function updateQuotation(req, res, next) {
         for (const item of transferItems) {
           const transferDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           const approvalState = getApprovalState('transfer', item);
+
+          const rawTransId = parseSafeFK(item.transfer_id);
+          let validTransId = null;
+          if (rawTransId) {
+            const transExists = await tx.transfers.findUnique({ where: { id: rawTransId }, select: { id: true } });
+            if (transExists) validTransId = rawTransId;
+          }
+
+          const rawSuppId = parseSafeFK(item.supplier_id);
+          let validSuppId = null;
+          if (rawSuppId) {
+            const suppExists = await tx.suppliers.findUnique({ where: { id: rawSuppId }, select: { id: true } });
+            if (suppExists) validSuppId = rawSuppId;
+          }
+
+          const rawCurrId = parseSafeFK(item.currency_id);
+          let validCurrId = null;
+          if (rawCurrId) {
+            const currExists = await tx.currencies.findUnique({ where: { id: rawCurrId }, select: { id: true } });
+            if (currExists) validCurrId = rawCurrId;
+          }
+
           await saveTripItem('transfer', item, {
               trip_item_id: id,
-              transfer_id: parseSafeInt(item.transfer_id),
+              transfer_id: validTransId,
               from_location: item.from_location, to_location: item.to_location,
               from_date: transferDate, to_date: transferDate,
               flight_number: item.flight_number, tot: parseTot(item.tot),
-              supplier_id: parseSafeInt(item.supplier_id), guide_name: item.guide_name,
+              supplier_id: validSuppId, guide_name: item.guide_name,
               guide_contact: item.guide_contact, price: parseFloat(item.price) || 0,
-              currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
+              currency_id: validCurrId, remarks: item.remarks,
               approved: approvalState.approved, declined: approvalState.declined,
               city: item.city || item.transferCity || null,
               transfer_description: item.transfer_description || item.transferType || null,
@@ -1654,11 +1862,19 @@ export async function updateQuotation(req, res, next) {
         for (const item of flightItems) {
           const flightDate = parseRequiredDate(item.from_date || item.flight_date || item.date, tripFallbackDate);
           const approvalState = getApprovalState('flight', item);
+
+          const rawCurrId = parseSafeFK(item.currency_id);
+          let validCurrId = null;
+          if (rawCurrId) {
+            const currExists = await tx.currencies.findUnique({ where: { id: rawCurrId }, select: { id: true } });
+            if (currExists) validCurrId = rawCurrId;
+          }
+
           await saveTripItem('flight', item, {
               trip_item_id: id, from_date: flightDate, to_date: flightDate,
               flight_number: item.flight_number, in_or_out: item.in_or_out,
               route: item.route, issued_by: item.issued_by, price: parseFloat(item.price) || 0,
-              currency_id: parseSafeInt(item.currency_id), remarks: item.remarks,
+              currency_id: validCurrId, remarks: item.remarks,
               approved: approvalState.approved, declined: approvalState.declined,
               ...normalizeQuotationFlightFields(item)
 
@@ -1669,7 +1885,7 @@ export async function updateQuotation(req, res, next) {
         for (const item of otherItems) {
           const otherDate = parseRequiredDate(item.from_date || item.date, tripFallbackDate);
           await saveTripItem('other', item, {
-              trip_item_id: id, other_id: parseSafeInt(item.other_id),
+              trip_item_id: id, other_id: parseSafeFK(item.other_id),
               from_date: otherDate, to_date: otherDate
 
           });

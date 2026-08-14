@@ -3416,9 +3416,17 @@
         const hotelDropdown = document.getElementById("hotelType");
         if (hotelDropdown) {
           hotelDropdown.addEventListener("change", function () {
-            // If no room type blocks exist yet, create the first one
-            if (document.querySelectorAll(".room-type-block").length === 0) {
+            const selectedHotel = this;
+            const existingBlocks = document.querySelectorAll("#roomTypesWrapper .room-type-block");
+            if (existingBlocks.length === 0) {
               createRoomTypeBlock(roomTypeIndex);
+            } else {
+              existingBlocks.forEach((block) => {
+                const rtDropdown = block.querySelector(".roomtype-dropdown");
+                if (rtDropdown) {
+                  populateRoomTypeAndPromotionDropdown(selectedHotel, rtDropdown);
+                }
+              });
             }
             syncHotelRoomBlocksWithRoomCounts();
           });
@@ -3724,6 +3732,7 @@
 
           // ✅ Populate room type dropdown
           if (targetRoomTypeDropdown) {
+            const previousValue = targetRoomTypeDropdown.value;
             targetRoomTypeDropdown.innerHTML =
               '<option value="">Select Room Type</option>';
             roomTypes.forEach((roomType) => {
@@ -3745,6 +3754,13 @@
               );
               targetRoomTypeDropdown.appendChild(option);
             });
+
+            if (previousValue && roomTypes.some((rt) => String(rt.id) === String(previousValue))) {
+              targetRoomTypeDropdown.value = previousValue;
+            } else if (roomTypes.length === 1) {
+              targetRoomTypeDropdown.value = roomTypes[0].id;
+              targetRoomTypeDropdown.dispatchEvent(new Event("change", { bubbles: true }));
+            }
           }
 
           // ✅ Look for `.promotion-dropdown` inside the row OR global `#promotion`
@@ -3817,17 +3833,7 @@
           }
         });
 
-        document
-          .getElementById("hotelType")
-          .addEventListener("change", function () {
-            const selectedHotel = this;
-            const roomTypeDropdown =
-              document.querySelector(".roomtype-dropdown"); // Populate first block
-            populateRoomTypeAndPromotionDropdown(
-              selectedHotel,
-              roomTypeDropdown
-            );
-          });
+
 
         document
           .getElementById("promotion")
@@ -4359,6 +4365,20 @@
               return;
             }
 
+            const roomBlocks = document.querySelectorAll("#roomTypesWrapper .room-type-block");
+            let hasEmptyRoomType = roomBlocks.length === 0;
+            roomBlocks.forEach((block) => {
+              const roomTypeDropdown = block.querySelector(".roomtype-dropdown");
+              if (!roomTypeDropdown || !roomTypeDropdown.value || roomTypeDropdown.value === "") {
+                hasEmptyRoomType = true;
+              }
+            });
+
+            if (hasEmptyRoomType) {
+              alert("❌ Please select room types for all room type blocks before getting the price.");
+              return;
+            }
+
             // ✅ Final Payload
             const requestData = {
               agent_name: agentName,
@@ -4563,6 +4583,20 @@
 
             if (!checkInDate || !checkOutDate || !city || !hotel) {
               alert("Please fill all required fields.");
+              return;
+            }
+
+            const currentRoomBlocks = document.querySelectorAll("#roomTypesWrapper .room-type-block");
+            let emptyRoomTypeFound = currentRoomBlocks.length === 0;
+            currentRoomBlocks.forEach((block) => {
+              const roomTypeDropdown = block.querySelector(".roomtype-dropdown");
+              if (!roomTypeDropdown || !roomTypeDropdown.value || roomTypeDropdown.value === "") {
+                emptyRoomTypeFound = true;
+              }
+            });
+
+            if (emptyRoomTypeFound) {
+              alert("❌ Please select room types for all room type blocks.");
               return;
             }
 

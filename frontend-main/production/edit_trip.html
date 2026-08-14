@@ -7956,6 +7956,7 @@
             console.error("Failed to parse room types JSON");
           }
 
+          const previousValue = roomTypeDropdown.value;
           // Populate room type dropdown
           roomTypeDropdown.innerHTML =
             '<option value="">Select Room Type</option>';
@@ -7977,6 +7978,13 @@
             );
             roomTypeDropdown.appendChild(opt);
           });
+
+          if (previousValue && roomTypes.some((rt) => String(rt.id) === String(previousValue))) {
+            roomTypeDropdown.value = previousValue;
+          } else if (roomTypes.length === 1) {
+            roomTypeDropdown.value = roomTypes[0].id;
+            roomTypeDropdown.dispatchEvent(new Event("change", { bubbles: true }));
+          }
 
           // Add logic for checkbox auto-fill on room type change
           roomTypeDropdown.addEventListener("change", () => {
