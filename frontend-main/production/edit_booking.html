@@ -7169,6 +7169,9 @@
         document
           .getElementById("addHotelBtn")
           .addEventListener("click", function () {
+            editingHotelRow = null;
+            document.getElementById("hotelModalLabel").textContent =
+              "Add Hotel Booking";
             document.getElementById("hotelBookingForm").reset();
             window.lastHotelPriceBreakdown = null;
             const tripStartDateInput = document.getElementById("tripStartDate");
@@ -7405,6 +7408,10 @@
           row.dataset.trip_hotel_id = hotel.id;
           row.dataset.tripItemId = hotel.id || "";
           row.dataset.hotelId = hotel.hotel_id || "";
+          row.dataset.hotelName = hotel.hotel_name || hotel.hotelName || "";
+          row.dataset.discount = hotel.discount || hotel.discount_amount || 0;
+          row.dataset.lateCheckoutType = hotel.late_checkout_type || "";
+          row.dataset.hotelData = JSON.stringify(hotel);
           row.dataset.quotationStatus = quotationStatus; // ✅ Store quotation status
           row.dataset.singleRooms = hotel.single_rooms || 0;
           row.dataset.doubleRooms = hotel.double_rooms || 0;
@@ -7452,13 +7459,12 @@
           }
 
           // ✅ 🚀 New: Save full room type array
-          if (hotel.room_types) {
-            row.dataset.roomTypes = JSON.stringify(hotel.room_types);
-          }
+          const storedRoomTypes = hotel.room_types || hotel.roomTypes || [];
+          row.dataset.roomTypes = JSON.stringify(storedRoomTypes);
 
           // ✅ Populate the row visually
-          const roomTypeSummary = Array.isArray(hotel.room_types)
-            ? hotel.room_types
+          const roomTypeSummary = Array.isArray(storedRoomTypes)
+            ? storedRoomTypes
                 .map((rt) => `${rt.room_type} (${rt.adults}A ${rt.children}C)`)
                 .join(", ")
             : hotel.room_type || "";
@@ -8237,54 +8243,112 @@
             populateRoomTypeAndPromotionDropdown(hotelDropdown, roomBlock);
           });
 
-        function editHotel(row) {
+        async function editHotel(row) {
           const hotelId = parseInt(row.dataset.hotelId, 10) || 0;
           if (!hotelId) {
             alert("❌ Hotel ID missing!");
             return;
           }
 
-          const adult = parseInt(document.getElementById("adult")?.value) || 0;
-          const child = parseInt(document.getElementById("child")?.value) || 0;
-          const discount = parseFloat(row.dataset.discount) || 0;
-          const final_cost = parseFloat(row.cells[10]?.textContent.trim()) || 0;
+          let sourceHotel = {};
+          try {
+            sourceHotel = JSON.parse(row.dataset.hotelData || "{}");
+          } catch (error) {
+            console.warn("Could not read stored hotel row data:", error);
+          }
+
+          const tripItemId = String(row.dataset.tripItemId || "");
+          const arrayHotel = hotelsArray.find((item) =>
+            tripItemId && String(item.id || item.trip_item_id || "") === tripItemId
+          );
+          if (arrayHotel) sourceHotel = { ...sourceHotel, ...arrayHotel };
+
+          const firstValue = (...values) =>
+            values.find((value) => value !== undefined && value !== null && value !== "");
+          const asBoolean = (value) =>
+            value === true || value === 1 || value === "1" || value === "true";
+          const normalizeLateCheckoutType = (value) => {
+            const normalized = String(value || "").trim().toUpperCase();
+            if (["18", "6PM", "6 PM", "18:00"].includes(normalized)) return "18";
+            if (["21", "9PM", "9 PM", "21:00"].includes(normalized)) return "21";
+            return "";
+          };
+          const adult = parseInt(document.getElementById("adult")?.value, 10) || 0;
+          const child = parseInt(document.getElementById("child")?.value, 10) || 0;
+          const discount = parseFloat(
+            firstValue(sourceHotel.discount, sourceHotel.discount_amount, row.dataset.discount, 0)
+          ) || 0;
+          const final_cost = parseFloat(
+            firstValue(
+              sourceHotel.final_cost,
+              sourceHotel.total_cost,
+              sourceHotel.price,
+              row.cells[10]?.textContent.trim(),
+              0
+            )
+          ) || 0;
           const total_cost = final_cost + discount;
+          const checkInDate = formatToYYYYMMDD(
+            firstValue(
+              sourceHotel.from_date,
+              sourceHotel.check_in_date,
+              sourceHotel.checkInDate,
+              getCellDateValue(row.cells[0])
+            ) || ""
+          ) || "";
+          const checkOutDate = formatToYYYYMMDD(
+            firstValue(
+              sourceHotel.to_date,
+              sourceHotel.check_out_date,
+              sourceHotel.checkOutDate,
+              getCellDateValue(row.cells[1])
+            ) || ""
+          ) || "";
+          const storedRoomTypes = firstValue(
+            sourceHotel.room_types,
+            sourceHotel.roomTypes,
+            JSON.parse(row.dataset.roomTypes || "[]")
+          ) || [];
 
           const hotel = {
-            trip_item_id: parseInt(row.dataset.tripItemId, 10) || 0,
+            ...sourceHotel,
+            trip_item_id: parseInt(row.dataset.tripItemId, 10) || sourceHotel.id || 0,
             hotel_id: hotelId,
             hotel_name:
-              row.dataset.hotelName || row.cells[3]?.textContent.trim(),
-            city: row.cells[2]?.textContent.trim(),
-            check_in_date: formatToYYYYMMDD(row.cells[0]?.textContent.trim()),
-            check_out_date: formatToYYYYMMDD(row.cells[1]?.textContent.trim()),
-            nights: parseInt(row.cells[5]?.textContent.trim(), 10) || 0,
+              firstValue(sourceHotel.hotel_name, sourceHotel.hotelName, row.dataset.hotelName, getCellText(row.cells[3])) || "",
+            city: firstValue(sourceHotel.city, getCellText(row.cells[2])) || "",
+            check_in_date: checkInDate,
+            check_out_date: checkOutDate,
+            nights: parseInt(firstValue(sourceHotel.nights, row.cells[5]?.textContent.trim(), 0), 10) || 0,
             single_room_days:
-              parseInt(row.cells[6]?.textContent.trim(), 10) || 0,
+              parseInt(firstValue(sourceHotel.single_room_days, sourceHotel.single_rooms, sourceHotel.singleRooms, row.cells[6]?.textContent.trim(), 0), 10) || 0,
             double_room_days:
-              parseInt(row.cells[7]?.textContent.trim(), 10) || 0,
-            promotion: row.cells[8]?.textContent.trim() || "",
+              parseInt(firstValue(sourceHotel.double_room_days, sourceHotel.double_rooms, sourceHotel.doubleRooms, row.cells[7]?.textContent.trim(), 0), 10) || 0,
+            promotion: firstValue(sourceHotel.promotion, row.dataset.promotion, getCellText(row.cells[9])) || "",
             discount,
             final_cost,
             total_cost,
-            notes: row.dataset.notes || "",
-            flight_in: row.dataset.flightIn || "",
-            flight_out: row.dataset.flightOut || "",
-            flight_info: row.dataset.flightInfo || "",
-            room_types: JSON.parse(row.dataset.roomTypes || "[]"),
-            early_checkin: row.dataset.earlyCheckIn === "true",
-            late_checkout: row.dataset.lateCheckOut === "true",
-            abf_include: row.dataset.mealAbf === "true",
-            lunch_include: row.dataset.mealLunch === "true",
-            dinner_include: row.dataset.mealDinner === "true",
-            all_inclusive: row.dataset.mealAllInclusive === "true",
-            days_abf: parseInt(row.dataset.abfDays || "0", 10),
-            days_lunch: parseInt(row.dataset.lunchDays || "0", 10),
-            days_dinner: parseInt(row.dataset.dinnerDays || "0", 10),
-            days_all_inclusive: parseInt(
-              row.dataset.allInclusiveDays || "0",
-              10
+            notes: firstValue(sourceHotel.notes, sourceHotel.remarks, row.dataset.notes) || "",
+            flight_in: firstValue(sourceHotel.flight_in, sourceHotel.flightIn, row.dataset.flightIn) || "",
+            flight_out: firstValue(sourceHotel.flight_out, sourceHotel.flightOut, row.dataset.flightOut) || "",
+            flight_info: firstValue(sourceHotel.flight_info, sourceHotel.flightInfo, row.dataset.flightInfo) || "",
+            room_types: Array.isArray(storedRoomTypes) ? storedRoomTypes : [],
+            early_checkin: asBoolean(firstValue(sourceHotel.early_check_in, sourceHotel.early_checkin, sourceHotel.earlyCheckIn, row.dataset.earlyCheckIn)),
+            late_checkout: asBoolean(firstValue(sourceHotel.late_check_out, sourceHotel.late_checkout, sourceHotel.lateCheckOut, row.dataset.lateCheckOut)),
+            late_checkout_type: normalizeLateCheckoutType(
+              firstValue(sourceHotel.late_checkout_type, sourceHotel.lateCheckOutType, row.dataset.lateCheckoutType)
             ),
+            abf_include: asBoolean(firstValue(sourceHotel.abf_include, sourceHotel.meal_abf, sourceHotel.mealAbf, row.dataset.mealAbf)),
+            lunch_include: asBoolean(firstValue(sourceHotel.lunch_include, sourceHotel.meal_lunch, sourceHotel.mealLunch, row.dataset.mealLunch)),
+            dinner_include: asBoolean(firstValue(sourceHotel.dinner_include, sourceHotel.meal_dinner, sourceHotel.mealDinner, row.dataset.mealDinner)),
+            all_inclusive: asBoolean(firstValue(sourceHotel.all_inclusive, sourceHotel.meal_all_inclusive, sourceHotel.allInclusive, row.dataset.mealAllInclusive)),
+            days_abf: parseInt(firstValue(sourceHotel.days_abf, sourceHotel.abf_days, row.dataset.abfDays, 0), 10) || 0,
+            days_lunch: parseInt(firstValue(sourceHotel.days_lunch, sourceHotel.lunch_days, row.dataset.lunchDays, 0), 10) || 0,
+            days_dinner: parseInt(firstValue(sourceHotel.days_dinner, sourceHotel.dinner_days, row.dataset.dinnerDays, 0), 10) || 0,
+            days_all_inclusive: parseInt(
+              firstValue(sourceHotel.days_all_inclusive, sourceHotel.all_inclusive_days, row.dataset.allInclusiveDays, 0),
+              10
+            ) || 0,
           };
 
           // Fill form fields
@@ -8292,10 +8356,11 @@
             document.getElementById("hotelPax").value = adult + child;
           }
 
-          setCountryAndCityForEdit("hotelCountry", "hotelCity", hotel.city);
+          document.getElementById("hotelModalLabel").textContent =
+            "Edit Hotel Booking";
+          await setCountryAndCityForEdit("hotelCountry", "hotelCity", hotel.city);
           document.getElementById("checkInDate").value = hotel.check_in_date;
           document.getElementById("checkOutDate").value = hotel.check_out_date;
-          document.getElementById("hotelType").value = hotel.hotel_id;
           document.getElementById("numberOfNights").value = hotel.nights;
           document.getElementById("singleRooms").value = hotel.single_room_days;
           document.getElementById("doubleRooms").value = hotel.double_room_days;
@@ -8337,16 +8402,23 @@
           hotelUrl.searchParams.append("keyword", "");
           const bookingDate = document.getElementById("bookingDate").value;
 
-          fetch(hotelUrl, {
+          try {
+            const response = await fetch(hotelUrl, {
             method: "POST",
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
               "Content-Type": "application/json",
             },
             body: JSON.stringify({ booking_date: bookingDate }),
-          })
-            .then((res) => res.json())
-            .then((hotels) => {
+            });
+            if (!response.ok) {
+              throw new Error(`Unable to load hotels (${response.status})`);
+            }
+            const hotelPayload = await response.json();
+            const hotels = Array.isArray(hotelPayload)
+              ? hotelPayload
+              : hotelPayload.data || hotelPayload.hotels || [];
+
               hotelDropdown.innerHTML =
                 '<option value="">Select Hotel</option>';
               hotels.forEach((h) => {
@@ -8361,9 +8433,23 @@
                   "data-promotions",
                   JSON.stringify(h.promotions || [])
                 );
-                if (h.id === hotel.hotel_id) opt.selected = true;
+                opt.setAttribute("data-hotel", JSON.stringify(h));
+                if (String(h.id) === String(hotel.hotel_id)) opt.selected = true;
                 hotelDropdown.appendChild(opt);
               });
+
+              if (![...hotelDropdown.options].some((opt) => String(opt.value) === String(hotel.hotel_id))) {
+                const currentOption = document.createElement("option");
+                currentOption.value = hotel.hotel_id;
+                currentOption.textContent = hotel.hotel_name || "Current Hotel";
+                currentOption.setAttribute("data-roomtypes", JSON.stringify(hotel.room_types || []));
+                currentOption.setAttribute("data-promotions", "[]");
+                currentOption.setAttribute("data-hotel", JSON.stringify(hotel));
+                currentOption.selected = true;
+                hotelDropdown.appendChild(currentOption);
+              } else {
+                hotelDropdown.value = String(hotel.hotel_id);
+              }
 
               // Populate room type blocks AFTER hotelDropdown is ready
               setTimeout(() => {
@@ -8374,7 +8460,7 @@
 
                   setTimeout(() => {
                     const dropdown = block.querySelector(".roomtype-dropdown");
-                    const roomTypeId = roomData.room_type_id?.toString();
+                    const roomTypeId = String(roomData.room_type_id || roomData.roomTypeId || "");
 
                     dropdown.value = roomTypeId || "";
                     dropdown.dispatchEvent(new Event("change"));
@@ -8407,6 +8493,21 @@
                   }, 100);
                 });
 
+                // Hotel selection logic may reset late check-out while it
+                // evaluates current fees. An existing booking must retain
+                // the value that was already saved.
+                const lateTypeSelect = document.getElementById("lateCheckOutType");
+                const lateCheckbox = document.getElementById("lateCheckOut");
+                if (hotel.late_checkout && hotel.late_checkout_type) {
+                  const savedOption = lateTypeSelect.querySelector(
+                    `option[value="${hotel.late_checkout_type}"]`
+                  );
+                  if (savedOption) savedOption.disabled = false;
+                  lateTypeSelect.disabled = false;
+                  lateTypeSelect.value = hotel.late_checkout_type;
+                  lateCheckbox.checked = true;
+                }
+
                 // ✅ Set promotion dropdown after room types are populated
                 setTimeout(() => {
                   const promotionDropdown =
@@ -8420,12 +8521,46 @@
                   }
                 }, 200);
               }, 100);
+          } catch (error) {
+            console.error("Error loading hotels for edit:", error);
+            hotelDropdown.innerHTML = '<option value="">Select Hotel</option>';
+            const currentOption = document.createElement("option");
+            currentOption.value = hotel.hotel_id;
+            currentOption.textContent = hotel.hotel_name || "Current Hotel";
+            currentOption.setAttribute("data-roomtypes", JSON.stringify(hotel.room_types || []));
+            currentOption.setAttribute("data-promotions", "[]");
+            currentOption.setAttribute("data-hotel", JSON.stringify(hotel));
+            currentOption.selected = true;
+            hotelDropdown.appendChild(currentOption);
+
+            hotel.room_types.forEach((roomData) => {
+              roomTypeIndex++;
+              const block = createRoomTypeBlock(roomTypeIndex);
+              populateRoomTypeAndPromotionDropdown(hotelDropdown, block);
+              const dropdown = block.querySelector(".roomtype-dropdown");
+              dropdown.value = String(roomData.room_type_id || roomData.roomTypeId || "");
+              block.querySelector(".adults").value = roomData.adults || 0;
+              block.querySelector(".children").value = roomData.children || 0;
             });
+
+            const lateTypeSelect = document.getElementById("lateCheckOutType");
+            const lateCheckbox = document.getElementById("lateCheckOut");
+            if (hotel.late_checkout && hotel.late_checkout_type) {
+              const savedOption = lateTypeSelect.querySelector(
+                `option[value="${hotel.late_checkout_type}"]`
+              );
+              if (savedOption) savedOption.disabled = false;
+              lateTypeSelect.disabled = false;
+              lateTypeSelect.value = hotel.late_checkout_type;
+              lateCheckbox.checked = true;
+            }
+          }
 
           // ✅ Permissions
           const isApproved = quotationStatus === "Approved";
           const role = localStorage.getItem("role") || "";
-          const isAdmin = role.trim().toLowerCase() === "admin";
+          const normalizedRole = role.trim().toLowerCase();
+          const isAdmin = normalizedRole === "admin" || normalizedRole === "superadmin";
           const canEdit = !isApproved || isAdmin;
 
           const disableFields = [
@@ -11415,17 +11550,27 @@
         }
 
         function formatToYYYYMMDD(dateString) {
+          if (!dateString) return null;
+          const normalized = String(dateString).trim().split("T")[0];
+
+          // Accept the display format used by the booking tables.
+          const slashDateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+          if (slashDateRegex.test(normalized)) {
+            const [day, month, year] = normalized.split("/");
+            return `${year}-${month}-${day}`;
+          }
+
           // Check if the date is in dd-mm-yyyy format
           const ddmmyyyyRegex = /^\d{2}-\d{2}-\d{4}$/;
-          if (ddmmyyyyRegex.test(dateString)) {
-            const [day, month, year] = dateString.split("-");
+          if (ddmmyyyyRegex.test(normalized)) {
+            const [day, month, year] = normalized.split("-");
             return `${year}-${month}-${day}`; // Convert to yyyy-mm-dd
           }
 
           // Assume the date is already in yyyy-mm-dd format
           const yyyymmddRegex = /^\d{4}-\d{2}-\d{2}$/;
-          if (yyyymmddRegex.test(dateString)) {
-            return dateString;
+          if (yyyymmddRegex.test(normalized)) {
+            return normalized;
           }
 
           // Return null for invalid formats

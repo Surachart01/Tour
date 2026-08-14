@@ -542,6 +542,20 @@ function mapTripResponse(trip) {
       from_date: fmtDate(h.from_date),
       to_date: fmtDate(h.to_date),
       room_types: h.hotel_room_type_items || [],
+      // Each saved room-type item represents one booked room. Restore the
+      // room counts required by the edit form for both current and old data.
+      single_room_days: (h.hotel_room_type_items || []).filter(
+        (room) => (parseInt(room.adults, 10) || 0) <= 1
+      ).length,
+      double_room_days: (h.hotel_room_type_items || []).filter(
+        (room) => (parseInt(room.adults, 10) || 0) >= 2
+      ).length,
+      single_rooms: (h.hotel_room_type_items || []).filter(
+        (room) => (parseInt(room.adults, 10) || 0) <= 1
+      ).length,
+      double_rooms: (h.hotel_room_type_items || []).filter(
+        (room) => (parseInt(room.adults, 10) || 0) >= 2
+      ).length,
     })),
     excursions: (trip.excursion_trip_items || []).map((e) => ({
       ...e,

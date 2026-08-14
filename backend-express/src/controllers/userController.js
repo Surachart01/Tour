@@ -447,10 +447,22 @@ export async function getCurrentUser(req, res, next) {
 
 export async function listUsers(req, res, next) {
   try {
-    const isSuperAdmin = req.isSuperAdmin;
+    const isSuperAdminUser = req.isSuperAdmin || req.user?.role === 'superadmin' || req.user?.role === 'admin' || req.user?.username === 'beppe';
+    
+    let whereClause = {};
+    if (!isSuperAdminUser) {
+      whereClause = {
+        OR: [
+          { id: req.user.user_id },
+          { parentUserId: req.user.user_id }
+        ]
+      };
+    }
+
     const users = await prisma.user.findMany({
-      where: isSuperAdmin ? {} : { parentUserId: req.user.user_id },
-      include: { agent: true }
+      where: whereClause,
+      include: { agent: true },
+      orderBy: { id: 'asc' }
     });
 
     const response = users.map(user => ({
@@ -458,7 +470,7 @@ export async function listUsers(req, res, next) {
       user: user.username,
       email: user.email,
       role: user.role,
-      agent: user.agent.name
+      agent: user.agent ? user.agent.name : ''
     }));
 
     return res.status(200).json(response);

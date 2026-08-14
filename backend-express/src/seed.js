@@ -1,212 +1,279 @@
 import prisma from './config/db.js';
 import pg from 'pg';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Standard lookup data
+const defaultCountries = [
+  { id: 1, name: 'Thailand', code: 'TH' },
+  { id: 2, name: 'Vietnam', code: 'VN' },
+  { id: 3, name: 'Cambodia', code: 'KH' },
+  { id: 4, name: 'Laos', code: 'LA' }
+];
 
-// Helper to parse and split SQL statements ignoring semicolons inside strings/comments
-function splitSql(sqlText) {
-  const statements = [];
-  let current = '';
-  let inSingleQuote = false;
-  let inDoubleQuote = false;
-  let inComment = false;
-  let inMultiLineComment = false;
+const defaultCurrencies = [
+  { id: 1, city: 'Bangkok', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 2, city: 'Phuket', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 3, city: 'Chiang Mai', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 4, city: 'Koh Tao', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 5, city: 'Krabi', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 6, city: 'Koh Kood', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 7, city: 'Koh Samui', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 8, city: 'Ayutthaya', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 9, city: 'Pattaya', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 10, city: 'Koh Phangan', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 11, city: 'Kanchanaburi', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 12, city: 'Chiang Saen', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 13, city: 'Hua Hin', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 14, city: 'Koh Samed', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 15, city: 'Koh Chang', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 16, city: 'Amphawa', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 17, city: 'Phi Phi Island', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 18, city: 'Koh Yao Noi', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 19, city: 'Koh Lipe', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 20, city: 'Rayong', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 21, city: 'Khao Lak', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 22, city: 'Koh Lanta', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 23, city: 'Chiang Rai', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 24, city: 'Pai', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 25, city: 'Ubon Ratchathani', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 26, city: 'Surin', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 27, city: 'Koh Kradan', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 28, city: 'Khao Yai', currency_code: 'THB', currency_name: 'Thai Baht' },
+  { id: 29, city: 'Mae Hong Son', currency_code: 'THB', currency_name: 'Thai Baht' }
+];
 
-  for (let i = 0; i < sqlText.length; i++) {
-    const char = sqlText[i];
-    const nextChar = sqlText[i + 1];
+const defaultCities = [
+  { id: 1, name: 'Sukhothai', country_id: 1 },
+  { id: 2, name: 'Ayutthaya', country_id: 1 },
+  { id: 3, name: 'Bangkok', country_id: 1 },
+  { id: 4, name: 'Chiang Mai', country_id: 1 },
+  { id: 5, name: 'Chiang Rai', country_id: 1 },
+  { id: 6, name: 'Hat Yai', country_id: 1 },
+  { id: 7, name: 'Hua Hin', country_id: 1 },
+  { id: 8, name: 'Kanchanaburi', country_id: 1 },
+  { id: 9, name: 'Khao Lak', country_id: 1 },
+  { id: 10, name: 'Koh Chang', country_id: 1 },
+  { id: 11, name: 'Koh Kood', country_id: 1 },
+  { id: 12, name: 'Koh Lanta', country_id: 1 },
+  { id: 13, name: 'Koh Lipe', country_id: 1 },
+  { id: 14, name: 'Koh Phangan', country_id: 1 },
+  { id: 15, name: 'Koh Samui', country_id: 1 },
+  { id: 16, name: 'Koh Tao', country_id: 1 },
+  { id: 17, name: 'Krabi', country_id: 1 },
+  { id: 18, name: 'Mae Hong Son', country_id: 1 },
+  { id: 19, name: 'Nan', country_id: 1 },
+  { id: 20, name: 'Pai', country_id: 1 },
+  { id: 21, name: 'Pattaya', country_id: 1 },
+  { id: 22, name: 'Phi Phi Island', country_id: 1 },
+  { id: 23, name: 'Phuket', country_id: 1 },
+  { id: 24, name: 'Rayong', country_id: 1 },
+  { id: 25, name: 'Satun', country_id: 1 },
+  { id: 26, name: 'Lampang', country_id: 1 },
+  { id: 27, name: 'Khao Kho', country_id: 1 },
+  { id: 28, name: 'Phitsanulok', country_id: 1 },
+  { id: 29, name: 'Koh Larn', country_id: 1 },
+  { id: 34, name: 'Khao Sok', country_id: 1 },
+  { id: 35, name: 'Khao Yai', country_id: 1 }
+];
 
-    if (inComment) {
-      if (char === '\n' || char === '\r') {
-        inComment = false;
-      }
-      continue;
-    }
-
-    if (inMultiLineComment) {
-      if (char === '*' && nextChar === '/') {
-        inMultiLineComment = false;
-        i++;
-      }
-      continue;
-    }
-
-    if (!inSingleQuote && !inDoubleQuote) {
-      if (char === '-' && nextChar === '-') {
-        inComment = true;
-        i++;
-        continue;
-      }
-      if (char === '/' && nextChar === '*') {
-        inMultiLineComment = true;
-        i++;
-        continue;
-      }
-    }
-
-    // Toggle single quotes
-    if (char === "'" && sqlText[i - 1] !== '\\') {
-      inSingleQuote = !inSingleQuote;
-    } else if (char === '"' && sqlText[i - 1] !== '\\') {
-      inDoubleQuote = !inDoubleQuote;
-    }
-
-    if (char === ';' && !inSingleQuote && !inDoubleQuote) {
-      if (current.trim()) {
-        statements.push(current.trim());
-      }
-      current = '';
-    } else {
-      current += char;
-    }
+const defaultMarkups = [
+  {
+    id: 1,
+    markup_group: 'Web',
+    excursion_markup_unit: '%',
+    excursion_markup: 25,
+    tour_markup_unit: '%',
+    tour_markup: 25,
+    transfer_markup_unit: '%',
+    transfer_markup: 25,
+    hotel_markup_unit: 'flat rate',
+    hotel_markup_value: 5000,
+    currency_id: 1
+  },
+  {
+    id: 2,
+    markup_group: 'TO Silver',
+    excursion_markup_unit: 'flat rate',
+    excursion_markup: 300,
+    tour_markup_unit: 'flat rate',
+    tour_markup: 1500,
+    transfer_markup_unit: 'flat rate',
+    transfer_markup: 200,
+    hotel_markup_unit: 'flat rate',
+    hotel_markup_value: 0,
+    currency_id: 1
+  },
+  {
+    id: 3,
+    markup_group: 'TO Gold',
+    excursion_markup_unit: 'flat rate',
+    excursion_markup: 200,
+    tour_markup_unit: 'flat rate',
+    tour_markup: 1000,
+    transfer_markup_unit: 'flat rate',
+    transfer_markup: 150,
+    hotel_markup_unit: 'flat rate',
+    hotel_markup_value: 500,
+    currency_id: 1
+  },
+  {
+    id: 5,
+    markup_group: 'Local Agent',
+    excursion_markup_unit: '%',
+    excursion_markup: 10,
+    tour_markup_unit: '%',
+    tour_markup: 10,
+    transfer_markup_unit: '%',
+    transfer_markup: 10,
+    hotel_markup_unit: 'flat rate',
+    hotel_markup_value: 0,
+    currency_id: 1
+  },
+  {
+    id: 6,
+    markup_group: 'Travel Agent',
+    excursion_markup_unit: 'flat rate',
+    excursion_markup: 15,
+    tour_markup_unit: 'flat rate',
+    tour_markup: 15,
+    transfer_markup_unit: 'flat rate',
+    transfer_markup: 15,
+    hotel_markup_unit: '%',
+    hotel_markup_value: 0,
+    currency_id: 1
   }
-  if (current.trim()) {
-    statements.push(current.trim());
-  }
-  return statements;
-}
+];
 
 async function main() {
-  console.log('🌱 Starting FAST database import using pg client...');
-  
-  // Locate public.sql - support multiple paths (local root, backend root, cwd)
-  let sqlPath = path.resolve(__dirname, '../../public.sql');
-  if (!fs.existsSync(sqlPath)) {
-    sqlPath = path.resolve(__dirname, '../public.sql');
-  }
-  if (!fs.existsSync(sqlPath)) {
-    sqlPath = path.resolve(process.cwd(), 'public.sql');
-  }
-  if (!fs.existsSync(sqlPath)) {
-    console.error(`❌ Error: public.sql not found at standard locations`);
-    process.exit(1);
-  }
+  console.log('🚀 Starting clean database reset and seed...');
 
-  console.log(`📖 Reading SQL dump from ${sqlPath}...`);
-  const sqlText = fs.readFileSync(sqlPath, 'utf8');
-
-  console.log('🧩 Splitting and filtering SQL statements...');
-  const rawStatements = splitSql(sqlText);
-  const filteredStatements = [];
-  for (const stmt of rawStatements) {
-    if (!stmt || stmt.startsWith('\\')) continue;
-    // Skip drop or create statements for uuid helper functions as they are handled by the uuid-ossp extension
-    if (/FUNCTION.*uuid_/i.test(stmt)) {
-      continue;
-    }
-    filteredStatements.push(stmt);
-  }
-  console.log(`✅ Filtered SQL statements to ${filteredStatements.length} commands.`);
-  
-  const filteredSqlText = filteredStatements.join(';\n');
-
-  // Connect via PG Client
   const client = new pg.Client({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false }
   });
-  
+
   await client.connect();
-  console.log('✅ Connected to PostgreSQL.');
+  console.log('✅ Connected to PostgreSQL database.');
 
-  console.log('🧹 Clearing existing database schema...');
-  await client.query('DROP SCHEMA IF EXISTS public CASCADE');
-  await client.query('CREATE SCHEMA public');
-  console.log('✅ Database schema cleared.');
-
-  // Pre-enable uuid-ossp extension so Prisma and SQL schema can use it immediately
-  console.log('🔌 Enabling uuid-ossp extension...');
-  await client.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
-
-  console.log('🚀 Executing raw SQL dump (this will take only a few seconds)...');
   try {
-    await client.query(filteredSqlText);
-    console.log('✅ Raw SQL dump executed successfully.');
-  } catch (err) {
-    console.error('❌ Raw SQL dump failed:', err.message);
-    throw err;
+    console.log('🧹 Clearing operational, inventory, booking, and transaction data...');
+
+    const tablesToTruncate = [
+      'operation_assignment_history',
+      'operation_assignments',
+      'operation_guides',
+      'tax_invoice_documents',
+      'service_documents',
+      'check_invoice_records',
+      'invoice_items',
+      'invoices',
+      'special_package_stop_sales',
+      'special_package_items',
+      'special_packages',
+      'special_promos',
+      'tour_trip_item_hotels',
+      'tour_details',
+      'tour_days',
+      'tour_services',
+      'tour_stop_sales',
+      'tour_pricing',
+      'tour_trip_items',
+      'tours',
+      'hotel_trip_items',
+      'hotel_room_type_items',
+      'hotel_promotions',
+      'hotel_markup_percentages',
+      'hotel_fees',
+      'hotel_contacts',
+      'stop_sales',
+      'room_types',
+      'hotels',
+      'excursion_stop_sales',
+      'excursion_pricing',
+      'excursion_trip_items',
+      'excursions',
+      'transfer_pricing',
+      'transfer_trip_items',
+      'transfers',
+      'flight_trip_items',
+      'other_trip_items',
+      'others',
+      'travel_checklists',
+      'trips',
+      'suppliers',
+      'notifications',
+      'workflow_email_log',
+      'city_info'
+    ];
+
+    for (const table of tablesToTruncate) {
+      try {
+        await client.query(`TRUNCATE TABLE "${table}" CASCADE`);
+      } catch (err) {
+        console.warn(`⚠️ Warning truncating ${table}:`, err.message);
+      }
+    }
+    console.log('✅ All inventory, tour, excursion, transfer, hotel, special package, and trip tables cleared.');
+
+    // Clean up non-default users and profiles
+    console.log('👤 Cleaning up non-default users (preserving "beppe")...');
+    
+    // First, delete user profiles for users other than beppe
+    await client.query(`
+      DELETE FROM user_profiles 
+      WHERE user_id NOT IN (SELECT id FROM users WHERE username = 'beppe')
+    `);
+
+    // Delete users other than beppe
+    await client.query(`
+      DELETE FROM users 
+      WHERE username != 'beppe'
+    `);
+
+    // Delete non-default agents (keep agent 1)
+    console.log('🏢 Cleaning up non-default agents (preserving default agent ID 1)...');
+    await client.query(`
+      DELETE FROM agents 
+      WHERE id != 1
+    `);
+
+    // Reset sequences for clean future IDs where appropriate
+    const tablesToResetSeq = [
+      'hotels',
+      'transfers',
+      'excursions',
+      'tours',
+      'special_packages',
+      'trips',
+      'invoices',
+      'suppliers'
+    ];
+    for (const tbl of tablesToResetSeq) {
+      try {
+        await client.query(`SELECT setval(pg_get_serial_sequence('"${tbl}"', 'id'), 1, false)`);
+      } catch (e) {
+        // Sequence may not exist or may have different name
+      }
+    }
+
   } finally {
     await client.end();
   }
 
-  console.log('🔧 Fixing NULL agent_id values in users table to satisfy schema constraints...');
-  try {
-    await prisma.$executeRawUnsafe('UPDATE users SET agent_id = 1 WHERE agent_id IS NULL');
-    console.log('✅ Updated users with NULL agent_id to default Agent ID 1.');
-  } catch (err) {
-    console.warn('⚠️ Warning updating agent_id:', err.message);
-  }
+  // Use Prisma client to seed/upsert baseline data
+  console.log('🌱 Seeding baseline lookup and master configuration data...');
 
-  console.log('🔧 Dropping legacy database constraints that conflict with new schema...');
-  try {
-    await prisma.$executeRawUnsafe('ALTER TABLE users DROP CONSTRAINT IF EXISTS users_google_id_key CASCADE');
-    await prisma.$executeRawUnsafe(`
-      ALTER TABLE hotel_promotions
-      DROP CONSTRAINT IF EXISTS hotel_promotions_hotel_id_discount_amount_discount_type_key
-    `);
-    console.log('✅ Dropped legacy constraints.');
-  } catch (err) {
-    console.warn('⚠️ Warning dropping users_google_id_key constraint:', err.message);
-  }
-
-  console.log('🔧 Ensuring hotel markup amounts support fixed THB ranges...');
-  try {
-    await prisma.$executeRawUnsafe('ALTER TABLE hotel_markup_percentages ALTER COLUMN markup_percentage TYPE numeric(10,2)');
-    console.log('✅ Hotel markup amount column supports fixed THB values.');
-  } catch (err) {
-    console.warn('⚠️ Warning updating markup_percentage:', err.message);
-  }
-
-  console.log('🔧 Truncating client_name in trips to 100 characters to fit VarChar(100) constraint...');
-  try {
-    await prisma.$executeRawUnsafe('UPDATE trips SET client_name = SUBSTRING(client_name FROM 1 FOR 100) WHERE LENGTH(client_name) > 100');
-    console.log('✅ Truncated trips.client_name to fit VARCHAR(100).');
-  } catch (err) {
-    console.warn('⚠️ Warning updating trips.client_name:', err.message);
-  }
-
-  console.log('🔧 Fixing duplicate agent email values to satisfy unique constraint...');
-  try {
-    await prisma.$executeRawUnsafe(`
-      UPDATE agents
-      SET email = regexp_replace(email, '@', '+' || id || '@')
-      WHERE email IN (
-        SELECT email FROM agents GROUP BY email HAVING COUNT(*) > 1
-      )
-    `);
-    console.log('✅ Updated duplicate agent emails to be unique.');
-  } catch (err) {
-    console.warn('⚠️ Warning updating duplicate agent emails:', err.message);
-  }
-
-  // Upgrade the schema to new SaaS model
-  console.log('🔄 Upgrading database schema to SaaS model using Prisma db push...');
-  try {
-    // This script already recreates the schema from the verified legacy dump.
-    // The flag permits the audited legacy-to-current column casts and constraints.
-    execSync('npx prisma db push --skip-generate --accept-data-loss', { stdio: 'inherit' });
-    console.log('✅ Schema upgraded to new model successfully.');
-  } catch (err) {
-    console.error('❌ Failed to run prisma db push:', err.message);
-    process.exit(1);
-  }
-
-  // Create default organization and user profiles for imported users
-  console.log('👤 Creating user profiles and organizations for imported users...');
-  
-  // Create default organization
+  // 1. Organization
   const defaultOrg = await prisma.organization.upsert({
     where: { slug: 'vera-thailandia' },
-    update: {},
+    update: {
+      name: 'Vera Thailandia',
+      domain: 'verathailandia.com',
+      subdomain: 'vera'
+    },
     create: {
       name: 'Vera Thailandia',
       slug: 'vera-thailandia',
@@ -215,123 +282,228 @@ async function main() {
       settings: {}
     }
   });
+  console.log(`✅ Default Organization: ${defaultOrg.name} (ID: ${defaultOrg.id})`);
 
-  // Query all users and build profiles
-  const dbUsers = await prisma.user.findMany();
-  for (const user of dbUsers) {
-    // Link user to organization
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { organizationId: defaultOrg.id }
-    });
-
-    // Check user profile
-    const existingProfile = await prisma.userProfile.findUnique({
-      where: { userId: user.id }
-    });
-
-    if (!existingProfile) {
-      let subscriptionTier = 'starter';
-      let subscriptionStatus = 'trial';
-      let userType = 'agent';
-
-      if (user.role === 'superadmin') {
-        subscriptionTier = 'enterprise';
-        subscriptionStatus = 'active';
-        userType = 'superadmin';
-      } else if (user.role === 'admin') {
-        subscriptionTier = 'enterprise';
-        subscriptionStatus = 'active';
-        userType = 'admin';
-      }
-
-      const companyName = user.username.charAt(0).toUpperCase() + user.username.slice(1) + ' Travel';
-
-      await prisma.userProfile.create({
-        data: {
-          userId: user.id,
-          userType: userType,
-          companyName: companyName,
-          companyEmail: user.email,
-          subscriptionTier,
-          subscriptionStatus,
-          role: 'admin',
-          isPrimaryProfile: user.role === 'superadmin' || user.role === 'admin',
-          organizationId: defaultOrg.id
-        }
-      });
-      console.log(`Created profile for user: ${user.username}`);
+  // 2. Default Agent 1
+  const defaultAgent = await prisma.agent.upsert({
+    where: { id: 1 },
+    update: {
+      name: 'Vera Thailandia Online',
+      markupGroup: 'Web',
+      address: 'Life condo Sathorn soi 10',
+      email: 'reservation@verathailandia.com',
+      telephone: '026353551',
+      fax: '026353550',
+      paymentDeadlineType: 'eom',
+      paymentDeadlineDays: 0
+    },
+    create: {
+      id: 1,
+      name: 'Vera Thailandia Online',
+      markupGroup: 'Web',
+      address: 'Life condo Sathorn soi 10',
+      email: 'reservation@verathailandia.com',
+      telephone: '026353551',
+      fax: '026353550',
+      paymentDeadlineType: 'eom',
+      paymentDeadlineDays: 0
     }
+  });
+  console.log(`✅ Default Agent: ${defaultAgent.name} (ID: ${defaultAgent.id})`);
+
+  // 3. Countries
+  for (const c of defaultCountries) {
+    await prisma.countries.upsert({
+      where: { id: c.id },
+      update: { name: c.name, code: c.code },
+      create: { id: c.id, name: c.name, code: c.code }
+    });
   }
-  console.log('✅ User profiles migration complete.');
+  console.log(`✅ Seeded ${defaultCountries.length} countries.`);
 
-  console.log('👤 Verifying the default superadmin user...');
-  try {
-    const superadminUsername = 'superadmin';
-    const superadminEmail = 'superadmin@verathailandia.com';
-    let testSuperUser = await prisma.user.findUnique({
-      where: { username: superadminUsername }
+  // 4. Currencies
+  for (const curr of defaultCurrencies) {
+    await prisma.currencies.upsert({
+      where: { id: curr.id },
+      update: { city: curr.city, currency_code: curr.currency_code, currency_name: curr.currency_name },
+      create: { id: curr.id, city: curr.city, currency_code: curr.currency_code, currency_name: curr.currency_name }
     });
+  }
+  console.log(`✅ Seeded ${defaultCurrencies.length} currencies.`);
 
-    if (testSuperUser) {
-      testSuperUser = await prisma.user.update({
-        where: { id: testSuperUser.id },
-        data: {
-        role: 'superadmin',
-        isSuperAdmin: true,
-        canCreateUsers: true,
-        canViewAnalytics: true,
-        organizationId: defaultOrg.id
-        }
-      });
-    } else if (process.env.SEED_SUPERADMIN_PASSWORD) {
-      const hashedSuperPassword = await bcrypt.hash(process.env.SEED_SUPERADMIN_PASSWORD, 10);
-      testSuperUser = await prisma.user.create({
-        data: {
-        username: superadminUsername,
-        email: superadminEmail,
-        role: 'superadmin',
-        password: hashedSuperPassword,
-        agentId: 1, // Default agent 1
-        userType: 'superadmin',
-        isSuperAdmin: true,
-        canCreateUsers: true,
-        canViewAnalytics: true,
-        organizationId: defaultOrg.id
-        }
-      });
-    } else {
-      console.warn('⚠️ Superadmin does not exist; set SEED_SUPERADMIN_PASSWORD to create it.');
-    }
+  // 5. Cities
+  for (const ct of defaultCities) {
+    await prisma.cities.upsert({
+      where: { id: ct.id },
+      update: { name: ct.name, country_id: ct.country_id },
+      create: { id: ct.id, name: ct.name, country_id: ct.country_id }
+    });
+  }
+  console.log(`✅ Seeded ${defaultCities.length} cities.`);
 
-    if (testSuperUser) await prisma.userProfile.upsert({
-      where: { userId: testSuperUser.id },
+  // 6. Markups
+  for (const m of defaultMarkups) {
+    await prisma.markups.upsert({
+      where: { id: m.id },
       update: {
-        userType: 'superadmin',
-        subscriptionTier: 'enterprise',
-        subscriptionStatus: 'active',
-        isPrimaryProfile: true,
-        role: 'admin',
-        organizationId: defaultOrg.id
+        markup_group: m.markup_group,
+        excursion_markup_unit: m.excursion_markup_unit,
+        excursion_markup: m.excursion_markup,
+        tour_markup_unit: m.tour_markup_unit,
+        tour_markup: m.tour_markup,
+        transfer_markup_unit: m.transfer_markup_unit,
+        transfer_markup: m.transfer_markup,
+        hotel_markup_unit: m.hotel_markup_unit,
+        hotel_markup_value: m.hotel_markup_value,
+        currency_id: m.currency_id
       },
       create: {
-        userId: testSuperUser.id,
-        userType: 'superadmin',
-        companyName: 'Vera Thailandia Admin',
-        companyEmail: superadminEmail,
-        subscriptionTier: 'enterprise',
-        subscriptionStatus: 'active',
-        isPrimaryProfile: true,
-        role: 'admin',
-        organizationId: defaultOrg.id
+        id: m.id,
+        markup_group: m.markup_group,
+        excursion_markup_unit: m.excursion_markup_unit,
+        excursion_markup: m.excursion_markup,
+        tour_markup_unit: m.tour_markup_unit,
+        tour_markup: m.tour_markup,
+        transfer_markup_unit: m.transfer_markup_unit,
+        transfer_markup: m.transfer_markup,
+        hotel_markup_unit: m.hotel_markup_unit,
+        hotel_markup_value: m.hotel_markup_value,
+        currency_id: m.currency_id
       }
     });
-    if (testSuperUser) console.log('✅ Default superadmin account verified without changing its password.');
-  } catch (err) {
-    console.warn('⚠️ Warning creating default superadmin user:', err.message);
+  }
+  console.log(`✅ Seeded ${defaultMarkups.length} markups.`);
+
+  // 7. Default Admin Account 'beppe'
+  console.log('👤 Configuring default admin account: beppe...');
+
+  const fullPermissions = JSON.stringify({
+    tours: true,
+    hotels: true,
+    transfers: true,
+    excursions: true,
+    bookings: true,
+    special_packages: true,
+    activities: true,
+    suppliers: true,
+    agents: true,
+    markups: true,
+    city_info: true,
+    users: true,
+    analytics: true,
+    proforma_invoices: true,
+    tax_invoices: true
+  });
+
+  const existingBeppe = await prisma.user.findFirst({
+    where: { username: 'beppe' }
+  });
+
+  let passwordHash = '$2a$10$wCbTLhwgZtlbd.nno75n7OrjxauARLWiS6ah7iajSwguEse58xOh.';
+  if (process.env.SEED_ADMIN_PASSWORD) {
+    passwordHash = await bcrypt.hash(process.env.SEED_ADMIN_PASSWORD, 10);
+  } else if (existingBeppe?.password) {
+    passwordHash = existingBeppe.password;
   }
 
-  console.log('🌱 Seeding completed successfully!');
+  const beppeUser = await prisma.user.upsert({
+    where: { username: 'beppe' },
+    update: {
+      email: 'reservation@verathailandia.com',
+      role: 'admin',
+      userType: 'admin',
+      agentId: 1,
+      isSuperAdmin: true,
+      isPrimaryAdmin: true,
+      canCreateUsers: true,
+      canViewAnalytics: true,
+      organizationId: defaultOrg.id,
+      permissions: fullPermissions
+    },
+    create: {
+      username: 'beppe',
+      email: 'reservation@verathailandia.com',
+      role: 'admin',
+      userType: 'admin',
+      password: passwordHash,
+      agentId: 1,
+      isSuperAdmin: true,
+      isPrimaryAdmin: true,
+      canCreateUsers: true,
+      canViewAnalytics: true,
+      organizationId: defaultOrg.id,
+      permissions: fullPermissions
+    }
+  });
+
+  // UserProfile for beppe
+  await prisma.userProfile.upsert({
+    where: { userId: beppeUser.id },
+    update: {
+      userType: 'admin',
+      role: 'admin',
+      companyName: 'Verathailandia Travel',
+      companyEmail: 'reservation@verathailandia.com',
+      subscriptionTier: 'enterprise',
+      subscriptionStatus: 'active',
+      isPrimaryProfile: true,
+      organizationId: defaultOrg.id,
+      primaryCurrency: 'THB',
+      country: 'Thailand',
+      featureFlags: {
+        export: true,
+        api_access: true,
+        white_label: true,
+        integrations: true,
+        custom_reports: true,
+        priority_support: true
+      },
+      usageLimits: {
+        users: -1,
+        agents: -1,
+        exports: -1,
+        bookings: -1,
+        api_calls: -1,
+        quotations: -1,
+        storage_mb: -1,
+        integrations: -1
+      }
+    },
+    create: {
+      userId: beppeUser.id,
+      userType: 'admin',
+      role: 'admin',
+      companyName: 'Verathailandia Travel',
+      companyEmail: 'reservation@verathailandia.com',
+      subscriptionTier: 'enterprise',
+      subscriptionStatus: 'active',
+      isPrimaryProfile: true,
+      organizationId: defaultOrg.id,
+      primaryCurrency: 'THB',
+      country: 'Thailand',
+      featureFlags: {
+        export: true,
+        api_access: true,
+        white_label: true,
+        integrations: true,
+        custom_reports: true,
+        priority_support: true
+      },
+      usageLimits: {
+        users: -1,
+        agents: -1,
+        exports: -1,
+        bookings: -1,
+        api_calls: -1,
+        quotations: -1,
+        storage_mb: -1,
+        integrations: -1
+      }
+    }
+  });
+
+  console.log(`✅ Default admin account 'beppe' configured successfully (User ID: ${beppeUser.id}).`);
+  console.log('✨ Clean database reset and seed completed successfully!');
 }
 
 main()

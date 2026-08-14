@@ -35,7 +35,42 @@ const booking = {
       email_sent: false,
     },
   ],
-  hotels: [],
+  hotels: [
+    {
+      id: 201,
+      hotel_id: 55,
+      hotel_name: "Test Hotel Bangkok",
+      city: "Bangkok",
+      from_date: "2026-08-03",
+      to_date: "2026-08-05",
+      nights: 2,
+      single_room_days: 0,
+      double_room_days: 1,
+      promotion: "Early Bird 10%",
+      discount: 250,
+      final_cost: 6000,
+      flight_in: "PG 122",
+      flight_out: "TK 059",
+      flight_info: "Morning arrival",
+      early_check_in: true,
+      late_check_out: true,
+      late_checkout_type: "6PM",
+      room_types: [
+        {
+          room_type_id: 501,
+          room_type: "Deluxe Room Incl. ABF",
+          adults: 2,
+          children: 0,
+          extra_adult_bed: false,
+          extra_child_bed: false,
+          sharing_bed: false,
+        },
+      ],
+      approved: false,
+      declined: false,
+      email_sent: false,
+    },
+  ],
   excursions: [],
   tours: [],
   flights: [],
@@ -118,4 +153,68 @@ test("booking action menu is aligned, colored, and usable", async ({ page }) => 
     path: "test-results/screenshots/booking-actions-menu.png",
     fullPage: false,
   });
+});
+
+test("editing a hotel restores all saved booking values", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("token", "test-token");
+    localStorage.setItem("role", "superadmin");
+    localStorage.setItem("username", "superadmin");
+  });
+
+  await page.route("**/api/v1/**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/api/v1/bookings/1") {
+      await route.fulfill({ json: booking });
+      return;
+    }
+    if (url.pathname === "/api/v1/hotels") {
+      await route.fulfill({
+        json: [
+          {
+            id: 55,
+            name: "Test Hotel Bangkok",
+            room_types: [
+              { id: 501, name: "Deluxe Room Incl. ABF" },
+            ],
+            promotions: [
+              { id: 71, name: "Early Bird 10%" },
+            ],
+          },
+        ],
+      });
+      return;
+    }
+    await route.fulfill({ json: [] });
+  });
+
+  await page.goto("/production/edit_booking.html?id=1", { waitUntil: "domcontentloaded" });
+  await page.locator("#btnHotels").click();
+  const row = page.locator("#hotelsTableBody tr").first();
+  await expect(row).toBeVisible();
+  await row.locator(".booking-actions-toggle").click();
+  await row.locator(".edit-hotel").click();
+
+  await expect(page.locator("#hotelModal")).toBeVisible();
+  await expect(page.locator("#hotelModalLabel")).toHaveText("Edit Hotel Booking");
+  await expect(page.locator("#checkInDate")).toHaveValue("2026-08-03");
+  await expect(page.locator("#checkOutDate")).toHaveValue("2026-08-05");
+  await expect(page.locator("#hotelType")).toHaveValue("55");
+  await expect(page.locator("#numberOfNights")).toHaveValue("2");
+  await expect(page.locator("#singleRooms")).toHaveValue("0");
+  await expect(page.locator("#doubleRooms")).toHaveValue("1");
+  await expect(page.locator("#updatedHotelPrice")).toHaveValue("6000");
+  await expect(page.locator("#updatedHotelDiscount")).toHaveValue("250");
+  await expect(page.locator("#flightIn")).toHaveValue("PG 122");
+  await expect(page.locator("#flightOut")).toHaveValue("TK 059");
+  await expect(page.locator("#flightInfo")).toHaveValue("Morning arrival");
+  await expect(page.locator("#earlyCheckIn")).toBeChecked();
+  await expect(page.locator("#lateCheckOut")).toBeChecked();
+  await expect(page.locator("#lateCheckOutType")).toHaveValue("18");
+
+  const roomBlock = page.locator("#roomTypesWrapper .room-type-block").first();
+  await expect(roomBlock).toBeVisible();
+  await expect(roomBlock.locator(".roomtype-dropdown")).toHaveValue("501");
+  await expect(roomBlock.locator(".adults")).toHaveValue("2");
+  await expect(roomBlock.locator(".children")).toHaveValue("0");
 });
