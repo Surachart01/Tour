@@ -130,8 +130,14 @@ export async function login(req, res, next) {
       return res.status(400).json({ code: 400, message: 'Invalid request body' });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { username },
+    const normalizedInput = username ? username.trim() : '';
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: { equals: normalizedInput, mode: 'insensitive' } },
+          { email: { equals: normalizedInput, mode: 'insensitive' } }
+        ]
+      },
       include: { agent: true }
     });
 
@@ -144,9 +150,12 @@ export async function login(req, res, next) {
       return res.status(401).json({ code: 401, message: 'Invalid credentials' });
     }
 
-    const agent = user.agent;
+    let agent = user.agent;
     if (!agent) {
-      return res.status(400).json({ code: 400, message: 'Invalid agent details' });
+      agent = await prisma.agent.findFirst();
+      if (!agent) {
+        return res.status(400).json({ code: 400, message: 'Invalid agent details' });
+      }
     }
 
     const profile = await getOrCreateUserProfile(user.id, user.email, user.role);
@@ -158,6 +167,7 @@ export async function login(req, res, next) {
       user: {
         id: user.id,
         user: user.username,
+        username: user.username,
         role: user.role,
         email: user.email,
         agent: agent.name,
