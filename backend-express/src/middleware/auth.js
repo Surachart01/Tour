@@ -14,10 +14,8 @@ export function isSuperAdmin(user) {
   if (!user) return false;
   return (
     user.role === 'superadmin' || 
-    user.is_super_admin === true ||
-    user.username === 'beppe' ||
     user.role === 'admin' ||
-    (user.role === 'admin' && user.email && user.email.endsWith('@wheelsapart.com'))
+    user.is_super_admin === true
   );
 }
 

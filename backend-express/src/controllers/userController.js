@@ -8,9 +8,10 @@ async function getOrCreateUserProfile(userId, userEmail, userRole, parentUserId 
     where: { userId }
   });
 
+  const isAdmin = userRole === 'admin' || userRole === 'superadmin';
+  const isEnterprise = isAdmin;
+
   if (profile) {
-    // If admin/superadmin, ensure subscription is active/enterprise
-    const isAdmin = userEmail && (userEmail.includes('admin') || userEmail.endsWith('@wheelsapart.com'));
     if (isAdmin && (profile.subscriptionTier !== 'enterprise' || profile.subscriptionStatus !== 'active')) {
       profile = await prisma.userProfile.update({
         where: { id: profile.id },
@@ -34,9 +35,6 @@ async function getOrCreateUserProfile(userId, userEmail, userRole, parentUserId 
   }
 
   // Create default profile
-  const isAdmin = userEmail && (userEmail.includes('admin') || userEmail.endsWith('@wheelsapart.com'));
-  const isEnterprise = userEmail && (userEmail.endsWith('@wheelsapart.com') || userEmail.endsWith('@verathailandia.com'));
-
   let subscriptionTier = 'starter';
   let subscriptionStatus = 'trial';
   let usageLimits = {
@@ -210,7 +208,7 @@ export async function createAdmin(req, res, next) {
       return res.status(400).send("Admin username must contain 'admin'");
     }
 
-    const isSuperAdminUser = is_superadmin || (company_domain === 'wheelsapart.com' && userData.username.startsWith('wa'));
+    const isSuperAdminUser = Boolean(is_superadmin);
     const role = isSuperAdminUser ? 'superadmin' : 'admin';
     const userType = role;
 
@@ -457,7 +455,7 @@ export async function getCurrentUser(req, res, next) {
 
 export async function listUsers(req, res, next) {
   try {
-    const isSuperAdminUser = req.isSuperAdmin || req.user?.role === 'superadmin' || req.user?.role === 'admin' || req.user?.username === 'beppe';
+    const isSuperAdminUser = req.isSuperAdmin || req.user?.role === 'superadmin' || req.user?.role === 'admin';
     
     let whereClause = {};
     if (!isSuperAdminUser) {

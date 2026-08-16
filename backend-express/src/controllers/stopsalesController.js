@@ -518,7 +518,7 @@ export async function updateSpecialPackageStopSaleStatus(req, res, next) {
                 <li><strong>Closed Dates:</strong> ${formattedStart} to ${formattedEnd}</li>
               </ul>
               <p>Please do not book this package during the above dates. Thank you for your cooperation.</p>
-              ${buildEmailFooter({ senderName: 'Beppe', senderEmail: 'booking@verathailandia.com' })}
+              ${buildEmailFooter({ senderName: req.user?.username || 'Reservations Team', senderEmail: req.user?.email || process.env.EMAIL_FROM_DEFAULT || 'booking@verathailandia.com' })}
             `;
           } else {
             subject = `[START SALE] Special Package Reopened: ${pkg.name}`;
@@ -531,7 +531,7 @@ export async function updateSpecialPackageStopSaleStatus(req, res, next) {
                 <li><strong>Package Code:</strong> ${pkg.code || 'N/A'}</li>
                 <li><strong>Available Dates:</strong> ${formattedStart} to ${formattedEnd}</li>
               </ul>
-              ${buildEmailFooter({ senderName: 'Beppe', senderEmail: 'booking@verathailandia.com' })}
+              ${buildEmailFooter({ senderName: req.user?.username || 'Reservations Team', senderEmail: req.user?.email || process.env.EMAIL_FROM_DEFAULT || 'booking@verathailandia.com' })}
             `;
           }
 
