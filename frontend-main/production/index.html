@@ -527,41 +527,36 @@
 
       #viewHotelModal .hotel-room-types-table {
         margin-bottom: 0;
-        font-size: 0.86rem;
+        font-size: 0.84rem;
+        border-collapse: collapse;
       }
 
       #viewHotelModal .hotel-room-types-table thead th {
         background: #203c59;
         color: #fff;
-        border-color: #294a6c;
+        border: 1px solid #294a6c;
         vertical-align: middle;
+        text-align: center;
         white-space: nowrap;
+        padding: 8px 6px;
+        font-size: 0.82rem;
       }
 
       #viewHotelModal .hotel-room-types-table td {
         vertical-align: middle;
+        border: 1px solid #dee2e6;
+        padding: 6px 8px;
+        font-size: 0.82rem;
       }
 
-      #viewHotelModal .room-type-name {
+      #viewHotelModal .room-type-name-cell {
         color: #213d5a;
         font-weight: 700;
+        vertical-align: middle;
+        background-color: #f8fafc;
+        min-width: 170px;
       }
 
-      #viewHotelModal .room-type-meta {
-        display: block;
-        margin-top: 4px;
-        color: #687b8f;
-        font-size: 0.78rem;
-      }
-
-      /* Fix column width for 'From' and 'To' date columns */
-      #roomTypesTable th:nth-child(1),
-      #roomTypesTable td:nth-child(1),
-      #roomTypesTable th:nth-child(2),
-      #roomTypesTable td:nth-child(2) {
-        width: 120px; /* Fixed width for date columns */
-        white-space: nowrap;
-      }
       #viewHotelNotes {
         white-space: pre-wrap; /* Ensures spaces and newlines are preserved */
         max-height: 150px;
@@ -1655,19 +1650,23 @@
                   Room Types & Seasonal Rates
                 </h5>
                 <table
-                  class="table table-striped table-bordered table-sm hotel-room-types-table"
+                  class="table table-bordered table-sm hotel-room-types-table"
                   id="roomTypesTable"
                 >
                   <thead>
                     <tr>
+                      <th>Room Type</th>
                       <th>From</th>
                       <th>To</th>
-                      <th>Room Type</th>
-                      <th>Availability</th>
-                      <th>Room Price</th>
-                      <th>Extra Bed</th>
-                      <th>Food Cost (Adult)</th>
-                      <th>Food Cost (Child)</th>
+                      <th>Allotment</th>
+                      <th>Cut-Off</th>
+                      <th>SGL Room</th>
+                      <th>DBL Room</th>
+                      <th>Extra Bed Adult</th>
+                      <th>Extra Bed Child</th>
+                      <th>Sharing Bed</th>
+                      <th>Lunch Cost [Adult]</th>
+                      <th>Dinner Cost [Adult]</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2310,82 +2309,123 @@
         return null;
       }
 
+      function formatToDDMMMYY(dateString) {
+        if (!dateString) return "-";
+        if (typeof dateString === "string") {
+          const cleanDate = dateString.split("T")[0];
+          const parts = cleanDate.split("-");
+          if (parts.length === 3) {
+            const year = parts[0].slice(-2);
+            const monthIdx = parseInt(parts[1], 10) - 1;
+            const day = parts[2].padStart(2, "0");
+            const monthNames = [
+              "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+              "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+            ];
+            if (monthIdx >= 0 && monthIdx < 12) {
+              return `${day}-${monthNames[monthIdx]}-${year}`;
+            }
+          }
+        }
+        const d = new Date(dateString);
+        if (isNaN(d.getTime())) return dateString;
+        const day = String(d.getDate()).padStart(2, "0");
+        const monthNames = [
+          "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        ];
+        const month = monthNames[d.getMonth()];
+        const year = String(d.getFullYear()).slice(-2);
+        return `${day}-${month}-${year}`;
+      }
+
       function populateRoomTypesTable(roomTypes) {
         const tableBody = document.querySelector("#roomTypesTable tbody");
+        if (!tableBody) return;
         tableBody.innerHTML = ""; // Clear existing rows
 
-        const formatAmount = (value) =>
-          Number(value || 0).toLocaleString("en-US", {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2,
-          });
+        const formatRoomNumber = (value) => {
+          if (value === null || value === undefined || value === "") return "0";
+          const num = Number(value);
+          if (isNaN(num)) return "0";
+          return num.toLocaleString("en-US", { maximumFractionDigits: 2 });
+        };
 
-        // Keep the hotel response unchanged while presenting seasons in date order.
-        const sortedRoomTypes = [...roomTypes].sort((a, b) => {
-          const dateA = new Date(a.start_date);
-          const dateB = new Date(b.start_date);
-
-          if (dateA.getTime() !== dateB.getTime()) {
-            return dateA - dateB; // Sort by start date first
-          }
-
-          const singlePriceA = a.single_price || 0;
-          const singlePriceB = b.single_price || 0;
-
-          if (singlePriceA !== singlePriceB) {
-            return singlePriceA - singlePriceB; // If start dates are the same, sort by single price
-          }
-
-          const doublePriceA = a.double_price || 0;
-          const doublePriceB = b.double_price || 0;
-
-          return doublePriceA - doublePriceB; // If single prices are the same, sort by double price
-        });
-
-        if (!sortedRoomTypes.length) {
+        if (!roomTypes || !roomTypes.length) {
           tableBody.innerHTML = `
             <tr>
-              <td colspan="8" class="text-center text-muted py-3">
+              <td colspan="12" class="text-center text-muted py-3">
                 No room types have been configured for this hotel.
               </td>
             </tr>`;
           return;
         }
 
-        sortedRoomTypes.forEach((roomType) => {
-          const startDate = formatToDDMMYYYY(
-            new Date(roomType.start_date).toISOString().split("T")[0]
-          );
-          const endDate = formatToDDMMYYYY(
-            new Date(roomType.end_date).toISOString().split("T")[0]
-          );
+        // Group room types by room name
+        const groupsMap = new Map();
+        roomTypes.forEach((rt) => {
+          const rawName = (rt.name || "N/A").trim();
+          if (!groupsMap.has(rawName)) {
+            groupsMap.set(rawName, []);
+          }
+          groupsMap.get(rawName).push(rt);
+        });
 
-          const row = document.createElement("tr");
-          row.setAttribute("data-room-type-id", roomType.id);
+        // Render each group
+        groupsMap.forEach((seasons, roomName) => {
+          // Sort seasons by start_date ascending
+          seasons.sort((a, b) => {
+            const dateA = new Date(a.start_date);
+            const dateB = new Date(b.start_date);
+            return dateA - dateB;
+          });
 
-          row.innerHTML = `
-            <td>${startDate}</td>
-            <td>${endDate}</td>
-            <td><span class="room-type-name">${roomType.name || "N/A"}</span></td>
-            <td>Allotment: ${roomType.allotment || 0}</td>
-            <td>Single: ${formatAmount(roomType.single_price)}<br>Double: ${formatAmount(
-            roomType.double_price
-          )}</td>
-            <td>Adult: ${formatAmount(roomType.extra_bed_adult)}<br>Child: ${formatAmount(
-            roomType.extra_bed_child
-          )}<br>Shared: ${formatAmount(roomType.extra_bed_shared)}</td>
-            <td>ABF: ${formatAmount(roomType.food_adult_abf)}<br>Lunch: ${formatAmount(
-            roomType.food_adult_lunch
-          )}<br>Dinner: ${formatAmount(roomType.food_adult_dinner)}<br>All Inclusive: ${formatAmount(
-            roomType.food_adult_all_inclusive
-          )}</td>
-            <td>ABF: ${formatAmount(roomType.food_child_abf)}<br>Lunch: ${formatAmount(
-            roomType.food_child_lunch
-          )}<br>Dinner: ${formatAmount(roomType.food_child_dinner)}<br>All Inclusive: ${formatAmount(
-            roomType.food_child_all_inclusive
-          )}</td>
-        `;
-          tableBody.appendChild(row);
+          seasons.forEach((rt, index) => {
+            const row = document.createElement("tr");
+            row.setAttribute("data-room-type-id", rt.id);
+
+            const isFirst = index === 0;
+            const isLast = index === seasons.length - 1;
+            const groupBottomBorder = isLast ? "border-bottom: 2px solid #203c59;" : "";
+
+            const startDate = formatToDDMMMYY(rt.start_date);
+            const endDate = formatToDDMMMYY(rt.end_date);
+            const allotment = rt.allotment !== null && rt.allotment !== undefined ? rt.allotment : 0;
+            const cutOff = rt.cut_off_days || rt.cutoff_days || 0;
+            const sglRoom = formatRoomNumber(rt.single_price);
+            const dblRoom = formatRoomNumber(rt.double_price);
+            const extraBedAdult = formatRoomNumber(rt.extra_bed_adult);
+            const extraBedChild = formatRoomNumber(rt.extra_bed_child);
+            const sharingBed = formatRoomNumber(rt.extra_bed_shared);
+            const lunchCostAdult = formatRoomNumber(rt.food_adult_lunch);
+            const dinnerCostAdult = formatRoomNumber(rt.food_adult_dinner);
+
+            let roomTypeCellHtml = "";
+            if (isFirst) {
+              roomTypeCellHtml = `
+                <td rowspan="${seasons.length}" class="room-type-name-cell" style="vertical-align: middle; ${groupBottomBorder}">
+                  ${roomName}
+                </td>
+              `;
+            }
+
+            row.innerHTML = `
+              ${roomTypeCellHtml}
+              <td style="text-align: center; white-space: nowrap; ${groupBottomBorder}">${startDate}</td>
+              <td style="text-align: center; white-space: nowrap; ${groupBottomBorder}">${endDate}</td>
+              <td style="text-align: center; ${groupBottomBorder}">${allotment}</td>
+              <td style="text-align: center; ${groupBottomBorder}">${cutOff}</td>
+              <td style="text-align: right; ${groupBottomBorder}">${sglRoom}</td>
+              <td style="text-align: right; ${groupBottomBorder}">${dblRoom}</td>
+              <td style="text-align: right; ${groupBottomBorder}">${extraBedAdult}</td>
+              <td style="text-align: right; ${groupBottomBorder}">${extraBedChild}</td>
+              <td style="text-align: right; ${groupBottomBorder}">${sharingBed}</td>
+              <td style="text-align: right; ${groupBottomBorder}">${lunchCostAdult}</td>
+              <td style="text-align: right; ${groupBottomBorder}">${dinnerCostAdult}</td>
+            `;
+
+            tableBody.appendChild(row);
+          });
         });
       }
 
