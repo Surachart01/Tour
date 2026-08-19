@@ -1,8 +1,24 @@
+import logger from '../utils/logger.js';
+
 export default function errorHandler(err, req, res, next) {
   console.error(err.stack);
 
   let status = err.statusCode || 500;
   let message = err.message || 'Internal Server Error';
+
+  logger.error(
+    req.baseUrl || req.path || 'ExpressApp',
+    `${req.method} ${req.originalUrl || req.url}`,
+    err.message || message,
+    {
+      statusCode: status,
+      stack: err.stack,
+      code: err.code,
+      meta: err.meta,
+      body: req.body && Object.keys(req.body).length > 0 ? req.body : undefined,
+    },
+    req
+  );
 
   if (err.code === 'P2002') {
     status = 409;

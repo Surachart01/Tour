@@ -54,6 +54,8 @@ import emailRoutes from './routes/emailRoutes.js';
 import advancedRoutes from './routes/advancedRoutes.js';
 import serviceDocumentRoutes from './routes/serviceDocumentRoutes.js';
 import specialPackageRoutes from './routes/specialPackageRoutes.js';
+import systemLogRoutes from './routes/systemLogRoutes.js';
+import devPortalRoutes from './routes/devPortalRoutes.js';
 
 
 const app = express();
@@ -108,6 +110,8 @@ app.use('/api/v1', emailRoutes);
 app.use('/api/v1', advancedRoutes);
 app.use('/api/v1', serviceDocumentRoutes);
 app.use('/api/v1', specialPackageRoutes);
+app.use('/api/v1', systemLogRoutes);
+app.use('/api/dev-portal', devPortalRoutes);
 
 
 // Root test endpoint

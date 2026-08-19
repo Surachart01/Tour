@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dev Console & System Logs | VeraThailandia</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="../vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Google Fonts: Outfit & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+
+    <style>
+      :root {
+        --bg-dark: #090d16;
+        --card-dark: #0f172a;
+        --card-border: #1e293b;
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --accent-teal: #14b8a6;
+        --accent-emerald: #10b981;
+        --accent-rose: #f43f5e;
+        --accent-amber: #f59e0b;
+        --accent-indigo: #6366f1;
+        --accent-sky: #0ea5e9;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        background-color: var(--bg-dark);
+        color: var(--text-main);
+        font-family: 'Outfit', sans-serif;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+      }
+
+      .mono-font {
+        font-family: 'JetBrains Mono', monospace !important;
+      }
+
+      /* ==================== LOGIN GATE ==================== */
+      #loginGate {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: radial-gradient(circle at top center, #1e293b 0%, #090d16 80%);
+        padding: 20px;
+      }
+
+      .login-card {
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        padding: 36px 32px;
+        width: 100%;
+        max-width: 420px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      }
+
+      .login-input {
+        background: #1e293b !important;
+        border: 1px solid #334155 !important;
+        color: #f8fafc !important;
+        border-radius: 10px !important;
+        height: 44px !important;
+        padding: 10px 14px !important;
+        font-size: 0.95rem !important;
+      }
+      .login-input:focus {
+        border-color: var(--accent-teal) !important;
+        box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.2) !important;
+      }
+
+      .btn-login {
+        background: linear-gradient(135deg, #14b8a6, #0d9488);
+        color: #ffffff;
+        border: none;
+        border-radius: 10px;
+        height: 46px;
+        font-weight: 700;
+        font-size: 1rem;
+        width: 100%;
+        transition: all 0.2s ease;
+      }
+      .btn-login:hover {
+        background: linear-gradient(135deg, #0d9488, #0f766e);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(20, 184, 166, 0.3);
+      }
+
+      /* ==================== DASHBOARD VIEW ==================== */
+      #dashboardView {
+        display: none;
+        padding: 24px;
+        max-width: 1600px;
+        margin: 0 auto;
+      }
+
+      /* Top App Bar */
+      .app-bar {
+        background: var(--card-dark);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        padding: 16px 24px;
+        margin-bottom: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      /* KPI Cards */
+      .kpi-card {
+        background: var(--card-dark);
+        border: 1px solid var(--card-border);
+        border-radius: 14px;
+        padding: 18px 20px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        height: 100%;
+      }
+      .kpi-card:hover {
+        border-color: #475569;
+        transform: translateY(-2px);
+      }
+      .kpi-card.active-filter {
+        border: 2px solid var(--accent-teal);
+        background: #131d33;
+      }
+
+      /* Control Toolbar */
+      .control-panel {
+        background: var(--card-dark);
+        border: 1px solid var(--card-border);
+        border-radius: 14px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+      }
+
+      .dev-select, .dev-input {
+        background: #1e293b !important;
+        border: 1px solid #334155 !important;
+        color: #f8fafc !important;
+        border-radius: 8px !important;
+        height: 38px !important;
+        font-size: 0.88rem !important;
+      }
+      .dev-select:focus, .dev-input:focus {
+        border-color: var(--accent-teal) !important;
+      }
+
+      /* Log Table */
+      .log-container {
+        background: var(--card-dark);
+        border: 1px solid var(--card-border);
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      .dev-table {
+        margin-bottom: 0;
+        color: #cbd5e1;
+        font-size: 0.86rem;
+      }
+      .dev-table th {
+        background: #131d33;
+        color: #94a3b8;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.75rem;
+        padding: 12px 16px;
+        border: none;
+        border-bottom: 1px solid var(--card-border);
+      }
+      .dev-table td {
+        padding: 12px 16px;
+        vertical-align: middle;
+        border-top: 1px solid #182234;
+      }
+      .dev-table tbody tr:hover {
+        background-color: #162036;
+      }
+      .dev-table tbody tr.row-error {
+        background-color: rgba(244, 63, 94, 0.08);
+      }
+      .dev-table tbody tr.row-error:hover {
+        background-color: rgba(244, 63, 94, 0.14);
+      }
+
+      /* Level Badges */
+      .pill-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+      .pill-error { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+      .pill-warn { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+      .pill-info { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); }
+      .pill-email { background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
+
+      /* Pulse Indicator */
+      .status-pulse {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background-color: #10b981;
+        display: inline-block;
+        box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+        animation: pulseAnimation 2s infinite;
+      }
+      @keyframes pulseAnimation {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+      }
+
+      /* Modal Stack Trace View */
+      .modal-content-dark {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 16px;
+        color: #f8fafc;
+      }
+      .code-box {
+        background: #020617;
+        border: 1px solid #1e293b;
+        border-radius: 10px;
+        padding: 14px;
+        max-height: 380px;
+        overflow-y: auto;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.8rem;
+        color: #38bdf8;
+        line-height: 1.5;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- ==================== 1. SECRET LOGIN GATE ==================== -->
+    <div id="loginGate">
+      <div class="login-card">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <div style="width: 56px; height: 56px; background: rgba(20, 184, 166, 0.15); border: 1px solid rgba(20, 184, 166, 0.3); border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; color: var(--accent-teal); font-size: 1.5rem; margin-bottom: 14px;">
+            <i class="fa fa-terminal"></i>
+          </div>
+          <h3 style="margin: 0 0 6px 0; font-weight: 800; font-size: 1.4rem; color: #ffffff;">Developer Console</h3>
+          <p style="margin: 0; color: var(--text-muted); font-size: 0.88rem;">Protected by server-level environment credentials</p>
+        </div>
+
+        <div id="loginErrorAlert" class="alert alert-danger" style="display: none; border-radius: 10px; font-size: 0.85rem; padding: 10px 14px; background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.3); color: #fb7185;"></div>
+
+        <form id="devLoginForm" onsubmit="handleDevLogin(event)">
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label style="font-size: 0.82rem; font-weight: 600; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">Username (.env)</label>
+            <input type="text" id="loginUsername" class="form-control login-input" placeholder="e.g. devadmin" required autofocus />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 22px;">
+            <label style="font-size: 0.82rem; font-weight: 600; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">Password (.env)</label>
+            <input type="password" id="loginPassword" class="form-control login-input" placeholder="••••••••••••" required />
+          </div>
+
+          <button type="submit" id="btnLoginSubmit" class="btn btn-login">
+            <i class="fa fa-key" style="margin-right: 6px;"></i> Authenticate Session
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ==================== 2. DEVELOPER DIAGNOSTIC DASHBOARD ==================== -->
+    <div id="dashboardView">
+      <!-- App Bar -->
+      <div class="app-bar">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 44px; height: 44px; background: rgba(20, 184, 166, 0.12); border: 1px solid rgba(20, 184, 166, 0.3); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--accent-teal); font-size: 1.2rem;">
+            <i class="fa fa-server"></i>
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <h4 style="margin: 0; font-weight: 800; font-size: 1.25rem;">VeraThailandia Dev Console</h4>
+              <span style="display: inline-flex; align-items: center; gap: 6px; background: #1e293b; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+                <span class="status-pulse"></span> <span id="dbLatencyBadge">DB: Live</span>
+              </span>
+            </div>
+            <span style="font-size: 0.82rem; color: var(--text-muted);">Real-time System Errors, Trace Pipeline & Workflow Audit</span>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button class="btn btn-sm" onclick="fetchDevLogs()" style="background: #1e293b; border: 1px solid #334155; color: #f8fafc; font-weight: 600; border-radius: 8px; padding: 6px 14px;">
+            <i class="fa fa-sync-alt" id="devRefreshIcon"></i> Refresh
+          </button>
+          <button class="btn btn-sm" onclick="triggerTestLog()" style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); color: #a5b4fc; font-weight: 600; border-radius: 8px; padding: 6px 14px;">
+            <i class="fa fa-flask"></i> Inject Test Error
+          </button>
+          <button class="btn btn-sm" onclick="clearDevLogs()" style="background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.3); color: #fda4af; font-weight: 600; border-radius: 8px; padding: 6px 14px;">
+            <i class="fa fa-trash-alt"></i> Clear Logs
+          </button>
+          <button class="btn btn-sm" onclick="handleDevLogout()" style="background: #334155; color: #f8fafc; font-weight: 600; border-radius: 8px; padding: 6px 14px;">
+            <i class="fa fa-lock"></i> Lock
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Metrics Strip -->
+      <div class="row" style="margin-bottom: 20px;">
+        <div class="col-md-3 col-sm-6" style="margin-bottom: 12px;">
+          <div class="kpi-card active-filter" data-level="ALL" onclick="filterByKpi('ALL')">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Total Logs</div>
+                <h3 id="kpiTotal" style="margin: 4px 0 0 0; font-weight: 800; font-size: 1.8rem; color: #f8fafc;">0</h3>
+              </div>
+              <div style="font-size: 1.8rem; opacity: 0.25;"><i class="fa fa-stream"></i></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6" style="margin-bottom: 12px;">
+          <div class="kpi-card" data-level="ERROR" onclick="filterByKpi('ERROR')">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 0.78rem; font-weight: 600; color: #fb7185; text-transform: uppercase;">Errors & Exceptions</div>
+                <h3 id="kpiErrors" style="margin: 4px 0 0 0; font-weight: 800; font-size: 1.8rem; color: #f43f5e;">0</h3>
+              </div>
+              <div style="font-size: 1.8rem; color: #f43f5e; opacity: 0.4;"><i class="fa fa-bug"></i></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6" style="margin-bottom: 12px;">
+          <div class="kpi-card" data-level="WARN" onclick="filterByKpi('WARN')">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 0.78rem; font-weight: 600; color: #fbbf24; text-transform: uppercase;">Warnings</div>
+                <h3 id="kpiWarnings" style="margin: 4px 0 0 0; font-weight: 800; font-size: 1.8rem; color: #f59e0b;">0</h3>
+              </div>
+              <div style="font-size: 1.8rem; color: #f59e0b; opacity: 0.4;"><i class="fa fa-triangle-exclamation"></i></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6" style="margin-bottom: 12px;">
+          <div class="kpi-card" data-level="EMAIL" onclick="filterByKpi('EMAIL')">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 0.78rem; font-weight: 600; color: #818cf8; text-transform: uppercase;">Email Deliveries</div>
+                <h3 id="kpiEmail" style="margin: 4px 0 0 0; font-weight: 800; font-size: 1.8rem; color: #6366f1;">0</h3>
+              </div>
+              <div style="font-size: 1.8rem; color: #6366f1; opacity: 0.4;"><i class="fa fa-envelope-open-text"></i></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Control Toolbar -->
+      <div class="control-panel">
+        <div class="row" style="align-items: center;">
+          <div class="col-md-4 col-sm-6" style="margin-bottom: 8px;">
+            <div class="input-group" style="margin: 0; width: 100%;">
+              <input type="text" id="devSearchInput" class="form-control dev-input" placeholder="Search message, endpoint, stack, user, IP..." />
+            </div>
+          </div>
+
+          <div class="col-md-2 col-sm-6" style="margin-bottom: 8px;">
+            <select id="devLevelSelect" class="form-control dev-select" onchange="handleFilterChange()">
+              <option value="ALL">All Levels</option>
+              <option value="ERROR">🔴 ERROR Only</option>
+              <option value="WARN">🟡 WARN Only</option>
+              <option value="INFO">🔵 INFO Only</option>
+              <option value="EMAIL">✉️ EMAIL Only</option>
+            </select>
+          </div>
+
+          <div class="col-md-2 col-sm-6" style="margin-bottom: 8px;">
+            <select id="devModuleSelect" class="form-control dev-select" onchange="handleFilterChange()">
+              <option value="ALL">All Modules</option>
+              <option value="Trips">Trips / Quotations</option>
+              <option value="Hotels">Hotels & Pricing</option>
+              <option value="Transfers">Transfers</option>
+              <option value="Tours">Tours</option>
+              <option value="Excursions">Excursions</option>
+              <option value="EmailService">Email Service</option>
+              <option value="Auth">Auth & JWT</option>
+              <option value="DevPortal">Dev Portal</option>
+            </select>
+          </div>
+
+          <div class="col-md-4 col-sm-6 text-right" style="margin-bottom: 8px; display: flex; justify-content: flex-end; align-items: center; gap: 10px;">
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: #1e293b; padding: 6px 12px; border-radius: 8px;">
+              <span style="font-size: 0.8rem; font-weight: 600; color: #94a3b8;">Poll Rate:</span>
+              <select id="devPollRate" class="dev-select" style="height: 26px !important; padding: 2px 6px !important; font-size: 0.78rem !important;" onchange="updatePollRate()">
+                <option value="2000">2s Live</option>
+                <option value="5000" selected>5s Live</option>
+                <option value="15000">15s</option>
+                <option value="0">Paused</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log Table Container -->
+      <div class="log-container">
+        <div class="table-responsive">
+          <table class="table dev-table">
+            <thead>
+              <tr>
+                <th style="width: 170px;">Timestamp</th>
+                <th style="width: 95px;">Level</th>
+                <th style="width: 130px;">Module</th>
+                <th>Action & Message</th>
+                <th style="width: 160px;">User / Client IP</th>
+                <th style="width: 90px; text-align: center;">Trace</th>
+              </tr>
+            </thead>
+            <tbody id="devLogTbody">
+              <tr>
+                <td colspan="6" class="text-center" style="padding: 40px; color: #64748b;">
+                  <i class="fa fa-spinner fa-spin" style="font-size: 24px; color: var(--accent-teal);"></i>
+                  <p style="margin-top: 10px;">Fetching live log stream...</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="devEmptyState" style="display: none; padding: 40px; text-align: center; color: #64748b;">
+          <i class="fa fa-circle-check" style="font-size: 2.5rem; color: #10b981; margin-bottom: 8px;"></i>
+          <h4 style="font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Zero Errors / Logs Matching Filter</h4>
+          <p style="font-size: 0.85rem;">All systems operational without logged exceptions.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 3. DIAGNOSTIC MODAL ==================== -->
+    <div class="modal fade" id="devTraceModal" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content modal-content-dark">
+          <div class="modal-header" style="border-bottom: 1px solid #1e293b; padding: 16px 20px;">
+            <button type="button" class="close" data-dismiss="modal" style="color: #94a3b8; opacity: 0.9;">&times;</button>
+            <h4 class="modal-title" style="font-weight: 700; color: #f8fafc;"><i class="fa fa-bug" style="color: var(--accent-rose); margin-right: 8px;"></i> Diagnostic Trace & Payload</h4>
+          </div>
+          <div class="modal-body" style="padding: 20px;">
+            <div style="display: flex; gap: 16px; margin-bottom: 14px; flex-wrap: wrap;">
+              <div>
+                <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Timestamp:</span>
+                <div id="traceModalTime" class="mono-font" style="font-weight: 600; font-size: 0.85rem;">-</div>
+              </div>
+              <div>
+                <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Level:</span>
+                <div id="traceModalLevel">-</div>
+              </div>
+              <div>
+                <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Module:</span>
+                <div id="traceModalModule" style="font-weight: 600;">-</div>
+              </div>
+              <div>
+                <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase;">User Context:</span>
+                <div id="traceModalUser" style="font-weight: 600;">-</div>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Message:</span>
+              <div id="traceModalMessage" style="background: #1e293b; border: 1px solid #334155; padding: 8px 12px; border-radius: 8px; font-weight: 600; color: #f1f5f9; margin-top: 4px;">-</div>
+            </div>
+
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Full Trace & Diagnostic JSON:</span>
+                <button class="btn btn-xs" onclick="copyTraceJson()" style="background: #1e293b; border: 1px solid #334155; color: #38bdf8; font-weight: 600; border-radius: 6px;">
+                  <i class="fa fa-copy"></i> Copy JSON
+                </button>
+              </div>
+              <pre id="traceModalPayload" class="code-box"></pre>
+            </div>
+          </div>
+          <div class="modal-footer" style="border-top: 1px solid #1e293b; padding: 12px 20px;">
+            <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal" style="border-radius: 8px;">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <script src="../vendors/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="js/config.js"></script>
+
+    <script>
+      let devToken = sessionStorage.getItem("dev_portal_token") || localStorage.getItem("dev_portal_token");
+      let devLogs = [];
+      let devPollTimer = null;
+      let activeKpiLevel = "ALL";
+
+      document.addEventListener("DOMContentLoaded", () => {
+        if (devToken) {
+          showDashboard();
+        } else {
+          showLoginGate();
+        }
+
+        document.getElementById("devSearchInput").addEventListener("input", debounce(() => {
+          fetchDevLogs();
+        }, 300));
+      });
+
+      function showLoginGate() {
+        document.getElementById("loginGate").style.display = "flex";
+        document.getElementById("dashboardView").style.display = "none";
+      }
+
+      function showDashboard() {
+        document.getElementById("loginGate").style.display = "none";
+        document.getElementById("dashboardView").style.display = "block";
+        fetchDevLogs();
+        fetchDevStats();
+        updatePollRate();
+      }
+
+      async function handleDevLogin(e) {
+        e.preventDefault();
+        const u = document.getElementById("loginUsername").value.trim();
+        const p = document.getElementById("loginPassword").value.trim();
+        const alertEl = document.getElementById("loginErrorAlert");
+        const btn = document.getElementById("btnLoginSubmit");
+
+        alertEl.style.display = "none";
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Authenticating...';
+
+        try {
+          const response = await fetch(`${Endpoint}/api/dev-portal/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: u, password: p }),
+          });
+
+          const result = await response.json();
+          if (result.success && result.token) {
+            devToken = result.token;
+            sessionStorage.setItem("dev_portal_token", devToken);
+            localStorage.setItem("dev_portal_token", devToken);
+            showDashboard();
+          } else {
+            alertEl.textContent = result.message || "Invalid credentials";
+            alertEl.style.display = "block";
+          }
+        } catch (err) {
+          alertEl.textContent = `Authentication server unreachable: ${err.message}`;
+          alertEl.style.display = "block";
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa fa-key"></i> Authenticate Session';
+        }
+      }
+
+      function handleDevLogout() {
+        devToken = null;
+        sessionStorage.removeItem("dev_portal_token");
+        localStorage.removeItem("dev_portal_token");
+        if (devPollTimer) clearInterval(devPollTimer);
+        showLoginGate();
+      }
+
+      function updatePollRate() {
+        if (devPollTimer) clearInterval(devPollTimer);
+        const rate = parseInt(document.getElementById("devPollRate").value, 10);
+        if (rate > 0) {
+          devPollTimer = setInterval(() => {
+            fetchDevLogs(true);
+            fetchDevStats();
+          }, rate);
+        }
+      }
+
+      function filterByKpi(level) {
+        activeKpiLevel = level;
+        document.getElementById("devLevelSelect").value = level;
+        updateKpiCardStyles(level);
+        fetchDevLogs();
+      }
+
+      function handleFilterChange() {
+        activeKpiLevel = document.getElementById("devLevelSelect").value;
+        updateKpiCardStyles(activeKpiLevel);
+        fetchDevLogs();
+      }
+
+      function updateKpiCardStyles(level) {
+        document.querySelectorAll(".kpi-card").forEach((c) => {
+          if (c.getAttribute("data-level") === level) {
+            c.classList.add("active-filter");
+          } else {
+            c.classList.remove("active-filter");
+          }
+        });
+      }
+
+      async function fetchDevLogs(isSilent = false) {
+        if (!devToken) return;
+
+        const level = document.getElementById("devLevelSelect").value;
+        const moduleName = document.getElementById("devModuleSelect").value;
+        const search = document.getElementById("devSearchInput").value;
+
+        if (!isSilent) {
+          const icon = document.getElementById("devRefreshIcon");
+          if (icon) icon.classList.add("fa-spin");
+        }
+
+        try {
+          const url = new URL(`${Endpoint}/api/dev-portal/logs`);
+          if (level && level !== "ALL") url.searchParams.append("level", level);
+          if (moduleName && moduleName !== "ALL") url.searchParams.append("module", moduleName);
+          if (search && search.trim()) url.searchParams.append("search", search.trim());
+          url.searchParams.append("limit", "150");
+
+          const response = await fetch(url, {
+            headers: {
+              Authorization: `Bearer ${devToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (response.status === 401 || response.status === 403) {
+            handleDevLogout();
+            return;
+          }
+
+          const result = await response.json();
+          if (result.success && Array.isArray(result.data)) {
+            devLogs = result.data;
+            renderDevLogs(devLogs);
+          }
+        } catch (err) {
+          console.error("Log fetch failed:", err);
+        } finally {
+          const icon = document.getElementById("devRefreshIcon");
+          if (icon) icon.classList.remove("fa-spin");
+        }
+      }
+
+      async function fetchDevStats() {
+        if (!devToken) return;
+        try {
+          const response = await fetch(`${Endpoint}/api/dev-portal/stats`, {
+            headers: {
+              Authorization: `Bearer ${devToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+          const result = await response.json();
+          if (result.success && result.stats) {
+            const s = result.stats;
+            document.getElementById("kpiTotal").textContent = s.total || 0;
+            document.getElementById("kpiErrors").textContent = s.errors || 0;
+            document.getElementById("kpiWarnings").textContent = s.warnings || 0;
+            document.getElementById("kpiEmail").textContent = s.email || 0;
+
+            if (s.system?.database) {
+              const db = s.system.database;
+              const badge = document.getElementById("dbLatencyBadge");
+              badge.textContent = `DB: ${db.status} (${db.latencyMs || 0}ms)`;
+            }
+          }
+        } catch (e) {
+          console.error("Stats fetch failed:", e);
+        }
+      }
+
+      function renderDevLogs(logs) {
+        const tbody = document.getElementById("devLogTbody");
+        const empty = document.getElementById("devEmptyState");
+
+        if (!logs || logs.length === 0) {
+          tbody.innerHTML = "";
+          empty.style.display = "block";
+          return;
+        }
+
+        empty.style.display = "none";
+        tbody.innerHTML = logs
+          .map((l, index) => {
+            const badgeClass =
+              l.level === "ERROR"
+                ? "pill-error"
+                : l.level === "WARN"
+                ? "pill-warn"
+                : l.level === "EMAIL"
+                ? "pill-email"
+                : "pill-info";
+
+            const iconClass =
+              l.level === "ERROR"
+                ? "fa-circle-xmark"
+                : l.level === "WARN"
+                ? "fa-triangle-exclamation"
+                : l.level === "EMAIL"
+                ? "fa-envelope"
+                : "fa-info-circle";
+
+            const userStr = l.user ? `${l.user.username}` : l.ip || 'system';
+
+            return `
+              <tr class="${l.level === 'ERROR' ? 'row-error' : ''}">
+                <td class="mono-font" style="font-size: 0.78rem; color: #94a3b8;">${formatTimestamp(l.timestamp)}</td>
+                <td><span class="pill-badge ${badgeClass}"><i class="fa ${iconClass}"></i> ${l.level}</span></td>
+                <td><strong style="color: #f1f5f9;">${escapeHtml(l.module || 'General')}</strong></td>
+                <td>
+                  <div style="font-weight: 600; color: #ffffff;">${escapeHtml(l.action || '')}</div>
+                  <div style="font-size: 0.8rem; color: #94a3b8; max-width: 550px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${escapeHtml(l.message || '')}
+                  </div>
+                </td>
+                <td style="font-size: 0.8rem; color: #94a3b8;">${escapeHtml(userStr)}</td>
+                <td style="text-align: center;">
+                  <button class="btn btn-xs" onclick="openTraceModal(${index})" style="background: #1e293b; border: 1px solid #334155; color: var(--accent-teal); font-weight: 600; border-radius: 6px; padding: 3px 8px;">
+                    <i class="fa fa-code"></i> Trace
+                  </button>
+                </td>
+              </tr>
+            `;
+          })
+          .join("");
+      }
+
+      function openTraceModal(index) {
+        const log = devLogs[index];
+        if (!log) return;
+
+        document.getElementById("traceModalTime").textContent = formatTimestamp(log.timestamp);
+        document.getElementById("traceModalLevel").innerHTML = `<span class="pill-badge pill-${log.level.toLowerCase()}">${log.level}</span>`;
+        document.getElementById("traceModalModule").textContent = `${log.module} ➔ ${log.action}`;
+        document.getElementById("traceModalUser").textContent = log.user ? `${log.user.username} [${log.ip || 'N/A'}]` : `System [${log.ip || 'N/A'}]`;
+        document.getElementById("traceModalMessage").textContent = log.message || "N/A";
+
+        document.getElementById("traceModalPayload").textContent = JSON.stringify(log, null, 2);
+        $("#devTraceModal").modal("show");
+      }
+
+      function copyTraceJson() {
+        const text = document.getElementById("traceModalPayload").textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          alert("Diagnostic JSON copied to clipboard!");
+        });
+      }
+
+      async function clearDevLogs() {
+        if (!confirm("Confirm: Clear all system diagnostic logs?")) return;
+        try {
+          const res = await fetch(`${Endpoint}/api/dev-portal/clear`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${devToken}`,
+              "Content-Type": "application/json",
+            },
+          });
+          const data = await res.json();
+          if (data.success) {
+            fetchDevLogs();
+            fetchDevStats();
+          }
+        } catch (e) {
+          alert(`Clear failed: ${e.message}`);
+        }
+      }
+
+      async function triggerTestLog() {
+        try {
+          await fetch(`${Endpoint}/api/dev-portal/test`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${devToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              level: "ERROR",
+              module: "DevConsoleTest",
+              message: "Diagnostic test exception triggered from Standalone Dev Console",
+              details: { testTimestamp: new Date().toISOString(), trigger: "dev_user" },
+            }),
+          });
+          fetchDevLogs();
+          fetchDevStats();
+        } catch (e) {
+          alert(`Test failed: ${e.message}`);
+        }
+      }
+
+      function formatTimestamp(ts) {
+        if (!ts) return "-";
+        const d = new Date(ts);
+        if (isNaN(d.getTime())) return ts;
+        return d.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+      }
+
+      function escapeHtml(str) {
+        if (!str) return "";
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function debounce(fn, delay) {
+        let timer;
+        return function (...args) {
+          clearTimeout(timer);
+          timer = setTimeout(() => fn.apply(this, args), delay);
+        };
+      }
+    </script>
+  </body>
+</html>

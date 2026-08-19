@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>System Logs & Diagnostics | VeraThailandia</title>
+
+    <!-- Strict Superadmin Access Verification (Immediate Pre-Execution) -->
+    <script>
+      (function () {
+        const token = localStorage.getItem("token") || localStorage.getItem("jwt");
+        const role = localStorage.getItem("role");
+        if (!token || (role !== "superadmin" && role !== "admin")) {
+          alert("Access Denied: Only authorized administrators can access the System Log Viewer.");
+          window.location.href = "index.html";
+        }
+      })();
+    </script>
+
+    <!-- Bootstrap -->
+    <link href="../vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Font Awesome -->
+    <link href="../vendors/font-awesome/css/font-awesome.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Google Font Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <!-- Custom Theme Style -->
+    <link href="../build/css/custom.min.css" rel="stylesheet" />
+
+    <style>
+      body, html, .right_col, h1, h2, h3, h4, h5, h6, p, label, table, button, input, select {
+        font-family: 'Outfit', sans-serif !important;
+      }
+      .mono-font {
+        font-family: 'JetBrains Mono', monospace !important;
+      }
+      
+      /* Hero Header Banner */
+      .log-hero-banner {
+        background: linear-gradient(135deg, #0b1f3a 0%, #173860 60%, #1e4d7a 100%);
+        color: white;
+        padding: 24px 28px;
+        border-radius: 16px;
+        margin-bottom: 22px;
+        box-shadow: 0 8px 24px rgba(11, 31, 58, 0.2);
+        position: relative;
+        overflow: hidden;
+      }
+      .log-hero-banner::after {
+        content: '';
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        width: 180px;
+        height: 180px;
+        background: rgba(36, 185, 154, 0.15);
+        border-radius: 50%;
+      }
+
+      /* Metric KPI Cards */
+      .metric-card {
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 18px 20px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+        border: 1px solid #eef2f6;
+        transition: all 0.2s ease-in-out;
+        cursor: pointer;
+      }
+      .metric-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      }
+      .metric-card.active-filter {
+        border: 2px solid #203c59;
+        background: #f8fafc;
+      }
+      .metric-icon-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+      }
+
+      /* Log Badges */
+      .badge-level {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        padding: 5px 10px;
+        border-radius: 6px;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .badge-level-error {
+        background-color: #fee2e2;
+        color: #b91c1c;
+        border: 1px solid #fca5a5;
+      }
+      .badge-level-warn {
+        background-color: #fef3c7;
+        color: #b45309;
+        border: 1px solid #fcd34d;
+      }
+      .badge-level-info {
+        background-color: #e0f2fe;
+        color: #0369a1;
+        border: 1px solid #bae6fd;
+      }
+      .badge-level-email {
+        background-color: #ede9fe;
+        color: #6d28d9;
+        border: 1px solid #ddd6fe;
+      }
+
+      /* Log Table */
+      .log-table-wrapper {
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 16px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+        border: 1px solid #eef2f6;
+      }
+      .log-table th {
+        background-color: #1e3a5f;
+        color: #ffffff;
+        font-size: 0.82rem;
+        font-weight: 600;
+        padding: 12px 14px;
+        border: none;
+      }
+      .log-table td {
+        padding: 12px 14px;
+        vertical-align: middle;
+        font-size: 0.85rem;
+        border-bottom: 1px solid #f1f5f9;
+      }
+      .log-table tbody tr:hover {
+        background-color: #f8fafc;
+      }
+      .log-table tbody tr.row-error {
+        background-color: #fff5f5;
+      }
+      .log-table tbody tr.row-error:hover {
+        background-color: #fee2e2;
+      }
+
+      /* Live Pulse Dot */
+      .pulse-dot {
+        width: 10px;
+        height: 10px;
+        background-color: #10b981;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+        animation: pulse 1.8s infinite;
+      }
+      @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+        70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+      }
+
+      /* Detail Modal Code Block */
+      .code-stack-block {
+        background: #0f172a;
+        color: #f8fafc;
+        padding: 14px 16px;
+        border-radius: 10px;
+        max-height: 380px;
+        overflow-y: auto;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.8rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+
+  <body class="nav-md">
+    <div class="container body">
+      <div class="main_container">
+        <!-- Sidebar Navigation -->
+        <div class="col-md-3 left_col">
+          <div class="left_col scroll-view">
+            <div class="navbar nav_title" style="border: 0;">
+              <a href="index.html" class="site_title" style="padding-left: 20px;">
+                <i class="fa fa-plane" style="color: #24b99a;"></i>
+                <span style="font-weight: 700; font-size: 1.1rem; letter-spacing: 0.5px;">VeraThailandia</span>
+              </a>
+            </div>
+            <div class="clearfix"></div>
+            
+            <!-- Quick User Profile in Sidebar -->
+            <div class="profile clearfix">
+              <div class="profile_pic">
+                <img src="images/user.png" alt="..." class="img-circle profile_img" onerror="this.src='https://ui-avatars.com/api/?name=Admin&background=203c59&color=fff'" />
+              </div>
+              <div class="profile_info">
+                <span>Logged as,</span>
+                <h2 id="sidebarUsername" style="font-weight: 700;">SuperAdmin</h2>
+              </div>
+            </div>
+            <br />
+
+            <div id="sidebar-menu" class="main_menu_side hidden-print main_menu">
+              <div class="menu_section">
+                <h3>General</h3>
+                <ul class="nav side-menu">
+                  <li><a href="index.html"><i class="fa fa-home"></i> Dashboard</a></li>
+                  <li><a href="trip.html"><i class="fa fa-suitcase"></i> Quotations</a></li>
+                  <li><a href="booking.html"><i class="fa fa-check-square-o"></i> Bookings</a></li>
+                  <li><a href="hotels.html"><i class="fa fa-building"></i> Hotels</a></li>
+                  <li><a href="tours.html"><i class="fa fa-map"></i> Tours</a></li>
+                  <li><a href="transfers.html"><i class="fa fa-car"></i> Transfers</a></li>
+                  <li><a href="excursions.html"><i class="fa fa-globe"></i> Excursions</a></li>
+                  <li><a href="markup.html"><i class="fa fa-percent"></i> Markups</a></li>
+                  <li><a href="users.html"><i class="fa fa-users"></i> Users</a></li>
+                  <li class="active"><a href="system_logs.html" style="color: #24b99a; font-weight: 700;"><i class="fa fa-shield-alt" style="color: #24b99a;"></i> System Logs</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Navigation -->
+        <div class="top_nav">
+          <div class="nav_menu">
+            <div class="nav toggle" style="padding-top: 15px;">
+              <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+            </div>
+            <ul class="nav navbar-nav navbar-right" style="padding-right: 20px;">
+              <li>
+                <a href="javascript:;" class="user-profile dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                  <i class="fa fa-user-circle" style="font-size: 1.2rem; margin-right: 6px;"></i>
+                  <span id="topNavUsername" style="font-weight: 600;">SuperAdmin</span>
+                  <span class="fa fa-angle-down"></span>
+                </a>
+                <ul class="dropdown-menu dropdown-usermenu pull-right">
+                  <li><a href="profile.html"> Profile</a></li>
+                  <li><a href="system_logs.html"><i class="fa fa-shield-alt pull-right"></i> System Logs</a></li>
+                  <li><a href="login.html" onclick="localStorage.clear();"><i class="fa fa-sign-out pull-right"></i> Log Out</a></li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="right_col" role="main" style="min-height: calc(100vh - 50px); background-color: #f4f7f9;">
+          <div class="">
+            <!-- Hero Header -->
+            <div class="log-hero-banner">
+              <div class="row align-items-center" style="display: flex; flex-wrap: wrap; align-items: center;">
+                <div class="col-md-8 col-sm-12">
+                  <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <span class="pulse-dot"></span>
+                    <span style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #6ee7b7;">System Activity & Health Monitor</span>
+                    <span class="badge" style="background: rgba(255,255,255,0.2); font-weight: 600; padding: 4px 8px;">Superadmin Access Only</span>
+                  </div>
+                  <h2 style="margin: 0 0 6px 0; font-weight: 800; font-size: 1.8rem;">System Diagnostic Logs</h2>
+                  <p style="margin: 0; opacity: 0.85; font-size: 0.92rem;">Real-time logging pipeline capturing API errors, database queries, quotation lifecycle events, and supplier notifications.</p>
+                </div>
+                <div class="col-md-4 col-sm-12 text-right" style="margin-top: 10px;">
+                  <button id="btnRefresh" class="btn btn-sm btn-light" style="font-weight: 600; border-radius: 8px; padding: 8px 16px; margin-right: 6px;">
+                    <i class="fa fa-sync-alt" id="refreshIcon"></i> Refresh Now
+                  </button>
+                  <button id="btnClearLogs" class="btn btn-sm btn-danger" style="font-weight: 600; border-radius: 8px; padding: 8px 16px;">
+                    <i class="fa fa-trash-alt"></i> Clear Logs
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- KPI Metric Cards -->
+            <div class="row" style="margin-bottom: 20px;">
+              <div class="col-md-3 col-sm-6 col-xs-12" style="margin-bottom: 12px;">
+                <div class="metric-card active-filter" data-level="ALL" onclick="filterByMetricCard('ALL')">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                      <span style="font-size: 0.82rem; font-weight: 600; color: #64748b; text-transform: uppercase;">Total Captured</span>
+                      <h3 id="statTotal" style="margin: 4px 0 0 0; font-weight: 800; color: #1e293b; font-size: 1.7rem;">0</h3>
+                    </div>
+                    <div class="metric-icon-box" style="background: #f1f5f9; color: #475569;">
+                      <i class="fa fa-list-ul"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6 col-xs-12" style="margin-bottom: 12px;">
+                <div class="metric-card" data-level="ERROR" onclick="filterByMetricCard('ERROR')">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                      <span style="font-size: 0.82rem; font-weight: 600; color: #ef4444; text-transform: uppercase;">Exceptions & Errors</span>
+                      <h3 id="statErrors" style="margin: 4px 0 0 0; font-weight: 800; color: #b91c1c; font-size: 1.7rem;">0</h3>
+                    </div>
+                    <div class="metric-icon-box" style="background: #fee2e2; color: #ef4444;">
+                      <i class="fa fa-bug"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6 col-xs-12" style="margin-bottom: 12px;">
+                <div class="metric-card" data-level="WARN" onclick="filterByMetricCard('WARN')">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                      <span style="font-size: 0.82rem; font-weight: 600; color: #f59e0b; text-transform: uppercase;">Warnings</span>
+                      <h3 id="statWarnings" style="margin: 4px 0 0 0; font-weight: 800; color: #d97706; font-size: 1.7rem;">0</h3>
+                    </div>
+                    <div class="metric-icon-box" style="background: #fef3c7; color: #f59e0b;">
+                      <i class="fa fa-exclamation-triangle"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6 col-xs-12" style="margin-bottom: 12px;">
+                <div class="metric-card" data-level="EMAIL" onclick="filterByMetricCard('EMAIL')">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                      <span style="font-size: 0.82rem; font-weight: 600; color: #8b5cf6; text-transform: uppercase;">Email Deliveries</span>
+                      <h3 id="statEmail" style="margin: 4px 0 0 0; font-weight: 800; color: #7c3aed; font-size: 1.7rem;">0</h3>
+                    </div>
+                    <div class="metric-icon-box" style="background: #ede9fe; color: #8b5cf6;">
+                      <i class="fa fa-envelope"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Filters & Controls Bar -->
+            <div class="log-table-wrapper" style="margin-bottom: 16px;">
+              <div class="row" style="align-items: center;">
+                <div class="col-md-4 col-sm-6" style="margin-bottom: 8px;">
+                  <div class="input-group" style="margin: 0;">
+                    <span class="input-group-addon" style="background: #f8fafc; border-color: #cbd5e1;"><i class="fa fa-search text-muted"></i></span>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Search message, endpoint, error, client..." style="border-color: #cbd5e1; height: 38px;" />
+                  </div>
+                </div>
+                <div class="col-md-2 col-sm-6" style="margin-bottom: 8px;">
+                  <select id="levelFilter" class="form-control" style="border-color: #cbd5e1; height: 38px; font-weight: 500;">
+                    <option value="ALL">All Levels</option>
+                    <option value="ERROR">🔴 ERROR Only</option>
+                    <option value="WARN">🟡 WARN Only</option>
+                    <option value="INFO">🔵 INFO Only</option>
+                    <option value="EMAIL">✉️ EMAIL Only</option>
+                  </select>
+                </div>
+                <div class="col-md-2 col-sm-6" style="margin-bottom: 8px;">
+                  <select id="moduleFilter" class="form-control" style="border-color: #cbd5e1; height: 38px; font-weight: 500;">
+                    <option value="ALL">All Modules</option>
+                    <option value="Trips">Trips / Quotations</option>
+                    <option value="Hotels">Hotels & Pricing</option>
+                    <option value="Transfers">Transfers</option>
+                    <option value="Tours">Tours</option>
+                    <option value="Excursions">Excursions</option>
+                    <option value="EmailService">Email Service</option>
+                    <option value="Auth">Auth & JWT</option>
+                    <option value="System">System Engine</option>
+                  </select>
+                </div>
+                <div class="col-md-4 col-sm-6 text-right" style="margin-bottom: 8px; display: flex; justify-content: flex-end; align-items: center; gap: 10px;">
+                  <div style="display: inline-flex; align-items: center; gap: 6px; background: #f1f5f9; padding: 6px 12px; border-radius: 20px;">
+                    <span style="font-size: 0.8rem; font-weight: 600; color: #475569;">Live Auto-Refresh (5s):</span>
+                    <input type="checkbox" id="autoRefreshToggle" checked style="cursor: pointer; width: 16px; height: 16px;" />
+                  </div>
+                  <button id="btnTestLog" class="btn btn-sm btn-outline-secondary" style="border: 1px solid #cbd5e1; border-radius: 8px; height: 38px; font-weight: 600;">
+                    <i class="fa fa-flask"></i> Test Log
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Log Table -->
+            <div class="log-table-wrapper">
+              <div class="table-responsive">
+                <table class="table log-table" style="margin-bottom: 0;">
+                  <thead>
+                    <tr>
+                      <th style="width: 170px;">Timestamp</th>
+                      <th style="width: 100px;">Level</th>
+                      <th style="width: 140px;">Module</th>
+                      <th>Action / Summary Message</th>
+                      <th style="width: 150px;">User / Client IP</th>
+                      <th style="width: 90px; text-align: center;">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody id="logTableBody">
+                    <tr>
+                      <td colspan="6" class="text-center" style="padding: 40px;">
+                        <i class="fa fa-spinner fa-spin" style="font-size: 24px; color: #24b99a;"></i>
+                        <p style="margin-top: 10px; color: #64748b;">Loading system logs...</p>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div id="emptyLogState" style="display: none; padding: 40px; text-align: center; color: #94a3b8;">
+                <i class="fa fa-check-circle" style="font-size: 3rem; color: #10b981; margin-bottom: 10px;"></i>
+                <h4 style="font-weight: 700; color: #334155;">No Logs Found</h4>
+                <p>No log records matching your current filter criteria.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Log Detail Modal -->
+    <div class="modal fade" id="logDetailModal" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content" style="border-radius: 14px; overflow: hidden; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+          <div class="modal-header" style="background: #1e3a5f; color: #fff; padding: 16px 20px;">
+            <button type="button" class="close" data-dismiss="modal" style="color: #fff; opacity: 0.8;">&times;</button>
+            <h4 class="modal-title" style="font-weight: 700;" id="modalLogTitle">Log Entry Details</h4>
+          </div>
+          <div class="modal-body" style="padding: 22px;">
+            <div style="display: flex; gap: 15px; margin-bottom: 16px; flex-wrap: wrap;">
+              <div>
+                <span class="text-muted" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Timestamp:</span>
+                <div id="modalTimestamp" class="mono-font" style="font-weight: 600;">-</div>
+              </div>
+              <div>
+                <span class="text-muted" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Level:</span>
+                <div id="modalLevel">-</div>
+              </div>
+              <div>
+                <span class="text-muted" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Module / Action:</span>
+                <div id="modalModule" style="font-weight: 600;">-</div>
+              </div>
+              <div>
+                <span class="text-muted" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">User / IP:</span>
+                <div id="modalUser" style="font-weight: 600;">-</div>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+              <span class="text-muted" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Summary Message:</span>
+              <div id="modalMessage" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 14px; border-radius: 8px; font-weight: 600; color: #1e293b; margin-top: 4px;">-</div>
+            </div>
+
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="text-muted" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Diagnostic Payload & Stack Trace:</span>
+                <button class="btn btn-xs btn-default" onclick="copyModalTrace()" style="border-radius: 6px; font-weight: 600;">
+                  <i class="fa fa-copy"></i> Copy Trace
+                </button>
+              </div>
+              <pre id="modalPayload" class="code-stack-block"></pre>
+            </div>
+          </div>
+          <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 12px 20px;">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal" style="border-radius: 8px; font-weight: 600;">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- jQuery & Bootstrap -->
+    <script src="../vendors/jquery/dist/jquery.min.js"></script>
+    <script src="../vendors/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="js/config.js"></script>
+
+    <!-- System Logs Frontend Script -->
+    <script>
+      let currentLogs = [];
+      let autoRefreshInterval = null;
+      let activeLevel = "ALL";
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const username = localStorage.getItem("username") || "SuperAdmin";
+        document.getElementById("sidebarUsername").textContent = username;
+        document.getElementById("topNavUsername").textContent = username;
+
+        // Fetch logs on load
+        fetchLogs();
+        fetchStats();
+
+        // Setup auto-refresh (every 5 seconds)
+        setupAutoRefresh();
+
+        // Event listeners
+        document.getElementById("btnRefresh").addEventListener("click", () => {
+          fetchLogs();
+          fetchStats();
+        });
+
+        document.getElementById("levelFilter").addEventListener("change", (e) => {
+          activeLevel = e.target.value;
+          updateMetricCardSelection(activeLevel);
+          fetchLogs();
+        });
+
+        document.getElementById("moduleFilter").addEventListener("change", () => {
+          fetchLogs();
+        });
+
+        document.getElementById("searchInput").addEventListener("input", debounce(() => {
+          fetchLogs();
+        }, 300));
+
+        document.getElementById("autoRefreshToggle").addEventListener("change", setupAutoRefresh);
+
+        document.getElementById("btnClearLogs").addEventListener("click", clearSystemLogs);
+
+        document.getElementById("btnTestLog").addEventListener("click", triggerTestLog);
+      });
+
+      function setupAutoRefresh() {
+        if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+        const enabled = document.getElementById("autoRefreshToggle").checked;
+        if (enabled) {
+          autoRefreshInterval = setInterval(() => {
+            fetchLogs(true);
+            fetchStats();
+          }, 5000);
+        }
+      }
+
+      function filterByMetricCard(level) {
+        activeLevel = level;
+        document.getElementById("levelFilter").value = level;
+        updateMetricCardSelection(level);
+        fetchLogs();
+      }
+
+      function updateMetricCardSelection(level) {
+        document.querySelectorAll(".metric-card").forEach((card) => {
+          if (card.getAttribute("data-level") === level) {
+            card.classList.add("active-filter");
+          } else {
+            card.classList.remove("active-filter");
+          }
+        });
+      }
+
+      async function fetchLogs(isSilent = false) {
+        const token = localStorage.getItem("token") || localStorage.getItem("jwt");
+        const level = document.getElementById("levelFilter").value;
+        const moduleName = document.getElementById("moduleFilter").value;
+        const search = document.getElementById("searchInput").value;
+
+        if (!isSilent) {
+          const refreshIcon = document.getElementById("refreshIcon");
+          if (refreshIcon) refreshIcon.classList.add("fa-spin");
+        }
+
+        try {
+          const url = new URL(`${Endpoint}/api/v1/system-logs`);
+          if (level && level !== "ALL") url.searchParams.append("level", level);
+          if (moduleName && moduleName !== "ALL") url.searchParams.append("module", moduleName);
+          if (search && search.trim()) url.searchParams.append("search", search.trim());
+          url.searchParams.append("limit", "150");
+
+          const response = await fetch(url, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (response.status === 401 || response.status === 403) {
+            alert("Unauthorized: Only superadmin accounts can view system logs.");
+            window.location.href = "index.html";
+            return;
+          }
+
+          const result = await response.json();
+          if (result.success && Array.isArray(result.data)) {
+            currentLogs = result.data;
+            renderLogTable(currentLogs);
+          }
+        } catch (err) {
+          console.error("Failed to fetch logs:", err);
+        } finally {
+          const refreshIcon = document.getElementById("refreshIcon");
+          if (refreshIcon) refreshIcon.classList.remove("fa-spin");
+        }
+      }
+
+      async function fetchStats() {
+        const token = localStorage.getItem("token") || localStorage.getItem("jwt");
+        try {
+          const response = await fetch(`${Endpoint}/api/v1/system-logs/stats`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+          const result = await response.json();
+          if (result.success && result.stats) {
+            const s = result.stats;
+            document.getElementById("statTotal").textContent = s.total || 0;
+            document.getElementById("statErrors").textContent = s.errors || 0;
+            document.getElementById("statWarnings").textContent = s.warnings || 0;
+            document.getElementById("statEmail").textContent = s.email || 0;
+          }
+        } catch (err) {
+          console.error("Failed to fetch stats:", err);
+        }
+      }
+
+      function renderLogTable(logs) {
+        const tbody = document.getElementById("logTableBody");
+        const emptyState = document.getElementById("emptyLogState");
+
+        if (!logs || logs.length === 0) {
+          tbody.innerHTML = "";
+          emptyState.style.display = "block";
+          return;
+        }
+
+        emptyState.style.display = "none";
+        tbody.innerHTML = logs
+          .map((l, index) => {
+            const badgeClass =
+              l.level === "ERROR"
+                ? "badge-level-error"
+                : l.level === "WARN"
+                ? "badge-level-warn"
+                : l.level === "EMAIL"
+                ? "badge-level-email"
+                : "badge-level-info";
+
+            const levelIcon =
+              l.level === "ERROR"
+                ? "fa-circle-xmark"
+                : l.level === "WARN"
+                ? "fa-triangle-exclamation"
+                : l.level === "EMAIL"
+                ? "fa-envelope"
+                : "fa-info-circle";
+
+            const dateStr = formatLogTimestamp(l.timestamp);
+            const userStr = l.user ? `${l.user.username} (${l.user.role || 'user'})` : l.ip || 'system';
+
+            return `
+              <tr class="${l.level === 'ERROR' ? 'row-error' : ''}">
+                <td class="mono-font" style="font-size: 0.8rem; color: #475569;">${dateStr}</td>
+                <td><span class="badge-level ${badgeClass}"><i class="fa ${levelIcon}"></i> ${l.level}</span></td>
+                <td><strong style="color: #0f172a;">${escapeHtml(l.module || 'General')}</strong></td>
+                <td>
+                  <div style="font-weight: 600; color: #1e293b;">${escapeHtml(l.action || '')}</div>
+                  <div style="font-size: 0.82rem; color: #64748b; margin-top: 2px; max-width: 500px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${escapeHtml(l.message || '')}
+                  </div>
+                </td>
+                <td style="font-size: 0.8rem; color: #475569;">${escapeHtml(userStr)}</td>
+                <td style="text-align: center;">
+                  <button class="btn btn-xs btn-primary" onclick="openLogDetail(${index})" style="border-radius: 6px; padding: 4px 8px; font-weight: 600;">
+                    <i class="fa fa-eye"></i> View
+                  </button>
+                </td>
+              </tr>
+            `;
+          })
+          .join("");
+      }
+
+      function openLogDetail(index) {
+        const log = currentLogs[index];
+        if (!log) return;
+
+        document.getElementById("modalTimestamp").textContent = formatLogTimestamp(log.timestamp);
+        document.getElementById("modalLevel").innerHTML = `<span class="badge-level badge-level-${log.level.toLowerCase()}">${log.level}</span>`;
+        document.getElementById("modalModule").textContent = `${log.module} ➔ ${log.action}`;
+        document.getElementById("modalUser").textContent = log.user ? `${log.user.username} (${log.user.email || ''}) [IP: ${log.ip || 'N/A'}]` : `System [IP: ${log.ip || 'N/A'}]`;
+        document.getElementById("modalMessage").textContent = log.message || "N/A";
+
+        const payloadObj = {
+          id: log.id,
+          timestamp: log.timestamp,
+          level: log.level,
+          module: log.module,
+          action: log.action,
+          path: log.path,
+          method: log.method,
+          details: log.details,
+          user: log.user,
+        };
+
+        document.getElementById("modalPayload").textContent = JSON.stringify(payloadObj, null, 2);
+        $("#logDetailModal").modal("show");
+      }
+
+      function copyModalTrace() {
+        const text = document.getElementById("modalPayload").textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          alert("Log payload copied to clipboard!");
+        });
+      }
+
+      async function clearSystemLogs() {
+        if (!confirm("Are you sure you want to clear all system logs? This action cannot be undone.")) return;
+        const token = localStorage.getItem("token") || localStorage.getItem("jwt");
+        try {
+          const response = await fetch(`${Endpoint}/api/v1/system-logs/clear`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+          const res = await response.json();
+          if (res.success) {
+            alert("System logs cleared successfully.");
+            fetchLogs();
+            fetchStats();
+          }
+        } catch (err) {
+          alert(`Failed to clear logs: ${err.message}`);
+        }
+      }
+
+      async function triggerTestLog() {
+        const token = localStorage.getItem("token") || localStorage.getItem("jwt");
+        try {
+          await fetch(`${Endpoint}/api/v1/system-logs/test`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              level: "ERROR",
+              module: "DiagnosticTest",
+              message: "Manual test error triggered from System Log Viewer Dashboard",
+              details: { testTimestamp: new Date().toISOString(), trigger: "user_action" },
+            }),
+          });
+          fetchLogs();
+          fetchStats();
+        } catch (err) {
+          alert(`Test failed: ${err.message}`);
+        }
+      }
+
+      function formatLogTimestamp(ts) {
+        if (!ts) return "-";
+        const d = new Date(ts);
+        if (isNaN(d.getTime())) return ts;
+        return d.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+      }
+
+      function escapeHtml(str) {
+        if (!str) return "";
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function debounce(fn, delay) {
+        let timer;
+        return function (...args) {
+          clearTimeout(timer);
+          timer = setTimeout(() => fn.apply(this, args), delay);
+        };
+      }
+    </script>
+  </body>
+</html>
