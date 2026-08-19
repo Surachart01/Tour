@@ -2641,6 +2641,17 @@ function setupCityChangeListeners() {
       populateTransferDropdown(this.value);
     });
   }
+
+  // Transfer direction type change (TRF In / TRF Out)
+  const transferDirectionEl = document.getElementById('transferDirectionType');
+  if (transferDirectionEl) {
+    transferDirectionEl.addEventListener('change', function() {
+      const cityDropdown = document.querySelector('.city-dropdown-transfer');
+      if (cityDropdown && cityDropdown.value) {
+        populateTransferDropdown(cityDropdown.value);
+      }
+    });
+  }
   
   // Hotel city change
   const hotelCityDropdown = document.querySelector('.city-dropdown-hotel');
@@ -2661,6 +2672,8 @@ function setupCityChangeListeners() {
         roomTypeBlocks.forEach(block => {
           populateRoomTypesForBlock(block, hotelId);
         });
+        // Populate promotion dropdown
+        populatePromotions(hotelId);
       }
     });
   }
@@ -2685,7 +2698,15 @@ function setupCityChangeListeners() {
 // Populate service dropdowns based on city
 async function populateTransferDropdown(cityName) {
   try {
+    if (!cityName) return;
+    const directionVal = (document.getElementById('transferDirectionType')?.value || '').trim();
+    const transferTypeCode = directionVal === 'TRF In' ? 'TIN' : directionVal === 'TRF Out' ? 'TOUT' : '';
+
     let url = `${Endpoint}/api/v1/transfers?city=${encodeURIComponent(cityName)}`;
+    if (transferTypeCode) {
+      url += `&transfer_type=${transferTypeCode}`;
+    }
+
     const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -2701,16 +2722,46 @@ async function populateTransferDropdown(cityName) {
     const transferDropdown = document.getElementById('transferType');
     
     if (transferDropdown) {
-      // Clear existing options except the first one
       transferDropdown.innerHTML = '<option value="" disabled selected>Select Transfer</option>';
-      // Sort transfers by score in descending order (highest score first)
-      transfers.sort((a, b) => (b.order || 0) - (a.order || 0));
+      
+      let filteredTransfers = transfers;
+      if (directionVal === 'TRF Out') {
+        filteredTransfers = transfers.filter(t => {
+          const type = (t.transfer_type || t.type_of_transfer || '').toUpperCase();
+          if (type === 'TOUT' || type.includes('TRF OUT') || type.includes('OUT')) return true;
+          const desc = (t.description || t.name || '').toLowerCase();
+          const dep = (t.departure || '').toLowerCase();
+          if (desc.includes('hotel') || desc.includes('pier') || dep.includes('hotel') || dep.includes('pier')) {
+            if (desc.includes('airport') || (t.arrival || '').toLowerCase().includes('airport')) return true;
+          }
+          return type === 'TOUT' || !type;
+        });
+        if (filteredTransfers.length === 0) filteredTransfers = transfers;
+      } else if (directionVal === 'TRF In') {
+        filteredTransfers = transfers.filter(t => {
+          const type = (t.transfer_type || t.type_of_transfer || '').toUpperCase();
+          if (type === 'TIN' || type.includes('TRF IN') || type.includes('IN')) return true;
+          const desc = (t.description || t.name || '').toLowerCase();
+          const dep = (t.departure || '').toLowerCase();
+          if (desc.includes('airport') || dep.includes('airport')) return true;
+          return type === 'TIN' || !type;
+        });
+        if (filteredTransfers.length === 0) filteredTransfers = transfers;
+      }
+
+      // Sort transfers by score in descending order
+      filteredTransfers.sort((a, b) => (b.order || 0) - (a.order || 0));
 
       // Add transfer options
-      transfers.forEach(transfer => {
+      filteredTransfers.forEach(transfer => {
         const option = document.createElement('option');
         option.value = transfer.id;
-        option.textContent = transfer.name || transfer.description;
+        option.textContent = transfer.description || transfer.name;
+        option.dataset.remark = transfer.remark || '';
+        option.dataset.departure = transfer.departure || '';
+        option.dataset.arrival = transfer.arrival || '';
+        option.dataset.direction = transfer.transfer_type || '';
+        option.dataset.tot = transfer.tot || 'PVT';
         transferDropdown.appendChild(option);
       });
     }
@@ -3820,4 +3871,64 @@ function initializeNewOtherModal() {
   // Clear other fields for new other service
   document.getElementById('otherDescription').value = '';
   document.getElementById('otherCost').value = '';
+}
+
+// Populate promotions dropdown
+function populatePromotions(hotelId) {
+  const promotionDropdown = document.getElementById('promotion');
+  if (!promotionDropdown) return;
+
+  promotionDropdown.disabled = false;
+  promotionDropdown.innerHTML = '<option value="">Select Promotion</option>';
+  
+  if (!hotelId || !selectedHotelData[hotelId]) return;
+  const promotions = selectedHotelData[hotelId].promotions || [];
+  
+  promotions.forEach(promo => {
+    const option = document.createElement('option');
+    option.value = promo.id || promo.code || promo.name;
+    const promoLabel = promo.name ? `${promo.name}${promo.promotion_code ? ' (' + promo.promotion_code + ')' : ''}` : (promo.promotion_code || 'Promotion');
+    option.textContent = promoLabel;
+    option.setAttribute('data-promotion-code', promo.promotion_code || '');
+    option.setAttribute('data-discount', promo.discount_amount || promo.discount || 0);
+    option.setAttribute('data-discount-type', promo.discount_type || '%');
+    promotionDropdown.appendChild(option);
+  });
+
+  autoSelectMatchingPromotionLead(promotions, promotionDropdown);
+}
+
+function autoSelectMatchingPromotionLead(promotions, promotionDropdown) {
+  if (!promotions || !promotions.length || !promotionDropdown) return;
+  const checkInVal = document.getElementById('checkInDate')?.value || document.getElementById('checkIn')?.value;
+  const checkOutVal = document.getElementById('checkOutDate')?.value || document.getElementById('checkOut')?.value;
+  const nightsVal = parseInt(document.getElementById('numberOfNights')?.value, 10) || 0;
+  const bookingDateVal = document.getElementById('bookingDate')?.value;
+
+  const checkIn = checkInVal ? new Date(checkInVal) : null;
+  const checkOut = checkOutVal ? new Date(checkOutVal) : null;
+  const bookingDate = bookingDateVal ? new Date(bookingDateVal) : new Date();
+
+  let daysPrior = 0;
+  if (checkIn && bookingDate) {
+    const diffTime = checkIn.getTime() - bookingDate.getTime();
+    daysPrior = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  }
+
+  const eligiblePromos = promotions.filter((p) => {
+    if (p.enabled === false) return false;
+    if (p.minimum_nights && p.minimum_nights > 0 && nightsVal < p.minimum_nights) return false;
+    if (p.booking_date_from && new Date(p.booking_date_from) > bookingDate) return false;
+    if (p.booking_date_to && new Date(p.booking_date_to) < bookingDate) return false;
+    if (checkIn && p.travel_date_from && new Date(p.travel_date_from) > checkIn) return false;
+    if (checkOut && p.travel_date_to && new Date(p.travel_date_to) < checkOut) return false;
+    if (p.early_bird_days && p.early_bird_days > 0 && daysPrior < p.early_bird_days) return false;
+    return true;
+  });
+
+  if (eligiblePromos.length > 0) {
+    eligiblePromos.sort((a, b) => (b.discount_amount || b.discount || 0) - (a.discount_amount || a.discount || 0));
+    const bestPromo = eligiblePromos[0];
+    promotionDropdown.value = bestPromo.id || bestPromo.code || bestPromo.name;
+  }
 }

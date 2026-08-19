@@ -2498,10 +2498,8 @@
                     <select
                       id="promotion"
                       class="form-control promotion-dropdown"
-                      disabled
-                      style="pointer-events: none; background-color: #e9ecef;"
                     >
-                      <option value="">-</option>
+                      <option value="">No Promotion</option>
                     </select>
                   </div>
                 </div>
@@ -3445,6 +3443,8 @@
         function searchTransfersByCity(cityDropdown, transferDropdown) {
           const selectedCity = cityDropdown.value;
           const transferDate = document.getElementById("transferDate")?.value;
+          const directionVal = (document.getElementById("transferDirectionType")?.value || "").trim();
+          const transferTypeCode = directionVal === "TRF In" ? "TIN" : directionVal === "TRF Out" ? "TOUT" : "";
 
           if (!selectedCity) {
             alert("Please select a city.");
@@ -3457,13 +3457,16 @@
             return;
           }
 
-          console.log(`Fetching transfers for city: ${selectedCity}, date: ${transferDate}`);
+          console.log(`Fetching transfers for city: ${selectedCity}, date: ${transferDate}, type: ${transferTypeCode || "all"}`);
 
           const url = new URL(`${Endpoint}/api/v1/transfers`);
           url.searchParams.append("city", selectedCity);
           url.searchParams.append("from_date", transferDate);
           url.searchParams.append("to_date", transferDate);
           url.searchParams.append("keyword", "");
+          if (transferTypeCode) {
+            url.searchParams.append("transfer_type", transferTypeCode);
+          }
 
           fetch(url, {
             method: "GET",
@@ -3487,17 +3490,47 @@
               transferDropdown.innerHTML =
                 '<option value="">Select Transfer</option>'; // Clear previous options
 
-              if (transfers.length === 0) {
+              let filteredTransfers = transfers;
+              if (directionVal === "TRF Out") {
+                filteredTransfers = transfers.filter((t) => {
+                  const type = (t.transfer_type || t.type_of_transfer || "").toUpperCase();
+                  if (type === "TOUT" || type.includes("TRF OUT") || type.includes("OUT")) return true;
+                  const desc = (t.description || "").toLowerCase();
+                  const dep = (t.departure || "").toLowerCase();
+                  if (desc.includes("hotel") || desc.includes("pier") || dep.includes("hotel") || dep.includes("pier")) {
+                    if (desc.includes("airport") || (t.arrival || "").toLowerCase().includes("airport")) return true;
+                  }
+                  return type === "TOUT" || !type;
+                });
+                if (filteredTransfers.length === 0) filteredTransfers = transfers;
+              } else if (directionVal === "TRF In") {
+                filteredTransfers = transfers.filter((t) => {
+                  const type = (t.transfer_type || t.type_of_transfer || "").toUpperCase();
+                  if (type === "TIN" || type.includes("TRF IN") || type.includes("IN")) return true;
+                  const desc = (t.description || "").toLowerCase();
+                  const dep = (t.departure || "").toLowerCase();
+                  if (desc.includes("airport") || dep.includes("airport")) return true;
+                  return type === "TIN" || !type;
+                });
+                if (filteredTransfers.length === 0) filteredTransfers = transfers;
+              }
+
+              if (filteredTransfers.length === 0) {
                 transferDropdown.innerHTML = '<option value="">No transfers available on this date</option>';
                 console.warn(`No transfers available in ${selectedCity} on ${transferDate}`);
                 return;
               }
 
               // Display transfers in the order returned by backend
-              transfers.forEach((transfer) => {
+              filteredTransfers.forEach((transfer) => {
                 const option = document.createElement("option");
-                option.value = transfer.id; // Use transfer ID
-                option.textContent = transfer.description; // Display transfer name
+                option.value = transfer.id;
+                option.textContent = transfer.description;
+                option.dataset.remark = transfer.remark || "";
+                option.dataset.departure = transfer.departure || "";
+                option.dataset.arrival = transfer.arrival || "";
+                option.dataset.direction = transfer.transfer_type || "";
+                option.dataset.tot = transfer.tot || "PVT";
                 transferDropdown.appendChild(option);
               });
             })
@@ -3772,18 +3805,68 @@
           }
 
           if (promotionDropdown) {
+            promotionDropdown.disabled = false;
             promotionDropdown.innerHTML =
-              '<option value="">-</option>';
+              '<option value="">No Promotion</option>';
             promotions.forEach((promotion) => {
               const option = document.createElement("option");
               option.value = promotion.id;
-              option.textContent = promotion.name;
+              const promoLabel = promotion.name 
+                ? `${promotion.name}${promotion.promotion_code ? ' (' + promotion.promotion_code + ')' : ''}` 
+                : (promotion.promotion_code || "Promotion");
+              option.textContent = promoLabel;
               option.setAttribute(
                 "data-promotion-code",
                 promotion.promotion_code || ""
               );
+              option.setAttribute(
+                "data-discount",
+                promotion.discount_amount || promotion.discount || 0
+              );
+              option.setAttribute(
+                "data-discount-type",
+                promotion.discount_type || "%"
+              );
               promotionDropdown.appendChild(option);
             });
+
+            // Auto-detect matching promotion if applicable
+            autoSelectMatchingPromotion(promotions, promotionDropdown);
+          }
+        }
+
+        function autoSelectMatchingPromotion(promotions, promotionDropdown) {
+          if (!promotions || !promotions.length || !promotionDropdown) return;
+          const checkInVal = document.getElementById("checkInDate")?.value;
+          const checkOutVal = document.getElementById("checkOutDate")?.value;
+          const nightsVal = parseInt(document.getElementById("numberOfNights")?.value, 10) || 0;
+          const bookingDateVal = document.getElementById("bookingDate")?.value;
+
+          const checkIn = checkInVal ? new Date(checkInVal) : null;
+          const checkOut = checkOutVal ? new Date(checkOutVal) : null;
+          const bookingDate = bookingDateVal ? new Date(bookingDateVal) : new Date();
+
+          let daysPrior = 0;
+          if (checkIn && bookingDate) {
+            const diffTime = checkIn.getTime() - bookingDate.getTime();
+            daysPrior = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+          }
+
+          const eligiblePromos = promotions.filter((p) => {
+            if (p.enabled === false) return false;
+            if (p.minimum_nights && p.minimum_nights > 0 && nightsVal < p.minimum_nights) return false;
+            if (p.booking_date_from && new Date(p.booking_date_from) > bookingDate) return false;
+            if (p.booking_date_to && new Date(p.booking_date_to) < bookingDate) return false;
+            if (checkIn && p.travel_date_from && new Date(p.travel_date_from) > checkIn) return false;
+            if (checkOut && p.travel_date_to && new Date(p.travel_date_to) < checkOut) return false;
+            if (p.early_bird_days && p.early_bird_days > 0 && daysPrior < p.early_bird_days) return false;
+            return true;
+          });
+
+          if (eligiblePromos.length > 0) {
+            eligiblePromos.sort((a, b) => (b.discount_amount || b.discount || 0) - (a.discount_amount || a.discount || 0));
+            const bestPromo = eligiblePromos[0];
+            promotionDropdown.value = bestPromo.id;
           }
         }
 

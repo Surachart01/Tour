@@ -64,6 +64,8 @@ document.getElementById("saveFlight").addEventListener("click", function (event)
     const newFlight = {
       flight,
       number,
+      flight_airline: flight,
+      flight_number: number,
       flightInOut,
       flightRoute,
       flightDate,

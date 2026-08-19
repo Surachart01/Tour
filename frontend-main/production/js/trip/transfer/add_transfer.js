@@ -250,9 +250,13 @@ function addTransferRow(transfer) {
 
   let displayPickupTime = formatTimeToHHMM(transfer.transferPickupTime || transfer.flightTime || "");
   if (!displayPickupTime && transfer.transferFlight && typeof flightsArray !== "undefined") {
-    const matchingFlight = flightsArray.find(
-      (f) => (f.flight_number || f.number || "").trim().toLowerCase() === (transfer.transferFlight || "").trim().toLowerCase()
-    );
+    const matchingFlight = flightsArray.find((f) => {
+      const fNo = (f.flight_number || f.number || "").trim().toLowerCase();
+      const fAirline = (f.flight_airline || f.flight || "").trim().toLowerCase();
+      const combined = `${fAirline} ${fNo}`.trim();
+      const tf = (transfer.transferFlight || "").trim().toLowerCase();
+      return fNo === tf || combined === tf;
+    });
     if (matchingFlight) {
       displayPickupTime = formatTimeToHHMM(matchingFlight.eat || matchingFlight.arrival_time || "");
     }
@@ -302,9 +306,13 @@ function updateTransferRow(row, transfer) {
 
   let displayPickupTime = formatTimeToHHMM(transfer.transferPickupTime || transfer.flightTime || "");
   if (!displayPickupTime && transfer.transferFlight && typeof flightsArray !== "undefined") {
-    const matchingFlight = flightsArray.find(
-      (f) => (f.flight_number || f.number || "").trim().toLowerCase() === (transfer.transferFlight || "").trim().toLowerCase()
-    );
+    const matchingFlight = flightsArray.find((f) => {
+      const fNo = (f.flight_number || f.number || "").trim().toLowerCase();
+      const fAirline = (f.flight_airline || f.flight || "").trim().toLowerCase();
+      const combined = `${fAirline} ${fNo}`.trim();
+      const tf = (transfer.transferFlight || "").trim().toLowerCase();
+      return fNo === tf || combined === tf;
+    });
     if (matchingFlight) {
       displayPickupTime = formatTimeToHHMM(matchingFlight.eat || matchingFlight.arrival_time || "");
     }
@@ -730,7 +738,7 @@ function setupFlightDropdown() {
     
     flights.forEach((flight, idx) => {
       const flightNo = flight.number || flight.flight_number || "";
-      const airline = flight.flight_airline || "";
+      const airline = flight.flight_airline || flight.flight || flight.flight_name || flight.airline || "";
 
       // Normalise flight number with airline code prefix if not already present
       let combinedFlight = flightNo;

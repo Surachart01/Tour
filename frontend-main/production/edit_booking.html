@@ -2756,10 +2756,8 @@
                     <select
                       id="promotion"
                       class="form-control promotion-dropdown"
-                      disabled
-                      style="pointer-events: none; background-color: #e9ecef;"
                     >
-                      <option value="">-</option>
+                      <option value="">No Promotion</option>
                     </select>
                   </div>
                 </div>
@@ -5670,7 +5668,32 @@
               transferDropdown.innerHTML =
                 '<option value="">Select Transfer</option>'; // Clear previous options
 
-              transfers.forEach((transfer) => {
+              let filteredTransfers = transfers;
+              if (directionVal === "TRF Out") {
+                filteredTransfers = transfers.filter((t) => {
+                  const type = (t.transfer_type || t.type_of_transfer || "").toUpperCase();
+                  if (type === "TOUT" || type.includes("TRF OUT") || type.includes("OUT")) return true;
+                  const desc = (t.description || "").toLowerCase();
+                  const dep = (t.departure || "").toLowerCase();
+                  if (desc.includes("hotel") || desc.includes("pier") || dep.includes("hotel") || dep.includes("pier")) {
+                    if (desc.includes("airport") || (t.arrival || "").toLowerCase().includes("airport")) return true;
+                  }
+                  return type === "TOUT" || !type;
+                });
+                if (filteredTransfers.length === 0) filteredTransfers = transfers;
+              } else if (directionVal === "TRF In") {
+                filteredTransfers = transfers.filter((t) => {
+                  const type = (t.transfer_type || t.type_of_transfer || "").toUpperCase();
+                  if (type === "TIN" || type.includes("TRF IN") || type.includes("IN")) return true;
+                  const desc = (t.description || "").toLowerCase();
+                  const dep = (t.departure || "").toLowerCase();
+                  if (desc.includes("airport") || dep.includes("airport")) return true;
+                  return type === "TIN" || !type;
+                });
+                if (filteredTransfers.length === 0) filteredTransfers = transfers;
+              }
+
+              filteredTransfers.forEach((transfer) => {
                 const option = document.createElement("option");
                 option.value = transfer.id;
                 option.textContent = transfer.description;
@@ -5805,7 +5828,7 @@
             
             flights.forEach((flight, idx) => {
               const flightNo = flight.flight_number || flight.number || "";
-              const airline = flight.flight_airline || "";
+              const airline = flight.flight_airline || flight.flight || flight.flight_name || flight.airline || "";
               
               // Normalise flight number with airline code prefix if not already present
               let combinedFlight = flightNo;
@@ -5988,9 +6011,13 @@
 
           let displayPickupTime = formatTimeToHHMM(transfer.transferPickupTime || transfer.flightTime || "");
           if (!displayPickupTime && transfer.transferFlight && typeof flightsArray !== "undefined") {
-            const matchingFlight = flightsArray.find(
-              (f) => (f.flight_number || f.number || "").trim().toLowerCase() === (transfer.transferFlight || "").trim().toLowerCase()
-            );
+            const matchingFlight = flightsArray.find((f) => {
+              const fNo = (f.flight_number || f.number || "").trim().toLowerCase();
+              const fAirline = (f.flight_airline || f.flight || "").trim().toLowerCase();
+              const combined = `${fAirline} ${fNo}`.trim();
+              const tf = (transfer.transferFlight || "").trim().toLowerCase();
+              return fNo === tf || combined === tf;
+            });
             if (matchingFlight) {
               displayPickupTime = formatTimeToHHMM(matchingFlight.eat || matchingFlight.arrival_time || "");
             }

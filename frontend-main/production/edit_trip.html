@@ -2495,10 +2495,8 @@
                     <select
                       id="promotion"
                       class="form-control promotion-dropdown"
-                      disabled
-                      style="pointer-events: none; background-color: #e9ecef;"
                     >
-                      <option value="">-</option>
+                      <option value="">No Promotion</option>
                     </select>
                   </div>
                 </div>
@@ -4523,7 +4521,32 @@
               transferDropdown.innerHTML =
                 '<option value="">Select Transfer</option>'; // Clear previous options
 
-              transfers.forEach((transfer) => {
+              let filteredTransfers = transfers;
+              if (directionVal === "TRF Out") {
+                filteredTransfers = transfers.filter((t) => {
+                  const type = (t.transfer_type || t.type_of_transfer || "").toUpperCase();
+                  if (type === "TOUT" || type.includes("TRF OUT") || type.includes("OUT")) return true;
+                  const desc = (t.description || "").toLowerCase();
+                  const dep = (t.departure || "").toLowerCase();
+                  if (desc.includes("hotel") || desc.includes("pier") || dep.includes("hotel") || dep.includes("pier")) {
+                    if (desc.includes("airport") || (t.arrival || "").toLowerCase().includes("airport")) return true;
+                  }
+                  return type === "TOUT" || !type;
+                });
+                if (filteredTransfers.length === 0) filteredTransfers = transfers;
+              } else if (directionVal === "TRF In") {
+                filteredTransfers = transfers.filter((t) => {
+                  const type = (t.transfer_type || t.type_of_transfer || "").toUpperCase();
+                  if (type === "TIN" || type.includes("TRF IN") || type.includes("IN")) return true;
+                  const desc = (t.description || "").toLowerCase();
+                  const dep = (t.departure || "").toLowerCase();
+                  if (desc.includes("airport") || dep.includes("airport")) return true;
+                  return type === "TIN" || !type;
+                });
+                if (filteredTransfers.length === 0) filteredTransfers = transfers;
+              }
+
+              filteredTransfers.forEach((transfer) => {
                 const option = document.createElement("option");
                 option.value = transfer.id;
                 option.textContent = transfer.description;
@@ -4668,7 +4691,7 @@
             
             flights.forEach((flight, idx) => {
               const flightNo = flight.flight_number || flight.number || "";
-              const airline = flight.flight_airline || "";
+              const airline = flight.flight_airline || flight.flight || flight.flight_name || flight.airline || "";
               
               // Normalise flight number with airline code prefix if not already present
               let combinedFlight = flightNo;
@@ -4851,9 +4874,13 @@
 
           let displayPickupTime = formatTimeToHHMM(transfer.transferPickupTime || transfer.flightTime || "");
           if (!displayPickupTime && transfer.transferFlight && typeof flightsArray !== "undefined") {
-            const matchingFlight = flightsArray.find(
-              (f) => (f.flight_number || f.number || "").trim().toLowerCase() === (transfer.transferFlight || "").trim().toLowerCase()
-            );
+            const matchingFlight = flightsArray.find((f) => {
+              const fNo = (f.flight_number || f.number || "").trim().toLowerCase();
+              const fAirline = (f.flight_airline || f.flight || "").trim().toLowerCase();
+              const combined = `${fAirline} ${fNo}`.trim();
+              const tf = (transfer.transferFlight || "").trim().toLowerCase();
+              return fNo === tf || combined === tf;
+            });
             if (matchingFlight) {
               displayPickupTime = formatTimeToHHMM(matchingFlight.eat || matchingFlight.arrival_time || "");
             }
@@ -8013,17 +8040,33 @@
               console.error("Failed to parse promotions JSON");
             }
 
+            promotionDropdown.disabled = false;
             promotionDropdown.innerHTML =
-              '<option value="">-</option>';
+              '<option value="">No Promotion</option>';
             promotions.forEach((promotion) => {
               const option = document.createElement("option");
               option.value = promotion.id;
-              option.textContent = promotion.name;
+              const promoLabel = promotion.name 
+                ? `${promotion.name}${promotion.promotion_code ? ' (' + promotion.promotion_code + ')' : ''}` 
+                : (promotion.promotion_code || "Promotion");
+              option.textContent = promoLabel;
               option.setAttribute(
                 "data-promotion",
                 JSON.stringify({
                   promotion_code: promotion.promotion_code || "", // 👈 critical
                 })
+              );
+              option.setAttribute(
+                "data-promotion-code",
+                promotion.promotion_code || ""
+              );
+              option.setAttribute(
+                "data-discount",
+                promotion.discount_amount || promotion.discount || 0
+              );
+              option.setAttribute(
+                "data-discount-type",
+                promotion.discount_type || "%"
               );
               promotionDropdown.appendChild(option);
             });
@@ -8033,12 +8076,49 @@
               document.getElementById("promotion").dataset.currentPromotion;
             if (currentPromotionName) {
               for (let opt of promotionDropdown.options) {
-                if (opt.textContent === currentPromotionName) {
+                if (opt.textContent === currentPromotionName || opt.value === currentPromotionName) {
                   opt.selected = true;
                   break;
                 }
               }
+            } else {
+              autoSelectMatchingPromotion(promotions, promotionDropdown);
             }
+          }
+        }
+
+        function autoSelectMatchingPromotion(promotions, promotionDropdown) {
+          if (!promotions || !promotions.length || !promotionDropdown) return;
+          const checkInVal = document.getElementById("checkInDate")?.value;
+          const checkOutVal = document.getElementById("checkOutDate")?.value;
+          const nightsVal = parseInt(document.getElementById("numberOfNights")?.value, 10) || 0;
+          const bookingDateVal = document.getElementById("bookingDate")?.value;
+
+          const checkIn = checkInVal ? new Date(checkInVal) : null;
+          const checkOut = checkOutVal ? new Date(checkOutVal) : null;
+          const bookingDate = bookingDateVal ? new Date(bookingDateVal) : new Date();
+
+          let daysPrior = 0;
+          if (checkIn && bookingDate) {
+            const diffTime = checkIn.getTime() - bookingDate.getTime();
+            daysPrior = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+          }
+
+          const eligiblePromos = promotions.filter((p) => {
+            if (p.enabled === false) return false;
+            if (p.minimum_nights && p.minimum_nights > 0 && nightsVal < p.minimum_nights) return false;
+            if (p.booking_date_from && new Date(p.booking_date_from) > bookingDate) return false;
+            if (p.booking_date_to && new Date(p.booking_date_to) < bookingDate) return false;
+            if (checkIn && p.travel_date_from && new Date(p.travel_date_from) > checkIn) return false;
+            if (checkOut && p.travel_date_to && new Date(p.travel_date_to) < checkOut) return false;
+            if (p.early_bird_days && p.early_bird_days > 0 && daysPrior < p.early_bird_days) return false;
+            return true;
+          });
+
+          if (eligiblePromos.length > 0) {
+            eligiblePromos.sort((a, b) => (b.discount_amount || b.discount || 0) - (a.discount_amount || a.discount || 0));
+            const bestPromo = eligiblePromos[0];
+            promotionDropdown.value = bestPromo.id;
           }
         }
 
