@@ -182,7 +182,8 @@ document.getElementById("saveTransfer").addEventListener("click", function (even
   let transferToT = document.getElementById("transferToT").value;
   const transferPickupTime = document.getElementById("transferPickupTime").value;
   const flightTime = document.getElementById("flightTime").value || "";
-  const transferFlight = document.getElementById("transferFlight").value || "";
+  const rawTransferFlight = document.getElementById("transferFlight").value || "";
+  const transferFlight = formatDisplayFlight(rawTransferFlight);
   let remarks = document.getElementById("remarks").value;
   let transferPrice = document.getElementById("updatedTransferPrice").value || "N/A";
   let transferId = document.getElementById("transferType").value;
@@ -208,6 +209,7 @@ document.getElementById("saveTransfer").addEventListener("click", function (even
     return;
   }
 
+  const typeOfTransfer = document.getElementById("transferDirectionType")?.value || "";
   const newTransfer = {
     transferId, // ✅ Ensure ID is included
     transferCity,
@@ -216,6 +218,7 @@ document.getElementById("saveTransfer").addEventListener("click", function (even
     transferFrom,
     transferTo,
     transferToT,
+    typeOfTransfer,
     transferPickupTime,
     flightTime,
     transferFlight,
@@ -241,20 +244,23 @@ document.getElementById("saveTransfer").addEventListener("click", function (even
 // Add a new row to the table
 function addTransferRow(transfer) {
   const newRow = document.createElement("tr");
+  const formattedFlight = formatDisplayFlight(transfer.transferFlight || "");
 
   // Store transferId, flightTime, and transferFlight in dataset
   newRow.dataset.transferId = transfer.transferId || "";
   newRow.dataset.flightTime = transfer.flightTime || "";
-  newRow.dataset.transferFlight = transfer.transferFlight || "";
+  newRow.dataset.transferFlight = formattedFlight;
+  newRow.dataset.typeOfTransfer = transfer.typeOfTransfer || "";
   newRow.dataset.transferDate = formatToYYYYMMDD(transfer.transferDate) || "";
 
   let displayPickupTime = formatTimeToHHMM(transfer.transferPickupTime || transfer.flightTime || "");
-  if (!displayPickupTime && transfer.transferFlight && typeof flightsArray !== "undefined") {
-    const matchingFlight = flightsArray.find((f) => {
+  const allFlights = getAllAvailableFlights();
+  if (!displayPickupTime && formattedFlight && allFlights.length > 0) {
+    const matchingFlight = allFlights.find((f) => {
       const fNo = (f.flight_number || f.number || "").trim().toLowerCase();
       const fAirline = (f.flight_airline || f.flight || "").trim().toLowerCase();
       const combined = `${fAirline} ${fNo}`.trim();
-      const tf = (transfer.transferFlight || "").trim().toLowerCase();
+      const tf = formattedFlight.trim().toLowerCase();
       return fNo === tf || combined === tf;
     });
     if (matchingFlight) {
@@ -264,7 +270,7 @@ function addTransferRow(transfer) {
   newRow.dataset.pickupTime = displayPickupTime;
 
   newRow.innerHTML = `
-    <td>${transfer.transferDate}<br>${transfer.transferFlight || ""}</td>
+    <td>${transfer.transferDate}<br>${formattedFlight}</td>
     <td>${transfer.transferCity}</td>
     <td>${transfer.transferType}</td>
     <td>${transfer.transferToT || ""}</td>
@@ -290,10 +296,11 @@ function addTransferRow(transfer) {
 
 // Update an existing row in the table
 function updateTransferRow(row, transfer) {
+  const formattedFlight = formatDisplayFlight(transfer.transferFlight || "");
   const transferDateCell = row.dataset.isPackageItem === "true"
     ? `<input type="date" class="form-control form-control-sm inline-date-picker inline-package-preview-date" value="${formatToYYYYMMDD(transfer.transferDate) || ""}" data-item-index="${row.dataset.packageItemIndex || ""}">`
     : transfer.transferDate;
-  row.cells[0].innerHTML = `${transferDateCell}<br>${transfer.transferFlight || ""}`;
+  row.cells[0].innerHTML = `${transferDateCell}<br>${formattedFlight}`;
   row.cells[1].textContent = transfer.transferCity;
   row.cells[2].innerHTML = row.dataset.isPackageItem === "true"
     ? `${transfer.transferType} <span class="badge pkg-badge" style="background-color: #7b1fa2; color: white; font-size: 0.75rem; margin-left: 6px; padding: 3px 8px; border-radius: 4px; display: inline-block; vertical-align: middle;">Special Package</span>`
@@ -305,12 +312,13 @@ function updateTransferRow(row, transfer) {
   row.cells[7].textContent = transfer.price ? `${transfer.price}` : "N/A";
 
   let displayPickupTime = formatTimeToHHMM(transfer.transferPickupTime || transfer.flightTime || "");
-  if (!displayPickupTime && transfer.transferFlight && typeof flightsArray !== "undefined") {
-    const matchingFlight = flightsArray.find((f) => {
+  const allFlights = getAllAvailableFlights();
+  if (!displayPickupTime && formattedFlight && allFlights.length > 0) {
+    const matchingFlight = allFlights.find((f) => {
       const fNo = (f.flight_number || f.number || "").trim().toLowerCase();
       const fAirline = (f.flight_airline || f.flight || "").trim().toLowerCase();
       const combined = `${fAirline} ${fNo}`.trim();
-      const tf = (transfer.transferFlight || "").trim().toLowerCase();
+      const tf = formattedFlight.trim().toLowerCase();
       return fNo === tf || combined === tf;
     });
     if (matchingFlight) {
@@ -321,7 +329,8 @@ function updateTransferRow(row, transfer) {
   //Ensure `transferId`, `flightTime`, and `transferFlight` stay in dataset
   row.dataset.transferId = transfer.transferId;
   row.dataset.flightTime = transfer.flightTime || "";
-  row.dataset.transferFlight = transfer.transferFlight || "";
+  row.dataset.transferFlight = formattedFlight;
+  row.dataset.typeOfTransfer = transfer.typeOfTransfer || "";
   row.dataset.pickupTime = displayPickupTime;
   row.dataset.transferDate = formatToYYYYMMDD(transfer.transferDate) || "";
   row.dataset.remarks = transfer.remarks || "";
@@ -729,11 +738,79 @@ function setupFlightDropdown() {
     return "";
   }
 
+  function getAllAvailableFlights() {
+    let flights = typeof flightsArray !== "undefined" && Array.isArray(flightsArray) ? [...flightsArray] : [];
+    
+    // Also harvest flights from flightsTableBody DOM if present
+    const flightRows = document.querySelectorAll("#flightsTableBody tr");
+    flightRows.forEach((row) => {
+      const cells = row.querySelectorAll("td");
+      if (cells.length >= 3) {
+        const dateInput = cells[0].querySelector("input[type='date']");
+        const flightDate = dateInput ? dateInput.value : cells[0].textContent.trim();
+        const airline = cells[1]?.textContent.replace(/Special Package/gi, "").trim() || "";
+        const flightNo = cells[2]?.textContent.trim() || "";
+        const inOut = cells[3]?.textContent.trim() || "";
+        const route = cells[4]?.textContent.trim() || "";
+        const depTime = cells[5]?.textContent.trim() || "";
+        const arrTime = cells[6]?.textContent.trim() || "";
+
+        const exists = flights.some(f => 
+          (f.number || f.flight_number || "").trim().toLowerCase() === flightNo.toLowerCase() &&
+          (f.flight || f.flight_airline || "").trim().toLowerCase() === airline.toLowerCase()
+        );
+        if (!exists && (flightNo || airline)) {
+          flights.push({
+            flight: airline,
+            flight_airline: airline,
+            number: flightNo,
+            flight_number: flightNo,
+            flightInOut: inOut,
+            in_or_out: inOut,
+            flightRoute: route,
+            route: route,
+            flightDate: flightDate,
+            departureTime: depTime,
+            departure_time: depTime,
+            arrivalTime: arrTime,
+            arrival_time: arrTime
+          });
+        }
+      }
+    });
+
+    return flights;
+  }
+
+  function formatDisplayFlight(flightValue) {
+    if (!flightValue) return "";
+    const raw = String(flightValue).trim();
+    if (!raw) return "";
+
+    // If it already includes a space and airline code (e.g. "CX 708", "TG 207"), return as is
+    if (raw.includes(" ")) return raw;
+
+    const flights = getAllAvailableFlights();
+    const match = flights.find(f => {
+      const fNo = (f.number || f.flight_number || "").trim().toLowerCase();
+      return fNo === raw.toLowerCase();
+    });
+
+    if (match) {
+      const airline = (match.flight_airline || match.flight || match.flight_name || match.airline || "").trim();
+      if (airline && !raw.toLowerCase().startsWith(airline.toLowerCase())) {
+        return `${airline} ${raw}`;
+      }
+    }
+
+    return raw;
+  }
+
   function refreshFlightSelect(selectedValue) {
     transferFlightSelect.innerHTML = '<option value="" disabled selected>Select Flight</option>';
     
-    // Access flightsArray from add_flight.js
-    const flights = typeof flightsArray !== "undefined" ? flightsArray : [];
+    // Access all flights from flightsArray & flightsTableBody
+    const flights = getAllAvailableFlights();
     console.log("Refreshing flight select dropdown. Flights found:", flights);
     
     flights.forEach((flight, idx) => {
@@ -766,7 +843,8 @@ function setupFlightDropdown() {
       option.dataset.arrival = arrTime;
       option.dataset.route = route;
 
-      if (selectedValue && (combinedFlight.toLowerCase() === selectedValue.toLowerCase() || flightNo.toLowerCase() === selectedValue.toLowerCase())) {
+      const normalizedSelected = selectedValue ? formatDisplayFlight(selectedValue).toLowerCase() : "";
+      if (selectedValue && (combinedFlight.toLowerCase() === selectedValue.toLowerCase() || flightNo.toLowerCase() === selectedValue.toLowerCase() || combinedFlight.toLowerCase() === normalizedSelected)) {
         option.selected = true;
       }
 

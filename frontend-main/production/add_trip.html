@@ -6015,6 +6015,7 @@
                 rowData["flight_time"] = row.dataset.flightTime || "";
                 rowData["pickup_time"] = row.dataset.pickupTime || "";
                 rowData["flight_number"] = row.dataset.transferFlight || "";
+                rowData["type_of_transfer"] = row.dataset.typeOfTransfer || (typeof normalizeTransferDirection === "function" ? normalizeTransferDirection("", rowData) : "");
                 rowData["price"] = rowData["total_cost"];
                 rowData["discount"] = 0.0;
                 rowData["final_cost"] = rowData["total_cost"];
