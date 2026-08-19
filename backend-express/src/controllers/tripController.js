@@ -133,6 +133,13 @@ export function buildQuotationConversionData(updatedAt = new Date()) {
   };
 }
 
+export function safeTruncate(val, maxLen) {
+  if (val === undefined || val === null) return null;
+  const s = String(val).trim();
+  if (!s) return null;
+  return maxLen && s.length > maxLen ? s.slice(0, maxLen) : s;
+}
+
 export function normalizeQuotationFlightFields(item = {}) {
   return {
     edt: item.edt || item.departure_time || null,
@@ -909,18 +916,18 @@ export async function createQuotation(req, res, next) {
 
           await tx.hotel_trip_items.create({ data: {
               trip_item_id: id, hotel_id: validHotelId, from_date: parseRequiredDate(item.from_date, tripFallbackDate),
-              to_date: parseRequiredDate(item.to_date, tripFallbackDate), city: item.city, hotel_name: item.hotel_name,
+              to_date: parseRequiredDate(item.to_date, tripFallbackDate), city: safeTruncate(item.city, 100) || "", hotel_name: safeTruncate(item.hotel_name, 255) || "",
               nights: parseSafeInt(item.nights) || 1, single_price: parseFloat(item.single_price) || 0, double_price: parseFloat(item.double_price) || 0,
-              extra_bed_price: parseFloat(item.extra_bed_price) || 0, room_type: item.room_type || item.room_type_summary || null,
+              extra_bed_price: parseFloat(item.extra_bed_price) || 0, room_type: safeTruncate(item.room_type || item.room_type_summary, 100),
               abf_price: parseFloat(item.abf_price) || 0, lunch_price: parseFloat(item.lunch_price) || 0, dinner_price: parseFloat(item.dinner_price) || 0,
-              promotions: validPromoId, tour_package: item.tour_package,
+              promotions: validPromoId, tour_package: safeTruncate(item.tour_package, 255),
               notes: item.notes, approved: approvalState.approved, declined: approvalState.declined,
               promotion: item.promotion || null,
               meals: item.meals || null,
               room_types_json: item.room_types_json || null,
               early_check_in: item.early_check_in || false,
               late_check_out: item.late_check_out || false,
-              late_checkout_type: item.late_checkout_type || null,
+              late_checkout_type: safeTruncate(item.late_checkout_type, 20),
               flight_in: item.flight_in || null,
               flight_out: item.flight_out || null,
               flight_info: item.flight_info || null,
@@ -937,7 +944,7 @@ export async function createQuotation(req, res, next) {
               payment_date: parseOptionalDate(item.payment_date),
               hotel_room_type_items: rtItems.length > 0 ? {
                 create: rtItems.map(rt => ({
-                  room_type_id: parseSafeFK(rt.room_type_id), room_type: rt.room_type,
+                  room_type_id: parseSafeFK(rt.room_type_id), room_type: safeTruncate(rt.room_type, 100),
                   adults: parseSafeInt(rt.adults) || 0, children: parseSafeInt(rt.children) || 0,
                   complimentary_abf: rt.complimentary_abf || false,
                   extra_adult_bed: rt.extra_adult_bed || false,
@@ -977,12 +984,12 @@ export async function createQuotation(req, res, next) {
 
           await tx.excursion_trip_items.create({ data: {
               trip_item_id: id, excursion_id: validExcId, supplier_id: validSuppId,
-              city: item.city, toe: item.toe, from_date: excursionDate,
-              to_date: excursionDate, hotel: item.hotel,
-              guide_name: item.guide_name, guide_contact: item.guide_contact,
+              city: safeTruncate(item.city, 255), toe: safeTruncate(item.toe, 50), from_date: excursionDate,
+              to_date: excursionDate, hotel: safeTruncate(item.hotel, 255),
+              guide_name: safeTruncate(item.guide_name, 255), guide_contact: safeTruncate(item.guide_contact, 50),
               price: parseFloat(item.price) || 0, currency_id: validCurrId, remarks: item.remarks,
               approved: approvalState.approved, declined: approvalState.declined,
-              pickup_time: item.pickup_time || null
+              pickup_time: safeTruncate(item.pickup_time, 50) || null
           } });
         }
       }
@@ -1014,12 +1021,12 @@ export async function createQuotation(req, res, next) {
 
           await tx.tour_trip_items.create({ data: {
               trip_item_id: id, tour_id: validTourId, supplier_id: validSuppId,
-              tot: parseTot(item.tot), from_location: item.from_location, to_location: item.to_location,
+              tot: safeTruncate(parseTot(item.tot), 50), from_location: safeTruncate(item.from_location, 255), to_location: safeTruncate(item.to_location, 255),
               number_of_adults: parseSafeInt(item.number_of_adults) || 0, number_of_kids: parseSafeInt(item.number_of_kids) || 0,
               from_date: parseRequiredDate(item.from_date, tripFallbackDate), to_date: parseRequiredDate(item.to_date, tripFallbackDate),
               flight_in: parseOptionalDate(item.flight_in),
-              flight_number: item.flight_number || item.flight_in || null, flight_out: parseOptionalDate(item.flight_out),
-              guide_name: item.guide_name, guide_contact: item.guide_contact,
+              flight_number: safeTruncate(item.flight_number || item.flight_in, 50), flight_out: parseOptionalDate(item.flight_out),
+              guide_name: safeTruncate(item.guide_name, 255), guide_contact: safeTruncate(item.guide_contact, 50),
               payment_car: item.payment_car, payment_service: item.payment_service,
               price: parseFloat(item.price) || 0, currency_id: validCurrId, remarks: item.remarks,
               approved: approvalState.approved, declined: approvalState.declined,
@@ -1058,18 +1065,18 @@ export async function createQuotation(req, res, next) {
           await tx.transfer_trip_items.create({ data: {
               trip_item_id: id,
               transfer_id: validTransId,
-              from_location: item.from_location, to_location: item.to_location,
+              from_location: safeTruncate(item.from_location, 255), to_location: safeTruncate(item.to_location, 255),
               from_date: transferDate, to_date: transferDate,
-              flight_number: item.flight_number, tot: parseTot(item.tot),
-              supplier_id: validSuppId, guide_name: item.guide_name,
-              guide_contact: item.guide_contact, price: parseFloat(item.price) || 0,
+              flight_number: safeTruncate(item.flight_number, 50), tot: safeTruncate(parseTot(item.tot), 10) || "SIC",
+              supplier_id: validSuppId, guide_name: safeTruncate(item.guide_name, 255),
+              guide_contact: safeTruncate(item.guide_contact, 20), price: parseFloat(item.price) || 0,
               currency_id: validCurrId, remarks: item.remarks,
               approved: approvalState.approved, declined: approvalState.declined,
-              city: item.city || item.transferCity || null,
-              transfer_description: item.transfer_description || item.transferType || null,
-              pickup_time: item.pickup_time || item.transferPickupTime || null,
-              flight_time: item.flight_time || item.flightTime || null,
-              type_of_transfer: item.type_of_transfer || item.transferRouteType || null
+              city: safeTruncate(item.city || item.transferCity, 255),
+              transfer_description: safeTruncate(item.transfer_description || item.transferType, 255),
+              pickup_time: safeTruncate(item.pickup_time || item.transferPickupTime, 255),
+              flight_time: safeTruncate(item.flight_time || item.flightTime, 50),
+              type_of_transfer: safeTruncate(item.type_of_transfer || item.transferRouteType, 50)
           } });
         }
       }
@@ -1086,13 +1093,15 @@ export async function createQuotation(req, res, next) {
             if (currExists) validCurrId = rawCurrId;
           }
 
+          const normalizedFlight = normalizeQuotationFlightFields(item);
           await tx.flight_trip_items.create({ data: {
               trip_item_id: id, from_date: flightDate, to_date: flightDate,
-              flight_number: item.flight_number, in_or_out: item.in_or_out,
-              route: item.route, issued_by: item.issued_by, price: parseFloat(item.price) || 0,
+              flight_number: safeTruncate(item.flight_number, 50), in_or_out: safeTruncate(item.in_or_out, 10),
+              route: safeTruncate(item.route, 100), issued_by: safeTruncate(item.issued_by, 100), price: parseFloat(item.price) || 0,
               currency_id: validCurrId, remarks: item.remarks,
               approved: approvalState.approved, declined: approvalState.declined,
-              ...normalizeQuotationFlightFields(item)
+              ...normalizedFlight,
+              flight_airline: safeTruncate(normalizedFlight.flight_airline || item.flight_airline, 100)
           } });
         }
       }
@@ -1693,18 +1702,18 @@ export async function updateQuotation(req, res, next) {
 
           await saveTripItem('hotel', item, {
               trip_item_id: id, hotel_id: validHotelId, from_date: parseRequiredDate(item.from_date, tripFallbackDate),
-              to_date: parseRequiredDate(item.to_date, tripFallbackDate), city: item.city, hotel_name: item.hotel_name,
+              to_date: parseRequiredDate(item.to_date, tripFallbackDate), city: safeTruncate(item.city, 100) || "", hotel_name: safeTruncate(item.hotel_name, 255) || "",
               nights: parseSafeInt(item.nights) || 1, single_price: parseFloat(item.single_price) || 0, double_price: parseFloat(item.double_price) || 0,
-              extra_bed_price: parseFloat(item.extra_bed_price) || 0, room_type: item.room_type || item.room_type_summary || null,
+              extra_bed_price: parseFloat(item.extra_bed_price) || 0, room_type: safeTruncate(item.room_type || item.room_type_summary, 100),
               abf_price: parseFloat(item.abf_price) || 0, lunch_price: parseFloat(item.lunch_price) || 0, dinner_price: parseFloat(item.dinner_price) || 0,
-              promotions: validPromoId, tour_package: item.tour_package,
+              promotions: validPromoId, tour_package: safeTruncate(item.tour_package, 255),
               notes: item.notes, approved: approvalState.approved, declined: approvalState.declined,
               promotion: item.promotion || null,
               meals: item.meals || null,
               room_types_json: item.room_types_json || null,
               early_check_in: item.early_check_in || false,
               late_check_out: item.late_check_out || false,
-              late_checkout_type: item.late_checkout_type || null,
+              late_checkout_type: safeTruncate(item.late_checkout_type, 20),
               flight_in: item.flight_in || null,
               flight_out: item.flight_out || null,
               flight_info: item.flight_info || null,
@@ -1721,7 +1730,7 @@ export async function updateQuotation(req, res, next) {
               payment_date: parseOptionalDate(item.payment_date),
               hotel_room_type_items: rtItems.length > 0 ? {
                 create: rtItems.map(rt => ({
-                  room_type_id: parseSafeFK(rt.room_type_id), room_type: rt.room_type,
+                  room_type_id: parseSafeFK(rt.room_type_id), room_type: safeTruncate(rt.room_type, 100),
                   adults: parseSafeInt(rt.adults) || 0, children: parseSafeInt(rt.children) || 0,
                   complimentary_abf: rt.complimentary_abf || false,
                   extra_adult_bed: rt.extra_adult_bed || false,
@@ -1729,7 +1738,6 @@ export async function updateQuotation(req, res, next) {
                   sharing_bed: rt.sharing_bed || false
                 }))
               } : undefined
-
           });
         }
       }
@@ -1761,13 +1769,12 @@ export async function updateQuotation(req, res, next) {
 
           await saveTripItem('excursion', item, {
               trip_item_id: id, excursion_id: validExcId, supplier_id: validSuppId,
-              city: item.city, toe: item.toe, from_date: excursionDate,
-              to_date: excursionDate, hotel: item.hotel,
-              guide_name: item.guide_name, guide_contact: item.guide_contact,
+              city: safeTruncate(item.city, 255), toe: safeTruncate(item.toe, 50), from_date: excursionDate,
+              to_date: excursionDate, hotel: safeTruncate(item.hotel, 255),
+              guide_name: safeTruncate(item.guide_name, 255), guide_contact: safeTruncate(item.guide_contact, 50),
               price: parseFloat(item.price) || 0, currency_id: validCurrId, remarks: item.remarks,
               approved: approvalState.approved, declined: approvalState.declined,
-              pickup_time: item.pickup_time || null
-
+              pickup_time: safeTruncate(item.pickup_time, 50) || null
           });
         }
       }
@@ -1798,18 +1805,17 @@ export async function updateQuotation(req, res, next) {
 
           await saveTripItem('tour', item, {
               trip_item_id: id, tour_id: validTourId, supplier_id: validSuppId,
-              tot: parseTot(item.tot), from_location: item.from_location, to_location: item.to_location,
+              tot: safeTruncate(parseTot(item.tot), 50), from_location: safeTruncate(item.from_location, 255), to_location: safeTruncate(item.to_location, 255),
               number_of_adults: parseSafeInt(item.number_of_adults) || 0, number_of_kids: parseSafeInt(item.number_of_kids) || 0,
               from_date: parseRequiredDate(item.from_date, tripFallbackDate), to_date: parseRequiredDate(item.to_date, tripFallbackDate),
               flight_in: parseOptionalDate(item.flight_in),
-              flight_number: item.flight_number || item.flight_in || null, flight_out: parseOptionalDate(item.flight_out),
-              guide_name: item.guide_name, guide_contact: item.guide_contact,
+              flight_number: safeTruncate(item.flight_number || item.flight_in, 50), flight_out: parseOptionalDate(item.flight_out),
+              guide_name: safeTruncate(item.guide_name, 255), guide_contact: safeTruncate(item.guide_contact, 50),
               payment_car: item.payment_car, payment_service: item.payment_service,
               price: parseFloat(item.price) || 0, currency_id: validCurrId, remarks: item.remarks,
               approved: approvalState.approved, declined: approvalState.declined,
               transfer_in: item.transfer_in || buildTourTransferText(item, 'in') || null,
               transfer_out: item.transfer_out || buildTourTransferText(item, 'out') || null
-
           });
         }
       }
@@ -1842,19 +1848,18 @@ export async function updateQuotation(req, res, next) {
           await saveTripItem('transfer', item, {
               trip_item_id: id,
               transfer_id: validTransId,
-              from_location: item.from_location, to_location: item.to_location,
+              from_location: safeTruncate(item.from_location, 255), to_location: safeTruncate(item.to_location, 255),
               from_date: transferDate, to_date: transferDate,
-              flight_number: item.flight_number, tot: parseTot(item.tot),
-              supplier_id: validSuppId, guide_name: item.guide_name,
-              guide_contact: item.guide_contact, price: parseFloat(item.price) || 0,
+              flight_number: safeTruncate(item.flight_number, 50), tot: safeTruncate(parseTot(item.tot), 10) || "SIC",
+              supplier_id: validSuppId, guide_name: safeTruncate(item.guide_name, 255),
+              guide_contact: safeTruncate(item.guide_contact, 20), price: parseFloat(item.price) || 0,
               currency_id: validCurrId, remarks: item.remarks,
               approved: approvalState.approved, declined: approvalState.declined,
-              city: item.city || item.transferCity || null,
-              transfer_description: item.transfer_description || item.transferType || null,
-              pickup_time: item.pickup_time || item.transferPickupTime || null,
-              flight_time: item.flight_time || item.flightTime || null,
-              type_of_transfer: item.type_of_transfer || item.transferRouteType || null
-
+              city: safeTruncate(item.city || item.transferCity, 255),
+              transfer_description: safeTruncate(item.transfer_description || item.transferType, 255),
+              pickup_time: safeTruncate(item.pickup_time || item.transferPickupTime, 255),
+              flight_time: safeTruncate(item.flight_time || item.flightTime, 50),
+              type_of_transfer: safeTruncate(item.type_of_transfer || item.transferRouteType, 50)
           });
         }
       }
@@ -1870,14 +1875,15 @@ export async function updateQuotation(req, res, next) {
             if (currExists) validCurrId = rawCurrId;
           }
 
+          const normalizedFlight = normalizeQuotationFlightFields(item);
           await saveTripItem('flight', item, {
               trip_item_id: id, from_date: flightDate, to_date: flightDate,
-              flight_number: item.flight_number, in_or_out: item.in_or_out,
-              route: item.route, issued_by: item.issued_by, price: parseFloat(item.price) || 0,
+              flight_number: safeTruncate(item.flight_number, 50), in_or_out: safeTruncate(item.in_or_out, 10),
+              route: safeTruncate(item.route, 100), issued_by: safeTruncate(item.issued_by, 100), price: parseFloat(item.price) || 0,
               currency_id: validCurrId, remarks: item.remarks,
               approved: approvalState.approved, declined: approvalState.declined,
-              ...normalizeQuotationFlightFields(item)
-
+              ...normalizedFlight,
+              flight_airline: safeTruncate(normalizedFlight.flight_airline || item.flight_airline, 100)
           });
         }
       }

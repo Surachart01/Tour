@@ -88,11 +88,15 @@ export function calculateMarkedUpPrice(basePrice, markupGroup, serviceType, mark
       const hotelMarkup = (markup.hotel_markup_percentages || []).find(
         hm => parsedPrice >= parseFloat(hm.price_from) && parsedPrice <= parseFloat(hm.price_to)
       );
-      if (!hotelMarkup) {
-        return parsedPrice;
+      if (hotelMarkup) {
+        finalPrice = applyFixedMarkup(parsedPrice, parseFloat(hotelMarkup.markup_percentage || 0));
+        break;
       }
-      finalPrice = applyFixedMarkup(parsedPrice, parseFloat(hotelMarkup.markup_percentage || 0));
-      break;
+      if (markup.hotel_markup_value && parseFloat(markup.hotel_markup_value) > 0) {
+        finalPrice = applyMarkup(parsedPrice, parseFloat(markup.hotel_markup_value), markup.hotel_markup_unit || 'flat rate');
+        break;
+      }
+      return parsedPrice;
     }
     case 'excursion':
       finalPrice = applyMarkup(basePrice, parseFloat(markup.excursion_markup || 0), markup.excursion_markup_unit);

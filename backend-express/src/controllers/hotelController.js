@@ -650,9 +650,20 @@ export async function calculateHotelCost(req, res, next) {
     }
 
     if (request.agent_name) {
-      const agent = await prisma.agent.findUnique({
-        where: { name: request.agent_name }
+      const cleanName = String(request.agent_name).trim();
+      let agent = await prisma.agent.findUnique({
+        where: { name: cleanName }
       });
+      if (!agent) {
+        agent = await prisma.agent.findFirst({
+          where: {
+            OR: [
+              { name: { equals: cleanName, mode: 'insensitive' } },
+              { name: { contains: cleanName.replace(/\s*\(our office\)\s*/i, '').trim(), mode: 'insensitive' } }
+            ]
+          }
+        });
+      }
       if (agent) {
         markupGroup = agent.markupGroup || '';
       }
