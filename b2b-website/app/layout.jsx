@@ -2,12 +2,12 @@ import './globals.css';
 import { LanguageProvider } from '../context/LanguageContext';
 
 export const metadata = {
-  title: 'Vera Thailandia | Premier Inbound DMC & Tour Operator in Thailand (B2B)',
-  description: 'Vera Thailandia is the leading incoming Destination Management Company (DMC) and Tour Operator in Thailand specialized in the Italian and European travel market.',
+  title: 'Vera Thailandia | Thailand DMC for Travel Professionals',
+  description: 'Thailand inbound operations, tailor-made journeys, accommodation, transfers and local support for travel agencies and tour operators.',
   keywords: 'Tour Operator Thailandia, DMC Thailand, Viaggi Thailandia B2B, Incoming Thailandia, Agenzia Viaggi Thailandia, Escursioni Thailandia',
   openGraph: {
-    title: 'Vera Thailandia - B2B Inbound Tour Operator & DMC',
-    description: 'Direct hotel rates, bespoke itineraries, Italian-speaking guides and 24/7 assistance across Thailand for travel agencies.',
+    title: 'Vera Thailandia | Thailand Inbound DMC',
+    description: 'One local operations team for accommodation, touring, transport and guest support across Thailand.',
     url: 'https://www.verathailandia.com',
     siteName: 'Vera Thailandia',
     images: [
@@ -17,14 +17,14 @@ export const metadata = {
         height: 630,
       },
     ],
-    locale: 'it_IT',
+    locale: 'en_US',
     type: 'website',
   },
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="it">
+    <html lang="en">
       <body>
         <LanguageProvider>
           {children}

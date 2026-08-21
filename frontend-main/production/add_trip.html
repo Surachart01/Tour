@@ -6368,6 +6368,13 @@
               clearTripRequiredFieldState();
               const errors = [];
 
+              if (
+                (userRole === "admin" || userRole === "superadmin") &&
+                (isBlankValue(agentName) || agentName === "Agent not found")
+              ) {
+                errors.push("A valid Agent is required.");
+              }
+
               if (isBlankValue(clientName)) {
                 errors.push("Client Name is required.");
                 markFieldInvalid("clientName", "Client Name is required.");

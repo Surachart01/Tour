@@ -4085,6 +4085,16 @@
         let toursArray = [];
         let hotelsArray = [];
         let othersArray = []; // Store others data
+        const bookingOriginalServiceCounts = {
+          hotel: 0,
+          transfer: 0,
+          excursion: 0,
+          flight: 0,
+          tour: 0,
+          other: 0,
+        };
+        let bookingDetailsLoaded = false;
+        let bookingLoadFailed = false;
         let editingTransferRow = null; // Track the row being edited
         let editingExcursionRow = null;
         let editingTourRow = null;
@@ -6346,7 +6356,8 @@
           // ✅ **Disable fields if the quotation is approved**
           const isQuotationApproved = quotationStatus === "Approved";
           const role = localStorage.getItem("role") || "";
-          const isAdmin = role.trim().toLowerCase() === "admin";
+          const normalizedRole = role.trim().toLowerCase();
+          const isAdmin = normalizedRole === "admin" || normalizedRole === "superadmin";
           const canEdit = !isQuotationApproved || isAdmin;
 
           document.getElementById("transferCity").disabled = !canEdit;
@@ -10977,7 +10988,8 @@
           });
           const isQuotationApproved = quotationStatus === "Approved";
           const role = localStorage.getItem("role") || "";
-          const isAdmin = role.trim().toLowerCase() === "admin";
+          const normalizedRole = role.trim().toLowerCase();
+          const isAdmin = normalizedRole === "admin" || normalizedRole === "superadmin";
           const canEdit = !isQuotationApproved || isAdmin;
 
           // ✅ **Disable all fields except Flight In, Arrival Time, Flight Out, Departure Time, Remarks**
@@ -11908,8 +11920,38 @@
             "Content-Type": "application/json",
           },
         })
-          .then((response) => response.json())
+          .then(async (response) => {
+            let payload = null;
+            try {
+              payload = await response.json();
+            } catch (error) {
+              console.error("Unable to parse booking response:", error);
+            }
+
+            if (!response.ok) {
+              throw new Error(
+                payload?.message ||
+                  payload?.error ||
+                  `The server returned HTTP ${response.status}.`
+              );
+            }
+
+            if (!payload || typeof payload !== "object") {
+              throw new Error("The server returned an invalid booking response.");
+            }
+
+            return payload;
+          })
           .then((data) => {
+            Object.assign(bookingOriginalServiceCounts, {
+              hotel: Array.isArray(data.hotels) ? data.hotels.length : 0,
+              transfer: Array.isArray(data.transfers) ? data.transfers.length : 0,
+              excursion: Array.isArray(data.excursions) ? data.excursions.length : 0,
+              flight: Array.isArray(data.flights) ? data.flights.length : 0,
+              tour: Array.isArray(data.tours) ? data.tours.length : 0,
+              other: Array.isArray(data.others) ? data.others.length : 0,
+            });
+
             document.getElementById("agentName").textContent = data.agent_name;
             document.getElementById("totalPrice").value = data.total_cost !== undefined ? data.total_cost : (data.total_amount || '');
             document.getElementById("finalPrice").value = data.final_cost !== undefined ? data.final_cost : (data.final_amount || '');
@@ -12295,13 +12337,26 @@
               console.warn("No others found or invalid format:", data.others);
             }
 
+            bookingDetailsLoaded = true;
+            bookingLoadFailed = false;
             window.quotationLoaded = true;
             checkAndApplyPendingSpecialPackage();
             updateBookingConfirmedButtonState();
           })
           .catch((error) => {
+            bookingDetailsLoaded = false;
+            bookingLoadFailed = true;
+            window.quotationLoaded = false;
             console.error("Error fetching trip details:", error);
-            alert("Failed to load trip details.");
+            const submitButton = document.getElementById("submitTrip");
+            if (submitButton) {
+              submitButton.disabled = true;
+              submitButton.innerHTML = '<i class="fas fa-exclamation-triangle" style="margin-right:8px"></i> Booking Unavailable';
+              submitButton.title = "Reload the page before editing or saving this booking.";
+            }
+            alert(
+              `Failed to load booking details. ${error.message || "Please reload the page and try again."}`
+            );
           })
           .finally(() => {
             const loader = document.getElementById("pageLoaderOverlay");
@@ -12401,6 +12456,13 @@
           .getElementById("submitTrip")
           .addEventListener("click", function (event) {
             event.preventDefault();
+
+            if (bookingLoadFailed || !bookingDetailsLoaded) {
+              alert(
+                "Booking data is not ready. Please reload the page before editing or saving."
+              );
+              return;
+            }
 
             const form = document.getElementById("addTripForm");
             clearTripRequiredFieldState();
@@ -13076,6 +13138,21 @@
               return;
             }
 
+            const currentServiceItems = {
+              hotel: hotels,
+              transfer: transfers,
+              excursion: excursions,
+              flight: flights,
+              tour: tours,
+              other: others,
+            };
+            const clearServiceTypes = Object.entries(bookingOriginalServiceCounts)
+              .filter(
+                ([type, originalCount]) =>
+                  originalCount > 0 && currentServiceItems[type].length === 0
+              )
+              .map(([type]) => type);
+
             // Construct the request payload
             const quotationRequest = {
               agent_name: agentName,
@@ -13101,6 +13178,7 @@
               flights: flights,
               tours: tours,
               others: others,
+              clear_service_types: clearServiceTypes,
               special_package_id: document.getElementById("specialPackageSelect").value ? parseInt(document.getElementById("specialPackageSelect").value) : null,
               special_pkg_single_rooms: document.getElementById("specialPackageSingleRoom").checked ? (parseInt(document.getElementById("specialPackageSingleRoomCount").value) || 0) : 0,
               special_pkg_double_rooms: document.getElementById("specialPackageDoubleRoom").checked ? (parseInt(document.getElementById("specialPackageDoubleRoomCount").value) || 0) : 0,

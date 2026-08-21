@@ -154,6 +154,27 @@ test('booking confirmation controls call the correct endpoints without a page re
   assert.match(supplierResponseSource, /This response link does not belong to an active booking/);
 });
 
+test('booking editing blocks destructive saves after load failures and clears explicitly emptied services', () => {
+  assert.match(bookingPage, /const bookingOriginalServiceCounts = \{/);
+  assert.match(bookingPage, /let bookingDetailsLoaded = false;/);
+  assert.match(bookingPage, /let bookingLoadFailed = false;/);
+  assert.match(bookingPage, /if \(!response\.ok\)/);
+  assert.match(bookingPage, /Booking data is not ready\. Please reload the page before editing or saving\./);
+  assert.match(bookingPage, /originalCount > 0 && currentServiceItems\[type\]\.length === 0/);
+  assert.match(bookingPage, /clear_service_types:\s*clearServiceTypes/);
+});
+
+test('booking transfer, hotel, and tour editing grant superadmin the admin permissions', () => {
+  const adminRoleCheck = /normalizedRole === "admin" \|\| normalizedRole === "superadmin"/g;
+  const matches = bookingPage.match(adminRoleCheck) || [];
+
+  assert.ok(matches.length >= 3, 'all three service editors must support superadmin');
+  assert.doesNotMatch(
+    bookingPage,
+    /const isAdmin = role\.trim\(\)\.toLowerCase\(\) === "admin";/
+  );
+});
+
 test('confirmed bookings open the single Proforma preview implementation', () => {
   assert.match(routeSource, /router\.get\('\/bookings\/:id\/proforma-pdf', authorize\('admin', 'agent'\), generateProformaInvoicePDF\)/);
   assert.match(quotationListPage, /const proformaButton = \(trip\.status === 'Confirmed'\)/);
@@ -474,6 +495,19 @@ test('hotel quotation editing restores package dates and room counts safely', ()
     quotationPage,
     /alert\("Check-Out date must be later than Check-In date\."\)/
   );
+});
+
+test('quotation editing blocks destructive saves when a service tab fails to hydrate', () => {
+  assert.match(quotationPage, /const quotationServiceHydration = Object\.fromEntries\(/);
+  assert.match(quotationPage, /function hydrateQuotationService\(/);
+  assert.match(quotationPage, /function getFailedQuotationServiceSections\(/);
+  assert.match(quotationPage, /Please reload the page before saving/);
+  assert.match(quotationPage, /clear_service_types:\s*clearServiceTypes/);
+});
+
+test('new quotations require a valid displayed agent for administrator saves', () => {
+  assert.match(addQuotationPage, /A valid Agent is required\./);
+  assert.match(addQuotationPage, /agentName === "Agent not found"/);
 });
 
 test('booking documents and supplier messages prefer the generated file number', () => {

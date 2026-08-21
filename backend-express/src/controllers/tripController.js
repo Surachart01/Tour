@@ -151,15 +151,27 @@ export function normalizeQuotationFlightFields(item = {}) {
 export async function resolveAgentIdFromRequest(data = {}, claims = {}, client = prisma, existingTrip = null) {
   const role = String(claims?.role || '').trim().toLowerCase();
   const claimAgentId = parseSafeInt(claims?.agent_id);
+  const isAdmin = role === 'admin' || role === 'superadmin';
 
-  // 1. Non-admin Agent role: MUST own their created/edited trip
-  if (role !== 'admin' && role !== 'superadmin' && claimAgentId) {
-    return claimAgentId;
+  // Agents may only save quotations under the agent linked to their token.
+  if (!isAdmin) {
+    if (!claimAgentId) return null;
+    const claimedAgent = await client.agent.findUnique({
+      where: { id: claimAgentId },
+      select: { id: true }
+    });
+    return claimedAgent?.id || null;
   }
 
-  // 2. Explicit agent_id in request payload
+  // Admin selections must reference an agent that actually exists.
   const explicitAgentId = parseSafeInt(data?.agent_id);
-  if (explicitAgentId) return explicitAgentId;
+  if (explicitAgentId) {
+    const selectedAgent = await client.agent.findUnique({
+      where: { id: explicitAgentId },
+      select: { id: true }
+    });
+    return selectedAgent?.id || null;
+  }
 
   // 3. Lookup by explicit agent_name in request payload (if valid agent name provided)
   const agentName = (data?.agent_name || '').toString().trim();
@@ -171,25 +183,17 @@ export async function resolveAgentIdFromRequest(data = {}, claims = {}, client =
     if (agent?.id) return agent.id;
   }
 
-  // 4. Preserve existing trip's agent_id if available
-  const existingAgentId = parseSafeInt(existingTrip?.agent_id);
-  if (existingAgentId) return existingAgentId;
-
-  // 5. Lookup by explicit agent_name even if Vera Thailandia Online (fallback)
+  // Lookup reserved/default agent names as real records as well.
   if (agentName) {
     const agent = await client.agent.findFirst({
       where: { name: { equals: agentName, mode: 'insensitive' } },
       select: { id: true }
     });
     if (agent?.id) return agent.id;
+    return null;
   }
 
-  // 6. Fallback to claimAgentId only for non-admins
-  if (claimAgentId && role !== 'admin' && role !== 'superadmin') {
-    return claimAgentId;
-  }
-
-  return existingTrip?.agent_id || null;
+  return parseSafeInt(existingTrip?.agent_id) || null;
 }
 
 /** Ensure tot is always 'SIC' or 'PVT' (DB check constraint). Defaults to 'SIC'. */
@@ -253,9 +257,46 @@ function generateQuotationNumber() {
   return `Q${datePart}${suffix}`;
 }
 
+function toNonNegativeNumber(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+function isSpecialPackageServiceItem(item = {}) {
+  if (item.is_special_package === true || item.is_special_package === 'true') return true;
+  return [item.remarks, item.notes, item.tour_package, item.transfer_description]
+    .some((value) => /\[special package\]/i.test(String(value || '')));
+}
+
+export function calculateSpecialPackageAmount(pkg, data = {}, existing = {}) {
+  if (!pkg) return 0;
+  const readCount = (key, fallbackKey = key) => {
+    const value = data[key] !== undefined ? data[key] : existing[fallbackKey];
+    return Math.max(0, parseSafeInt(value) || 0);
+  };
+  const singleRooms = readCount('special_pkg_single_rooms');
+  const doubleRooms = readCount('special_pkg_double_rooms');
+  const tripleRooms = readCount('special_pkg_triple_rooms');
+  const adultPrice = toNonNegativeNumber(pkg.price_per_adult);
+  const doublePrice = toNonNegativeNumber(pkg.price_dbl);
+  const childPrice = toNonNegativeNumber(pkg.price_per_child);
+
+  if (singleRooms || doubleRooms || tripleRooms) {
+    return (adultPrice * singleRooms) +
+      (doublePrice * doubleRooms * 2) +
+      (childPrice * tripleRooms * 3);
+  }
+
+  const adults = readCount('number_of_adults');
+  const children = readCount('number_of_kids');
+  return (adultPrice * adults) + (childPrice * children);
+}
+
 export function calculateQuotationCosts(data) {
   let totalCost = 0;
-  let discount = data.discount_amount !== undefined ? parseFloat(data.discount_amount) : (data.discount !== undefined ? parseFloat(data.discount) : 0);
+  const discount = toNonNegativeNumber(
+    data.discount_amount !== undefined ? data.discount_amount : data.discount
+  );
 
   const flights = data.flight_items || data.flights || [];
   const hotels = data.hotel_items || data.hotels || [];
@@ -264,15 +305,20 @@ export function calculateQuotationCosts(data) {
   const tours = data.tour_items || data.tours || [];
   const others = data.other_items || data.others || [];
 
-  for (const f of flights) totalCost += parseFloat(f.price || 0);
-  for (const h of hotels) totalCost += parseFloat(h.total_price || h.price || 0);
-  for (const t of transfers) totalCost += parseFloat(t.price || 0);
-  for (const e of excursions) totalCost += parseFloat(e.price || 0);
-  for (const tr of tours) totalCost += parseFloat(tr.price || 0);
-  for (const o of others) totalCost += parseFloat(o.price || 0);
+  const includeService = (item) => !data._has_special_package || !isSpecialPackageServiceItem(item);
+  for (const f of flights) if (includeService(f)) totalCost += toNonNegativeNumber(f.price);
+  for (const h of hotels) if (includeService(h)) totalCost += toNonNegativeNumber(h.total_price ?? h.price);
+  for (const t of transfers) if (includeService(t)) totalCost += toNonNegativeNumber(t.price);
+  for (const e of excursions) if (includeService(e)) totalCost += toNonNegativeNumber(e.price);
+  for (const tr of tours) if (includeService(tr)) totalCost += toNonNegativeNumber(tr.price);
+  for (const o of others) if (includeService(o)) totalCost += toNonNegativeNumber(o.price);
+
+  totalCost += toNonNegativeNumber(data._special_package_amount);
 
   const includeAssistance = data.include_assistance_fee !== undefined ? (data.include_assistance_fee === true || data.include_assistance_fee === 'true') : true;
-  const assistanceFee = includeAssistance ? parseFloat(data.assistance_fee_amount !== undefined ? data.assistance_fee_amount : 1000) : 0;
+  const assistanceFee = includeAssistance
+    ? toNonNegativeNumber(data.assistance_fee_amount !== undefined ? data.assistance_fee_amount : 1000)
+    : 0;
 
   totalCost += assistanceFee;
   const finalCost = Math.max(0, totalCost - discount);
@@ -284,6 +330,27 @@ export function calculateQuotationCosts(data) {
     include_assistance_fee: includeAssistance,
     assistance_fee_amount: assistanceFee
   };
+}
+
+export function buildSuppliedQuotationItems(data = {}, existing = {}) {
+  const hasOwn = (key) => Object.prototype.hasOwnProperty.call(data, key);
+  const clearTypes = new Set(Array.isArray(data.clear_service_types) ? data.clear_service_types : []);
+  const config = {
+    hotel: ['hotel_items', 'hotels', 'hotel_trip_items'],
+    excursion: ['excursion_items', 'excursions', 'excursion_trip_items'],
+    tour: ['tour_items', 'tours', 'tour_trip_items'],
+    transfer: ['transfer_items', 'transfers', 'transfer_trip_items'],
+    flight: ['flight_items', 'flights', 'flight_trip_items'],
+    other: ['other_items', 'others', 'other_trip_items']
+  };
+
+  return Object.fromEntries(Object.entries(config).map(([type, [primary, alias, existingKey]]) => {
+    if (!hasOwn(primary) && !hasOwn(alias)) return [type, false];
+    const incoming = data[primary] ?? data[alias] ?? [];
+    const existingRows = existing[existingKey] || [];
+    const explicitlyCleared = clearTypes.has(type);
+    return [type, incoming.length > 0 || existingRows.length === 0 || explicitlyCleared];
+  }));
 }
 
 export function buildPartialQuotationCostInput(data, existing, suppliedItems) {
@@ -647,6 +714,9 @@ export async function createQuotation(req, res, next) {
     const data = req.body;
     const claims = req.user;
     const resolvedAgentId = await resolveAgentIdFromRequest(data, claims);
+    if (!resolvedAgentId) {
+      return res.status(400).json({ message: 'A valid agent is required to create a quotation.' });
+    }
 
     const trip_start_date = data.trip_start_date
       ? parseOptionalDate(data.trip_start_date)
@@ -654,6 +724,7 @@ export async function createQuotation(req, res, next) {
     const tripFallbackDate = trip_start_date && !isNaN(trip_start_date.getTime()) ? trip_start_date : new Date();
 
     let finalSpecialPackageId = null;
+    let selectedSpecialPackage = null;
     if (data.special_package_id) {
       finalSpecialPackageId = parseSafeInt(data.special_package_id);
       const pkg = await prisma.special_packages.findUnique({
@@ -661,6 +732,7 @@ export async function createQuotation(req, res, next) {
         include: { items: true }
       });
       if (pkg) {
+        selectedSpecialPackage = pkg;
         const baseDate = trip_start_date && !isNaN(trip_start_date.getTime()) ? trip_start_date : new Date();
         const pkgHotels = [];
         const pkgExcursions = [];
@@ -792,6 +864,9 @@ export async function createQuotation(req, res, next) {
           data.final_amount = data.total_amount;
         }
       }
+      if (!selectedSpecialPackage) {
+        return res.status(400).json({ message: 'The selected special package was not found.' });
+      }
     }
 
     const hotelItems = data.hotel_items || data.hotels || [];
@@ -801,10 +876,12 @@ export async function createQuotation(req, res, next) {
     const flightItems = data.flight_items || data.flights || [];
     const otherItems = data.other_items || data.others || [];
 
+    data._has_special_package = Boolean(selectedSpecialPackage);
+    data._special_package_amount = calculateSpecialPackageAmount(selectedSpecialPackage, data);
     const calculated = calculateQuotationCosts(data);
-    const total_amount = data.total_amount !== undefined ? parseFloat(data.total_amount) : (data.total_cost !== undefined ? parseFloat(data.total_cost) : calculated.total_amount);
-    const discount_amount = data.discount_amount !== undefined ? parseFloat(data.discount_amount) : (data.discount !== undefined ? parseFloat(data.discount) : calculated.discount_amount);
-    const final_amount = data.final_amount !== undefined ? parseFloat(data.final_amount) : (data.final_cost !== undefined ? parseFloat(data.final_cost) : calculated.final_amount);
+    const total_amount = calculated.total_amount;
+    const discount_amount = calculated.discount_amount;
+    const final_amount = calculated.final_amount;
 
     let payment_deadline = data.payment_deadline ? parseOptionalDate(data.payment_deadline) : null;
     let cancellation_deadline = data.cancellation_deadline ? parseOptionalDate(data.cancellation_deadline) : null;
@@ -839,16 +916,12 @@ export async function createQuotation(req, res, next) {
         if (!userExists) resolvedUserId = null;
       }
 
-      let finalAgentId = resolvedAgentId ? parseSafeFK(resolvedAgentId) : null;
-      if (finalAgentId) {
-        const agentExists = await tx.agent.findUnique({ where: { id: finalAgentId }, select: { id: true } });
-        if (!agentExists) {
-          const defaultAgent = await tx.agent.findFirst({ select: { id: true } });
-          finalAgentId = defaultAgent ? defaultAgent.id : null;
-        }
-      } else {
-        const defaultAgent = await tx.agent.findFirst({ select: { id: true } });
-        finalAgentId = defaultAgent ? defaultAgent.id : null;
+      const finalAgentId = parseSafeFK(resolvedAgentId);
+      const agentExists = finalAgentId
+        ? await tx.agent.findUnique({ where: { id: finalAgentId }, select: { id: true } })
+        : null;
+      if (!agentExists) {
+        throw Object.assign(new Error('A valid agent is required to create a quotation.'), { status: 400 });
       }
 
       const trip = await tx.trips.create({
@@ -1267,15 +1340,20 @@ export async function updateQuotation(req, res, next) {
         message: 'Only pending quotations can be edited by an agent.'
       });
     }
-    const resolvedAgentId = (data.agent_id !== undefined || data.agent_name)
+    const agentSelectionRequested = data.agent_id !== undefined || Boolean(data.agent_name);
+    const resolvedAgentId = agentSelectionRequested
       ? await resolveAgentIdFromRequest(data, claims, prisma, existing)
       : existing.agent_id;
+    if (!resolvedAgentId) {
+      return res.status(400).json({ message: 'The selected agent is invalid or no longer available.' });
+    }
 
     const trip_start_date = data.trip_start_date !== undefined
       ? parseOptionalDate(data.trip_start_date)
       : (data.start_date !== undefined ? parseOptionalDate(data.start_date) : undefined);
     
     let finalSpecialPackageId = undefined;
+    let selectedSpecialPackage = null;
     if (data.special_package_id !== undefined) {
       if (data.special_package_id === null) {
         finalSpecialPackageId = null;
@@ -1286,6 +1364,7 @@ export async function updateQuotation(req, res, next) {
           include: { items: true }
         });
         if (pkg) {
+          selectedSpecialPackage = pkg;
           const baseDate = trip_start_date ? trip_start_date : (existing.trip_start_date ? new Date(existing.trip_start_date) : new Date());
           const dateStrBase = baseDate.toISOString().substring(0, 10);
           const pkgHotels = [];
@@ -1420,18 +1499,26 @@ export async function updateQuotation(req, res, next) {
             data.final_amount = data.total_amount;
           }
         }
+        if (!selectedSpecialPackage) {
+          return res.status(400).json({ message: 'The selected special package was not found.' });
+        }
       }
     }
 
-    const hasOwn = (key) => Object.prototype.hasOwnProperty.call(data, key);
-    const suppliedItems = {
-      hotel: hasOwn('hotel_items') || hasOwn('hotels'),
-      excursion: hasOwn('excursion_items') || hasOwn('excursions'),
-      tour: hasOwn('tour_items') || hasOwn('tours'),
-      transfer: hasOwn('transfer_items') || hasOwn('transfers'),
-      flight: hasOwn('flight_items') || hasOwn('flights'),
-      other: hasOwn('other_items') || hasOwn('others')
-    };
+    const effectiveSpecialPackageId = finalSpecialPackageId !== undefined
+      ? finalSpecialPackageId
+      : existing.special_package_id;
+    if (effectiveSpecialPackageId && !selectedSpecialPackage) {
+      selectedSpecialPackage = await prisma.special_packages.findUnique({
+        where: { id: effectiveSpecialPackageId },
+        select: { id: true, price_per_adult: true, price_dbl: true, price_per_child: true }
+      });
+      if (!selectedSpecialPackage) {
+        return res.status(400).json({ message: 'The quotation special package no longer exists.' });
+      }
+    }
+
+    const suppliedItems = buildSuppliedQuotationItems(data, existing);
     const hotelItems = data.hotel_items || data.hotels || [];
     const excursionItems = data.excursion_items || data.excursions || [];
     const tourItems = data.tour_items || data.tours || [];
@@ -1439,23 +1526,17 @@ export async function updateQuotation(req, res, next) {
     const flightItems = data.flight_items || data.flights || [];
     const otherItems = data.other_items || data.others || [];
 
-    const calculated = calculateQuotationCosts(buildPartialQuotationCostInput(data, existing, suppliedItems));
-    const anyServicesSupplied = Object.values(suppliedItems).some(Boolean);
-    const total_amount = data.total_amount !== undefined
-      ? parseFloat(data.total_amount)
-      : (data.total_cost !== undefined
-          ? parseFloat(data.total_cost)
-          : (anyServicesSupplied ? calculated.total_amount : existing.total_amount));
-    const discount_amount = data.discount_amount !== undefined
-      ? parseFloat(data.discount_amount)
-      : (data.discount !== undefined
-          ? parseFloat(data.discount)
-          : (anyServicesSupplied ? calculated.discount_amount : existing.discount_amount));
-    const final_amount = data.final_amount !== undefined
-      ? parseFloat(data.final_amount)
-      : (data.final_cost !== undefined
-          ? parseFloat(data.final_cost)
-          : (anyServicesSupplied ? calculated.final_amount : existing.final_amount));
+    const costInput = buildPartialQuotationCostInput(data, existing, suppliedItems);
+    costInput._has_special_package = Boolean(selectedSpecialPackage);
+    costInput._special_package_amount = calculateSpecialPackageAmount(
+      selectedSpecialPackage,
+      data,
+      existing
+    );
+    const calculated = calculateQuotationCosts(costInput);
+    const total_amount = calculated.total_amount;
+    const discount_amount = calculated.discount_amount;
+    const final_amount = calculated.final_amount;
 
     let payment_deadline = existing.payment_deadline;
     let cancellation_deadline = existing.cancellation_deadline;
@@ -1630,8 +1711,10 @@ export async function updateQuotation(req, res, next) {
       if (finalAgentId) {
         const agentExists = await tx.agent.findUnique({ where: { id: finalAgentId }, select: { id: true } });
         if (!agentExists) {
-          finalAgentId = existing.agent_id || null;
+          throw Object.assign(new Error('The selected agent is invalid or no longer available.'), { status: 400 });
         }
+      } else {
+        throw Object.assign(new Error('A valid agent is required to update a quotation.'), { status: 400 });
       }
 
       // Update trip base data

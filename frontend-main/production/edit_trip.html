@@ -3121,6 +3121,33 @@
         let toursArray = [];
         let hotelsArray = [];
         let othersArray = []; // Store others data
+        const quotationServiceHydration = Object.fromEntries(
+          ["hotel", "transfer", "excursion", "tour", "flight", "other"].map((type) => [
+            type,
+            { loaded: false, originalCount: 0, error: null },
+          ])
+        );
+
+        function hydrateQuotationService(type, items, populateRow) {
+          const safeItems = Array.isArray(items) ? items : [];
+          const state = quotationServiceHydration[type];
+          state.originalCount = safeItems.length;
+          state.error = null;
+          try {
+            safeItems.forEach((item) => populateRow(item));
+            state.loaded = true;
+          } catch (error) {
+            state.loaded = false;
+            state.error = error;
+            console.error(`Failed to load ${type} quotation items:`, error);
+          }
+        }
+
+        function getFailedQuotationServiceSections() {
+          return Object.entries(quotationServiceHydration)
+            .filter(([, state]) => !state.loaded)
+            .map(([type]) => type);
+        }
         let editingTransferRow = null; // Track the row being edited
         let editingExcursionRow = null;
         let editingTourRow = null;
@@ -10570,38 +10597,19 @@
 
             // ✅ Populate Data for Transfers, Hotels, Excursions, Tours, Flights
             flightsArray = data.flights || [];
-            if (data.transfers && data.transfers.length > 0) {
-              transfersArray = data.transfers.map(t => ({
-                ...t,
-                transfer_id: t.transfer_id || 0
-              }));
-              transfersArray.forEach((transfer) =>
-                populateTransferRow(transfer)
-              );
-            }
-            if (Array.isArray(data.excursions) && data.excursions.length > 0) {
-              console.log("Excursions Data:", data.excursions);
-              excursionsArray = [...data.excursions];
-              data.excursions.forEach((excursion) =>
-                populateExcursionRow(excursion)
-              );
-            } else {
-              console.warn(
-                "No excursions found or invalid format:",
-                data.excursions
-              );
-            }
-            if (Array.isArray(data.hotels) && data.hotels.length > 0) {
-              console.log("Hotels Data:", data.hotels);
-              hotelsArray = [...data.hotels];
-              data.hotels.forEach((hotel) => populateHotelRow(hotel));
-            } else {
-              console.warn("No hotels found or invalid format:", data.hotels);
-            }
-            if (Array.isArray(data.tours) && data.tours.length > 0) {
-              console.log("Tours Data:", data.tours);
-              toursArray = [...data.tours];
-              data.tours.forEach((tour) => populateTourRow(tour));
+            transfersArray = Array.isArray(data.transfers)
+              ? data.transfers.map((transfer) => ({ ...transfer, transfer_id: transfer.transfer_id || 0 }))
+              : [];
+            excursionsArray = Array.isArray(data.excursions) ? [...data.excursions] : [];
+            hotelsArray = Array.isArray(data.hotels) ? [...data.hotels] : [];
+            toursArray = Array.isArray(data.tours) ? [...data.tours] : [];
+
+            hydrateQuotationService("transfer", transfersArray, populateTransferRow);
+            hydrateQuotationService("excursion", excursionsArray, populateExcursionRow);
+            hydrateQuotationService("hotel", hotelsArray, populateHotelRow);
+            hydrateQuotationService("tour", toursArray, populateTourRow);
+
+            if (toursArray.length > 0 && quotationServiceHydration.tour.loaded) {
               
               // Initialize tour hotels display (admin can edit in quotations)
               const userRole = localStorage.getItem("role");
@@ -10610,36 +10618,25 @@
               
               // Wait for DOM to be ready, then display tour hotels
               setTimeout(() => {
-                TourHotelsUI.initializeTourHotels(tripId, data.tours, isAdmin, isBooking)
+                TourHotelsUI.initializeTourHotels(tripId, toursArray, isAdmin, isBooking)
                   .catch(error => console.error("Error initializing tour hotels:", error));
               }, 500);
-            } else {
-              console.warn("No tours found or invalid format:", data.tours);
             }
-            if (data.flights && data.flights.length > 0) {
-              flightsArray = data.flights;
-              data.flights.forEach((flight) => populateFlightRow(flight));
-            }
-            if (Array.isArray(data.others) && data.others.length > 0) {
-              console.log("Others Data:", data.others);
-              othersArray = []; // Clear array first
-              data.others.forEach((other) => {
-                // Add to othersArray with proper structure mapping backend fields to frontend
-                const otherService = {
+            flightsArray = Array.isArray(data.flights) ? [...data.flights] : [];
+            hydrateQuotationService("flight", flightsArray, populateFlightRow);
+
+            othersArray = Array.isArray(data.others)
+              ? data.others.map((other, index) => ({
                   other_id: other.other_id || 0,
-                  id: other.id || `temp-${Date.now()}`, // Use id as primary identifier
+                  id: other.id || `temp-${Date.now()}-${index}`,
                   description: other.description || "",
                   date: other.date || "",
                   total_price: other.total_price || other.cost || 0,
-                  cost: other.total_price || other.cost || 0, // Keep for backward compatibility
+                  cost: other.total_price || other.cost || 0,
                   remarks: other.remarks || "",
-                };
-                othersArray.push(otherService); // Add to array
-                populateOtherRow(otherService);
-              });
-            } else {
-              console.warn("No others found or invalid format:", data.others);
-            }
+                }))
+              : [];
+            hydrateQuotationService("other", othersArray, populateOtherRow);
           })
           .catch((error) => {
             console.error("Error fetching trip details:", error);
@@ -11350,9 +11347,23 @@
               }
             }
 
+            const failedServiceSections = getFailedQuotationServiceSections();
+            if (failedServiceSections.length > 0) {
+              alert(
+                `Some quotation sections could not be loaded (${failedServiceSections.join(", ")}). ` +
+                "Please reload the page before saving so existing service data is not lost."
+              );
+              return;
+            }
+
             if (!validateTripBeforeSave({ hotels, transfers, excursions, flights, tours, others })) {
               return;
             }
+
+            const currentServiceItems = { hotel: hotels, transfer: transfers, excursion: excursions, tour: tours, flight: flights, other: others };
+            const clearServiceTypes = Object.entries(quotationServiceHydration)
+              .filter(([type, state]) => state.loaded && state.originalCount > 0 && currentServiceItems[type].length === 0)
+              .map(([type]) => type);
 
             // Construct the request payload
             const quotationRequest = {
@@ -11381,6 +11392,7 @@
               flights: flights,
               tours: tours,
               others: others,
+              clear_service_types: clearServiceTypes,
               special_package_id: document.getElementById("specialPackageSelect").value ? parseInt(document.getElementById("specialPackageSelect").value) : null,
               special_pkg_single_rooms: document.getElementById("specialPackageSingleRoom").checked ? (parseInt(document.getElementById("specialPackageSingleRoomCount").value) || 0) : 0,
               special_pkg_double_rooms: document.getElementById("specialPackageDoubleRoom").checked ? (parseInt(document.getElementById("specialPackageDoubleRoomCount").value) || 0) : 0,

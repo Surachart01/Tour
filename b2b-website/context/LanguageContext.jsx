@@ -6,7 +6,7 @@ import { translations } from '../data/translations';
 const LanguageContext = createContext();
 
 export function LanguageProvider({ children }) {
-  const [lang, setLang] = useState('it');
+  const [lang, setLang] = useState('en');
 
   useEffect(() => {
     const saved = localStorage.getItem('vera_lang');
